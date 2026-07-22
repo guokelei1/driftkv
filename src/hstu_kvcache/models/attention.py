@@ -31,9 +31,9 @@ class PointwiseAttention(nn.Module):
         not additive -inf (which would corrupt the unnormalised sum).
 
     This module owns the Q/K/V linear projections and returns, alongside the
-    block output, the per-layer K and V tensors. Those K/V tensors are exactly
-    the cached representation ``F(theta, x_u)`` whose drift we study, so they
-    are a first-class output rather than an internal detail.
+    block output, the per-layer K and V tensors. Those K/V tensors are the
+    versioned prefix representation being migrated, so they are a first-class
+    output rather than an internal detail.
     """
 
     def __init__(self, cfg: PointwiseAttentionConfig) -> None:
@@ -68,7 +68,7 @@ class PointwiseAttention(nn.Module):
                 -inf for mask. Converted to a multiplicative 0/1 mask internally
                 because elu+1 is non-negative. None => full causal.
             return_kv: if True, also return (k, v) [B, L, num_heads*head_dim] which
-                are the cacheable per-user representation F(theta, x_u).
+                are the cacheable batched prefix representation F(theta, x).
 
         Returns: out [B, L, H], and optionally (k, v).
         """

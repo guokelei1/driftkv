@@ -29,9 +29,11 @@ def load_movielens_hard(path: str | Path, split: str = "train") -> list[dict]:
             pos = set(item_map[x] for x in r["labels"]["positive_item_ids"])
             labels = np.array([1 if c in pos else 0 for c in cands], dtype=np.int64)
             records.append({
+                "user_id": r["user_id"],
                 "history": np.array(hist, dtype=np.int64),
                 "candidates": np.array(cands, dtype=np.int64),
                 "labels": labels,
+                "positive_items": np.array(sorted(pos), dtype=np.int64),
             })
     records.sort(key=lambda r: len(r["history"]))
     return records

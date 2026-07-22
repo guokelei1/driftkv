@@ -39,9 +39,9 @@ class HSTU(nn.Module):
       * FFN merged into attention via pointwise gating - in HSTUBlock.
       * Tied item-embedding output head.
 
-    ``forward`` returns hidden states; ``compute_kv`` returns the per-user
-    derived KV cache F(theta, x_u) which is the object whose drift under
-    theta -> theta + dtheta we study.
+    ``forward`` returns hidden states; ``compute_kv`` returns the batched
+    derived prefix K/V cache F(theta, x), which can be captured under one
+    model version and migrated for use by another.
     """
 
     def __init__(self, cfg: HSTUConfig) -> None:
@@ -91,6 +91,7 @@ class HSTU(nn.Module):
         time_deltas: torch.Tensor,
         return_kv: bool = False,
         return_hidden: bool = True,
+        lengths: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, HSTUKVCache | None]:
         """Run the transducer.
 
@@ -105,6 +106,11 @@ class HSTU(nn.Module):
         """
         x = self.embed_inputs(item_ids, behaviors, time_deltas)
         L = x.shape[1]
+        valid = None
+        if lengths is not None:
+            lengths = lengths.to(x.device)
+            valid = torch.arange(L, device=x.device).unsqueeze(0) < lengths.unsqueeze(1)
+            x = x * valid.unsqueeze(-1)
         kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
         for blk in self.blocks:
             if return_kv:
@@ -112,7 +118,11 @@ class HSTU(nn.Module):
                 kvs.append((k, v))
             else:
                 x = blk(x, attn_mask=None, return_kv=False)
+            if valid is not None:
+                x = x * valid.unsqueeze(-1)
         x = self.final_norm(x)
+        if valid is not None:
+            x = x * valid.unsqueeze(-1)
         kv = None
         if return_kv:
             kv = HSTUKVCache.from_layer_list(kvs, seq_len=L)
@@ -126,6 +136,7 @@ class HSTU(nn.Module):
         item_ids: torch.Tensor,
         behaviors: torch.Tensor,
         time_deltas: torch.Tensor,
+        lengths: torch.Tensor | None = None,
     ) -> HSTUKVCache:
         """Convenience: return only the derived KV cache F(theta, x_u).
 
@@ -135,16 +146,39 @@ class HSTU(nn.Module):
         was_training = self.training
         self.eval()
         try:
-            _, kv = self.forward(item_ids, behaviors, time_deltas, return_kv=True, return_hidden=False)
+            _, kv = self.forward(
+                item_ids,
+                behaviors,
+                time_deltas,
+                return_kv=True,
+                return_hidden=False,
+                lengths=lengths,
+            )
         finally:
             if was_training:
                 self.train()
         assert kv is not None
         return kv
 
-    def score_candidates(self, hidden: torch.Tensor, candidate_ids: torch.Tensor) -> torch.Tensor:
+    def last_hidden(
+        self,
+        hidden: torch.Tensor,
+        lengths: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        if lengths is None:
+            return hidden[:, -1, :]
+        lengths = lengths.to(hidden.device)
+        rows = torch.arange(hidden.shape[0], device=hidden.device)
+        return hidden[rows, (lengths - 1).clamp_min(0), :]
+
+    def score_candidates(
+        self,
+        hidden: torch.Tensor,
+        candidate_ids: torch.Tensor,
+        lengths: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         """hidden [B, L, H] (use last position) -> scores [B, C]."""
-        last = hidden[:, -1, :]  # [B, H]
+        last = self.last_hidden(hidden, lengths)
         return self.item_emb.score(last, candidate_ids)
 
     @torch.no_grad()

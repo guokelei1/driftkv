@@ -1,11 +1,11 @@
-"""HSTU architecture for streaming KV-cache drift research.
+"""HSTU architecture for model-version K/V cache migration research.
 
 The model is intentionally modular so future design tweaks (roadmap U1/U2/U6)
 are localised edits:
   * PointwiseAttention  - the defining elu+1 unnormalised attention.
   * HSTUBlock           - one layer (norm + PMA + gating + residual).
   * HSTU                - full transducer with first-class KV output.
-  * HSTUKVCache         - F(theta, x_u), the object whose drift we study.
+  * HSTUKVCache         - batched prefix K/V, the object being migrated.
 """
 
 from .attention import PointwiseAttention, PointwiseAttentionConfig

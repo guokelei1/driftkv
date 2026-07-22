@@ -35,11 +35,11 @@ def test_kv_deterministic():
     batch = _make_batch()
     kv1 = model.compute_kv(**batch)
     kv2 = model.compute_kv(**batch)
-    d = kv1.drift_norm(kv2)
+    d = kv1.difference_metrics(kv2)
     assert d["k_l2"] < 1e-5 and d["v_l2"] < 1e-5
 
 
-def test_drift_nonzero_after_param_change():
+def test_cache_changes_after_param_change():
     model = _make_model()
     batch = _make_batch()
     kv0 = model.compute_kv(**batch)
@@ -47,7 +47,7 @@ def test_drift_nonzero_after_param_change():
         for p in model.parameters():
             p.add_(torch.randn_like(p) * 0.1)
     kv1 = model.compute_kv(**batch)
-    d = kv0.drift_norm(kv1)
+    d = kv0.difference_metrics(kv1)
     assert d["k_l2"] > 0.1 and d["v_l2"] > 0.1
 
 

@@ -14,8 +14,8 @@ class KuaiRandTrace:
     """Streaming-ready KuaiRand behaviour trace.
 
     KuaiRand-1K ships two standard-log windows (Apr 8-21, Apr 22-May 8) with
-    millisecond timestamps - ideal for streaming drift: each window yields a
-    distinct theta checkpoint when the model is retrained on the new window.
+    millisecond timestamps, allowing each stream window to produce a distinct
+    model-version checkpoint.
 
     Columns of interest: user_id, video_id, time_ms, date, hourmin, and the
     multi-behaviour flags (is_click/like/follow/comment/forward/hate/long_view).
@@ -38,6 +38,7 @@ def load_kuairand(
     max_seq_len: int = 512,
     max_items: int | None = 50000,
     max_users: int | None = None,
+    fit_num_days: int | None = None,
 ) -> KuaiRandTrace:
     """Load one or more KuaiRand log CSVs into a single sorted trace.
 
@@ -63,42 +64,43 @@ def load_kuairand(
     df = pd.concat(frames, ignore_index=True)
     df = df.sort_values("time_ms").reset_index(drop=True)
 
+    fit_df = df
+    if fit_num_days is not None:
+        dates = sorted(df["date"].astype(str).unique())[:fit_num_days]
+        fit_df = df[df["date"].astype(str).isin(dates)]
+
     # optional catalog truncation: keep top-N most frequent items
     if max_items is not None:
-        item_counts = df["video_id"].value_counts()
+        item_counts = fit_df["video_id"].value_counts()
         keep_items = item_counts.head(max_items).index
         df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
+        fit_df = fit_df[fit_df["video_id"].isin(keep_items)]
+    elif fit_num_days is not None:
+        keep_items = fit_df["video_id"].unique()
+        df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
 
-    # encode the multi-behaviour signal into a single behaviour id:
-    # 0 = padding, 1 = view(no-engage), 2=click, 3=like, 4=follow, 5=comment,
-    # 6=forward, 7=hate, 8=long_view. Priority: most informative first.
-    def _behavior_id(row: pd.Series) -> int:
-        if row["is_hate"]:
-            return 7
-        if row["is_forward"]:
-            return 6
-        if row["is_comment"]:
-            return 5
-        if row["is_follow"]:
-            return 4
-        if row["is_like"]:
-            return 3
-        if row["is_click"]:
-            return 2
-        if row["long_view"]:
-            return 8
-        return 1
-
-    df["behavior"] = df.apply(_behavior_id, axis=1)
+    behavior = np.ones(len(df), dtype=np.int8)
+    for column, value in (
+        ("long_view", 8),
+        ("is_click", 2),
+        ("is_like", 3),
+        ("is_follow", 4),
+        ("is_comment", 5),
+        ("is_forward", 6),
+        ("is_hate", 7),
+    ):
+        behavior[df[column].to_numpy(dtype=bool)] = value
+    df["behavior"] = behavior
     # positive label = any positive engagement (exclude hate)
     df["label"] = ((df["is_click"] | df["is_like"] | df["is_follow"] | df["is_comment"] | df["is_forward"] | df["long_view"]).astype(int))
 
     # remap user/item ids to contiguous 1..N (0 reserved for padding)
-    active_users = df.groupby("user_id").size()
+    active_users = fit_df.groupby("user_id").size()
     keep_users = active_users[active_users >= min_interactions_per_user].index
     df = df[df["user_id"].isin(keep_users)]
-    user_ids = df["user_id"].unique()
-    item_ids = df["video_id"].unique()
+    fit_df = fit_df[fit_df["user_id"].isin(keep_users)]
+    user_ids = fit_df["user_id"].unique()
+    item_ids = fit_df["video_id"].unique()
     if max_users is not None and len(user_ids) > max_users:
         user_ids = user_ids[:max_users]
         df = df[df["user_id"].isin(user_ids)].reset_index(drop=True)
@@ -164,7 +166,9 @@ def collate_batch(
     behaviors = np.zeros((B, L), dtype=np.int64)
     time_deltas = np.zeros((B, L), dtype=np.float32)
     has_labels = "labels" in sequences[0]
+    has_train_mask = "train_mask" in sequences[0]
     labels = np.zeros((B, L), dtype=np.int64) if has_labels else None
+    train_mask = np.zeros((B, L), dtype=np.bool_) if has_train_mask else None
     lengths = np.zeros(B, dtype=np.int64)
     for i, s in enumerate(sequences):
         arr = s["item_ids"][-L:]
@@ -174,6 +178,8 @@ def collate_batch(
         time_deltas[i, :n] = s["time_deltas"][-L:]
         if has_labels:
             labels[i, :n] = s["labels"][-L:]
+        if has_train_mask:
+            train_mask[i, :n] = s["train_mask"][-L:]
         lengths[i] = n
     out = {
         "item_ids": torch.from_numpy(item_ids),
@@ -183,4 +189,6 @@ def collate_batch(
     }
     if has_labels:
         out["labels"] = torch.from_numpy(labels)
+    if has_train_mask:
+        out["train_mask"] = torch.from_numpy(train_mask)
     return out

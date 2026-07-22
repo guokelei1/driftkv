@@ -36,7 +36,7 @@ class Checkpoint:
 
 
 def checkpoint_diff(theta0: torch.Tensor, theta1: torch.Tensor) -> torch.Tensor:
-    """dtheta = theta1 - theta0 (flattened). The input variable for drift."""
+    """Return the flattened parameter difference between two model versions."""
     return (theta1 - theta0).detach()
 
 
@@ -51,8 +51,31 @@ def oracle_recompute_kv(
     item_ids = batch["item_ids"].to(device)
     behaviors = batch["behaviors"].to(device)
     time_deltas = batch["time_deltas"].to(device)
-    kv = model.compute_kv(item_ids, behaviors, time_deltas)
+    lengths = batch.get("lengths")
+    kv = model.compute_kv(
+        item_ids,
+        behaviors,
+        time_deltas,
+        lengths=None if lengths is None else lengths.to(device),
+    )
     return kv.detach().to(torch.device("cpu"))
+
+
+def build_next_item_targets(
+    item_ids: torch.Tensor,
+    lengths: torch.Tensor,
+    labels: torch.Tensor | None = None,
+    train_mask: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    targets = item_ids[:, 1:]
+    positions = torch.arange(targets.shape[1], device=item_ids.device)
+    valid = positions.unsqueeze(0) < (lengths - 1).clamp_min(0).unsqueeze(1)
+    valid = valid & (item_ids[:, :-1] > 0) & (targets > 0)
+    if labels is not None:
+        valid = valid & (labels[:, 1:] > 0)
+    if train_mask is not None:
+        valid = valid & train_mask[:, 1:].bool()
+    return targets, valid
 
 
 def train_step(
@@ -65,7 +88,7 @@ def train_step(
 
     Objective: predict the next item's behaviour/label from the hidden state at
     the previous position. We use a simple cross-entropy over a sampled
-    negative set derived from the in-batch items (cheap, sufficient for
+    negative set sampled from the fitted item catalog (cheap, sufficient for
     producing realistic dtheta sequences - the exact ranking loss is not the
     research focus).
     """
@@ -74,26 +97,45 @@ def train_step(
     behaviors = batch["behaviors"].to(device)
     time_deltas = batch["time_deltas"].to(device)
 
-    hidden, _ = model(item_ids, behaviors, time_deltas, return_kv=False)
-    # score against the *next* item (shift): use item_emb table directly.
-    # logits[i, t] = hidden[i, t] . item_emb[item_ids[i, t+1]]
-    B, L, H = hidden.shape
-    target_items = item_ids  # predict item at same position from hidden (autoregressive)
-    # in-batch negative sampling
-    all_items = item_ids.clamp(min=1).reshape(-1)
-    neg = all_items[torch.randint(0, all_items.numel(), (B, L, 8), device=device)]
-    pos = target_items.unsqueeze(-1)  # [B, L, 1]
-    cands = torch.cat([pos, neg], dim=-1)  # [B, L, 9]
-    logits = model.item_emb.score(hidden, cands)  # [B, L, 9]
-    # label: 1 for pos. mask padding & first position.
-    target = torch.zeros(B, L, 9, device=device)
-    target[..., 0] = 1.0
-    mask = (item_ids > 0).float().unsqueeze(-1)  # [B, L, 1]
-    loss = torch.nn.functional.binary_cross_entropy_with_logits(
-        logits, target, reduction="none"
-    ) * mask
-    loss = loss.sum() / (mask.sum() + 1e-6)
-    optimizer.zero_grad()
+    lengths = batch.get("lengths")
+    if lengths is None:
+        lengths = (item_ids > 0).sum(dim=1)
+    else:
+        lengths = lengths.to(device)
+    labels = batch.get("labels")
+    train_mask = batch.get("train_mask")
+    labels = None if labels is None else labels.to(device)
+    train_mask = None if train_mask is None else train_mask.to(device)
+
+    optimizer.zero_grad(set_to_none=True)
+    hidden, _ = model(
+        item_ids,
+        behaviors,
+        time_deltas,
+        return_kv=False,
+        lengths=lengths,
+    )
+    target_items, valid = build_next_item_targets(item_ids, lengths, labels, train_mask)
+    if not torch.any(valid):
+        return 0.0
+    source_hidden = hidden[:, :-1]
+    neg = torch.randint(
+        1,
+        model.cfg.num_items + 1,
+        (*target_items.shape, 8),
+        device=device,
+    )
+    pos = target_items.unsqueeze(-1)
+    neg = torch.where(neg == pos, neg.remainder(model.cfg.num_items) + 1, neg)
+    cands = torch.cat([pos, neg], dim=-1)
+    logits = model.item_emb.score(source_hidden, cands)
+    target = torch.zeros_like(target_items)
+    per_target = torch.nn.functional.cross_entropy(
+        logits.flatten(0, 1),
+        target.flatten(),
+        reduction="none",
+    ).view_as(target_items)
+    loss = (per_target * valid).sum() / valid.sum()
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
     optimizer.step()
@@ -104,8 +146,7 @@ class StreamingTrainer:
     """Produces a sequence of checkpoints theta_0, theta_1, ..., theta_t.
 
     Each ``stream_chunk`` call does N gradient steps on a chunk of the streaming
-    data and records a new checkpoint. The resulting dtheta sequence is the
-    raw material for drift experiments (Phase 0 V3/V4 and Phase 3).
+    data and records a new checkpoint for versioned cache evaluation.
     """
 
     def __init__(self, model: HSTU, lr: float = 3e-4, device: str | torch.device = "cuda") -> None:

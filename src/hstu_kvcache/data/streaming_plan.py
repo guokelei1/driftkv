@@ -19,10 +19,10 @@ class StreamingDataPlan:
          a. EVAL: predict day t's interactions using theta_{t-1}
             (history = each user's interactions up to end of day t-1)
          b. INGEST: append day t's interactions into user histories
-         c. TRAIN: incremental update on day t's data -> theta_t,  dtheta_t
+         c. TRAIN: incremental update on day t's data -> theta_t
 
-    This produces realistic per-day Delta-theta (small, hourly-scale updates) and
-    leak-free next-day evaluation - exactly the scenario the drift research needs.
+    This produces realistic model-version checkpoints and leak-free next-day
+    evaluation for cache migration experiments.
     """
 
     trace: KuaiRandTrace
@@ -48,6 +48,7 @@ class StreamingDataPlan:
                 "item_ids": np.array([], dtype=np.int64),
                 "behaviors": np.array([], dtype=np.int64),
                 "time_deltas": np.array([], dtype=np.float32),
+                "labels": np.array([], dtype=np.int64),
                 "timestamps": np.array([], dtype=np.int64),
             }
 
@@ -59,12 +60,14 @@ class StreamingDataPlan:
         max_seq_len: int = 128,
         max_items: int = 20000,
         min_interactions_per_user: int = 5,
+        fit_vocabulary_on_base: bool = False,
     ) -> StreamingDataPlan:
         trace = load_kuairand(
             csv_paths,
             min_interactions_per_user=min_interactions_per_user,
             max_seq_len=max_seq_len,
             max_items=max_items,
+            fit_num_days=base_num_days if fit_vocabulary_on_base else None,
         )
         all_dates = sorted(trace.interactions["date"].astype(str).unique())
         base_dates = all_dates[:base_num_days]
@@ -82,6 +85,7 @@ class StreamingDataPlan:
             return
         items = day_df["item_idx"].to_numpy(dtype=np.int64)
         behs = day_df["behavior"].to_numpy(dtype=np.int64)
+        labels = day_df["label"].to_numpy(dtype=np.int64)
         ts = day_df["time_ms"].to_numpy(dtype=np.int64)
         hist = self.user_histories[u]
         if len(hist["timestamps"]) > 0:
@@ -98,6 +102,7 @@ class StreamingDataPlan:
         hist["item_ids"] = np.concatenate([hist["item_ids"], items])
         hist["behaviors"] = np.concatenate([hist["behaviors"], behs])
         hist["time_deltas"] = np.concatenate([hist["time_deltas"], td])
+        hist["labels"] = np.concatenate([hist["labels"], labels])
         hist["timestamps"] = np.concatenate([hist["timestamps"], ts])
         cap = self.max_seq_len * 4
         if len(hist["item_ids"]) > cap:
@@ -124,8 +129,44 @@ class StreamingDataPlan:
             "item_ids": hist["item_ids"][start:],
             "behaviors": hist["behaviors"][start:],
             "time_deltas": hist["time_deltas"][start:],
+            "labels": hist["labels"][start:],
+            "timestamps": hist["timestamps"][start:],
             "user_id": u,
         }
+
+    def _frame_sequence(self, u: int, frame: pd.DataFrame) -> dict:
+        frame = frame.sort_values("time_ms")
+        timestamps = frame["time_ms"].to_numpy(dtype=np.int64)
+        if "time_delta" in frame:
+            time_deltas = frame["time_delta"].to_numpy(dtype=np.float32)
+        else:
+            time_deltas = np.zeros(len(frame), dtype=np.float32)
+            if len(frame) > 1:
+                time_deltas[1:] = np.diff(timestamps).clip(0, 86400 * 7 * 1000) / 1000.0
+        return {
+            "item_ids": frame["item_idx"].to_numpy(dtype=np.int64),
+            "behaviors": frame["behavior"].to_numpy(dtype=np.int64),
+            "time_deltas": time_deltas,
+            "labels": frame["label"].to_numpy(dtype=np.int64),
+            "timestamps": timestamps,
+            "user_id": u,
+        }
+
+    def _chunk_sequence(self, sequence: dict) -> list[dict]:
+        length = len(sequence["item_ids"])
+        if length < 2:
+            return []
+        stride = max(1, self.max_seq_len - 1)
+        output = []
+        for start in range(0, length - 1, stride):
+            end = min(length, start + self.max_seq_len)
+            chunk = {
+                name: values[start:end] if isinstance(values, np.ndarray) else values
+                for name, values in sequence.items()
+            }
+            if len(chunk["item_ids"]) >= 2:
+                output.append(chunk)
+        return output
 
     def get_eval_set(self, date: str, max_users: int | None = None) -> list[dict]:
         """Eval samples for `date`: history up to yesterday + today's positive items.
@@ -138,17 +179,18 @@ class StreamingDataPlan:
             return []
         samples = []
         users = day_df["user_idx"].unique()
-        if max_users:
-            users = users[:max_users]
         for u in users:
             u = int(u)
             seq = self._build_seq(u)
             if seq is None or len(seq["item_ids"]) < 1:
                 continue
-            pos_items = day_df[day_df["user_idx"] == u]["item_idx"].unique()
+            user_day = day_df[(day_df["user_idx"] == u) & (day_df["label"] > 0)]
+            pos_items = user_day["item_idx"].unique()
             if len(pos_items) == 0:
                 continue
             samples.append({"history": seq, "pos_items": pos_items.tolist()})
+            if max_users is not None and len(samples) >= max_users:
+                break
         return samples
 
     def ingest_day(self, date: str) -> None:
@@ -159,7 +201,12 @@ class StreamingDataPlan:
         for u, grp in day_df.groupby("user_idx"):
             self._append_day_to_history(int(u), grp)
 
-    def iter_train_batches(self, date: str, batch_size: int = 32) -> Iterator[dict]:
+    def iter_train_batches(
+        self,
+        date: str,
+        batch_size: int = 32,
+        all_chunks: bool = False,
+    ) -> Iterator[dict]:
         """Training batches for `date`: each active user's extended sequence.
 
         After ingest_day, each user's history includes `date`'s interactions.
@@ -169,27 +216,60 @@ class StreamingDataPlan:
         day_df = self.daily_segments.get(date)
         if day_df is None:
             return
-        active_users = [int(u) for u in day_df["user_idx"].unique()]
-        np.random.shuffle(active_users)
-        for i in range(0, len(active_users), batch_size):
-            batch_users = active_users[i : i + batch_size]
-            seqs = [self._build_seq(u) for u in batch_users]
-            seqs = [s for s in seqs if s is not None and len(s["item_ids"]) >= 2]
+        sequences = []
+        for value in day_df["user_idx"].unique():
+            u = int(value)
+            history = self.user_histories.get(u)
+            truncate = None if not all_chunks or history is None else len(history["item_ids"])
+            seq = self._build_seq(u, truncate=truncate)
+            if seq is None:
+                continue
+            timestamps = day_df[day_df["user_idx"] == u]["time_ms"].to_numpy()
+            seq["train_mask"] = np.isin(seq["timestamps"], timestamps)
+            candidates = self._chunk_sequence(seq) if all_chunks else [seq]
+            if all_chunks:
+                candidates = [
+                    chunk
+                    for chunk in candidates
+                    if np.any(chunk["train_mask"][1:] & (chunk["labels"][1:] > 0))
+                ]
+            sequences.extend(candidates)
+        np.random.shuffle(sequences)
+        for i in range(0, len(sequences), batch_size):
+            seqs = sequences[i : i + batch_size]
             if not seqs:
                 continue
             from .kuairand import collate_batch
 
             yield collate_batch(seqs, max_seq_len=self.max_seq_len, pad_to=self.max_seq_len)
 
-    def iter_base_train_batches(self, batch_size: int = 32, shuffle_users: bool = True) -> Iterator[dict]:
+    def iter_base_train_batches(
+        self,
+        batch_size: int = 32,
+        shuffle_users: bool = True,
+        all_chunks: bool = False,
+    ) -> Iterator[dict]:
         """Training batches over the full base-period histories (for theta_0)."""
-        users = [u for u in self.user_histories if len(self.user_histories[u]["item_ids"]) >= 2]
+        if all_chunks:
+            frames = [self.daily_segments[date] for date in self.base_dates if date in self.daily_segments]
+            base = pd.concat(frames, ignore_index=True)
+            sequences = []
+            for value, frame in base.groupby("user_idx"):
+                sequence = self._frame_sequence(int(value), frame)
+                sequences.extend(self._chunk_sequence(sequence))
+        else:
+            sequences = [
+                self._build_seq(u)
+                for u in self.user_histories
+                if len(self.user_histories[u]["item_ids"]) >= 2
+            ]
+            sequences = [sequence for sequence in sequences if sequence is not None]
         if shuffle_users:
-            np.random.shuffle(users)
-        for i in range(0, len(users), batch_size):
-            batch_users = users[i : i + batch_size]
-            seqs = [self._build_seq(u) for u in batch_users]
-            seqs = [s for s in seqs if s is not None]
+            np.random.shuffle(sequences)
+        for sequence in sequences:
+            sequence["train_mask"] = np.ones(len(sequence["item_ids"]), dtype=np.bool_)
+        for i in range(0, len(sequences), batch_size):
+            seqs = sequences[i : i + batch_size]
             if not seqs:
                 continue
             from .kuairand import collate_batch

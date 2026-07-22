@@ -1,204 +1,337 @@
-# 08 核心思考沉淀与工程建设路线图
+# Core insights and roadmap
 
-> 本文档是整个方向探索会话的核心沉淀，目的：下次直接从这份文档开始搭建系统。
-> 包含：(1) 方向演进脉络；(2) 最终问题定义；(3) 核心数学 insight；(4) 分阶段工程建设路线（含 gating criteria）；(5) 风险与未决问题。
-> 前置文档 `00-07` 是早期分析（部分结论已被本文档修正），以本文档为准。
+> Status: authoritative as of 2026-07-22. This file replaces all earlier problem statements and
+> phase plans.
 
----
+## 1. Current thesis
 
-## 一、方向演进脉络（供下次 recall 上下文）
+Streaming recommendation training creates a sequence of model versions
 
-1. **起点**：从 TokaDB（用户行为序列数据管理）延伸到 LLM-based 推荐 serving，最初定位"流式派生 KV 一致性管理"。
-2. **第一次修正**：用户指出方法层卡住（版本控制+向量匹配太简单）。诊断：把 KV 当黑盒管理必然平庸，创新须"打开 KV 盒子"。
-3. **第二次修正**：用户指出 benchmark 问题--静态数据模拟流式测不出新鲜度收益。诊断：LLM backbone 太强稀释新鲜度边际价值，这是存在性风险。
-4. **第三次修正（关键）**：用户澄清用的是 HSTU 架构（非通用 LLM）。核验发现 HSTU 原生为"non-stationary streaming data"设计，新鲜度可测性更好；但 HSTU serving 赛道被 VISTA/Versioned-Late-Materialization/ULTRA-HSTU/MTGR 密集占领。
-5. **第四次修正（关键）**：用户澄清真实场景是**模型流式训练、参数持续变化导致 KV 失效**（非行为变化导致）。这与 VISTA 区别成立（版本维空白）。
-6. **方法落地**：聚焦到"判断 KV 漂移"这一核心数学难点，形式化为参数扰动下前向输出范数的低成本估计，连接 Fisher/影响函数。
+$$
+\theta_0 \rightarrow \theta_1 \rightarrow \cdots \rightarrow \theta_t.
+$$
 
----
+For a fixed user-history prefix $x$, a cache produced under version $v$ is
 
-## 二、最终问题定义
+$$
+C_v(x)=F(\theta_v,x).
+$$
 
-### 场景
-- 模型（HSTU 类生成式推荐架构）持续流式训练，参数 θ 周期性更新：θ_0 -> θ_1 -> ... -> θ_t。
-- 每个用户 u 有派生 KV cache：KV_v(u) = F(θ_v, x_u)（x_u 为用户行为序列）。
-- 参数更新后，**所有旧 KV 整体失效**（计算函数变了，即使输入相同）。全量重算所有用户 KV 成本巨大。
-- 更新间隔：天级 ~ 小时级（真实工业频率需查证，见风险 R1）。
+After the model advances to $\theta_t$, consuming $C_v$ with the current model is cheaper than
+recomputing the history but no longer version-consistent. The research question is:
 
-### 核心问题
-> 在不重算 F(θ_{v+1}, x_u) 的前提下，低成本估计漂移 ||F(θ_{v+1}, x_u) − F(θ_v, x_u)||，据此对每个用户的 KV 做三态决策：**复用（漂移小）/ 缓慢迁移（漂移中）/ 重算（漂移大）**。
+> Can the internal structure of HSTU be used to migrate a version-stale prefix K/V cache toward
+> the current model at materially lower cost than a complete history forward, while recovering a
+> controllable fraction of fresh recommendation quality?
 
-### 与已有工作的精确区别
-- **VISTA [ICLR'26, arXiv:2510.22049]**：固定模型 + lossy summary 缓存，不研究模型版本变化。定位区别：本工作是"VISTA 类派生缓存的流式训练版本维护"。
-- **Versioned Late Materialization [arXiv:2604.24806]**：训练侧 O2O consistency，非 serving 侧派生 KV 一致性。
-- **HSTU 原论文 [ICML'24, arXiv:2402.17152]**：为非平稳流式数据设计，但未解决 serving 时参数更新下的 KV 维护。
+The active abstraction is **structure-aware cache migration**. It is not a per-user prediction
+problem and it is not ordinary tail-token cache append.
 
----
+## 2. What the corrected evidence supports
 
-## 三、核心数学 Insight（最有价值的部分）
+### 2.1 Cache staleness has a useful time scale
 
-### Insight 1：失效源的精确区分
-两种失效源本质不同：
-- **失效源 A（行为变化）**：输入 x 变 -> KV 内容变。causal LLM 下纯尾部追加的旧 KV 数学上仍有效。
-- **失效源 B（参数变化，本场景）**：θ 变 -> 计算函数 F(θ,·) 变 -> 即使 x 不变，KV 整体失效。无任何旧 KV 数学上有效。
-本场景是失效源 B，更硬，且区别于所有"行为流驱动"的现有工作。
+Under `validity_v1_incremental_prefix_cache`, fresh recomputation improves Best Rank over stale
+reuse by `4.15` on average for one-step cache staleness and by `63.39` for a theta-0 cache carried
+across multiple versions. The cumulative gain has a seed-level 95% t interval of
+`[41.57, 85.20]`; cumulative parameter distance and Best Rank gain have mean Spearman correlation
+`0.975` across five cache ages.
 
-### Insight 2：漂移度量的形式化
-漂移 = ||F(θ+Δθ, x_u) − F(θ, x_u)||。难点结构是**"估计重算代价而不重算"**--要度量的东西恰好是要避免计算的。这是经典难结构，有数学深度。
+The defensible conclusion is limited but useful: one small update often does not justify immediate
+global recomputation, while indefinite reuse accumulates visible loss. Cache age therefore creates
+an operating region between the two endpoints.
 
-### Insight 3：Fisher / 影响函数连接
-一阶线性化：漂移 ≈ ||J_F(θ, x_u) · Δθ||，J_F 是 F 对 θ 的雅可比。
-- ||J·Δθ||² = Δθ^T (J^T J) Δθ，而 J^T J 是 Fisher 信息的近似。
-- **漂移度量本质 = Δθ 在 Fisher 度量下的范数**。这连接到影响函数（influence functions, Koh & Liang）与弹性理论，有现成理论根基，非凭空造。
-- Δθ 是输入变量（获取 trivial：checkpoint 差），难的是算子 J·Δθ 的低成本估计。
+### 2.2 Raw user-level drift is a discarded decision signal
 
-### Insight 4：关键陷阱--per-user JVP 比前向贵
-J·Δθ 是一次 Jacobian-vector product，需一次反向传播。**反向传播 ≈ 2× 前向成本**，而全量重算 KV 只需一次前向。所以 naive 的 per-user JVP **比直接全量重算还贵**，方法不成立。
-> 真正的创新空间不在"能不能估计漂移"（一阶近似能给），而在"**能否把估计成本降到远低于全量重算**"。这是方法成败的核心。
+Across 20 seed-window cells, the correlation between an individual sample's relative K/V norm
+change and its realized rank-utility gain is `0.020`, with 95% interval `[-0.012, 0.052]`.
+Moreover, a JVP-based estimate is not cheaper than the forward it was intended to avoid.
 
-### Insight 5：三条低成本估计路径
-1. **跨用户共享 / 低秩近似**：Δθ 相同，不同用户的 J·Δθ 若有低秩结构，用一小批用户 JVP 拟合"漂移预测器"推广到全部用户。把 per-user 反向降到 sample-size 次反向。
-2. **离线 Fisher 谱刻画 + 在线查表（最看好）**：离线用 probe 用户刻画 J^T J 的谱结构（哪些参数方向敏感），在线来 Δθ 时用其敏感方向投影 + 用户轻量特征查表估计漂移。**昂贵部分离线化，在线极便宜**，系统最友好。
-3. **层分解**：只在漂移放大的关键层精确估计，其他层用代理。需先验证层间依赖允许多大独立估计（HSTU 的 pointwise attention 结构对此影响未分析，见未决问题 U2）。
+This is retained only as a negative result. The project must not return to “estimate drift for
+every user, then choose reuse/migrate/recompute” unless new evidence changes both the quality-signal
+and cost arguments.
 
-### Insight 6：三态决策架构（不难，但需漂移度量驱动）
-漂移度量产出后，按阈值决策：复用 / 迁移 / 重算。可叠加用户活跃度分层（活跃用户精确重算、不活跃用旧 KV 顶、中间带迁移）。架构本身是工程，创新全部压在"漂移度量"上。
+### 2.3 HSTU exposes a migration decomposition
 
-### Insight 7：更新频率 vs 迁移可行性的张力
-天级大 Δθ -> 一阶近似失效 -> 只能全量重算 -> 方向萎缩。
-小时级小 Δθ -> 近似有空间 -> 方向成立。
-真实工业频率（Meta/Kuaishou 倾向小时级在线学习）需查证（见风险 R1）。
+At layer $l$,
 
----
+$$
+K_l=W^K_l\operatorname{Norm}_l(x_l), \qquad
+V_l=W^V_l\operatorname{Norm}_l(x_l).
+$$
 
-## 四、工程建设路线图（gated，按用户"先系统后数学"的计划）
+Version change affects both the direct projection parameters and the hidden state propagated from
+earlier layers. The current operator separates them:
 
-### Phase 0：前置验证（cheap，决定方向生死，必须先做）
-**目的**：用最小成本确认方向有空间，再投入工程建设。
+- **cheap refresh** reuses cached old $\operatorname{Norm}(x_l)$ and applies current $W^K_l/W^V_l$;
+- **full propagation** starts from a cached split hidden and executes current blocks through a
+  continuous region;
+- executing all layers from current embeddings is exactly full current-model K/V recomputation.
 
-| 验证项 | 方法 | 成本 | Gating 判据 |
-|---|---|---|---|
-| V1 工业流式训练频率 | 查证文献（HSTU/MTGR/GR4AD 等工业论文的更新间隔描述） | 文献调研 | 频率 ≤ 小时级 -> 方向有空间；天级大更新 -> 需重新评估 |
-| V2 per-user JVP vs 全量重算成本比 | 小模型上测一次反向 vs 一次前向的 KV 计算 time | 几小时 | 确认 JVP 确实更贵（motive 低成本估计） |
-| V3 跨用户 J·Δθ 可共享性 | 取一批用户算 J·Δθ，测低秩近似/小样本拟合推广误差 | 1-2 天 | 可低秩拟合（误差可控）-> 路径1/2 成立；高度异质 -> 路径收窄 |
-| V4 旧 KV 精度衰减曲线 | 参数小步长更新后，直接用旧 KV 的推荐精度衰减 | 1-2 天 | 衰减平缓 -> 迁移/复用有空间；衰减极快 -> 只能重算 |
+This decomposition produces a real computation-quality curve rather than only a cache-error
+estimate.
 
-**Gating**：V1 通过 + V3/V4 至少一个通过，才进入 Phase 1。否则方向需偏移（见风险 R5）。
+### 2.4 The first six-layer curve passes the continuation gate
 
-### Phase 1：流式训练 + KV 缓存基础系统（工程先行）
-**目的**：搭出能产出 Δθ 序列和 KV 序列的基础设施，为数学方法提供实验平台。
+On the current six-layer model and four training seeds:
 
-工程建设：
-- [ ] 选定模型：HSTU 开源实现（facebookresearch/generative-recommenders）或可用的 HSTU 变体，4×A40 可训练规模。
-- [ ] 流式训练 loop：能持续训练并产出 checkpoint 序列 θ_0, θ_1, ..., θ_t（即 Δθ 序列）。
-- [ ] KV cache 计算与持久化：对每个用户 u，能在给定 θ_v 下算 KV_v(u) 并存储。
-- [ ] Oracle 重算能力：能在 θ_{v+1} 下重算 KV_{v+1}(u)（作为漂移 ground truth 与精度上界）。
-- [ ] Δθ 提取：checkpoint diff，产出 Δθ 序列。
+| Configuration | Measured GPU time / full | Rank recovery at theta-3 | Rank recovery at theta-5 |
+|---|---:|---:|---:|
+| cheap all | 0.187 | 50.8% | 72.9% |
+| cheap + suffix-2 | 0.372 | 65.3% | 84.6% |
+| cheap + suffix-4 | 0.635 | 87.5% | 101.3% |
+| cheap + suffix-5 | 0.767 | 88.8% | 103.0% |
+| full recompute | 1.000 | 100% | 100% |
 
-**需摸清才能进下一步**：
-- HSTU 在 4×A40 上可训到多大、多长序列（决定实验规模上限）。
-- HSTU 的 KV cache 具体结构（pointwise attention 下的 KV 形态，与标准 transformer 的差异）--这直接影响后续 J·Δθ 的可计算性。
-- 单用户 KV 计算成本（决定"全量重算"baseline 的成本量级）。
+In this small-gap table, paired differences around 100% contain zero and do not support superiority
+over fresh. Suffix-5 is not proven equivalent to full; four seeds only fail to distinguish their
+current Best Rank and NDCG@100.
 
-**Gating**：能在选定数据集上稳定产出 (θ_0..θ_t, KV_0..KV_t) 序列，且能算 Δθ 与 oracle 重算，才进入 Phase 2。
+Two structural observations matter more than the exact numbers:
 
-### Phase 2：数据集与 workload 构造
-**目的**：构造能体现"流式更新收益"的 workload，解决存在性问题。
+1. Relative stale K/V error rises with depth in the current model, so a deep propagation region is
+   a reasonable first heuristic.
+2. The final block output is not consumed by another prefix layer. Removing its
+   attention/gate/residual gives exactly equal K/V and reduces suffix-1 to `0.229x` versus cheap at
+   `0.187x`; the quality gain remains negligible.
 
-工程建设：
-- [ ] 选定数据集：优先 KuaiRec/KuaiRand（细粒度时间戳+密集行为+漂移）/ MIND（新闻时效性）；避开 MovieLens（弱漂移）。
-- [ ] 流式行为 trace 构造：按真实时间戳还原行为流到达。
-- [ ] 请求 workload：1 用户 × N 候选的生成式推荐请求，按到达模式生成。
-- [ ] 评测指标体系：精度（Recall/NDCG/Hit）+ 新鲜度（staleness）+ 延迟（TTFT/TPOT）+ 漂移估计成本。
+### 2.5 The first scale pass is positive on KuaiRand and unresolved across datasets
 
-**需摸清才能进下一步**：
-- **存在性验证（关键）**：在该数据集 + HSTU 上，"流式更新参数后用新 KV" vs "固定不更新" 的精度差是否显著可测。若测不出，整个方向失去动机（见风险 R3）。
-- Δθ 序列的统计特性（大小、方向分布）--这决定一阶近似是否可行。
-- 时段化指标设计（漂移点附近精度恢复，非全局 Recall）。
+The optimized suffix was frozen and tested without another layer search. At batch 32, increasing
+synthetic resident sequence length from 128 to 512 raises optimized full latency from `2.08 ms` to
+`14.41 ms`; cheap/full falls from `0.189` to `0.058` and suffix-2/full from `0.377` to `0.248`.
+The lightweight paths therefore gain a larger relative advantage once full-prefix attention leaves
+the under-utilized regime. Suffix-5 stays near `0.8x`, so the high-quality endpoint remains costly.
 
-**Gating**：证明流式更新带来可测精度收益 + 产出稳定 Δθ 序列，才进入 Phase 3。
+The quality-cost curve also survives depth 3, 6, and 9 over four seeds at fixed hidden/KV width.
+An approximately two-thirds suffix recovers `94.6%`, `101.3%`, and `95.3%` of the cross-seed mean
+Best Rank gain at costs `0.554`, `0.636`, and `0.668` respectively. In these depth cells, paired
+comparisons do not distinguish values around 100% from full. This supports the structural
+decomposition across the first depth range; it does not prove suffix optimality.
 
-### Phase 3：漂移度量方法验证（数学方法落地）
-**目的**：验证低成本漂移估计的可行性，这是创新核心。
+Along controlled interpolation from theta-0 to theta-5, stale K/V error grows monotonically from
+`0.206` to `0.656`. Recommendation utility does not grow monotonically: full maintenance Best Rank
+gain peaks at alpha `0.75` before falling at the trained endpoint. Update norm and cache error are
+therefore severity indicators rather than calibrated utility predictors.
 
-工程建设：
-- [ ] 实现 naive baseline：per-user JVP（J·Δθ），作为精度上界、成本下界。
-- [ ] 实现路径 2（离线 Fisher 谱 + 在线查表）：离线用 probe 用户刻画 J^T J 谱，在线用 Δθ 投影 + 用户特征查表。
-- [ ] （可选）实现路径 1（跨用户低秩共享）：小样本 JVP 拟合漂移预测器。
-- [ ] 对比：估计精度（vs oracle 漂移）× 估计成本（vs 全量重算）× 三态决策正确率。
+The MovieLens-1M chronological-holdout transfer check is a boundary result. After two updates,
+full maintenance improves Best Rank by only `1.48` with seed interval `[-6.37, 9.33]`; NDCG and the
+provided 20-candidate metrics are also unresolved. The operator itself remains exact, but the
+KuaiRand problem strength has not generalized under this short version chain. Exact scale results
+and protocol limitations are in `experiments/scaling/SCALING_V1.md`.
 
-**需摸清才能进下一步**：
-- Fisher 谱的有效低维数（决定离线刻画能否压缩）。
-- 一阶近似在多层 HSTU 上的累积误差层数（见未决问题 U1）。
-- 估计成本/精度的 Pareto 前沿。
+### 2.6 More complete KuaiRand use strengthens the problem and preserves the operator
 
-**Gating**：估计成本显著低于全量重算，且三态决策正确率足以带来端到端收益，才进入 Phase 4。
+The earlier experiments did not use all local KuaiRand data. The top-5k vocabulary retained only
+3.67% of 11.71M standard-log rows, and the base iterator used only each user's latest truncated
+sequence. A fixed 2x2 stress test first increased the catalog/context bundle to top-20k/length-256
+and the model to 12 layers/hidden-192. The maintenance gap remained positive on Best Rank and
+NDCG@100 in all four cells. In the combined cell, optimized full latency was 9.1x the original
+baseline while cheap/full fell to 0.099. Exact results are in
+`experiments/scaling/KUAIRAND_FACTORIAL_V1.md`.
 
-### Phase 4：系统集成 + 端到端评测
-**目的**：把漂移度量接入三态缓存决策，端到端验证。
+A second protocol then used top-50k, length 512, and overlapping chronological base chunks. This
+raises eligible base targets per epoch from 230,945 to 620,958 without changing the 130,239 stream
+targets. Across four seeds, theta-5 full maintenance Best Rank grows from 82.68
+`[40.23, 125.13]` under latest-only training to 885.56 `[460.24, 1310.88]`; NDCG@100 grows from an
+unresolved 0.00109 to 0.00250 `[0.00169, 0.00330]`. Full compute over frozen is 3837.67 Best Rank,
+so the stronger gap is not caused by streaming training becoming useless. Cumulative parameter
+distance is slightly smaller rather than larger.
 
-工程建设：
-- [ ] 三态决策器：漂移阈值 + 用户活跃度分层 -> 复用/迁移/重算。
-- [ ] 迁移机制：漂移中态的具体迁移操作（基于漂移估计的局部修正，未决问题 U3）。
-- [ ] 端到端系统：流式训练 -> Δθ -> 漂移估计 -> 缓存决策 -> serving。
-- [ ] baseline 对比：全量重算（上界成本/上界精度）/ 永不更新（下界精度）/ naive JVP（下界效率）。
-- [ ] 自构造 streaming serving benchmark 开源（独立贡献）。
+At this stronger operating point, cheap costs 0.058x full and recovers 54.6% of the mean Best Rank
+gap; suffix-2, suffix-4, and suffix-5 cost 0.248x, 0.613x, and 0.796x and recover 58.9%, 76.2%, and
+84.1%. The curve is more conservative than the small-gap result but remains useful. Details are in
+`experiments/scaling/KUAIRAND_DATA_UTILIZATION_V1.md`.
 
-**Gating**：端到端在精度-成本-延迟 Pareto 前沿上优于所有 baseline。
+A single-seed bridge then combined top-50k chunked training with 12 layers and hidden size 192.
+Full maintenance gains 659.04 Best Rank; cheap, proportional one-third, and two-thirds suffixes
+cost 0.054x, 0.312x, and 0.653x full and recover 61.1%, 63.4%, and 82.9%. This descriptive gate
+shows no interaction failure, but it is not a substitute for cross-seed inference.
 
----
+Full recomputation must now be treated as the version-consistency and cache-fidelity reference,
+not an unconditional upper bound on realized ranking quality. In the top-20k/12-layer cell,
+one-third suffix beats full Best Rank by 25.84 with paired seed interval `[7.69, 44.00]`, while its
+paired NDCG difference contains zero. Future tables must report paired differences and multiple
+quality views rather than dismissing every recovery value above 100% as noise.
 
-## 五、风险清单
+## 3. Current contribution hypothesis
 
-| ID | 风险 | 验证方式 | 应对 |
-|---|---|---|---|
-| R1 | 真实流式训练是天级大更新，Δθ 太大，一阶近似失效 | Phase 0 V1 查证 | 若天级，需重新评估或转向"大 Δθ 下的选择性重算" |
-| R2 | per-user JVP 比前向贵，低成本估计路径也压不下来 | Phase 0 V2/V3 | 若压不下，方法核心塌，方向偏移 |
-| R3 | HSTU 上流式更新精度收益测不出（存在性问题） | Phase 2 存在性验证 | 若测不出，转向纯吞吐/延迟收益的系统问题（不依赖精度收益）|
-| R4 | HSTU serving 赛道已被 VISTA 等占领，剩余空白窄 | 精读 VISTA/Versioned-LM | 确认"版本维"确为空白；若已被隐含覆盖，需重定位 |
-| R5 | 一阶近似多层累积误差爆炸 | Phase 3 层敏感度实验 | 若爆炸，限制精确估计层数 + 其他层用代理 |
-| R6 | 滑向 ML（持续学习稳定性）而非系统 | -- | 把参数变化当黑盒输入，研究缓存系统应对，不研究训练本身 |
+A complete paper could make four contributions if the remaining gates pass:
 
----
+1. Define model-version invalidation of generative-recommendation prefix K/V as distinct from
+   behavior append and fixed-model cache management.
+2. Characterize the time and layer structure of the resulting quality loss under leak-free
+   streaming evaluation.
+3. Introduce a migration operator that decomposes projection refresh from hidden-state
+   propagation and allocates computation across layer regions.
+4. Build a version-aware executor that applies an age/budget-appropriate suffix configuration by
+   cache-version cohort and demonstrates end-to-end savings.
 
-## 六、未决问题（下次需继续想清楚）
+The reusable idea is the decomposition and budgeted allocation of propagation work. A dynamic
+arbitrary-layer planner is optional rather than assumed: it must first show reproducible benefit
+over the optimized deepest suffix.
 
-- **U1**：一阶近似 J·Δθ 在 HSTU 多层上的累积误差到底多少层可控？需 Phase 3 实测。
-- **U2**：HSTU 的 pointwise attention 结构（非标准 causal transformer）对 J·Δθ 的可计算性、对层间依赖的影响？需 Phase 1 摸清 KV 结构后分析。
-- **U3**：三态决策中"迁移"态的具体操作机制是什么？漂移判断解决了"要不要迁"，但"怎么迁"（用漂移估计做局部修正的具体算子）尚未定义。这是一个潜在的第二创新点，也可能暴露新难点。
-- **U4**：更新间隔/触发时机的决策与漂移度量如何耦合？是被动（来 Δθ 就判）还是主动（预测何时该更新）？
-- **U5**：自构造 benchmark 的"真实流式更新收益"如何在 4×A40 上可信复现工业级现象？规模外推方法。
-- **U6**：HSTU 的开源实现完整度与可改造性（能否方便地插桩 JVP、checkpoint diff、KV 持久化）。
+## 4. Next research gates
 
----
+### Gate A: remove structurally wasted compute — passed
 
-## 七、文献状态（用于下次直接深入）
+For every propagation region, execute full current blocks only while their output will affect a
+later layer's K/V. At the terminal layer, compute current `Norm + Wk/Wv` without attention, gate,
+output projection, or residual.
 
-### 已核验（arXiv API 本次会话确认）
-- HSTU 原论文：Zhai et al., ICML'24, arXiv:2402.17152 ✅（"non-stationary streaming data"原话）
-- VISTA：Chen et al., ICLR'26, arXiv:2510.22049 ✅（summary 缓存进 storage，最关键竞品）
-- Versioned Late Materialization：Guo et al., arXiv:2604.24806 ✅（训练侧 versioned consistency）
-- ULTRA-HSTU：Ding et al., arXiv:2602.16986 ✅（sparse attention，21x 推理 scaling）
-- MTGR (Meituan)：Han et al., arXiv:2505.18654 ✅（HSTU + user-level 压缩）
-- vLLM/SGLang/FlexGen：见 `07_references.md` ✅
-- RcLLM：Zhao et al., ICDCS'26, arXiv:2605.07443 ✅（静态空间复用，无版本维）
+Completed checks:
 
-### 待精读（下次首要任务）
-1. **VISTA 全文**：确认其 summary 缓存是否处理模型版本变化（决定 R4）。
-2. **Versioned Late Materialization 全文**：确认其 consistency 是否纯训练侧（决定与本文的边界）。
-3. **HSTU 原文架构细节**：pointwise attention 的 KV 结构（决定 U2）。
+- unit-test K/V equality against the existing suffix operator for every suffix depth;
+- remeasure GPU time with the same resident batch and CUDA-event protocol;
+- confirm that the optimized operator changes cost only, not ranking output.
 
-### 待查证
-- 工业推荐流式训练的真实更新频率（R1，Phase 0 V1）。
-- 影响函数在 transformer 上的 JVP 计算实践（Koh & Liang 2017 及后续，未核验，使用前复核）。
+All suffix depths have maximum absolute K/V difference `0.0` from the legacy operator. The new
+operator takes 62.4% of legacy suffix-1 time, 75.1% of suffix-2, 86.4% of suffix-5, and 89.1% of
+legacy full-recompute time. Costs normalized to optimized full are stable across four seeds:
+cheap `0.187`, suffix-2 `0.372`, suffix-3 `0.504`, suffix-4 `0.635`, suffix-5 `0.767`.
 
----
+### Gate B: test whether deepest suffix is actually the right region — passed with a negative result
 
-## 八、下次工作的建议起点
+Use the six-layer model as a small oracle space before increasing scale. Represent a candidate
+interval `[s, e]` as full propagation through layers `s..e-1` followed by terminal projection at
+layer `e`; layers outside the interval use cheap cached states. There are only 21 contiguous
+intervals in a six-layer model.
 
-1. **先做 Phase 0 的 V1（文献查证频率）+ V3（跨用户 J·Δθ 可共享性）**--这两个最便宜且最决定方向空间。V3 需要先有一个能跑的小 HSTU + 能算 JVP 的环境，所以实际上 V1 先行，同时启动 Phase 1 的 HSTU 开源实现跑通。
-2. **精读 VISTA 与 Versioned Late Materialization 全文**，锁定剩余空白。
-3. Phase 0 通过后，按 Phase 1 -> 2 -> 3 -> 4 推进，每阶段满足 gating 才进下一阶段。
-4. 数学方法（Phase 3）在工程基础（Phase 1-2）就绪后进入，不要提前过度设计数学。
+Seed 0 searched all intervals at theta-3/theta-5; seeds 1-3 evaluated only selected candidates.
+Deep suffixes recover more Best Rank than same-cost middle intervals on every held-out seed. Small
+middle-interval NDCG advantages at theta-5 occur on only two of three seeds, reverse at theta-3,
+and their paired intervals include zero. Early intervals are also consistently worse on Best Rank.
 
-> 核心信念：整个方向的创新全部压在"低成本漂移估计"这一个数学点上（Insight 4/5）。架构是工程，问题是真实的，剩下就是这个数学点能否落地。先验证它，再投入系统建设。
+The current decision is to retain the optimized deepest suffix. Arbitrary or disjoint interval
+selection is deferred unless a larger model or second dataset produces new evidence. Exact results
+are in `experiments/validity/INTERVAL_ORACLE.md`.
+
+### Gate C: establish the full streaming-training value chain — passed
+
+Under the same validity protocol and future evaluation window, compare:
+
+1. `frozen`: theta-0 model with its consistent theta-0 cache;
+2. `full reuse`: current theta-t model consuming a theta-0 prefix cache;
+3. `full compute`: current theta-t model with a fresh theta-t prefix cache.
+
+This separates the benefit of stream training from the cache inconsistency it creates. Under the
+six-layer validity protocol and four seeds, full compute over frozen improves Best Rank by `111.43`,
+`237.97`, and `484.34` at theta-1/3/5. Full reuse retains most of this value, while cache maintenance
+adds `5.66`, `41.68`, and `85.32` Best Rank respectively. At theta-5, maintenance accounts for
+17.6% of total Best Rank value and 30.8% of NDCG@100 value; both seed-level intervals exclude zero.
+
+Thus streaming training is necessary, stale reuse remains useful, and the recoverable gap grows
+with cache age. MRR does not uniformly favor maintenance, so the claim is restricted to the primary
+Best Rank and NDCG views. Exact results are in
+`experiments/validity/STREAMING_VALUE_CONTROL.md`.
+
+### Gate D: dynamic selection without returning to per-user estimation — deferred
+
+If the oracle region changes across model updates or cache ages, select one configuration per
+`(old_model_version, current_model_version, compute_budget)` cohort. A small held-out probe cache
+set may evaluate candidate regions after each update; all caches in that version cohort then use
+the selected GPU-friendly operator.
+
+Only after this oracle planner is useful should cheaper update-level features be studied, such as
+cache age, layerwise parameter-update norms, or aggregate probe errors. Training and evaluation
+probe sets must be separated. A user-specific JVP is outside the active design.
+
+The current held-out interval result does not satisfy this prerequisite. Do not build the planner
+until scale or cross-dataset experiments show reproducible region changes.
+
+### Gate E: expand scale and generality after the operator is fixed — KuaiRand passed, cross-dataset open
+
+Completed without changing the operator:
+
+- resident sequence lengths 16-512 and batch sizes 1-128;
+- active KuaiRand lengths 32/64/128 over four seeds;
+- depth 3/6/9 at fixed hidden and K/V width over four seeds;
+- controlled theta-0 to theta-5 update magnitude over four seeds;
+- a four-seed MovieLens-1M two-update chronological-holdout check.
+- a top-5k/top-20k by 6-layer/12-layer four-seed factorial stress test;
+- a top-50k, length-512 four-seed comparison of latest-only and complete base-chunk training.
+
+The KuaiRand scale gate passes: the curve survives length, batching, depth, model width, larger
+catalog/context, controlled update magnitude, and materially greater training-data utilization.
+The generality gate remains open because MovieLens shows only a tiny and inconsistent maintenance
+gap. Do not tune the short MovieLens chain until it becomes positive.
+
+Taobao UserBehavior is the selected next cross-dataset stream. This is a planned gate, not current
+evidence, and it must proceed in this order:
+
+1. Audit users, events, dates, user-day overlap, behavior frequencies, and per-user sequence-length
+   p50/p90/p99 before choosing a model setting.
+2. Freeze the behavior mapping, base/update/evaluation windows, replay policy, and a base-only item
+   vocabulary. Choose daily or sub-day windows from the audit, before observing method quality.
+3. Run a small one-seed `frozen / full reuse / full compute` motivation control across several real
+   updates. Do not sweep migration configurations before establishing a measurable maintenance gap.
+4. If the motivation gate passes, reproduce it over four seeds and evaluate only the frozen
+   endpoints and proportional suffix budgets: full reuse, cheap, roughly one-third/two-thirds
+   suffixes, all-but-first suffix, and full recompute. Do not reopen arbitrary interval search.
+5. Report a negative boundary if the gap remains unidentifiable; do not change temporal semantics
+   merely to obtain a positive result. Then add organically mixed cache versions to the surviving
+   KuaiRand and Taobao settings.
+
+### Gate F: turn kernel savings into a system result — parallel systems task
+
+The current cost is GPU-resident kernel time. A paper-grade system evaluation must include:
+
+- extra normalized/split-hidden state capacity;
+- HBM reads and writes, host-device transfer, allocation, and cache admission;
+- batched throughput and tail latency across version cohorts;
+- fused or grouped `Wk/Wv` projection only after profiling identifies it as a bottleneck;
+- end-to-end comparison with periodic full recomputation under equal quality or equal cost.
+
+## 5. Evaluation rules for the next phase
+
+- Keep full reuse, cheap refresh, every selected propagation configuration, periodic recomputation,
+  and full recompute as explicit baselines.
+- Report absolute rank/NDCG gains together with normalized recovery. Do not report a recovery ratio
+  when the fresh-over-reuse denominator is too small to be identifiable.
+- Treat full recomputation as the fidelity reference and report each method's paired task-quality
+  difference from full; do not assume full is the ranking-quality ceiling.
+- Treat training seed as the replication unit and use paired intervals for methods evaluated on
+  the same run.
+- Separate configuration search from final evaluation to avoid selecting and reporting on the same
+  cells.
+- Version any material protocol change and never merge it into existing validity-v1 summaries.
+- For a new dataset, publish the temporal audit and freeze target semantics before method results.
+- Report operator state and data-movement cost alongside arithmetic time.
+
+## 6. Claims that are not yet supported
+
+- deepest suffix is optimal;
+- the current method is statistically equivalent to full recomputation;
+- relative kernel-time savings transfer to industrial end-to-end latency;
+- the effect generalizes beyond the current simplified HSTU and KuaiRand setup;
+- the problem is novel relative to all current literature;
+- dynamic layer selection can be predicted cheaply without probe evaluation.
+
+## 7. Stop or pivot conditions
+
+The route should be reconsidered if any of the following persists after the scoped checks:
+
+1. the optimized suffix cannot produce a meaningful Pareto curve against cheap-all, periodic full
+   recomputation, and full recompute after end-to-end data movement is included;
+2. extra state movement removes the measured compute saving in end-to-end execution;
+3. the streaming-training and maintenance gains fail to generalize beyond the current control;
+4. the chosen region does not generalize across seeds, cache ages, or a second dataset;
+5. a related-work audit shows that model-version cache migration and the same structural operator
+   have already been established.
+
+## 8. Recommended execution order
+
+1. [x] Implement terminal projection optimization and its equivalence tests.
+2. [x] Run the one-seed interval oracle and validate selected candidates on held-out seeds.
+3. [x] Decide whether update-level arbitrary-interval selection is currently necessary: no.
+4. [x] Run the corrected frozen/full-reuse/full-compute control across seeds.
+5. [x] Freeze the optimized suffix and complete the first length, batch, depth, update-magnitude,
+   and MovieLens transfer pass.
+6. [x] Complete the KuaiRand data/model factorial and top-50k chunked-data utilization pass.
+7. [ ] Audit Taobao UserBehavior, freeze a leak-free temporal protocol, and run the small motivation
+   control.
+8. [ ] If the Taobao motivation gate passes, reproduce it across seeds with the frozen suffix
+   configurations; otherwise record the negative boundary without tuning the split.
+9. [ ] Evaluate organically mixed cache versions on the settings with an identifiable gap.
+10. [ ] Measure end-to-end state movement, throughput, tail latency, and periodic recomputation.
+11. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

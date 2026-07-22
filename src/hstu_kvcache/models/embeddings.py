@@ -47,7 +47,7 @@ class ItemEmbedding(nn.Module):
 
     Tied weights between the input item embedding lookup and the output scoring
     logits is the HSTU convention (dot-product retrieval). We expose the table
-    directly so the drift code can also reason about item-embedding drift.
+    directly so versioned evaluation uses the same current scoring head.
     """
 
     def __init__(self, num_items: int, hidden_size: int, padding_idx: int = 0) -> None:

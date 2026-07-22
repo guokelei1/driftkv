@@ -116,3 +116,50 @@ def test_updated_kv_cache_length():
     )
     assert updated_kv.k.shape[2] == n_prefix + n_suffix
     assert updated_kv.seq_len == n_prefix + n_suffix
+
+
+def test_variable_length_padded_cache_matches_full_forward():
+    model, item_ids, behaviors, time_deltas = _make(batch_size=2, seq_len=8)
+    lengths = torch.tensor([8, 5])
+    item_ids[1, 5:] = 0
+    behaviors[1, 5:] = 0
+    time_deltas[1, 5:] = 0
+
+    full_hidden, _ = model(
+        item_ids,
+        behaviors,
+        time_deltas,
+        return_kv=False,
+        lengths=lengths,
+    )
+    full_last = model.last_hidden(full_hidden, lengths)
+
+    prefix_lengths = lengths - 1
+    prefix_items = torch.zeros(2, 7, dtype=torch.long)
+    prefix_behaviors = torch.zeros(2, 7, dtype=torch.long)
+    prefix_deltas = torch.zeros(2, 7)
+    suffix_items = torch.zeros(2, 1, dtype=torch.long)
+    suffix_behaviors = torch.zeros(2, 1, dtype=torch.long)
+    suffix_deltas = torch.zeros(2, 1)
+    for row, length in enumerate(lengths.tolist()):
+        prefix_items[row, : length - 1] = item_ids[row, : length - 1]
+        prefix_behaviors[row, : length - 1] = behaviors[row, : length - 1]
+        prefix_deltas[row, : length - 1] = time_deltas[row, : length - 1]
+        suffix_items[row, 0] = item_ids[row, length - 1]
+        suffix_behaviors[row, 0] = behaviors[row, length - 1]
+        suffix_deltas[row, 0] = time_deltas[row, length - 1]
+
+    prefix_kv = model.compute_kv(
+        prefix_items,
+        prefix_behaviors,
+        prefix_deltas,
+        lengths=prefix_lengths,
+    )
+    inc_hidden, _ = model.forward_with_cache(
+        prefix_kv,
+        suffix_items,
+        suffix_behaviors,
+        suffix_deltas,
+    )
+
+    assert torch.allclose(inc_hidden[:, 0], full_last, atol=1e-4, rtol=1e-4)
