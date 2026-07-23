@@ -7,9 +7,8 @@ from pathlib import Path
 import torch
 from interval_oracle import evaluate_pair, suffix_config_name
 from layerwise_validity import load_model, reconstruct_eval_samples
-from motivation_validity import STANDARD_LOGS, seed_everything
+from motivation_validity import build_streaming_plan, seed_everything
 
-from hstu_kvcache.data import StreamingDataPlan
 from hstu_kvcache.streaming import model_params_vec
 from hstu_kvcache.utils import save_json
 
@@ -78,13 +77,9 @@ def main() -> None:
     plan_seq_len = metadata["seq_len"]
     if args.axis == "sequence_length":
         plan_seq_len = max(plan_seq_len, max(args.seq_lens))
-    plan = StreamingDataPlan.from_csvs(
-        STANDARD_LOGS,
-        base_num_days=metadata["base_days"],
-        max_seq_len=plan_seq_len,
-        max_items=metadata["max_items"],
-        fit_vocabulary_on_base=True,
-    )
+    plan_metadata = dict(metadata)
+    plan_metadata["seq_len"] = plan_seq_len
+    plan, _ = build_streaming_plan(plan_metadata)
     plan.init_base()
     samples = reconstruct_eval_samples(
         plan,

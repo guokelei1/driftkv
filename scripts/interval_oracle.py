@@ -17,14 +17,13 @@ from layerwise_validity import (
     timed_call,
 )
 from motivation_validity import (
-    STANDARD_LOGS,
+    build_streaming_plan,
     eval_batches,
     move_batch,
     ranking_metrics,
     seed_everything,
 )
 
-from hstu_kvcache.data import StreamingDataPlan
 from hstu_kvcache.migration import (
     capture_layerwise_state,
     contiguous_intervals,
@@ -341,13 +340,7 @@ def main() -> None:
     metadata_result = json.loads(Path(args.run_result).read_text())
     metadata = metadata_result["args"]
     max_eval_users = args.max_eval_users or metadata["max_eval_users"]
-    plan = StreamingDataPlan.from_csvs(
-        STANDARD_LOGS,
-        base_num_days=metadata["base_days"],
-        max_seq_len=metadata["seq_len"],
-        max_items=metadata["max_items"],
-        fit_vocabulary_on_base=True,
-    )
+    plan, _ = build_streaming_plan(metadata)
     plan.init_base()
     samples = reconstruct_eval_samples(
         plan,

@@ -14,23 +14,39 @@ $\theta_t$ 更新到 $\theta_{t+1}$ 后，即使用户历史 $x_u$ 不变，旧�
 $F(\theta_t,x_u)$ 也不再等于新模型应产生的 $F(\theta_{t+1},x_u)$。全量重算可以恢复
 一致性，却会重新支付所有用户历史的完整前向成本。
 
-我们的初步结果支持五个判断：
+我们的初步结果支持七个判断：
 
 1. **流式训练有价值，cache inconsistency 会侵蚀其中一部分，而且具有时间尺度。** 单次小
-   更新造成的平均损失较小；缓存跨多个模型版本累积后，推荐质量退化稳定增大。因此系统既
-   不能永远复用，也不必每次更新都全量重算。
+   更新造成的平均损失较小；缓存跨多个模型版本后会出现可恢复损失，而且一部分损失可能在
+   某次更新集中出现。因此系统既不能永远复用，也不必每次更新都全量重算；单看 cache age
+   也不足以稳定判断何时重算。
 2. **把 KV 当黑盒、按用户预测是否重算，目前没有证据支持。** 用户级相对 KV drift 与
    实际排序收益几乎不相关，基于原始 drift/JVP 的用户选择不是当前主线。
 3. **打开 HSTU 的层结构后，存在低于完整前向的迁移路径。** 使用新模型的 $W_k/W_v$
    对缓存的 $\operatorname{Norm}(x)$ 做 cheap projection refresh，再对一段深层连续后缀执行
    current block，可以形成可测的计算—质量曲线。
-4. **这条曲线不是六层单点现象，但跨数据集问题强度尚未成立。** 固定 optimized suffix 后，
-   KuaiRand 的长度 32/64/128 和深度 3/6/9 都保留了中间 Pareto 点；MovieLens 的两次更新
-   只产生很小且不稳定的维护缺口，因此当前不能声称数据集泛化。
+4. **这条曲线不是六层单点现象，但完整方法曲线尚未跨数据集泛化。** 固定 optimized suffix
+   后，KuaiRand 的长度 32/64/128 和深度 3/6/9 都保留了中间 Pareto 点；MovieLens 的两次
+   更新只产生很小且不稳定的维护缺口。
 5. **旧实验明显低估了 KuaiRand 数据利用率；补全 retained history 后，问题与曲线反而更清楚。**
    top-50k、长度 512 的 chunked 训练将每轮有效 base target 从 23.1 万增至 62.1 万。四个 seed
    下，theta-5 maintenance Best Rank 从 latest-only 的 82.68 增至 885.56，NDCG 区间也排除
    0；cheap 仅需 0.058x full，suffix-4 以 0.613x 成本恢复 76.2% Rank gap。
+6. **三份真实曝光数据已经给出一致的 pre-design motivation，cheap 方法开始跨数据集，
+   suffix 泛化仍是开放问题。**
+   KuaiRand、fixed-horizon Tenrec QB、top-5k Tenrec QK 在四个 seed 上都表现为：流式训练
+   长期有价值，旧 cache 仍保留大部分价值，而旧版本 cache 留下额外可恢复 gap。原始
+   BestRank 数字不能跨 catalog 比较；用“被 stale cache 损失的流式训练收益比例”归一化后，
+   三者 coarse endpoint 分别为 17.6%、31.5%、27.6%，最大仅为最小的 1.79 倍。细粒度固定
+   endpoint 仍为 17.7%、35.0%、14.1%，并出现局部跃升。在 aligned QK 上，cheap 以
+   0.194x full 成本获得 9.17 `[6.71, 11.63]` BestRank 增益，恢复 70.6% 的 mean full gap；
+   aligned QB 的 partial method 则在 seed 0 失败。suffix 曲线仍未跨数据集复现，ZhihuRec
+   保留为负面边界。
+7. **真正适合方法展开的是“中等失效 + 高重算成本”，而不是刻意把 reuse 做坏。**
+   四 seed 的 KuaiRand top-50k/all-chunks 同时满足这两点：stale cache 损失 23.1% 的流式
+   训练收益、仍保留 76.9%，而长度 512 下 cheap 只需 0.058x full。预先冻结的长上下文
+   Tenrec 筛选虽然把 cheap/full 降到约 0.11-0.12，却只有 1.1%-6.0% staleness tax，因此
+   已按规则停止。它说明长序列会放大重算成本，但不会自动放大版本不一致的质量损失。
 
 在当前六层小模型、四个训练种子的实验中，cheap refresh 约使用优化后完整 KV 重算的 19%
 GPU 计算；随着 full suffix 加深，质量总体向 fresh 靠近。重算最深五层约使用 77% 计算，在
@@ -43,6 +59,20 @@ GPU 计算；随着 full suffix 加深，质量总体向 fresh 靠近。重算�
 更完整的 KuaiRand 使用进一步强化了这个判断，但也校正了“已经用了很多数据”的错觉。本地
 标准日志有 1171 万行，原 top-5k 只保留 3.67%；top-50k 也只保留 13.35%。因此新的结果是
 更强的数据规模证据，而不是 full KuaiRand 或工业规模结论。
+
+跨数据集结果把问题主张与方法主张分开了。版本失效的 motivation 已在 KuaiRand、QB、QK
+三份曝光数据上形成一致证据；但 QB/QK 来自同一 Tenrec collection，且 Tenrec 只有用户内
+顺序、没有全局日历时间，因此不能把它写成三个独立来源的自然时间漂移复现。方法方面，
+cheap projection refresh 不仅在原 QB 协议上有正收益，现在也在 aligned QK 的四 seed 上以
+约 19% 成本恢复 70.6% mean BestRank gap；但 aligned QB seed-0 只恢复 5%。更重要的是，
+“加深 suffix 就稳定逼近 full”目前仍只在 KuaiRand 上得到强支持。逐层 stale K/V 误差上升
+说明 deep suffix 合理，却不能保证任务指标随计算量单调改善。
+
+新的固定终点实验还把“随时间积累”推进了一步：在相同当前模型、相同用户历史和相同目标
+下，只改变 cache 的模型版本。KuaiRand 与 QB 各有一个跨 4/4 seed 同向的局部恶化点；QK
+每个 seed 都有明显局部跃升，但位置在 age 5、8、9、10 之间移动。这说明固定周期仍应作为
+baseline，却不能被当成跨更新稳定的质量控制器；更合理的下一步是 model-version cohort
+级的 update-aware trigger，而不是恢复昂贵的 per-user drift/JVP 路线。
 
 ---
 
@@ -173,6 +203,61 @@ Best Rank 收益的 17.6%，占 NDCG@100 收益的 30.8%；二者 seed-level 区
 MRR 并非始终改善，因此本文应将主张限定在 full-catalog Best Rank 与 NDCG，而不是声称所有
 ranking metric 同向变化。
 
+### 2.5 固定当前模型后，cache age 仍会出现平台、跃升与反转
+
+为了不把 cache age 与评测日期、用户组成混在一起，我们固定最终 $\theta_T$、最终评测
+用户与历史，只用 $\theta_{T-1},\ldots,\theta_0$ 分别生成同一 prefix 的 K/V。跨数据集不再
+比较 BestRank 的绝对差，而比较
+
+$$
+\text{staleness tax}=
+\frac{\text{full compute}-\text{reuse}}
+     {\text{full compute}-\text{frozen}},
+$$
+
+即 stale cache 损失了多少比例的流式训练收益。
+
+| 数据集 | coarse endpoint tax | fine endpoint tax | fine 中首次达到 10% 的 age |
+|---|---:|---:|---|
+| KuaiRand | 17.6% `[11.5%, 23.7%]` | 17.7% `[11.8%, 23.6%]` | 14 / 14 / 14 / 14 |
+| Tenrec QB | 31.5% `[22.5%, 40.4%]` | 35.0% `[26.3%, 43.7%]` | 2 / 1 / 5 / 4 |
+| Tenrec QK | 27.6% `[16.8%, 38.5%]` | 14.1% `[5.6%, 22.7%]` | 1 / 10 / 5 / 8 |
+
+在 fine curve 中，KuaiRand 的 age 13→14 与 QB 的 age 6→7 分别一次增加 6.3 和 9.4 个
+百分点，且均为 4/4 seed 同向。QK 的最大单步增加在每个 seed 都存在，但分别落在
+8→9、9→10、4→5、7→8；同一个 age 上无法得到窄区间。三个数据集的每条曲线也都包含
+非单调反转。
+
+因此现在可以把 observation 表述得更具体：旧 cache 不是匀速老化，它可以先处于低损失
+平台，再因某次模型更新局部恶化；坏点的位置还会随更新轨迹变化。现有结果不能证明任何
+经过单独调参的 fixed window 都失败——KuaiRand 在当前设置下反而很稳定——但足以说明
+age-only window 不是通用、可校准的质量状态。这里的最大跃升统计仍是 exploratory，下一份
+独立数据必须冻结定义后再验证。
+
+### 2.6 机会区间：主结果足够宽，但不能把两条轴强行绑在每个数据集上
+
+方法需要的不是一个退化到不可用的 reuse 端点，而是一个内部工作区间：
+
+1. `full compute - frozen > 0`，说明流式训练值得做；
+2. stale reuse 保留相当一部分收益，说明不能简单退回 frozen；
+3. `full compute - reuse` 稳定且中等，给 migration 留出质量恢复空间；
+4. full history recompute 足够贵，给 partial migration 留出计算空间。
+
+当前最完整的同一设置证据来自 KuaiRand top-50k/all-chunks：full compute、reuse 和
+maintenance 的 BestRank 改善分别为 3837.67、2952.11 和 885.56，即 reuse 保留 76.9%，
+staleness tax 为 23.1%；长度 512 下 cheap/full 为 0.058。这已经是一个适合优化的中间点，
+不需要继续人为放大失效。
+
+我们同时预先冻结了 QB top-50k 和 QK top-20k 的 256-raw-exposure 长上下文筛选。实际保留
+历史中位数为 244 和 206；对应 batch-32 full/cheap 为
+`4.504/0.512 ms` 和 `3.578/0.439 ms`。但在 `1e-4/2e-4/4e-4` 三档流式学习率下，QB 的
+oldest-cache tax 只有 5.6%/1.1%/2.5%，QK 为 3.6%/6.0%/3.7%，且五个 cell 的 NDCG
+maintenance 非正。因此这两个 cell 停在 motivation screen，不运行方法，也不扩 seed。
+
+汇报时应明确区分：KuaiRand 提供当前最强的联合 quality-cost opportunity；aligned QB/QK
+提供跨数据集的版本失效复现；长上下文 QB/QK 则是“成本变大不等于失效比例变大”的负面
+边界。这样比为得到漂亮方法结果而继续调数据更可信。
+
 ---
 
 ## 3. Design：把版本漂移分成直接投影变化与跨层状态传播
@@ -294,8 +379,8 @@ update magnitude 四个轴。最重要的结果不是某个单点更高，而是
 
 MovieLens 的结果必须主动作为边界讲清楚。optimized full K/V 仍严格等于 fresh，增量 parity
 也小于 $4.8\times10^{-6}$，说明代码路径成立；但两次更新后的 full maintenance Best Rank
-均值只有 1.48，seed 区间为 `[-6.37, 9.33]`，NDCG 也无法区分。因此当前证据支持“算子可以
-迁移到第二数据格式”，不支持“问题和质量收益已经跨数据集复现”。
+均值只有 1.48，seed 区间为 `[-6.37, 9.33]`，NDCG 也无法区分。因此仅就该 MovieLens gate，
+证据支持“算子可以迁移到第二数据格式”，不支持“问题和质量收益已经跨数据集复现”。
 
 ### 4.4 数据/模型组合规模与 KuaiRand 利用率修复
 
@@ -334,6 +419,49 @@ Rank 配对增益比 full 高 25.84，区间 `[7.69, 44.00]`，但 NDCG 配对�
 数学上界。后续必须同时报告 fidelity、多项 task metric 和 method-vs-full 配对差异，不能把
 所有 recovery>100% 简单写成噪声，也不能据此声称 partial 全面优于 full。
 
+### 4.5 真实曝光跨数据集复现
+
+后续数据均保留真实负曝光并复用同一个 next-positive-item 目标。首轮统一 top-50k 协议暴露
+两个测量问题：QB 的 base-only cohort 随窗口从 4,049 个正样本用户降到 2,552 个，cache age
+与用户组成变化混在一起；QK 的 50k item embedding 在 5k 用户下形成稀疏、方差很大的
+maintenance 分母。因此在不看标签、不看 seed 结果的前提下，各改变一个数据轴：
+
+- QB 保留 top-50k，但只纳入原始曝光长度覆盖完整 `64+6x8` horizon 的用户；六个窗口因此
+  都稳定在约 3.7 万条保留曝光。这个设置条件化于未来活跃可用性，但不按未来正反馈选人。
+- QK 改为 top-5k，匹配 KuaiRand 的 dense-catalog operating point；模型参数从 509 万降为
+  77 万。它提高了测量稳定性，但不能据此断言 catalog size 是唯一因果因素。
+
+四 seed 同口径结果为：
+
+| 数据集 | theta-5 full over frozen | theta-5 full reuse over frozen | theta-5 maintenance | age/gap Spearman |
+|---|---:|---:|---:|---:|
+| KuaiRand | 484.34 `[462.15, 506.54]` | 399.02 `[370.79, 427.26]` | 85.32 `[53.74, 116.91]` | 0.925 `[0.845, 1.000]` |
+| Tenrec QB fixed horizon | 94.70 `[70.49, 118.90]` | 64.38 `[54.41, 74.35]` | 30.31 `[14.08, 46.55]` | 0.600 `[0.005, 1.000]` |
+| Tenrec QK top-5k | 47.34 `[29.20, 65.47]` | 34.34 `[20.55, 48.13]` | 13.00 `[5.70, 20.30]` | 0.700 `[0.475, 0.925]` |
+
+BestRank 绝对值不能跨 catalog 比大小；这里比较的是符号、价值分解和年龄关系。三个数据集
+现在都支持“流式训练必要—旧 KV 部分保留—老缓存形成可恢复 gap”。QB 的 gap 出现更晚，
+QK 的相邻窗口不严格单调，但跨五个年龄的 seed-level 关系稳定为正。
+
+固定最终模型和评测窗口后，coarse BestRank staleness tax 分别为
+17.6%/31.5%/27.6%，把 raw full-compute gain 的 10.2 倍跨度缩小到 1.79 倍；MeanRank tax
+跨度为 1.60 倍。Fine BestRank tax 的最大/最小为 2.48 倍，并进一步暴露了平台后的局部跃升。
+这才是适合跨数据集讲效应量的主表；上面的 raw BestRank 只保留为各数据集内部的直观量纲。
+
+aligned method gate 已经完成。QB seed-0 的 full gap 为 21.95，而 cheap 只恢复 1.09，
+suffix-2/4/5 为 -0.33/-2.07/+1.16，且所有 partial NDCG 都下降，因此没有扩 seed。QK
+seed-0 中 cheap 以 0.197x 成本恢复 89.3% BestRank，所有更深 suffix 的主指标反而更低；
+只扩展 cheap 后，四 seed 结果为：
+
+| 配置 | 成本 / full | BestRank gain | Mean recovery | NDCG@100 gain |
+|---|---:|---:|---:|---:|
+| QK cheap | 0.194 `[0.187, 0.200]` | **9.17 `[6.71, 11.63]`** | **70.6%** | 0.00125 `[-0.00091, 0.00341]` |
+| QK full | 1.000 | **13.00 `[5.70, 20.30]`** | 100% | 0.00227 `[-0.00086, 0.00541]` |
+
+cheap 与 full 的 paired BestRank 差为 -3.83 `[-8.85, 1.19]`，当前未区分但不构成等价证明。
+因此现在可以讲 projection refresh 这个最轻量结构在 QK 上跨数据集成立，不能讲完整 suffix
+曲线已经泛化。ZhihuRec 的 theta-5 maintenance 仍为负，作为负面边界保留。
+
 ---
 
 ## 5. 当前工作的潜在学术价值
@@ -350,12 +478,12 @@ Rank 配对增益比 full 高 25.84，区间 `[7.69, 44.00]`，但 NDCG 配对�
 HSTU 的 `Norm → K/V projection → block propagation` 结构，产生新的可服务缓存。这里真正
 值得发展的抽象是 **structure-aware cache migration**，而不是某个固定的 suffix 数字。
 
-### 5.3 缓存年龄与层级迁移共同形成二维决策空间
+### 5.3 版本风险与层级迁移共同形成二维决策空间
 
-Motivation 表明单步 staleness 较弱、累计 staleness 较强；method 表明迁移深度控制成本与质量。
-因此系统可以围绕两个变量设计：
+Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，而且 age 本身并不是可校准的
+质量状态；method 表明迁移深度控制成本与质量。因此系统可以围绕两个变量设计：
 
-- 时间维：缓存跨过了多少模型版本、当前参数更新有多大；
+- 版本维：old/current model pair 经历了哪些更新、当前兼容性风险有多大；
 - 结构维：哪些层只 refresh projection，哪些连续层需要传播新 hidden。
 
 这比“更新后全部缓存立即失效”或“只挑部分用户重算”提供了更细的研究空间。
@@ -374,10 +502,14 @@ Motivation 表明单步 staleness 较弱、累计 staleness 较强；method 表�
 
 1. 我们已经修复了足以影响结论的训练和 serving 评估问题，核心现象在四个 seed 上仍成立。
 2. 模型版本 staleness 具有随 cache age 增长的质量影响，同时单步影响较小，存在迁移空间。
-3. HSTU 的 K/V 计算可以被拆成 cheap projection refresh 与部分 state propagation。
-4. 最小设计的曲线已经在长度与 3/6/9 层上保留，值得进入混合版本和系统成本评测。
-5. 在 top-50k complete-base-chunk 协议下，流式训练价值、maintenance gap 与固定 suffix 曲线
+3. 三个数据集的 BestRank staleness tax 已处在 2.5 倍以内；局部跃升与越界年龄变化说明
+   age-only window 不是通用的质量控制器，值得测试 model-version cohort 级触发。
+4. HSTU 的 K/V 计算可以被拆成 cheap projection refresh 与部分 state propagation。
+5. 最小设计的曲线已经在长度与 3/6/9 层上保留，值得进入混合版本和系统成本评测。
+6. 在 top-50k complete-base-chunk 协议下，流式训练价值、maintenance gap 与固定 suffix 曲线
    都在四个 seed 上成立，路线已通过当前 KuaiRand 数据规模 gate。
+7. 在 KuaiRand、fixed-horizon QB、top-5k QK 上，pre-design motivation 的三个环节均在四个
+   seed 上成立；差异主要体现在 gap 出现的时间与幅度，而不是逻辑方向。
 
 ### 不能讲
 
@@ -388,51 +520,54 @@ Motivation 表明单步 staleness 较弱、累计 staleness 较强；method 表�
 4. 不能忽略额外状态：cheap/suffix 方法需要保存 normalized state 和 split hidden，且尚未测量
    host-device transfer、缓存读取、allocator 与 admission 开销。
 5. 不能把“与 full 差异不显著”表述成严格等价；当前只有四个训练种子。
-6. 不能声称跨数据集泛化；MovieLens 的短版本链没有形成可辨识的 maintenance gap。
+6. 不能声称完整 suffix 曲线已经跨数据集泛化；新的 QB/QK 结果只冻结了 motivation，方法
+   尚未在 aligned cohort 上重跑，ZhihuRec 也没有形成正的累计 gap。
 7. 不能声称已经使用完整 KuaiRand：top-50k 仍只覆盖标准日志 13.35%，KuaiRand-27K 未在本地，
    random-exposure log 也没有混入训练。
 8. 不能把 full 当作所有 task metric 的质量上界；它严格定义的是当前版本的一致性结果。
+9. 不能把 QB/QK 写成两个独立数据来源，也不能把 Tenrec 用户内顺序写成真实全局日历时间；
+   QB fixed-horizon 结果还条件化于用户能覆盖完整活跃 horizon。
+10. 不能声称任意 fixed-window reuse 都必然失败；当前只证明 age 不是跨数据集、跨更新轨迹
+    都可校准的质量状态。Fine QK 的 MeanRank、rank-utility 与 NDCG 区间仍包含 0。
 
 ---
 
 ## 7. 下一步最小研究计划
 
-terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、数据/模型组合规模以及 top-50k
-chunked-data 实验均已完成，当前不继续投入任意层动态选择或继续盲目扩大 catalog。下一步是：
+terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、数据/模型组合规模、top-50k
+chunked-data 以及 aligned method gate 均已完成。QK cheap 通过四-seed gate，QB 与 aligned
+suffix 均已按规则停止，当前不继续投入任意层动态选择或继续盲目扩大 catalog。下一步是：
 
-1. **用真实曝光数据补强 generality，而不是调参追正结果。** Taobao 已在数据语义 gate 被
-   排除为主数据集：它只有用户行为，没有真实未点击曝光，不能在不改变任务或构造负样本的
-   前提下复用 KuaiRand 定义。新审计的 Tenrec QK/QB 和 ZhihuRec 都保留了曝光与负反馈；先用
-   较小的 QB 检查统一 loader，并做一个 seed 的 `frozen / full reuse / full compute` gate。若
-   maintenance gap 可辨识，再把完全冻结的 top-50k、长度 128、64 条 base 与六个 8 条窗口
-   协议移到 QK 和 ZhihuRec，最后扩到四 seed。QK 提供最接近 KuaiRand 的多反馈视频字段，
-   ZhihuRec 提供真实时间戳与跨域证据；任何负结果都不能靠改切分追成正数。
-2. **进入系统成本。** 测量额外状态读取、host-device transfer、allocator、端到端 latency、
+1. **进入系统成本。** 测量额外状态读取、host-device transfer、allocator、端到端 latency、
    吞吐和显存；profiling 确认后再做 `Wk/Wv` kernel fusion。
-3. **把自然 cache-version 分布纳入评估。** 当前 theta-0→theta-5 是可控 stress test；下一步
-   应比较 cohort batching、不同 cache age 和 periodic full recompute 的等质量/等成本策略。
-4. **仅在新证据出现时恢复动态选择。** 若更深模型或第二数据集显示最优区间稳定移动，再考虑
-   model-version cohort 级 planner，而不是 per-user 决策。
+2. **把自然 cache-version 分布纳入评估。** 当前 theta-0→theta-5 是可控 stress test；下一步
+   应在可辨识的 KuaiRand/QB/QK 设置上比较 cohort batching、periodic full、age threshold
+   与 update-aware trigger 的等质量/等成本策略。
+3. **动态的是维护时机，不是重新搜索任意层。** 先冻结 deepest suffix 候选，用小型
+   held-out probe 为每个 model-version cohort 选择 reuse/cheap/suffix/full；除非新证据显示
+   最优区间稳定移动，否则不恢复任意层搜索，更不做 per-user JVP 决策。
 
 ---
 
 ## 8. 建议的导师汇报顺序
 
 1. **一张图讲问题：** 模型持续更新，旧版本用户 KV 在输入不变时也整体失效。
-2. **一张图讲 motivation：** 单步损失小、累计损失随 cache age 增大，说明 reuse 与 recompute
-   之间存在空间。
+2. **一张图讲 motivation：** 单步通常较弱，累计后会出现平台、局部跃升与反转；age 只能
+   粗排风险，说明 reuse 与 recompute 之间既有迁移空间，也需要 update-aware 触发。
 3. **一张结构图讲 design：** 将 K/V 变化拆成 projection change 与 hidden propagation，得到
    cheap refresh + full interval。
 4. **一张 Pareto 图讲结果：** 横轴 measured compute，纵轴 quality recovery，只标 cheap、
    suffix-2/4/5 与 full。
 5. **一张小表讲规模：** 3/6/9 层都保留曲线；top-50k chunked 让有效 base target 增至
    62.1 万，并得到 0.058x cheap 与 0.613x suffix-4 的更强四-seed结果。
-6. **最后主动讲边界：** MovieLens 短版本链没有复现强 gap；Tenrec 与 ZhihuRec 目前只完成
-   数据容量审计，还没有模型结果；系统数据移动尚未计入。请导师重点判断问题边界、结构化
-   迁移抽象，以及第二数据集 motivation gate 与系统 gate 的优先级。
+6. **最后主动讲边界：** 三数据集一致的是 motivation；方法上只有 cheap refresh 已在
+   aligned QK 形成四-seed 正结果，完整 suffix 曲线仍只在 KuaiRand 强。QB/QK 来自同一
+   collection，Tenrec 无全局日历时间，QB 还使用完整活跃 horizon 条件。ZhihuRec 为负，
+   系统数据移动尚未计入。请导师重点判断结构化迁移抽象、混合 cache-age 系统实验，以及
+   是否应把 “cheap refresh” 而非固定 suffix 深度作为更稳健的跨数据集贡献。
 
 汇报时最核心的一句话可以是：
 
 > 我们并不是预测哪些旧缓存已经坏掉，而是利用 HSTU 生成 K/V 的层级结构，以不同计算预算
-> 直接把旧版本缓存迁移到新版本；当前小规模结果已经显示出稳定的 cache-age 现象和一条初步
-> 的成本—质量前沿。
+> 直接把旧版本缓存迁移到新版本；当前结果表明版本损失会累积但并非匀速，固定年龄无法稳定
+> 标定风险，同时结构化迁移已经形成一条初步的成本—质量前沿。

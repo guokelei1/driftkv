@@ -1,7 +1,8 @@
 # Exposure-compatible dataset expansion audit
 
-> Status: complete data-capacity audit as of 2026-07-23. This document reports no model training,
-> maintenance gap, or migration-quality result.
+> Status: data-capacity audit and frozen ordered-exposure materialization complete as of
+> 2026-07-23. Model results are reported separately in
+> `experiments/exposure/ORDERED_EXPOSURE_V1.md`.
 
 ## 1. Decision
 
@@ -86,10 +87,11 @@ base rows, so 3,949 is not the actual scale ceiling. A top-250k QK vocabulary re
 rows and gives 226,510 users with all 64 base rows, but the initial experiment should keep top-50k
 for comparability and avoid increasing the embedding table before it is necessary.
 
-### 4.2 Matched, manageable pilot cohorts
+### 4.2 Base-only candidate cohorts
 
 A base-only top-5k-user cohort makes the three new streams similar in training volume without
-using future activity:
+using future activity. This capacity table counts all retained audit rows for those users; it is
+not the exact 64+6x8 materialized input:
 
 | Dataset | Base rows | Stream rows | Total rows | Base positive targets | Stream positive targets |
 |---|---:|---:|---:|---:|---:|
@@ -99,6 +101,18 @@ using future activity:
 
 These are already large enough for the current model. There is no reason to begin by training on
 all 493 million QK rows or all 100 million ZhihuRec rows.
+
+The implemented loader applies the exact 64+6x8 cap after fitting the base-only vocabulary and
+cohort:
+
+| Dataset | Selected users | Materialized base | Materialized stream | Stream positives | Theta-5 positive-active users |
+|---|---:|---:|---:|---:|---:|
+| Tenrec QK | 5,000 | 318,949 | 153,673 | 63,690 | 2,244 |
+| Tenrec QB | 5,000 | 319,349 | 160,141 | 123,112 | 2,552 |
+| ZhihuRec | 5,000 | 320,000 | 207,200 | 58,040 | 3,177 |
+
+Exact split counts, positive counts, source provenance, and output sizes are in the tracked
+`results/dataset_audit/*_prepared.json` files. The compact NPZ inputs are ignored by Git.
 
 Under the stricter 64-retained-base cohort, the fifth ordered evaluation window also remains
 well populated:
@@ -112,18 +126,61 @@ well populated:
 This establishes capacity only. It does not establish that streaming training is valuable or that
 stale-cache maintenance has a measurable quality gap on any of these datasets.
 
-## 5. Frozen next gate
+## 5. Completed motivation-alignment gate
 
-The smallest defensible next experiment is:
+The first frozen top-50k gate was diagnostically useful but not the final motivation protocol. QB's
+base-only cohort lost nearly half its active users by theta-5, confounding cache age with cohort
+composition. QK used a 5.09M-parameter top-50k model for only 5,000 users and produced a
+high-variance maintenance denominator.
 
-1. Implement one shared ordered-exposure loader with top-50k, length 128, a 64-impression base,
-   six 8-impression windows, and the feedback rules above.
-2. Use Tenrec QB to check data parity and run one seed of `frozen / full reuse / full compute`.
-3. If a maintenance gap is identifiable, run the same frozen control on a base-only 5k-user QK
-   cohort and a base-only 5k-user ZhihuRec cohort.
-4. Only then expand the successful cells to four seeds and evaluate the already frozen migration
-   endpoints. Do not reopen arbitrary-layer search or tune the window split to obtain a positive
-   result.
+The follow-up changed one non-label data axis per dataset before seed expansion:
 
-Exact machine-readable audits are in `results/dataset_audit/`; the Taobao semantic boundary is in
+- QB retains top-50k but requires the raw sequence to cover the complete 112-exposure horizon.
+  Selection does not inspect positive labels or model outcomes. The six retained stream windows
+  are stable at 37,079–37,366 rows and theta-5 has 4,730 positive-active users.
+- QK uses a base-fitted top-5k catalog with the original base-activity cohort. The resulting model
+  has 770k rather than 5.09M parameters; theta-5 has 1,588 positive-active users.
+
+Over four seeds, theta-5 full-compute/full-reuse/maintenance BestRank gains are
+`94.70/64.38/30.31` for QB and `47.34/34.34/13.00` for QK; all six theta-5 seed intervals exclude
+zero. The cache-age/maintenance Spearman is `0.600 [0.005, 1.000]` on QB and
+`0.700 [0.475, 0.925]` on QK, compared with `0.925 [0.845, 1.000]` on KuaiRand. This closes the
+pre-design motivation gate on the three datasets.
+
+Scope remains important. QB conditions on future activity availability, although not future
+labels. QB/QK are related Tenrec tables, not independent collections, and have only within-user
+ordinal order rather than global timestamps. Absolute BestRank gains are not comparable across
+catalog sizes. In the fixed-endpoint matrix, within-seed BestRank staleness tax is
+`0.176/0.315/0.276` on KuaiRand/QB/QK, only a 1.79x range; the fine matrix remains within 2.48x
+and shows update-local jumps whose ages move most strongly on QK. This supports an update-aware
+version-cohort trigger, not the stronger claim that every tuned periodic window fails. ZhihuRec
+remains a negative maintenance boundary.
+
+The method result is still mixed and separate. On the aligned top-5k QK setting, cheap refresh
+costs 0.194x full and gains `9.17 [6.71, 11.63]` BestRank over four seeds, recovering 70.6% of
+the mean full gap. Aligned fixed-horizon QB fails its seed-0 partial-method gate, and no aligned
+suffix improves on QK cheap in the primary metric. Exact protocols, intervals, failed gates, and
+commands are in `experiments/exposure/ORDERED_EXPOSURE_V1.md`.
+The fixed-endpoint metric and transition analysis are in
+`experiments/exposure/CACHE_VERSION_MATRIX_V1.md`.
+
+Machine-readable audits are in `results/dataset_audit/`; the Taobao semantic boundary is in
 `results/taobao/kuairand_matched_comparison.json`.
+
+## 6. Long-context opportunity boundary
+
+A later pre-frozen screen selected 1,000 users with a complete 256-raw-exposure horizon without
+looking at feedback labels or model outcomes. QB top-50k retains 241,221 rows and has retained
+history quantiles `160/226/244/254/256` at min/p10/p50/p90/max. QK top-20k retains 202,636 rows
+with corresponding quantiles `112/173/206/229/250`.
+
+These cohorts establish real long-context capacity and a larger recomputation cost. They do not
+improve the quality-side cache-migration opportunity: across the three pre-specified stream
+learning rates, oldest-cache BestRank staleness tax remains 1.1%-5.6% on QB and 3.6%-6.0% on QK.
+The branch stops before migration-quality evaluation. This is a cohort boundary, not a
+contradiction of the aligned coarse protocols: conditioning on much longer activity changes the
+population and makes streaming-training value grow faster than cache-maintenance value.
+
+The prepared-data audits are
+`results/dataset_audit/tenrec_{qb_top50000,qk_top20000}_users1000_horizon256_prepared.json`; exact
+screen rules and results are in `experiments/exposure/OPPORTUNITY_REGIME_V1.md`.

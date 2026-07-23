@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from motivation_validity import (
-    STANDARD_LOGS,
+    build_streaming_plan,
     eval_batches,
     move_batch,
     ranking_metrics,
@@ -345,13 +345,7 @@ def main() -> None:
     seed_everything(args.seed)
     metadata_result = json.loads(Path(args.run_result).read_text())
     metadata = metadata_result["args"]
-    plan = StreamingDataPlan.from_csvs(
-        STANDARD_LOGS,
-        base_num_days=metadata["base_days"],
-        max_seq_len=metadata["seq_len"],
-        max_items=metadata["max_items"],
-        fit_vocabulary_on_base=True,
-    )
+    plan, _ = build_streaming_plan(metadata)
     plan.init_base()
     samples = reconstruct_eval_samples(
         plan,

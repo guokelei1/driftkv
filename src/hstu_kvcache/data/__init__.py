@@ -1,3 +1,4 @@
+from .exposure import load_prepared_exposure_plan
 from .kuairand import (
     KuaiRandTrace,
     build_user_sequences,
@@ -17,4 +18,5 @@ __all__ = [
     "load_movielens_hard",
     "collate_grec_batch",
     "StreamingDataPlan",
+    "load_prepared_exposure_plan",
 ]

@@ -1,10 +1,16 @@
+import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 
-from hstu_kvcache.data import KuaiRandTrace, StreamingDataPlan, collate_batch
+from hstu_kvcache.data import (
+    KuaiRandTrace,
+    StreamingDataPlan,
+    collate_batch,
+    load_prepared_exposure_plan,
+)
 from hstu_kvcache.data.kuairand import load_kuairand
 from hstu_kvcache.streaming.trainer import build_next_item_targets
 
@@ -74,6 +80,27 @@ def test_streaming_plan_uses_engaged_eval_items_and_current_day_train_mask():
 
     assert batch["lengths"].tolist() == [5]
     assert batch["train_mask"][0, :5].tolist() == [False, False, False, True, True]
+
+
+def test_eval_user_limit_preserves_first_exposure_order():
+    interactions = pd.DataFrame(
+        {
+            "date": ["d1", "d1", "d2", "d2", "d2"],
+            "user_idx": [1, 2, 1, 2, 1],
+            "item_idx": [1, 2, 3, 4, 5],
+            "behavior": [1, 1, 1, 2, 2],
+            "label": [0, 0, 0, 1, 1],
+            "time_ms": [1000, 1000, 2000, 3000, 4000],
+        }
+    )
+    trace = KuaiRandTrace(interactions, 2, 5, 2, {}, {})
+    plan = StreamingDataPlan(trace, ["d1"], ["d2"], max_seq_len=8)
+    plan.init_base()
+
+    samples = plan.get_eval_set("d2", max_users=1)
+
+    assert samples[0]["history"]["user_id"] == 1
+    assert samples[0]["pos_items"] == [5]
 
 
 def test_all_chunk_base_training_covers_each_next_item_pair_once():
@@ -168,3 +195,36 @@ def test_kuairand_behavior_priority_is_preserved(tmp_path: Path):
     trace = load_kuairand([path], min_interactions_per_user=1, max_items=None)
 
     assert trace.interactions["behavior"].tolist() == [1, 8, 2, 3, 4, 5, 6, 7]
+
+
+def test_prepared_exposure_plan_preserves_base_windows_and_positive_targets(
+    tmp_path: Path,
+):
+    metadata = {
+        "dataset": "synthetic",
+        "selected_users": 2,
+        "fitted_items": 6,
+        "num_behaviors": 2,
+        "window_count": 2,
+    }
+    path = tmp_path / "prepared.npz"
+    np.savez_compressed(
+        path,
+        user_idx=np.array([1, 1, 2, 2, 1, 2, 1, 2]),
+        item_idx=np.array([1, 2, 3, 4, 5, 5, 6, 6]),
+        behavior=np.array([1, 2, 1, 2, 1, 2, 2, 1]),
+        label=np.array([0, 1, 0, 1, 0, 1, 1, 0]),
+        time_ms=np.array([1000, 2000, 1000, 2000, 3000, 3000, 4000, 4000]),
+        window_index=np.array([-1, -1, -1, -1, 0, 0, 1, 1]),
+        metadata_json=np.array(json.dumps(metadata)),
+    )
+
+    plan, loaded = load_prepared_exposure_plan(path, max_seq_len=8)
+    plan.init_base()
+
+    assert loaded == metadata
+    assert plan.base_dates == ["base"]
+    assert plan.stream_dates == ["window_0", "window_1"]
+    assert plan.get_eval_set("window_0")[0]["pos_items"] == [5]
+    plan.ingest_day("window_0")
+    assert plan.get_eval_set("window_1")[0]["pos_items"] == [6]

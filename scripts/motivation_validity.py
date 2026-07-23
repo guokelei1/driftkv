@@ -14,7 +14,11 @@ import torch
 import torch.nn.functional as F
 from scipy.stats import spearmanr
 
-from hstu_kvcache.data import StreamingDataPlan, collate_batch
+from hstu_kvcache.data import (
+    StreamingDataPlan,
+    collate_batch,
+    load_prepared_exposure_plan,
+)
 from hstu_kvcache.models import HSTU, HSTUConfig
 from hstu_kvcache.streaming import model_params_vec
 from hstu_kvcache.streaming.trainer import build_next_item_targets, train_step
@@ -54,6 +58,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output", default="results/validity/motivation_seed0.json")
     parser.add_argument("--checkpoint-dir")
+    parser.add_argument("--prepared-data")
     return parser.parse_args()
 
 
@@ -62,6 +67,26 @@ def seed_everything(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def build_streaming_plan(metadata: dict) -> tuple[StreamingDataPlan, dict | None]:
+    prepared_data = metadata.get("prepared_data")
+    if prepared_data:
+        plan, prepared_metadata = load_prepared_exposure_plan(
+            prepared_data,
+            max_seq_len=metadata["seq_len"],
+        )
+        if metadata["stream_window_days"] != 1:
+            raise ValueError("prepared exposure streams require --stream-window-days 1")
+        return plan, prepared_metadata
+    plan = StreamingDataPlan.from_csvs(
+        STANDARD_LOGS,
+        base_num_days=metadata["base_days"],
+        max_seq_len=metadata["seq_len"],
+        max_items=metadata["max_items"],
+        fit_vocabulary_on_base=True,
+    )
+    return plan, None
 
 
 def make_model(args: argparse.Namespace, num_items: int, num_behaviors: int) -> HSTU:
@@ -391,13 +416,7 @@ def main() -> None:
     torch.set_float32_matmul_precision("high")
     started = time.perf_counter()
     print(f"device={args.device} seed={args.seed}", flush=True)
-    plan = StreamingDataPlan.from_csvs(
-        STANDARD_LOGS,
-        base_num_days=args.base_days,
-        max_seq_len=args.seq_len,
-        max_items=args.max_items,
-        fit_vocabulary_on_base=True,
-    )
+    plan, prepared_metadata = build_streaming_plan(vars(args))
     plan.init_base()
     print(
         f"users={plan.num_users} items={plan.num_items} stream_days={len(plan.stream_dates)}",
@@ -451,6 +470,7 @@ def main() -> None:
             "num_items": plan.num_items,
             "base_dates": plan.base_dates,
             "stream_dates": plan.stream_dates,
+            "prepared_metadata": prepared_metadata,
         },
         "num_parameters": sum(parameter.numel() for parameter in model.parameters()),
         "base_losses": base_losses,

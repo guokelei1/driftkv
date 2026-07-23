@@ -33,6 +33,20 @@ Six-layer seeds 0-3 compare theta-0 frozen serving, current-model full reuse of 
 and current-model full compute on the same history and future positives. The three contrasts are
 total streaming-training value, value retained under stale reuse, and cache-maintenance value.
 
+### Fixed-endpoint cache-version matrices
+
+`cache_version_matrix_v1` and `cache_version_matrix_full_eval_v1` hold the current theta-5 model,
+final evaluation histories, targets, and users fixed while changing only the old model version
+used to produce the prefix K/V. The KuaiRand matrix retains its 300-user evaluation; the
+`full_eval` QB/QK matrices evaluate every eligible final-window user up to 5,000. These files must
+not be pooled with moving-window cumulative-age records.
+
+`cache_version_matrix_fine_full_eval_v1` is a separate temporal-resolution family. KuaiRand uses
+one-day updates through theta-15. QB/QK use four ordinal exposures per update through theta-10.
+The current model and final evaluation window remain fixed within every matrix. KuaiRand fine
+runs retain the existing latest-sequence training mode and are diagnostic rather than a
+replacement for the all-chunks primary operating point.
+
 ### `scaling_v1_fixed_optimized_suffix`
 
 Freezes the optimized deepest suffix and changes one KuaiRand axis at a time. Active sequence
@@ -182,6 +196,94 @@ KuaiRand factorial and data-utilization setup:
 Exact tables are in `experiments/scaling/KUAIRAND_FACTORIAL_V1.md` and
 `experiments/scaling/KUAIRAND_DATA_UTILIZATION_V1.md`.
 
+### 5.1 Ordered-exposure reproduction
+
+The original method-transfer family uses `ordered_exposure_reproduction_v1_all_active`:
+
+- the vocabulary is the top 50k items fitted only on each user's first 64 raw exposures;
+- the 5,000-user cohort is selected only from retained base activity, with no future-window
+  filtering;
+- base contains 64 raw exposures and the stream contains six consecutive 8-exposure windows;
+- every exposure enters context, while only observed positive feedback is a target;
+- Tenrec uses official within-user ordinal order and ZhihuRec uses impression time;
+- the primary model is 6L/H96, length 128, with 6 base epochs and 2 epochs per update;
+- every positive-active user is evaluated against the full retained 50k catalog;
+- QB uses eight seeds, QK four, and ZhihuRec one descriptive seed;
+- only reuse, cheap-all, deepest suffix-2/4/5, and full recompute are evaluated at theta-5.
+
+The motivation-alignment follow-up retains the same exposure target, model, optimizer, base length,
+window length, and seed-level inference, but uses two explicitly versioned data regimes:
+
+- `ordered_exposure_fixed_horizon_v3` for QB: top-50k and 5,000 users with at least 112 raw
+  exposures. This conditions only on activity availability, never on future feedback labels or
+  model outcomes. It is a controlled fixed-cohort mechanism test, not a population estimate.
+- `ordered_exposure_kuai_matched_top5k_v2` for QK: top-5k fitted from the base prefix and the
+  original base-activity cohort. The catalog axis was frozen before four-seed expansion.
+
+Both evaluate every positive-active cohort user at theta-1/3/5 and also record five cumulative
+cache-age points. A valid motivation claim requires all three conditions at theta-5 to improve
+BestRank over their relevant baseline and a positive seed-level relationship between cumulative
+cache age and maintenance gain. Absolute BestRank changes cannot be compared across catalogs.
+
+The fixed-endpoint matrix uses the same aligned cohorts and checkpoints but reconstructs one final
+evaluation set for every stale cache version. For an oriented quality gain $G$, cross-dataset
+effect size is the per-seed staleness tax
+
+$$
+\tau_G =
+\frac{G(\mathrm{full\ compute},\mathrm{reuse})}
+     {G(\mathrm{full\ compute},\mathrm{frozen})}.
+$$
+
+It is reported only when the within-seed streaming-value denominator is positive. The ratio is
+computed before cross-seed aggregation. Raw BestRank differences and numeric cache ages are not
+cross-dataset effect sizes: catalog sizes differ, and Tenrec age denotes ordinal exposure blocks
+rather than KuaiRand calendar days.
+
+These protocols are not pooled with KuaiRand user records; only seed-level signs, value partitions,
+and age structure are compared. The original method results are not relabeled as measurements on
+the aligned cohorts. A separate 12L/H192 single-seed gate keeps the old data settings fixed and is
+a negative scale diagnostic. Exact tables and limitations are in
+`experiments/exposure/ORDERED_EXPOSURE_V1.md` and
+`experiments/exposure/CACHE_VERSION_MATRIX_V1.md`.
+
+### 5.2 Long-context opportunity screen
+
+`long_context_opportunity_v1` is a separate seed-0 screening family. It was frozen before
+migration-quality evaluation:
+
+- QB uses top-50k, 1,000 complete-horizon users, 64 base plus 12x16 raw exposures, and length 256;
+- QK uses top-20k with the same raw horizon and model settings;
+- both use 6L/H96, six base epochs at `3e-4`, two epochs per update, and oldest-cache theta-0 versus
+  current theta-11;
+- the primary acceptance interval is BestRank staleness tax 0.15-0.45 with positive streaming and
+  maintenance value, at least 55% reuse retention, and one agreeing secondary metric;
+- only stream learning rates `1e-4`, `2e-4`, and `4e-4` are allowed, in that order, with all other
+  optimizer settings fixed.
+
+Both datasets failed the quality gate at every allowed learning rate and therefore have no valid
+migration-quality result in this family. Their resident-GPU cost measurements are valid systems
+diagnostics but must not be merged with the aligned four-seed QB/QK motivation or KuaiRand method
+records. Exact negative results are in `experiments/exposure/OPPORTUNITY_REGIME_V1.md`.
+
+### 5.3 Aligned ordered-exposure method gate
+
+`aligned_ordered_exposure_method_gate_v1` uses the accepted Section 5.1 motivation cohorts and
+their unchanged checkpoints:
+
+- fixed-horizon top-50k QB and top-5k QK at theta-0 to theta-5;
+- seed 0 evaluates cheap-all, frozen deepest suffix-2/4/5, and optimized full recompute;
+- a partial configuration expands only if it creates a material quality-cost point on BestRank
+  without a conflicting secondary-metric failure;
+- QB stops at seed 0; QK expands cheap-all, and only cheap-all, to seeds 1-3;
+- seed-level method-minus-reuse and method-minus-full differences remain the inferential units.
+
+The QK four-seed result is valid evidence for cheap projection refresh, not for the suffix family.
+The unexpanded QK suffix and QB results are seed-0 gate diagnostics. They must not be pooled with
+the original top-50k method-transfer family. Compact results are in
+`results/exposure/aligned_method_gate_summary.json` and
+`results/exposure/qk_top5k_aligned_method_summary.json`.
+
 ## 6. Metrics and statistics
 
 Primary quality views:
@@ -190,6 +292,8 @@ Primary quality views:
 - MRR, NDCG@10/100, Hit@10/100: higher is better; gains are `method - reuse`.
 - Quality recovery: method gain divided by fresh-recompute gain, only when the denominator is
   sufficiently different from zero.
+- Staleness tax: cache-maintenance gain divided by full-compute streaming-training gain, computed
+  within seed only when that denominator is positive.
 - Full recompute is the cache-fidelity reference, but not a guaranteed upper bound on a ranking
   metric. Report paired method-minus-full quality differences whenever recovery is shown.
 
@@ -272,8 +376,25 @@ Dataset audits:
 - `results/dataset_audit/tenrec_qk.json`
 - `results/dataset_audit/tenrec_qb.json`
 - `results/dataset_audit/zhihurec.json`
+- `results/dataset_audit/*_top50000_users5000_prepared.json`
 
-`smoke.json` files, old `results/phase0`, old `results/streaming`, and checkpoints outside
-`checkpoints/validity` or `checkpoints/scaling` are not research artifacts. Taobao UserBehavior is
-an action-only semantic boundary rather than the selected next stream. The exposure-compatible
-audits establish data capacity only; assign a new model protocol name before training on them.
+Ordered-exposure reproduction:
+
+- local `results/exposure/qb_{core,method,streaming_control}_seed{0..7}*.json`
+- local `results/exposure/qk_{core,method,streaming_control}_seed{0..3}*.json`
+- local ZhihuRec and 12L/H192 gate files under `results/exposure/`
+- `results/exposure/{qb,qk,zhihu}_streaming_control_summary.json`
+- `results/exposure/{qb,qk}_method_summary.json`
+- `results/exposure/aligned_method_gate_summary.json`
+- `results/exposure/qk_top5k_aligned_method_summary.json`
+- `results/exposure/{kuai,qb_fixed_horizon,qk_top5k}_allages_streaming_control_summary.json`
+- `results/exposure/cache_age_cross_dataset_summary.json`
+- `results/exposure/cache_version_matrix_{cross_dataset,fine_cross_dataset}_summary.json`
+- `results/exposure/long_context_opportunity_summary.json`
+- `results/exposure/{qb_horizon256,long_context}_operator_cost_seed0.json`
+- local `results/exposure/*cache_version_matrix_seed*.json`
+- local `checkpoints/exposure/`
+
+`smoke.json` files, old `results/phase0`, and old `results/streaming` are not research artifacts.
+Per-seed exposure JSON and all checkpoints are current local artifacts but ignored by Git. Taobao
+UserBehavior is an action-only semantic boundary rather than the selected next stream.

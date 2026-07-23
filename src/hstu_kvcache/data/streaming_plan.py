@@ -178,14 +178,12 @@ class StreamingDataPlan:
         if day_df is None:
             return []
         samples = []
-        users = day_df["user_idx"].unique()
-        for u in users:
+        for u, user_day in day_df.groupby("user_idx", sort=False):
             u = int(u)
             seq = self._build_seq(u)
             if seq is None or len(seq["item_ids"]) < 1:
                 continue
-            user_day = day_df[(day_df["user_idx"] == u) & (day_df["label"] > 0)]
-            pos_items = user_day["item_idx"].unique()
+            pos_items = user_day.loc[user_day["label"] > 0, "item_idx"].unique()
             if len(pos_items) == 0:
                 continue
             samples.append({"history": seq, "pos_items": pos_items.tolist()})
@@ -217,14 +215,14 @@ class StreamingDataPlan:
         if day_df is None:
             return
         sequences = []
-        for value in day_df["user_idx"].unique():
+        for value, user_day in day_df.groupby("user_idx", sort=False):
             u = int(value)
             history = self.user_histories.get(u)
             truncate = None if not all_chunks or history is None else len(history["item_ids"])
             seq = self._build_seq(u, truncate=truncate)
             if seq is None:
                 continue
-            timestamps = day_df[day_df["user_idx"] == u]["time_ms"].to_numpy()
+            timestamps = user_day["time_ms"].to_numpy()
             seq["train_mask"] = np.isin(seq["timestamps"], timestamps)
             candidates = self._chunk_sequence(seq) if all_chunks else [seq]
             if all_chunks:
