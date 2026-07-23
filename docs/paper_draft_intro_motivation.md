@@ -400,11 +400,13 @@ Motivation 表明单步 staleness 较弱、累计 staleness 较强；method 表�
 terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、数据/模型组合规模以及 top-50k
 chunked-data 实验均已完成，当前不继续投入任意层动态选择或继续盲目扩大 catalog。下一步是：
 
-1. **用 Taobao 补强 generality，而不是调参追正结果。** 先统计用户跨日重叠、行为分布与
-   序列长度分位数，再冻结行为标签、base/update/evaluation 窗口、replay 和 base-only item
-   vocabulary。先用一个 seed 做小规模 `frozen / full reuse / full compute` gate；只有跨多个
-   真实窗口形成可辨识 maintenance gap，才扩到四 seed 并复用已经冻结的 cheap 与比例 suffix。
-   若 gate 不通过，保留负结果，不通过改切分追求正数。
+1. **用真实曝光数据补强 generality，而不是调参追正结果。** Taobao 已在数据语义 gate 被
+   排除为主数据集：它只有用户行为，没有真实未点击曝光，不能在不改变任务或构造负样本的
+   前提下复用 KuaiRand 定义。新审计的 Tenrec QK/QB 和 ZhihuRec 都保留了曝光与负反馈；先用
+   较小的 QB 检查统一 loader，并做一个 seed 的 `frozen / full reuse / full compute` gate。若
+   maintenance gap 可辨识，再把完全冻结的 top-50k、长度 128、64 条 base 与六个 8 条窗口
+   协议移到 QK 和 ZhihuRec，最后扩到四 seed。QK 提供最接近 KuaiRand 的多反馈视频字段，
+   ZhihuRec 提供真实时间戳与跨域证据；任何负结果都不能靠改切分追成正数。
 2. **进入系统成本。** 测量额外状态读取、host-device transfer、allocator、端到端 latency、
    吞吐和显存；profiling 确认后再做 `Wk/Wv` kernel fusion。
 3. **把自然 cache-version 分布纳入评估。** 当前 theta-0→theta-5 是可控 stress test；下一步
@@ -425,8 +427,9 @@ chunked-data 实验均已完成，当前不继续投入任意层动态选择或�
    suffix-2/4/5 与 full。
 5. **一张小表讲规模：** 3/6/9 层都保留曲线；top-50k chunked 让有效 base target 增至
    62.1 万，并得到 0.058x cheap 与 0.613x suffix-4 的更强四-seed结果。
-6. **最后主动讲边界：** MovieLens 短版本链没有复现强 gap，Taobao 尚未开始，系统数据移动
-   尚未计入；请导师重点判断问题边界、结构化迁移抽象，以及 Taobao 与系统 gate 的优先级。
+6. **最后主动讲边界：** MovieLens 短版本链没有复现强 gap；Tenrec 与 ZhihuRec 目前只完成
+   数据容量审计，还没有模型结果；系统数据移动尚未计入。请导师重点判断问题边界、结构化
+   迁移抽象，以及第二数据集 motivation gate 与系统 gate 的优先级。
 
 汇报时最核心的一句话可以是：
 

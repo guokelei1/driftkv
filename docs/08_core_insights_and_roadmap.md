@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-22. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-23. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -256,21 +256,32 @@ catalog/context, controlled update magnitude, and materially greater training-da
 The generality gate remains open because MovieLens shows only a tiny and inconsistent maintenance
 gap. Do not tune the short MovieLens chain until it becomes positive.
 
-Taobao UserBehavior is the selected next cross-dataset stream. This is a planned gate, not current
-evidence, and it must proceed in this order:
+The Taobao UserBehavior audit fails the target-semantics gate before model training: it records user
+actions but not true unclicked impressions, so using it would change the prediction problem or
+require synthetic negatives. It remains a documented data boundary rather than the selected
+second stream.
 
-1. Audit users, events, dates, user-day overlap, behavior frequencies, and per-user sequence-length
-   p50/p90/p99 before choosing a model setting.
-2. Freeze the behavior mapping, base/update/evaluation windows, replay policy, and a base-only item
-   vocabulary. Choose daily or sub-day windows from the audit, before observing method quality.
-3. Run a small one-seed `frozen / full reuse / full compute` motivation control across several real
-   updates. Do not sweep migration configurations before establishing a measurable maintenance gap.
-4. If the motivation gate passes, reproduce it over four seeds and evaluate only the frozen
-   endpoints and proportional suffix budgets: full reuse, cheap, roughly one-third/two-thirds
-   suffixes, all-but-first suffix, and full recompute. Do not reopen arbitrary interval search.
-5. Report a negative boundary if the gap remains unidentifiable; do not change temporal semantics
-   merely to obtain a positive result. Then add organically mixed cache versions to the surviving
-   KuaiRand and Taobao settings.
+Tenrec QK/QB and ZhihuRec pass the exposure-semantics and capacity audit. QK is the closest
+multi-feedback video match, QB is a compact pipeline check, and ZhihuRec supplies explicit
+timestamps and a different domain. Under a base-only top-50k audit, they retain 70.05%, 92.29%, and
+95.42% of raw rows respectively. Exact distributions, limitations, and the frozen ordered replay
+are in `docs/dataset_expansion_audit.md`. These are data results only; the generality gate remains
+open.
+
+Proceed in this order:
+
+1. Implement one length-128 ordered-exposure loader with a 64-impression base, six 8-impression
+   windows, base-only top-50k vocabulary, and base-only cohort selection.
+2. Use QB for data parity and one seed of `frozen / full reuse / full compute`. Do not evaluate
+   migration configurations before establishing a measurable maintenance gap.
+3. If the motivation gate passes, repeat the frozen control on base-only 5k-user QK and ZhihuRec
+   cohorts. Preserve the distinction between Tenrec ordinal replay and ZhihuRec calendar time.
+4. Reproduce successful cells over four seeds and evaluate only the frozen endpoints and
+   proportional suffix budgets: full reuse, cheap, roughly one-third/two-thirds suffixes,
+   all-but-first suffix, and full recompute. Do not reopen arbitrary interval search.
+5. Report a negative boundary if the gap remains unidentifiable; do not change target or window
+   semantics to obtain a positive result. Then add organically mixed cache versions to the
+   surviving KuaiRand and second-dataset settings.
 
 ### Gate F: turn kernel savings into a system result — parallel systems task
 
@@ -328,10 +339,12 @@ The route should be reconsidered if any of the following persists after the scop
 5. [x] Freeze the optimized suffix and complete the first length, batch, depth, update-magnitude,
    and MovieLens transfer pass.
 6. [x] Complete the KuaiRand data/model factorial and top-50k chunked-data utilization pass.
-7. [ ] Audit Taobao UserBehavior, freeze a leak-free temporal protocol, and run the small motivation
-   control.
-8. [ ] If the Taobao motivation gate passes, reproduce it across seeds with the frozen suffix
-   configurations; otherwise record the negative boundary without tuning the split.
-9. [ ] Evaluate organically mixed cache versions on the settings with an identifiable gap.
-10. [ ] Measure end-to-end state movement, throughput, tail latency, and periodic recomputation.
-11. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+7. [x] Audit Taobao and reject it as the primary second stream because it lacks true unclicked
+   impressions.
+8. [x] Audit Tenrec QK/QB and ZhihuRec under a base-only ordered-exposure protocol.
+9. [ ] Implement the shared loader and run the one-seed QB motivation control, followed by frozen
+   QK and ZhihuRec controls if the gap is identifiable.
+10. [ ] Reproduce successful second-dataset cells across seeds with the frozen suffix endpoints.
+11. [ ] Evaluate organically mixed cache versions on the settings with an identifiable gap.
+12. [ ] Measure end-to-end state movement, throughput, tail latency, and periodic recomputation.
+13. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

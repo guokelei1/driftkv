@@ -137,8 +137,9 @@ precision.
 Subsequent work increased both data/model scale and repaired latest-only base-data underuse. See
 `KUAIRAND_FACTORIAL_V1.md` and `KUAIRAND_DATA_UTILIZATION_V1.md`. Their stronger cells show that
 full is a fidelity reference but not always a ranking-quality ceiling, so the “above 100% is
-noise” shorthand is retired. Taobao UserBehavior is now the selected next stream; the current plan
-is maintained only in `docs/08_core_insights_and_roadmap.md`.
+noise” shorthand is retired. A later data audit rejected Taobao UserBehavior as the primary second
+stream because it lacks true unclicked impressions. The current cross-dataset plan is maintained
+only in `docs/08_core_insights_and_roadmap.md`.
 
 ## Artifacts
 

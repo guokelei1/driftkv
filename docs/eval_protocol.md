@@ -79,6 +79,15 @@ be pooled with latest-only scaling-v1 cells.
 12 layers and hidden size 192. It is descriptive and must not be pooled with the four-seed
 six-layer data-utilization summary.
 
+### `ordered_exposure_data_audit_v1`
+
+Data-only audit for Tenrec QK-video, Tenrec QB-video, and ZhihuRec. The first 64 raw impressions
+per user fit the item vocabulary and user cohort; six later windows contain eight impressions per
+user. Catalog and cohort decisions cannot use later windows. Negative rows are observed
+impressions, not sampled negatives. Tenrec uses the official within-user file order and is an
+ordinal replay, while ZhihuRec uses impression timestamps. This protocol contains no model
+training and cannot support a maintenance-gap or generality claim.
+
 The families may be linked through their explicit `source_run`, but their records must not be
 merged as if they were the same experiment.
 
@@ -256,7 +265,15 @@ Scaling-v1:
 - `checkpoints/scaling/top50k_{latest,all_chunks}_seed{0,1,2,3}/theta_*.pt`
 - `checkpoints/scaling/top50k_all_chunks_large_seed0/theta_*.pt`
 
+Dataset audits:
+
+- `results/taobao/data_audit.json`
+- `results/taobao/kuairand_matched_comparison.json`
+- `results/dataset_audit/tenrec_qk.json`
+- `results/dataset_audit/tenrec_qb.json`
+- `results/dataset_audit/zhihurec.json`
+
 `smoke.json` files, old `results/phase0`, old `results/streaming`, and checkpoints outside
 `checkpoints/validity` or `checkpoints/scaling` are not research artifacts. Taobao UserBehavior is
-planned but has no current protocol or result family; assign a new protocol name only after its
-temporal audit and target semantics are frozen.
+an action-only semantic boundary rather than the selected next stream. The exposure-compatible
+audits establish data capacity only; assign a new model protocol name before training on them.
