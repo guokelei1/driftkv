@@ -102,7 +102,13 @@ def load_kuairand(
     user_ids = fit_df["user_id"].unique()
     item_ids = fit_df["video_id"].unique()
     if max_users is not None and len(user_ids) > max_users:
-        user_ids = user_ids[:max_users]
+        ranked_users = (
+            active_users.loc[user_ids]
+            .rename("count")
+            .reset_index()
+            .sort_values(["count", "user_id"], ascending=[False, True], kind="stable")
+        )
+        user_ids = ranked_users["user_id"].to_numpy()[:max_users]
         df = df[df["user_id"].isin(user_ids)].reset_index(drop=True)
     user_map = {u: i + 1 for i, u in enumerate(user_ids)}
     item_map = {v: i + 1 for i, v in enumerate(item_ids)}

@@ -20,6 +20,10 @@ from hstu_kvcache.utils import save_json
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--protocol",
+        default="operator_cost_scaling_v1_resident_cuda_events",
+    )
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--run-result")
@@ -202,7 +206,7 @@ def main() -> None:
         points.append(point)
         print(f"batch_size={batch_size}", flush=True)
     result = {
-        "protocol": "operator_cost_scaling_v1_resident_cuda_events",
+        "protocol": args.protocol,
         "seed": args.seed,
         "source_run": args.run_result,
         "checkpoint_dir": args.checkpoint_dir,

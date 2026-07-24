@@ -3,7 +3,7 @@
 > 当前定位：这是一条已经通过当前 KuaiRand 数据/模型规模 gate 的早期研究路径，而不是一篇
 > 已经完成的论文。我们已经有了
 > `motivation → structural observation → minimal design → scaled preliminary evaluation` 的闭环；
-> 当前重点已经从“值不值得继续”转向端到端系统证据、自然混合版本与跨数据集泛化。
+> 当前重点已经从“值不值得继续”转向强规模迁移、自然混合版本与端到端系统证据。
 
 ---
 
@@ -25,23 +25,29 @@ $F(\theta_t,x_u)$ 也不再等于新模型应产生的 $F(\theta_{t+1},x_u)$。�
 3. **打开 HSTU 的层结构后，存在低于完整前向的迁移路径。** 使用新模型的 $W_k/W_v$
    对缓存的 $\operatorname{Norm}(x)$ 做 cheap projection refresh，再对一段深层连续后缀执行
    current block，可以形成可测的计算—质量曲线。
-4. **这条曲线不是六层单点现象，但完整方法曲线尚未跨数据集泛化。** 固定 optimized suffix
-   后，KuaiRand 的长度 32/64/128 和深度 3/6/9 都保留了中间 Pareto 点；MovieLens 的两次
-   更新只产生很小且不稳定的维护缺口。
+4. **固定 suffix 没有跨数据集泛化，当前主设计已转为 version-cohort tiered migration。**
+   KuaiRand 的 optimized suffix 在长度 32/64/128 和深度 3/6/9 都保留中间 Pareto 点，但在
+   aligned QB/QK 和新的容量矩阵中不稳定。新的 fast tier 在少量 cohort cache 上校准
+   `fresh-cheap` 残差，并提前编译进一次 prepacked K/V projection；更严格 fidelity SLA
+   才进入 residual-delta structural replay，最后回退 full。九个 motivation-selected
+   checkpoint 上，50% 规则以平均 0.122x full 成本、56.4% K/V 恢复同时改善 9/9 BestRank
+   和 rank utility。
 5. **旧实验明显低估了 KuaiRand 数据利用率；补全 retained history 后，问题与曲线反而更清楚。**
    top-50k、长度 512 的 chunked 训练将每轮有效 base target 从 23.1 万增至 62.1 万。四个 seed
    下，theta-5 maintenance Best Rank 从 latest-only 的 82.68 增至 885.56，NDCG 区间也排除
    0；cheap 仅需 0.058x full，suffix-4 以 0.613x 成本恢复 76.2% Rank gap。
-6. **三份真实曝光数据已经给出一致的 pre-design motivation，cheap 方法开始跨数据集，
-   suffix 泛化仍是开放问题。**
+6. **三份真实曝光数据给出一致 motivation，新方法也出现了共同的低成本中间点。**
    KuaiRand、fixed-horizon Tenrec QB、top-5k Tenrec QK 在四个 seed 上都表现为：流式训练
    长期有价值，旧 cache 仍保留大部分价值，而旧版本 cache 留下额外可恢复 gap。原始
    BestRank 数字不能跨 catalog 比较；用“被 stale cache 损失的流式训练收益比例”归一化后，
    三者 coarse endpoint 分别为 17.6%、31.5%、27.6%，最大仅为最小的 1.79 倍。细粒度固定
-   endpoint 仍为 17.7%、35.0%、14.1%，并出现局部跃升。在 aligned QK 上，cheap 以
-   0.194x full 成本获得 9.17 `[6.71, 11.63]` BestRank 增益，恢复 70.6% 的 mean full gap；
-   aligned QB 的 partial method 则在 seed 0 失败。suffix 曲线仍未跨数据集复现，ZhihuRec
-   保留为负面边界。
+   endpoint 仍为 17.7%、35.0%、14.1%，并出现局部跃升。固定 suffix 的 aligned QB gate
+   失败，但 compiled adapter 自动选择不同 rank 后，仅需 0.109-0.123x full kernel time，
+   在三个数据集的 BestRank、rank utility、NDCG@100 上都得到 4/4 seed 正号。ZhihuRec
+   保留为负面边界。进一步的固定任务 3x3 容量实验表明，流式训练价值和 reuse 保留价值在
+   九个数据集—容量 cell 中均为 4/4 seed 正向；但 maintenance gap 只在 large KuaiRand
+   和 large QB 上形成窄的正区间，large QK 不稳定。因此跨数据集 motivation 成立不等于
+   gap 会随模型容量机械增大。
 7. **真正适合方法展开的是“中等失效 + 高重算成本”，而不是刻意把 reuse 做坏。**
    四 seed 的 KuaiRand top-50k/all-chunks 同时满足这两点：stale cache 损失 23.1% 的流式
    训练收益、仍保留 76.9%，而长度 512 下 cheap 只需 0.058x full。预先冻结的长上下文
@@ -56,6 +62,12 @@ GPU 计算；随着 full suffix 加深，质量总体向 fresh 靠近。重算�
 轻量路径在长上下文下的相对优势会扩大；高质量 suffix-5 仍接近 0.8x full，是下一阶段必须
 面对的成本边界。
 
+这个 suffix 结果现在主要是结构 ablation，而不是最终 design。当前 design 以
+model-version cohort 为控制单位：fast tier 学习 `fresh-cheap` 的低秩 K/V 残差并把线性
+修正折叠进一次 layer-batched projection；当更高 fidelity 不能由 projection 达到时，才
+执行 current prefix block 并把边界 residual delta 输送到更深层；最后回退 full。控制变量
+是 cohort 的 fidelity/预算 SLA，而不是固定 suffix 深度。
+
 更完整的 KuaiRand 使用进一步强化了这个判断，但也校正了“已经用了很多数据”的错觉。本地
 标准日志有 1171 万行，原 top-5k 只保留 3.67%；top-50k 也只保留 13.35%。因此新的结果是
 更强的数据规模证据，而不是 full KuaiRand 或工业规模结论。
@@ -63,10 +75,24 @@ GPU 计算；随着 full suffix 加深，质量总体向 fresh 靠近。重算�
 跨数据集结果把问题主张与方法主张分开了。版本失效的 motivation 已在 KuaiRand、QB、QK
 三份曝光数据上形成一致证据；但 QB/QK 来自同一 Tenrec collection，且 Tenrec 只有用户内
 顺序、没有全局日历时间，因此不能把它写成三个独立来源的自然时间漂移复现。方法方面，
-cheap projection refresh 不仅在原 QB 协议上有正收益，现在也在 aligned QK 的四 seed 上以
-约 19% 成本恢复 70.6% mean BestRank gap；但 aligned QB seed-0 只恢复 5%。更重要的是，
-“加深 suffix 就稳定逼近 full”目前仍只在 KuaiRand 上得到强支持。逐层 stale K/V 误差上升
-说明 deep suffix 合理，却不能保证任务指标随计算量单调改善。
+aligned QB 的 cheap/suffix seed-0 失败与 QK suffix 反转仍说明“加深 suffix 就稳定逼近
+full”不能泛化；compiled adapter 则在分离的 fit/probe/test 上首次通过三数据集四-seed
+kernel gate。它尚未覆盖系统数据移动、自然混合版本和独立第三来源，因此只能称为
+method-level preliminary pass。
+
+新的容量矩阵也要求把“成立”说得更精确。固定各数据集任务和 vocabulary 后，数据量与模型
+从 3L/H64、6L/H96 联合扩到 9L/H128，36 条独立训练链全部完成。九个 cell 都支持
+`full compute > frozen` 和 `full reuse > frozen`；large KuaiRand 与 large QB 进一步支持
+稳定的 cache-maintenance gap，而 large QK 不支持 gap 随容量增强。这个结果保留了论文的
+问题主张，同时阻止我们把单一数据集上的放大趋势写成普遍 scaling law。
+
+同一容量矩阵上的方法验证也已经完成。冻结规则在 27 个非 discovery seed 上平均只使用
+`0.121 [0.112, 0.130]x` full kernel，并恢复 `0.587 [0.547, 0.627]` K/V gap；但严格的
+cell-level BestRank/rank-utility gate 只通过 6/9。负向 cell 基本跟随 full endpoint：
+QB-medium 的 full BestRank 在三个 replication seed 中都为负，QK-large 接近 0 且不稳定。
+因此当前结论不是“迁移对所有 cohort 必然有收益”，而是“当 full maintenance endpoint
+存在时，编译迁移通常以低成本跟随它”。正式系统还需要先做 cohort admission，再做
+fidelity-tier selection。
 
 新的固定终点实验还把“随时间积累”推进了一步：在相同当前模型、相同用户历史和相同目标
 下，只改变 cache 的模型版本。KuaiRand 与 QB 各有一个跨 4/4 seed 同向的局部恶化点；QK
@@ -258,6 +284,50 @@ maintenance 非正。因此这两个 cell 停在 motivation screen，不运行�
 提供跨数据集的版本失效复现；长上下文 QB/QK 则是“成本变大不等于失效比例变大”的负面
 边界。这样比为得到漂亮方法结果而继续调数据更可信。
 
+### 2.7 数据量与模型容量联合扩展后的 motivation
+
+为了避免“用同一份小数据硬测三个模型”，新的 fixed-task protocol 在每个数据集内使用嵌套
+cohort，并同时增大模型：
+
+| Tier | KuaiRand 用户 | QB/QK 用户 | 模型 |
+|---|---:|---:|---|
+| small | 250 | 1,000 | 3L/H64 |
+| medium | 500 | 3,000 | 6L/H96 |
+| large | 980 | 5,000 | 9L/H128 |
+
+KuaiRand/QB 的 vocabulary 始终为 top-50k，QK 始终为 top-5k，因此 tier 之间没有改变
+预测任务。三个数据集的有效 base 与 stream targets 都严格递增。每个 cell 运行四个独立
+训练 seed，合计 36 条 theta-0→theta-11 模型链。
+
+最稳定的结果是两端价值链：九个 cell 中，full compute 相对 frozen、full reuse 相对
+frozen 的 BestRank 都是 4/4 seed 正向，且 seed-level interval 均排除 0。说明更大的数据和
+模型没有消除流式训练必要性，旧 cache 也不是立刻全坏。
+
+maintenance 空间则存在明确的 regime dependence：
+
+| Cell | Full over frozen | Reuse over frozen | Maintenance | Tax |
+|---|---:|---:|---:|---:|
+| KuaiRand large | 4415.56 | 2819.20 | 1596.37 `[1030.21, 2162.52]` | 36.0% `[25.3%, 46.7%]` |
+| QB large | 141.87 | 66.70 | 75.17 `[22.06, 128.28]` | 54.8% `[38.3%, 71.3%]` |
+| QK medium | 42.78 | 30.63 | 12.14 `[-10.89, 35.18]` | 23.3% `[-9.7%, 56.4%]` |
+| QK large | 44.93 | 40.27 | 4.66 `[-16.44, 25.75]` | -0.5% `[-66.4%, 65.5%]` |
+
+large KuaiRand 与 large QB 的 gap 均为 4/4 seed 正向，BestRank tax 区间排除 0；
+medium QK 虽然也是 4/4 正号，但方差较大；large QK 只有 3/4 正号且 NDCG 不支持。对应的
+full-prefix GPU 时间从 small 的约 1.05 ms 增到 large 的约 3.36 ms，cheap 始终只需
+full 的 18.5%-20.4%。
+
+因此容量实验给出的论文级结论不是“模型越大，失效必然越严重”，而是：
+
+- 流式训练价值与 reuse 的部分保留跨数据集、跨容量稳定存在；
+- 计算侧的 full-recompute 压力随容量明确增加；
+- 质量侧可恢复 gap 会在某些大规模 operating point 显著放大，但依赖数据/模型匹配；
+- large QK 是必须报告的 scale boundary，不能通过挑 seed 或合并 tier 消掉。
+
+这使 motivation 更完整，也更可证伪：它给出 strong opportunity regime，同时明确限定
+capacity scaling 不是普遍单调规律。完整九 cell 结果见
+`experiments/motivation/CAPACITY_V2.md`。
+
 ---
 
 ## 3. Design：把版本漂移分成直接投影变化与跨层状态传播
@@ -286,7 +356,7 @@ $$
 
 它不是精确 fresh，因为没有修复 $x_l$ 的跨层传播误差，但比完全复用多吸收了新投影参数。
 
-### 3.2 当前最小设计：cheap prefix + full suffix
+### 3.2 结构基线：cheap prefix + full suffix
 
 对于 $L$ 层模型，选定分界点 $s=L-N$：
 
@@ -303,6 +373,27 @@ $$
 
 > 利用 K/V 生成过程的可分解结构，把一次完整历史前向拆成 projection refresh 与
 > state-propagating block recompute，从而暴露连续的成本—质量操作空间。
+
+### 3.3 当前正式候选：cohort-compiled fast tier + structural fallback
+
+对每个 `(old version, current version)` cohort，先用少量 fit cache 学习
+
+$$
+C_l^{\mathrm{fresh}}-C_l^{\mathrm{cheap}}
+\approx
+(z_l-\mu_l)A_{l,r}B_{l,r}+b_l.
+$$
+
+因为右侧对 cached \(z_l\) 是仿射映射，可以在版本切换时提前折叠成
+\(\widetilde W_l=[W_l^K,W_l^V]+A_{l,r}B_{l,r}\) 与对应 bias。在线每个 cache 仍只执行
+一次同形状 projection，而不是额外串联两次低秩乘法。
+
+如果更严格的 fidelity SLA 超过 compiled projection 的能力，`residual-p` 精确执行前
+\(p\) 个 current block，计算边界位移
+\(\Delta_p=x_p^{\theta_t}-x_p^{\theta_s}\)，再用
+\(\widehat x_l=x_l^{\theta_s}+\Delta_p\) 更新深层 `Norm + Wk/Wv`；最终 endpoint 是 exact
+full recompute。动作由 disjoint probe 上的 K/V fidelity 与真实 GPU cost 选择，不使用
+ranking label，也不为每个用户单独预测。
 
 ---
 
@@ -459,8 +550,35 @@ seed-0 中 cheap 以 0.197x 成本恢复 89.3% BestRank，所有更深 suffix �
 | QK full | 1.000 | **13.00 `[5.70, 20.30]`** | 100% | 0.00227 `[-0.00086, 0.00541]` |
 
 cheap 与 full 的 paired BestRank 差为 -3.83 `[-8.85, 1.19]`，当前未区分但不构成等价证明。
-因此现在可以讲 projection refresh 这个最轻量结构在 QK 上跨数据集成立，不能讲完整 suffix
-曲线已经泛化。ZhihuRec 的 theta-5 maintenance 仍为负，作为负面边界保留。
+这个负结果说明固定 suffix 不是可迁移的最终方法。
+
+后续 `compiled_low_rank_migration_v1` 不再重调 suffix。它在少量 fit cache 上学习
+`fresh K/V - cheap K/V` 的共享低秩残差，再把这张线性残差图折叠进预打包 K/V projection；
+在线仍只执行一次 layer-batched projection。seed-0 冻结“probe cache gap 至少恢复 50% 的
+最小 rank”，seed 1-3 不再改规则。四 seed held-out 结果为：
+
+| 数据集 | 自动选择的 ranks | 成本 / full | Cache gap recovery | BestRank gain | Rank-utility gain |
+|---|---|---:|---:|---:|---:|
+| KuaiRand | 2/8/4/2 | 0.123 `[0.122, 0.124]` | 52.1% `[49.9%, 54.2%]` | 79.93 `[36.70, 123.16]` | 0.1687 `[0.0932, 0.2441]` |
+| QB fixed horizon | 8/4/2/16 | 0.115 `[0.113, 0.117]` | 51.5% `[48.3%, 54.7%]` | 20.74 `[-0.88, 42.36]` | 0.0456 `[0.0059, 0.0852]` |
+| QK top-5k | 16/16/8/8 | 0.109 `[0.106, 0.112]` | 53.6% `[49.1%, 58.2%]` | 12.43 `[-3.60, 28.46]` | 0.0384 `[0.0052, 0.0716]` |
+
+三个数据集的 BestRank、rank utility、NDCG@100 都在 4/4 seed 上相对 reuse 为正；只有
+rank-utility 的 seed interval 在三个数据集上都排除 0。QB/QK BestRank 与 QK NDCG 仍然
+不够精确。这个结果把“固定 suffix 没有泛化”和“结构迁移方法没有泛化”区分开：前者仍是
+负结果，后者已经有第一个 kernel-level cross-dataset pass。ZhihuRec 继续作为负面边界。
+
+容量扩展进一步把 projection、prefix replay、residual transport 与 full 放在同一个
+fit/probe/test 协议中。50% fidelity 点在九个 discovery checkpoint 中全部选择 compiled
+projection，平均成本 0.122x full，BestRank/rank utility 为 9/9 正号；75% 点在六个 cell
+继续使用 compiled projection，在 large KuaiRand/QB/QK 自动选择 residual depth 5/6/7。
+普通 prefix replay 从未进入统一 Pareto 选择，因此只保留为 no-fit baseline。
+
+冻结到其余 27 个训练 seed 后，projection 的成本与 K/V recovery 仍稳定，但 task metric
+会随 full endpoint 换向。selected/full 的符号在 BestRank、rank utility、NDCG@100 上分别
+一致 23/27、27/27、25/27；当 full 为正时，selected 也为正的数量分别是
+18/20、24/24、19/20。该结果支持算子的跨容量扩展性，也直接暴露了下一项系统问题：
+version cohort 是否值得迁移，不能由迁移算子自身保证。
 
 ---
 
@@ -475,16 +593,19 @@ cheap 与 full 的 paired BestRank 差为 -3.83 `[-8.85, 1.19]`，当前未区�
 ### 5.2 从黑盒缓存判断转向白盒结构迁移
 
 早期路线试图预测“谁需要重算”，容易陷入估计本身不比重算便宜的问题。当前设计直接利用
-HSTU 的 `Norm → K/V projection → block propagation` 结构，产生新的可服务缓存。这里真正
-值得发展的抽象是 **structure-aware cache migration**，而不是某个固定的 suffix 数字。
+HSTU 的 `Norm → K/V projection → block propagation` 结构，产生新的可服务缓存。更进一步，
+它只在 model-version cohort 上用少量 fresh cache 学习一次共享残差，并将残差编译进
+projection，把适配计算移出 per-cache 热路径。这里真正值得发展的抽象是
+**structure-aware cache migration**，而不是某个固定的 suffix 数字。
 
 ### 5.3 版本风险与层级迁移共同形成二维决策空间
 
 Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，而且 age 本身并不是可校准的
-质量状态；method 表明迁移深度控制成本与质量。因此系统可以围绕两个变量设计：
+质量状态；method 表明 version-pair probe 可以校准共享迁移强度。因此系统可以围绕两个变量设计：
 
 - 版本维：old/current model pair 经历了哪些更新、当前兼容性风险有多大；
-- 结构维：哪些层只 refresh projection，哪些连续层需要传播新 hidden。
+- 算子维：reuse、编译后的 calibrated projection、residual structural replay 或 full
+  recompute，分别满足不同 fidelity SLA。
 
 这比“更新后全部缓存立即失效”或“只挑部分用户重算”提供了更细的研究空间。
 
@@ -510,6 +631,10 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
    都在四个 seed 上成立，路线已通过当前 KuaiRand 数据规模 gate。
 7. 在 KuaiRand、fixed-horizon QB、top-5k QK 上，pre-design motivation 的三个环节均在四个
    seed 上成立；差异主要体现在 gap 出现的时间与幅度，而不是逻辑方向。
+8. 冻结的 50% cache-fidelity 规则会跨 dataset/seed 自动选择不同 rank；编译后的方法在三组
+   四-seed held-out 结果中都以约 0.11-0.12x full kernel cost 改善 reuse。
+9. 同一 tiered operator 已扩展到九个数据集—容量 cell；27 个 replication seed 的成本与
+   K/V recovery 稳定，且在 full endpoint 为正时通常保留其大部分收益。
 
 ### 不能讲
 
@@ -517,11 +642,11 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
 2. 不能把小模型的相对 GPU kernel 时间直接外推到工业用户规模或端到端 serving latency。
 3. 不能声称 deepest suffix 在所有规模上最优；连续区间 oracle 只在六层模型完成，更深模型
    仅验证了预先固定的 proportional suffix，没有重新搜索任意区间。
-4. 不能忽略额外状态：cheap/suffix 方法需要保存 normalized state 和 split hidden，且尚未测量
-   host-device transfer、缓存读取、allocator 与 admission 开销。
+4. 不能忽略额外状态：compiled 方法仍需保存 normalized state，还需一次性 fit/compile 与
+   version-cohort adapter admission；host-device transfer、缓存读取、allocator 尚未测量。
 5. 不能把“与 full 差异不显著”表述成严格等价；当前只有四个训练种子。
-6. 不能声称完整 suffix 曲线已经跨数据集泛化；新的 QB/QK 结果只冻结了 motivation，方法
-   尚未在 aligned cohort 上重跑，ZhihuRec 也没有形成正的累计 gap。
+6. 不能声称完整 suffix 曲线已经跨数据集泛化；跨数据集成立的是新的 compiled adapter，
+   不是 suffix。ZhihuRec 也没有形成正的累计 gap。
 7. 不能声称已经使用完整 KuaiRand：top-50k 仍只覆盖标准日志 13.35%，KuaiRand-27K 未在本地，
    random-exposure log 也没有混入训练。
 8. 不能把 full 当作所有 task metric 的质量上界；它严格定义的是当前版本的一致性结果。
@@ -529,23 +654,24 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
    QB fixed-horizon 结果还条件化于用户能覆盖完整活跃 horizon。
 10. 不能声称任意 fixed-window reuse 都必然失败；当前只证明 age 不是跨数据集、跨更新轨迹
     都可校准的质量状态。Fine QK 的 MeanRank、rank-utility 与 NDCG 区间仍包含 0。
+11. 不能声称 migration 在所有 cohort 上都优于 reuse；容量验证的严格 cell gate 只通过
+    6/9，full maintenance endpoint 本身在 QB-medium 和 QK-large 等设置中不稳定。
 
 ---
 
 ## 7. 下一步最小研究计划
 
-terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、数据/模型组合规模、top-50k
-chunked-data 以及 aligned method gate 均已完成。QK cheap 通过四-seed gate，QB 与 aligned
-suffix 均已按规则停止，当前不继续投入任意层动态选择或继续盲目扩大 catalog。下一步是：
+terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、aligned motivation、compiled
+low-rank 四-seed gate，以及九容量 tiered migration 均已完成。固定 suffix、普通 prefix 和
+任意层动态选择均不再作为主线。下一步是：
 
-1. **进入系统成本。** 测量额外状态读取、host-device transfer、allocator、端到端 latency、
-   吞吐和显存；profiling 确认后再做 `Wk/Wv` kernel fusion。
+1. **把 admission 与 migration 分开。** 在查看新 seed 前冻结 version-cohort admission
+   信号；它只能在 cohort 级使用更新/验证信息，不能恢复 per-user drift/JVP 路线。
 2. **把自然 cache-version 分布纳入评估。** 当前 theta-0→theta-5 是可控 stress test；下一步
    应在可辨识的 KuaiRand/QB/QK 设置上比较 cohort batching、periodic full、age threshold
-   与 update-aware trigger 的等质量/等成本策略。
-3. **动态的是维护时机，不是重新搜索任意层。** 先冻结 deepest suffix 候选，用小型
-   held-out probe 为每个 model-version cohort 选择 reuse/cheap/suffix/full；除非新证据显示
-   最优区间稳定移动，否则不恢复任意层搜索，更不做 per-user JVP 决策。
+   与 tiered migration 的等质量/等成本策略。
+3. **进入系统成本。** 测量 normalized-state 读取、fit/compile amortization、adapter admission、
+   host-device transfer、端到端 latency、吞吐和显存。
 
 ---
 
@@ -554,20 +680,20 @@ suffix 均已按规则停止，当前不继续投入任意层动态选择或继�
 1. **一张图讲问题：** 模型持续更新，旧版本用户 KV 在输入不变时也整体失效。
 2. **一张图讲 motivation：** 单步通常较弱，累计后会出现平台、局部跃升与反转；age 只能
    粗排风险，说明 reuse 与 recompute 之间既有迁移空间，也需要 update-aware 触发。
-3. **一张结构图讲 design：** 将 K/V 变化拆成 projection change 与 hidden propagation，得到
-   cheap refresh + full interval。
-4. **一张 Pareto 图讲结果：** 横轴 measured compute，纵轴 quality recovery，只标 cheap、
-   suffix-2/4/5 与 full。
-5. **一张小表讲规模：** 3/6/9 层都保留曲线；top-50k chunked 让有效 base target 增至
-   62.1 万，并得到 0.058x cheap 与 0.613x suffix-4 的更强四-seed结果。
-6. **最后主动讲边界：** 三数据集一致的是 motivation；方法上只有 cheap refresh 已在
-   aligned QK 形成四-seed 正结果，完整 suffix 曲线仍只在 KuaiRand 强。QB/QK 来自同一
-   collection，Tenrec 无全局日历时间，QB 还使用完整活跃 horizon 条件。ZhihuRec 为负，
-   系统数据移动尚未计入。请导师重点判断结构化迁移抽象、混合 cache-age 系统实验，以及
-   是否应把 “cheap refresh” 而非固定 suffix 深度作为更稳健的跨数据集贡献。
+3. **一张结构图讲 design：** 用少量 version-pair probe 学习 `fresh-cheap` 低秩残差并
+   编译进一次 prepacked projection；更高 fidelity 才进入 residual structural replay，
+   最后回退 full。
+4. **一张 Pareto 图讲结果：** 横轴 measured compute，纵轴 quality/cache fidelity；标
+   reuse、compiled projection、residual replay、full，并展示 50%/75% SLA 自动动作。
+5. **一张小表讲规模：** 九个 discovery checkpoint 的两个主指标均为正；27-seed 验证以
+   0.121x full 恢复 58.7% K/V gap，同时明确严格 task gate 只通过 6/9。
+6. **最后主动讲边界：** 算子 fidelity 与成本已经跨容量稳定，但 full maintenance endpoint
+   并非每个 cohort 都为正；QB/QK 来自同一 collection，Tenrec 无全局日历时间，QB 还使用
+   完整活跃 horizon 条件。校准摊销和系统数据移动尚未计入端到端结果。
 
 汇报时最核心的一句话可以是：
 
-> 我们并不是预测哪些旧缓存已经坏掉，而是利用 HSTU 生成 K/V 的层级结构，以不同计算预算
-> 直接把旧版本缓存迁移到新版本；当前结果表明版本损失会累积但并非匀速，固定年龄无法稳定
-> 标定风险，同时结构化迁移已经形成一条初步的成本—质量前沿。
+> 我们不为每个用户预测缓存是否已坏，而是先在 model-version cohort 上判断是否值得维护，
+> 再把共享 K/V 残差编译成一次 projection，并只在更高 fidelity SLA 下启动结构 replay；
+> 当前算子约用十分之一 full kernel cost 恢复一半以上 K/V gap，下一步是把 cohort admission
+> 与 mixed-version 调度补成端到端系统。

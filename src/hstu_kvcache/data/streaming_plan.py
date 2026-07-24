@@ -59,6 +59,7 @@ class StreamingDataPlan:
         base_num_days: int = 14,
         max_seq_len: int = 128,
         max_items: int = 20000,
+        max_users: int | None = None,
         min_interactions_per_user: int = 5,
         fit_vocabulary_on_base: bool = False,
     ) -> StreamingDataPlan:
@@ -67,6 +68,7 @@ class StreamingDataPlan:
             min_interactions_per_user=min_interactions_per_user,
             max_seq_len=max_seq_len,
             max_items=max_items,
+            max_users=max_users,
             fit_num_days=base_num_days if fit_vocabulary_on_base else None,
         )
         all_dates = sorted(trace.interactions["date"].astype(str).unique())

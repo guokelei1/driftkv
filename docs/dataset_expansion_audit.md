@@ -156,11 +156,15 @@ and shows update-local jumps whose ages move most strongly on QK. This supports 
 version-cohort trigger, not the stronger claim that every tuned periodic window fails. ZhihuRec
 remains a negative maintenance boundary.
 
-The method result is still mixed and separate. On the aligned top-5k QK setting, cheap refresh
+The first fixed-suffix method result is mixed and separate. On the aligned top-5k QK setting, cheap refresh
 costs 0.194x full and gains `9.17 [6.71, 11.63]` BestRank over four seeds, recovering 70.6% of
 the mean full gap. Aligned fixed-horizon QB fails its seed-0 partial-method gate, and no aligned
 suffix improves on QK cheap in the primary metric. Exact protocols, intervals, failed gates, and
 commands are in `experiments/exposure/ORDERED_EXPOSURE_V1.md`.
+The subsequent `compiled_low_rank_migration_v1` protocol learns a shared residual correction and
+passes the aligned four-seed method screen on both QB and QK, while preserving the failed suffix
+gate as a negative result. It is documented separately in
+`experiments/migration/COMPILED_LOW_RANK_V1.md`.
 The fixed-endpoint metric and transition analysis are in
 `experiments/exposure/CACHE_VERSION_MATRIX_V1.md`.
 

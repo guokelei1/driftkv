@@ -27,6 +27,82 @@ an equivalence/cost comparison.
 `interval_oracle.py` records `study_stage=heldout_validation` for seeds 1-3 and evaluates only
 candidates selected on seed 0. These files must not be used to search additional configurations.
 
+### `compiled_low_rank_migration_v1`
+
+Uses matching 6L/H96 theta-0/theta-5 checkpoints from KuaiRand validity, fixed-horizon QB, and
+top-5k QK. A user split separates adapter fitting, rank-selection probe, and final evaluation.
+The adapter fits fresh-minus-cheap K/V residuals from cached old `Norm(x)`, then folds the
+low-rank affine correction into one prepacked K/V projection for online execution.
+
+Candidate ranks are `2/4/8/16/32/64/96`. The frozen selector chooses the smallest rank closing at
+least 50% of the stale-to-fresh relative K/V error gap on the probe. Seed 0 is
+`seed0_discovery`; seeds 1-3 are `frozen_rule_replication`. Task labels are not used for adapter
+fitting or rank selection. Raw files from the earlier uncompiled candidate screen have a different
+protocol string and cannot be pooled with this family.
+
+### `progressive_prefix_replay_v1`
+
+Uses the nine motivation-selected `motivation_capacity_v2` checkpoints for method discovery and
+the remaining 27 training seeds for frozen-rule replication. Its \(L+1\) action ladder ranges from
+cheap current projection over cached old `Norm(x)`, through exact current-model prefix replay, to
+full recomputation. A 60-user label-independent probe selects the lowest measured GPU-cost action
+closing at least 20% of the stale-to-fresh K/V error gap. Discovery and
+`frozen_rule_replication` records remain distinct. This family is a replicated structural
+baseline, not the current primary operator.
+
+### `cohort_tiered_migration_v1`
+
+Uses the same capacity-v2 checkpoint boundary with a disjoint 40-user adapter-fit set, 60-user
+planning set, and remaining held-out users. The production library contains a calibrated residual
+compiled into one affine K/V projection, prefix replay with residual-delta transport as a
+high-fidelity tier, and exact recomputation. Plain prefix replay is measured only as a discovery
+baseline and is excluded from production selection.
+
+The primary selector chooses the minimum-cost action reaching 50% probe K/V recovery; 75% and 90%
+are frozen secondary curve points. Compiled ranks have one online kernel shape, so their median
+measured projection cost is used and the smallest eligible rank is selected. A structural partial
+action must save at least 1% relative to full on the probe. Task labels do not fit the adapter or
+select an action. The nine motivation-selected checkpoint files use
+`cohort_tiered_migration_discovery_v1`; only the other 27 files use
+`cohort_tiered_migration_v1` with `study_stage=frozen_rule_replication`.
+
+### `motivation_joint_scale_v1_*`
+
+This rejected seed-0 family crossed KuaiRand, QB, and QK with three matched data/model operating
+points.
+Small, medium, and large jointly increase the retained catalog/user data and model capacity; it is
+not a model-only factorial. Every cell trains theta-0 through theta-11, runs the
+frozen/full-reuse/full-compute value control, fixes theta-11 while varying the stale cache version,
+and measures resident-GPU prefix cost. Its simultaneous catalog/task change and underfed 12L/H192
+Tenrec cells failed the gate. Do not run more seeds or use it for the primary capacity claim.
+
+The target, base-only vocabulary rule, full-catalog ranking, and stale-serving semantics remain
+shared. KuaiRand retains calendar order and complete chunked training. QB/QK share a 64-exposure
+base plus 12 four-exposure ordinal windows and an activity-only complete retained-horizon cohort.
+Calendar age and ordinal age are not numerically interchangeable. Exact frozen settings are in
+`experiments/motivation/JOINT_SCALE_V1.md`.
+
+### `motivation_capacity_v2_*`
+
+This corrected pre-design family holds each dataset's accepted task and vocabulary fixed while
+jointly increasing nested training users and model capacity. KuaiRand/QB retain top-50k and QK
+retains top-5k. Models scale as 3L/H64, 6L/H96, and 9L/H128; dataset-specific user counts increase
+at every tier. Training, target, serving, endpoint, and timing semantics otherwise match the v1
+screen. Exact settings and the seed-expansion rule are frozen in
+`experiments/motivation/CAPACITY_V2.md`.
+
+The family is complete over seeds 0-3: 36 independently trained model-version chains, 36 streaming
+controls, and 36 fixed-endpoint cache-age matrices. GPU-resident operator cost is recorded at seed
+0 for all nine cells. `results/motivation_scale/capacity_v2_summary.json` is the only compact
+cross-cell summary; raw files remain separate by dataset, tier, stage, and seed. Training seed is
+the statistical unit, and all ratios are formed within seed before aggregation.
+
+The frozen gate supports positive full-compute streaming value and positive stale-reuse value in
+all nine cells. It does not support a uniform monotonic capacity claim for cache maintenance:
+large KuaiRand and large QB have replicated BestRank maintenance gaps, medium QK has four positive
+signs but an imprecise interval, and large QK is unstable across seeds. This boundary cannot be
+removed by pooling tiers or selecting a favorable seed.
+
 ### `streaming_value_control_v1_incremental_prefix_cache`
 
 Six-layer seeds 0-3 compare theta-0 frozen serving, current-model full reuse of a theta-0 prefix,
@@ -160,6 +236,11 @@ The three-layer `layerwise_seed*` family is a correct sanity run, not the main m
 The strongest current KuaiRand scale table is the separate top-50k/all-chunks six-layer protocol
 in Section 5; it does not retroactively replace the original run's protocol or artifacts.
 
+The current cross-dataset method result is the compiled low-rank family. It retains the same old
+normalized-state requirement as cheap refresh, learns one shared adapter per old/current
+model-version pair, and precompiles it before cache migration. It does not execute a separate
+adapter model per user.
+
 ## 5. Scaling-v1 setup
 
 KuaiRand shape and quality axes:
@@ -284,6 +365,71 @@ the original top-50k method-transfer family. Compact results are in
 `results/exposure/aligned_method_gate_summary.json` and
 `results/exposure/qk_top5k_aligned_method_summary.json`.
 
+### 5.4 Compiled low-rank migration
+
+`compiled_low_rank_migration_v1` uses the unchanged aligned checkpoints but creates a new,
+non-overlapping user split:
+
+- KuaiRand: 40 adapter-fit, 60 rank-probe, and 200 held-out test users;
+- QB/QK: 80 adapter-fit, 120 rank-probe, and 400 held-out test users;
+- split seed is `9151 + training_seed` and is independent of labels and outcomes;
+- the adapter target is current-model fresh prefix K/V, while its input is the old-version cached
+  normalized state used by cheap refresh;
+- only valid prefix positions enter the fit; sequence lengths mask padding during migration;
+- seed 0 fixes the 50% fidelity target, and seeds 1-3 may not change the rank ladder or target.
+
+Online time is measured with CUDA events after adapter compilation. One-time target collection,
+low-rank fitting, compilation, shared parameter bytes, and descriptive break-even cohort size are
+reported separately. Kernel-time ratios must not include calibration in the numerator and then be
+described as end-to-end cost; both components must be shown.
+
+The primary selector signal is cache-fidelity recovery
+
+\[
+\rho_C =
+\frac{E(C_{\mathrm{reuse}},C_{\mathrm{fresh}})
+      -E(C_{\mathrm{method}},C_{\mathrm{fresh}})}
+     {E(C_{\mathrm{reuse}},C_{\mathrm{fresh}})},
+\]
+
+where \(E\) is mean per-sample relative K/V error. The selector chooses the first action in
+`cheap_prepacked -> increasing adapter rank -> recompute` whose probe \(\rho_C\) reaches 0.5.
+Held-out ranking metrics evaluate the selected action; they do not select it.
+
+Exact design and four-seed results are in
+`experiments/migration/COMPILED_LOW_RANK_V1.md`.
+
+### 5.5 Capacity-tiered migration
+
+`progressive_prefix_replay_v1` and `cohort_tiered_migration_v1` consume the fixed-task 3x3
+capacity checkpoints without retraining or changing their streaming semantics. One checkpoint per
+cell is selected by the motivation-only rule in
+`results/motivation_scale/design_discovery_seeds.json`; migration outcomes do not enter this
+selection. These nine checkpoints are discovery units. The other three training seeds in every
+cell are the 27 frozen-rule replication units.
+
+For cohort-tiered migration:
+
+- adapter fit, probe planning, and held-out evaluation users are disjoint;
+- all rank candidates are compiled before resident-GPU timing;
+- full recomputation is the cache-fidelity reference, not a guaranteed ranking upper bound;
+- primary method evidence is the 50% target fixed before held-out replication;
+- the 75% and 90% targets show the same frozen action library under stricter quality SLAs;
+- rankings from the fit or probe users cannot be pooled into final quality results.
+
+At the 50% target, all 27 replication runs select a compiled projection. Mean kernel cost is
+`0.121 [0.112, 0.130]x` full and mean K/V recovery is `0.587 [0.547, 0.627]`. The strict
+positive-mean BestRank/rank-utility gate passes 6/9 cells. Endpoint tracking is a required
+diagnostic because QB-medium full recomputation is itself negative in BestRank and QK-large is
+near zero. This result supports scalable operator fidelity and cost; it does not establish that
+every version cohort should be admitted for migration.
+
+Exact architecture, frozen gates, cell results, and limitations are in
+`experiments/migration/COHORT_TIERED_MIGRATION_V1.md`. The compact reproducible summaries are
+`results/motivation_scale/progressive_prefix_replay_v1_summary.json` and
+`results/motivation_scale/cohort_tiered_migration_v1_summary.json`; bounded architecture
+comparisons are in `results/motivation_scale/structural_design_discovery_summary.json`.
+
 ## 6. Metrics and statistics
 
 Primary quality views:
@@ -292,6 +438,8 @@ Primary quality views:
 - MRR, NDCG@10/100, Hit@10/100: higher is better; gains are `method - reuse`.
 - Quality recovery: method gain divided by fresh-recompute gain, only when the denominator is
   sufficiently different from zero.
+- Cache-fidelity recovery: relative reduction in K/V reconstruction error from stale reuse toward
+  exact fresh K/V; unlike task-quality recovery, its full-recompute endpoint is exactly one.
 - Staleness tax: cache-maintenance gain divided by full-compute streaming-training gain, computed
   within seed only when that denominator is positive.
 - Full recompute is the cache-fidelity reference, but not a guaranteed upper bound on a ranking
@@ -313,6 +461,8 @@ Statistical rules:
 - Normalize every configuration to full prefix K/V recomputation on the same batch and prefix.
 - Report the measured ratio and absolute time; never use a hand-assigned projection cost.
 - Report extra normalized/split-hidden state as both elements/bytes and a ratio to K/V capacity.
+- For a calibrated operator, report adapter-fit size, one-time fit/compile time, shared parameter
+  bytes, and an amortized or break-even cohort calculation separately from per-cache kernel time.
 - Current numbers exclude host-device transfer, allocator, cache admission, and scheduler overhead;
   they must be labeled kernel-level rather than end-to-end serving cost.
 
@@ -394,6 +544,23 @@ Ordered-exposure reproduction:
 - `results/exposure/{qb_horizon256,long_context}_operator_cost_seed0.json`
 - local `results/exposure/*cache_version_matrix_seed*.json`
 - local `checkpoints/exposure/`
+
+Compiled low-rank migration:
+
+- local `results/validity/kuai_low_rank_migration_seed{0..3}.json`
+- local `results/exposure/qb_fixed_horizon_low_rank_migration_seed{0..3}.json`
+- local `results/exposure/qk_top5k_low_rank_migration_seed{0..3}.json`
+- `experiments/migration/COMPILED_LOW_RANK_V1.md`
+
+Capacity-tiered migration:
+
+- local `results/motivation_scale/*_prefix_replay_seed*.json`
+- local `results/motivation_scale/*_cohort_tiered_{discovery_,}seed*.json`
+- `results/motivation_scale/progressive_prefix_replay_v1_summary.json`
+- `results/motivation_scale/cohort_tiered_migration_v1_summary.json`
+- `results/motivation_scale/structural_design_discovery_summary.json`
+- `experiments/migration/PROGRESSIVE_PREFIX_REPLAY_V1.md`
+- `experiments/migration/COHORT_TIERED_MIGRATION_V1.md`
 
 `smoke.json` files, old `results/phase0`, and old `results/streaming` are not research artifacts.
 Per-seed exposure JSON and all checkpoints are current local artifacts but ignored by Git. Taobao

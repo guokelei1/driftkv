@@ -24,17 +24,21 @@
 ## Current research route
 
 - The object is model-version-stale HSTU prefix K/V under streaming training.
-- The active method is structure-aware cache migration:
-  - cheap layer: cached old `Norm(x)` projected by current `Wk/Wv`;
-  - full region: current blocks over the deepest suffix, with projection-only terminal execution;
-  - all full layers: exact current-model K/V recomputation.
-- The 21-interval search did not justify arbitrary-layer dynamic selection. Keep the optimized
-  suffix unless larger-scale or cross-dataset evidence changes this result.
-- Fixed-operator scaling across sequence length, batch size, depth, update magnitude, a
-  top-5k/top-20k by 6L/12L factorial, and top-50k chunked training is complete. KuaiRand scaling is
-  positive; the short MovieLens chain does not establish cross-dataset problem strength. Taobao
-  UserBehavior is the selected next cross-dataset stream. Audit and freeze its temporal protocol
-  before running the motivation control; mixed cache versions and end-to-end state movement follow.
+- The active method is version-cohort tiered cache migration:
+  - fast tier: fit a shared `fresh - cheap` K/V residual and compile it into one affine projection
+    over cached old `Norm(x)`;
+  - quality tier: replay a current-model prefix and transport its boundary residual delta to deeper
+    current `Norm + Wk/Wv` projections;
+  - endpoint: exact current-model K/V recomputation.
+- Fixed suffix, progressive prefix, arbitrary intervals, and recent-token rectangles are baselines,
+  not the active method. The cross-dataset capacity screen changed the earlier suffix decision:
+  plain prefix is never selected in the unified library, all 54 matched recent-token partial
+  actions are slower, and arbitrary intervals add negligible value.
+- Fixed-task 3x3 data/model-capacity motivation and cohort-tiered method replication are complete
+  over KuaiRand, QB, and QK. The compiled operator scales in kernel cost and K/V fidelity, but the
+  strict task-quality gate passes 6/9 cells because some full-maintenance endpoints are near zero
+  or negative. The next design problem is version-cohort admission, followed by organic mixed
+  versions and end-to-end state movement.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
   project crux. Its only valid role is a clearly labeled negative result in the motivation.
 
@@ -45,10 +49,11 @@
 - `src/hstu_kvcache/data/` — KuaiRand streaming trace and ML1m loader.
 - `src/hstu_kvcache/streaming/` — leak-free next-item training and model-version utilities.
 - `src/hstu_kvcache/migration/` — layerwise state capture and migration operators.
-- `scripts/*validity.py`, `scripts/interval_oracle.py`, `scripts/streaming_value_control.py`, and
-  `scripts/*scaling.py` — active experiment entry points.
-- `results/validity/`, `checkpoints/validity/`, `results/scaling/`, and `checkpoints/scaling/` —
-  current result/checkpoint families. Their protocol records must remain separate.
+- `scripts/*validity.py`, `scripts/*scaling.py`, `scripts/*motivation_capacity_v2.py`, and
+  `scripts/*migration*.py` — active experiment entry points.
+- `results/validity/`, `results/scaling/`, `results/exposure/`, and
+  `results/motivation_scale/` — current result families. Their protocol records must remain
+  separate; raw per-seed files and checkpoints stay local and ignored.
 
 ## Experimental invariants
 
@@ -75,7 +80,11 @@
   their rows. The random-exposure log is excluded from training, and KuaiRand-27K is not present.
 - ML1m hard_v5 source: `/home/gkl/LRM1/data/standardized/movielens_1m_hard_v5/pilot20`; local copy
   in `data/movielens/`.
-- Taobao UserBehavior is planned but is not local and has no current protocol or result artifacts.
+- Taobao UserBehavior is local but rejected at the target-semantics gate because it lacks true
+  unclicked impressions.
+- Tenrec QB/QK are the positive ordered-exposure extensions; they are related tables from one
+  collection and have ordinal rather than global calendar time.
+- ZhihuRec is a documented negative maintenance boundary.
 
 ## Conventions
 

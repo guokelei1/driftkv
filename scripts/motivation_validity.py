@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--head-dim", type=int, default=32)
     parser.add_argument("--seq-len", type=int, default=256)
     parser.add_argument("--max-items", type=int, default=10000)
+    parser.add_argument("--max-users", type=int)
     parser.add_argument("--base-days", type=int, default=14)
     parser.add_argument("--base-epochs", type=int, default=8)
     parser.add_argument("--base-lr", type=float, default=3e-4)
@@ -84,6 +85,7 @@ def build_streaming_plan(metadata: dict) -> tuple[StreamingDataPlan, dict | None
         base_num_days=metadata["base_days"],
         max_seq_len=metadata["seq_len"],
         max_items=metadata["max_items"],
+        max_users=metadata.get("max_users"),
         fit_vocabulary_on_base=True,
     )
     return plan, None

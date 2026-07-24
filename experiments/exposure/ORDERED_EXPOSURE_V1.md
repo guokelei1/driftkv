@@ -5,6 +5,8 @@
 > On the aligned method gate, QK cheap refresh transfers over four seeds, QB fails at seed 0, and
 > the deepest-suffix curve remains KuaiRand-specific. ZhihuRec remains a negative boundary. Raw
 > per-user outputs and checkpoints are local, ignored artifacts.
+> A later protocol learns and compiles a shared low-rank residual adapter; it must not be pooled
+> with this gate. See `experiments/migration/COMPILED_LOW_RANK_V1.md`.
 
 ## 1. Question and protocols
 
@@ -255,13 +257,13 @@ Both decisions and the failed QB top-5k gate are retained in the record. The lim
 Tenrec has ordinal rather than global calendar time, QB conditions on future activity availability,
 and QB/QK are related tables from one collection.
 
-The method conclusion is still mixed and must remain separate. Re-evaluation on the aligned
+Within this fixed-suffix protocol, the method conclusion is mixed and must remain separate. Re-evaluation on the aligned
 settings now gives four-seed support for cheap projection refresh on QK at 0.194x full cost and
 70.6% mean BestRank recovery. Aligned QB fails its seed-0 partial-method gate, and no Tenrec result
-supports the strong KuaiRand suffix curve. The next paper step is therefore not another arbitrary
-layer search. It is to test mixed cache ages, state movement, throughput, tail latency, periodic
-full recomputation, and update-aware version-cohort triggering while retaining cheap as the
-cross-dataset method anchor.
+supports the strong KuaiRand suffix curve. The subsequent compiled-adapter result supersedes cheap
+as the current cross-dataset method anchor without relabeling these files. The next paper step is
+therefore not another arbitrary layer search; it is mixed cache ages, state movement, throughput,
+tail latency, periodic full recomputation, and update-aware version-cohort triggering.
 
 ## 7. Reproduction entry points
 
