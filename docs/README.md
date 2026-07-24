@@ -43,6 +43,12 @@ The background figure [streaming_training_kv_cache_background.png](streaming_tra
 explains windows, model versions, full reuse, and full compute. It is explanatory artwork rather
 than evidence.
 
+The planning note [system_paper_candidates.md](system_paper_candidates.md) records the current
+StreamKV direction—cohort migration compilation, a one-pass capsule-to-KV operator, and a
+cohort-streaming multi-GPU runtime—plus older system-paper candidates and same-slot fallbacks. It
+is a candidate-design document rather than a source of research claims, and remains subordinate
+to the roadmap and evaluation protocol.
+
 ## Valid artifact boundary
 
 Only these result families are current:
