@@ -66,6 +66,25 @@ select an action. The nine motivation-selected checkpoint files use
 `cohort_tiered_migration_discovery_v1`; only the other 27 files use
 `cohort_tiered_migration_v1` with `study_stage=frozen_rule_replication`.
 
+### `kuairand_long_context_8plus8_*`
+
+This new, separate bring-up family has five protocol records:
+
+- `kuairand_long_context_8plus8_data_v2` is the immutable prepared-data boundary;
+- `kuairand_long_context_8plus8_training_v2` trains theta0 through theta8;
+- `kuairand_long_context_8plus8_motivation_v2` is the completed partial matrix containing the
+  moving theta0 curve and fixed-D16 theta7 row;
+- `kuairand_long_context_8plus8_motivation_all_pairs_v3` evaluates all 28 strictly
+  older-cache/current-model pairs through theta7;
+- `kuairand_long_context_8plus8_compiled_migration_v2` evaluates a fixed rank-16 compiled
+  residual at the theta0-to-theta7 boundary.
+
+The family uses eight base dates and eight online dates and must not be merged with the 14-day-base
+validity, scaling, exposure, capacity, or superseded 12+4 families. Seed-0 training, the v2 partial
+motivation evaluation, and the active v3 all-pairs evaluation are complete. Only the method
+evaluation remains pending. Exact settings and commands are in
+`experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md`.
+
 ### `motivation_joint_scale_v1_*`
 
 This rejected seed-0 family crossed KuaiRand, QB, and QK with three matched data/model operating
@@ -185,7 +204,8 @@ merged as if they were the same experiment.
 
 - Target: hidden state at position `t` predicts item at position `t+1`.
 - Training labels: only engaged targets from the currently ingested stream date contribute.
-- Vocabulary: item IDs are fitted on the 14-day base period only.
+- Vocabulary: item IDs are fitted only on the protocol's frozen base period. Legacy validity
+  families use 14 dates; long-context families use the base side of their recorded split.
 - Padding: lengths determine valid hidden and K/V positions; padding cannot become the last state.
 - Temporal order: evaluate a day before ingesting it into history or training on it.
 - Evaluation positives: engaged items on the next unseen day.
@@ -430,6 +450,205 @@ Exact architecture, frozen gates, cell results, and limitations are in
 `results/motivation_scale/cohort_tiered_migration_v1_summary.json`; bounded architecture
 comparisons are in `results/motivation_scale/structural_design_discovery_summary.json`.
 
+### 5.6 KuaiRand 8+8 long-context bring-up
+
+The prepared cohort contains 965 users with at least five D1-D8 exposures; reaching exactly 1,000
+users is not an objective. All 5,820,867 selected standard-log exposures remain in the context
+stream. The prediction task uses a D1-D8-fitted top-50k catalog. Long-tail items map to 262,144
+deterministic context-only buckets and cannot become positives.
+
+The frozen HSTU is 16L/H512 with eight 64-dimensional heads, ReLU pointwise attention, an
+eight-day history window, and length 2,048. It has 181,082,112 parameters. Base training and every
+daily update use all chronological chunks. D9-D16 produce theta1-theta8. Theta1-theta7 are
+evaluated on D10-D16 before ingestion; theta8 has no next-day endpoint inside the frozen horizon.
+Four FP32 DDP workers each use logical batch four, micro-batch one, and four-way gradient
+accumulation, preserving effective global batch 16. Dynamic length-bucketed dense execution is
+part of the protocol.
+
+The active motivation record is a 28-cell strict lower triangle. For each current theta-i,
+`i=1..7`, it holds that model's next unseen evaluation date, histories, positives, and users fixed
+while evaluating every cache theta-j with `0 <= j < i`. The theta0 column is the seven-point
+moving curve; the theta7 row is the fixed-D16 endpoint. Every cell contains its own complete
+current-model fresh reference, so diagonal self-pairs are omitted. MeanRank is primary, AUC is the
+robust secondary, and NDCG@100/Hit@100 are standard secondaries; all other rank and top-k metrics
+remain in the raw result. Adjacent cache ages are paired within each current-version row, but a
+user bootstrap within one training run is diagnostic rather than independent replication.
+
+Cache age in this controlled family is checkpoint-update distance. Every version encodes the same
+deterministically tail-cropped resident prefix; it is not a claim that one physical D9 cache
+snapshot survives unchanged through D16. Literal snapshot residence, rolling eviction, and
+organically mixed per-token versions belong to a separate lifecycle protocol. At D16, 746 users
+are eligible, median length is 2,048, and 392 users are token-truncated after applying the
+eight-day window. This truncation is recorded in every result and cannot be hidden by referring
+only to the model maximum.
+
+The preliminary method uses 40 label-independent D16 fit users and fixed compiled rank 16; all
+remaining users are held out. It reports CUDA-event kernel time and cache fidelity for reuse,
+compiled migration, and exact recomputation. It does not include a probe-selected rank, quality
+tier, admission rule, physical mixed-version rollout, transfers, or end-to-end scheduling.
+
+The prepared artifact SHA256 is
+`2db3f76992ab490802fc586d47cbc2e1b4e38e1adc45a221c123dfe159633b36`. Training JSON records this
+hash, and both evaluators reject a mismatch or incomplete training record. The data-only dry run
+is valid protocol evidence about counts and state size; it is not a model-quality result.
+
+The seed-0 28-cell v3 evaluation is complete. Its only large discontinuity is the theta0
+base-to-stream boundary; it does not establish a repeated non-theta0 cache-age cliff. This result
+is valid evidence for the 8+8 protocol but is not pooled with alternate temporal splits.
+
+### 5.7 KuaiRand temporal-split cliff exploration
+
+The exploratory family supports 4+12 and 6+10 splits over the same fixed 16 dates. Each split
+refits its user cohort and base-only prediction catalog, receives a distinct prepared-data,
+training, and motivation protocol string, and must be reported separately from 8+8 and from one
+another. Model shape, maximum sequence length, history window, all-chunks training, optimizer
+hyperparameters, and four-worker execution remain unchanged.
+
+The primary split is 4+12. D1-D4 train theta0; D5-D16 produce theta1-theta12. Theta1-theta11 are
+evaluated on D6-D16 before ingestion, while theta12 has no unseen endpoint. The motivation matrix
+contains all 66 strictly older-cache/current-model pairs. Besides the fixed-current rows, the
+result must expose fixed-cache longitudinal trajectories: theta0 under theta1-theta11, theta1
+under theta2-theta11, and so on. Every point retains the complete fresh current-model path on the
+same endpoint as its reference.
+
+The prepared 4+12 artifact contains 945 users and 5,780,499 rows and has SHA256
+`e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8`. The data audit and tiny
+four-GPU smokes, seed-0 theta0-theta12 training, and the 66-pair matrix are complete. The evaluator reports all raw
+metrics, successive loss increments along each fixed-cache trajectory, and an exploratory late
+jump after at least two earlier transitions. Adjacent longitudinal endpoints use different
+next-day tasks, so this jump ratio is descriptive; the stale-versus-fresh contrast within each
+point and the training seed remain the valid comparison and replication units.
+
+A useful fixed-window counterexample must occur beyond theta0, agree directionally across the
+preselected MeanRank and at least one robust or standard secondary, and reproduce across cache
+cohorts or new seeds. If 4+12 has no such result, 6+10 is the only predeclared split balance check.
+Further post-result split or metric search does not support a cliff claim.
+
+### 5.8 KuaiRand 4+12 progressive synchronization design
+
+`kuairand_long_context_4plus12_progressive_sync_design_v1` fixes the current model and evaluation
+task at theta11/D16. It compares cache source theta10, theta4, and theta0, representing one, seven,
+and eleven checkpoint updates, on identical histories, positives, users, and the base-only
+50,000-item prediction catalog. Source versions were selected before method evaluation to cover
+low, medium, and high staleness; they are not chosen per user or by realized task quality.
+
+The frozen formal split uses a seed-9151 permutation: 40 users fit one shared rank-32
+`fresh - current-projection` residual for each source/target pair, 60 users are reserved for
+label-free tier calibration, and every remaining evaluable user is held out for final reporting.
+The action library is:
+
+- stale reuse;
+- current projection over cached old `Norm(x)`;
+- the rank-32 residual compiled into that same affine projection;
+- residual-delta prefix replay at depths 4, 8, and 12;
+- exact current-model prefix recomputation.
+
+The primary deployed ladder is unconditional compiled rank-32 synchronization, fixed p8 background
+refinement, and exact recomputation. P4 and p12 are same-slot ablations or replacements, not extra
+system contributions. Cache version is a batching and program-compilation key; the protocol does
+not infer whether a cache version is safe to reuse. No recommendation labels are used for fitting,
+tier admission, or per-version action selection.
+
+Every action reports measured resident-GPU milliseconds and ratio to exact, relative K/V error and
+fidelity recovery, hidden/score cosine, top-100 overlap, all ranking metrics, signed task difference
+from fresh, absolute task deviation from fresh, and signed gain over stale reuse. Full
+recomputation is exactly the cache-fidelity endpoint but remains only a paired reference for
+ranking quality. Evaluation worker count may vary because inference records are independently
+sharded and gathered; it must be recorded and is not a statistical replication unit. The frozen
+user split, action library, batch size, and all other protocol settings may not vary.
+
+The current 24-user, three-worker run is
+`kuairand_long_context_4plus12_progressive_sync_design_v1` only in implementation semantics and is
+stored with `status=diagnostic_complete` and `formal_protocol=false`. It uses four fit, four
+reserved probe, and 16 test users plus one timing repeat. It validates action ordering and program
+serialization but is not paper evidence and cannot be pooled with the formal run.
+
+The formal two-worker run is complete in
+`long_context_4plus12_progressive_sync_design_seed0.json`. It preserves the 40/60/582 split,
+batch size four, three timing repeats, source versions, and complete action library above. Worker
+count is two and is recorded; users are independently sharded, so this changes wall time rather
+than the estimator or statistical unit.
+
+Three separate design-search protocols reuse the identical endpoint and split but cannot be pooled
+with the frozen rank-32 family:
+
+- `kuairand_long_context_4plus12_compiled_rank_search_v1` fits a maximum rank-512 residual once,
+  truncates it to ranks `16/32/64/128/256/512`, compiles every rank into the same dense affine
+  shape, and selects one global rank by mean label-free fresh-score cosine over the three probe
+  cohorts. Test users remain disjoint from fit and probe.
+- `kuairand_long_context_4plus12_compiled_ridge_search_v1` directly solves full-affine candidates
+  at ridges `1e-5/1e-4/1e-3/1e-2/1e-1`. It is a recorded negative search: the probe-selected
+  `1e-2` program does not replace the `1e-3` incumbent on test fidelity.
+- `kuairand_long_context_4plus12_attention_weighted_search_v1` fixes the rank-512 `1e-3`
+  incumbent and weights fit tokens by the current HSTU latest-query-to-prefix-key activation.
+  Mixes `0/0.25/0.5/0.75/1` all compile to the same affine operator; the global probe selects
+  mix one. The weights use fresh model internals on fit users but no recommendation labels.
+
+All three searches require exactly two evaluation workers, the same seed-9151 user permutation,
+40 fit users, 60 probe users, 582 test users, batch four, 8,192 sampled fit tokens per layer,
+three timing repeats, and the theta0/theta4/theta10-to-theta11 pairs. Every program contains
+8,404,992 FP32 values. Later rounds were proposed after examining earlier test results, so the
+selected attention-weighted program is exploratory development evidence. It must be frozen on new
+training seeds or accepted external checkpoints before any confirmatory task-quality claim.
+
+### 5.9 KuaiRand verified cohort compiler
+
+`kuairand_long_context_4plus12_verified_compiler_v1` fixes the selected attention-weighted
+full-affine programs and adds an independent label-free certification role. The seed-9151
+permutation retains 40 program-fit users and 60 earlier hyperparameter-selection users. The next
+60 users are certificate users, and the remaining 522 are final recommendation-test users.
+Certificate users may not fit or tune projection parameters; final users may not change the
+contract, action library, or selected plan.
+
+The fixed candidate library is current projection, compiled full affine, structural replay at p4
+and p8, and exact recomputation. Stale reuse is the zero-maintenance semantic reference, not a
+publishable synchronization action. For each user, certification measures:
+
+- relative K/V error;
+- score error as one minus fresh-score cosine;
+- top-100 error as one minus fresh top-100 overlap.
+
+For each error view, recovery is the reduction from stale-reuse error toward exact-current-model
+error. Every publishable primary action must satisfy a frozen 70% ratio-of-means recovery target,
+a one-sided 90% bootstrap recovery lower bound of at least 70%, and at least 80% qualifying-user
+coverage after a one-sided 90% Wilson lower bound. It must also cost at most 0.30x exact on the
+same resident-GPU timing protocol. At least 50 valid certificate users and 1,000 deterministic
+bootstrap samples are required. Recommendation labels and ranking metrics are forbidden during
+certification.
+
+The compiler publishes the minimum-cost action satisfying fidelity and budget. If none does, it
+publishes the minimum-cost fidelity-certified budget-overflow action. The serialized plan includes
+all certificates and an ordered, fidelity-certified fallback chain terminating in exact
+recomputation. A fallback is an execution recovery path, not a prediction that stale reuse is safe.
+
+The seed-0 two-worker run is complete with `status=verified_design_complete` and
+`study_stage=adaptive_seed0_exploration`. It selects compiled full affine for all three source
+cohorts, then evaluates only reuse, the published action, and exact on the 522 final users. The
+new certificate split prevents direct label leakage into publication, but prior design rounds
+inspected this seed, so confirmation still requires a frozen new seed or accepted external
+checkpoint.
+
+### 5.10 KuaiRand real-capsule system execution
+
+`kuairand_long_context_4plus12_progressive_sync_system_v1` consumes a serialized design program
+and materializes real old-version layerwise `Norm(x)` capsules from the same theta11/D16 histories.
+The hot path measures a GPU-resident capsule. The warm path starts with FP16 capsules in pinned
+host memory and includes H2D transfer, packed affine execution, D2H publication of target K/V, and
+pipeline synchronization. Input reconstruction and checkpoint loading are excluded and reported
+separately. Cache extents, rather than the 0.181B model, are assigned across GPUs.
+
+Formal execution requires all four A40 GPUs, at least one warmup, at least three timing repeats,
+real source theta0→theta11 rank-32 weights, and the predeclared user/batch settings. It reports
+absolute throughput, bytes moved, completion time, load imbalance, scaling efficiency, padding,
+program replication bytes, and packed-FP16 error against the FP32 operator. Exact current-model
+recomputation is measured from pinned raw history through FP16 pinned-host K/V publication. The
+current exact path is synchronous; a paper-grade endpoint must additionally compare against a
+similarly pipelined full-recompute implementation.
+
+The existing 12-user run on three currently idle GPUs is explicitly diagnostic. Its 1/2/3-GPU
+points and resident-operator profile verify the real data path, not four-GPU scaling or
+end-to-end serving benefit.
+
 ## 6. Metrics and statistics
 
 Primary quality views:
@@ -561,6 +780,43 @@ Capacity-tiered migration:
 - `results/motivation_scale/structural_design_discovery_summary.json`
 - `experiments/migration/PROGRESSIVE_PREFIX_REPLAY_V1.md`
 - `experiments/migration/COHORT_TIERED_MIGRATION_V1.md`
+
+KuaiRand 8+8 long-context bring-up:
+
+- local `data/processed/kuairand_long_context_8plus8_v2.npz`
+- `experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md`
+- local `checkpoints/kuairand_long_context_8plus8/seed0/theta_{0..8}.pt`
+- local `results/motivation_scale/long_context_8plus8_training_seed0.json`
+- local `results/motivation_scale/long_context_8plus8_motivation_seed0.json`
+- local `results/motivation_scale/long_context_8plus8_motivation_all_pairs_seed0.json`
+- pending local `results/motivation_scale/long_context_8plus8_method_seed0.json`
+
+KuaiRand temporal-split exploration:
+
+- local `data/processed/kuairand_long_context_4plus12_exploration_v1.npz`
+- `experiments/motivation/LONG_CONTEXT_SPLIT_EXPLORATION_V1.md`
+- local `checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_{0..12}.pt`
+- local `results/motivation_scale/long_context_4plus12_training_exploration_seed0.json`
+- local
+  `results/motivation_scale/long_context_4plus12_motivation_all_pairs_exploration_seed0.json`
+- diagnostic local
+  `results/motivation_scale/long_context_4plus12_progressive_sync_design_diagnostic_seed0.json`
+- local
+  `results/motivation_scale/long_context_4plus12_progressive_sync_design_seed0.json`
+- local
+  `results/motivation_scale/long_context_4plus12_compiled_rank_search_seed0.json`
+- local
+  `results/motivation_scale/long_context_4plus12_compiled_ridge_search_seed0.json`
+- local
+  `results/motivation_scale/long_context_4plus12_attention_weighted_search_seed0.json`
+- `experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md`
+- local
+  `results/motivation_scale/long_context_4plus12_verified_compiler_seed0.json`
+- `experiments/migration/VERIFIED_COHORT_COMPILER_V1.md`
+- local
+  `checkpoints/kuairand_long_context_4plus12_exploration/seed0/verified_plans/theta{0,4,10}_to_theta11_verified.json`
+- diagnostic local
+  `results/system/kuairand_long_context_4plus12_progressive_sync_system_diagnostic_seed0.json`
 
 `smoke.json` files, old `results/phase0`, and old `results/streaming` are not research artifacts.
 Per-seed exposure JSON and all checkpoints are current local artifacts but ignored by Git. Taobao

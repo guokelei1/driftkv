@@ -38,6 +38,21 @@ order is:
     replicated no-fit structural baseline on the capacity matrix.
 18. [../experiments/migration/COHORT_TIERED_MIGRATION_V1.md](../experiments/migration/COHORT_TIERED_MIGRATION_V1.md) —
     current compiled fast tier, residual structural fallback, and 27-seed capacity validation.
+19. [../experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md](../experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md) —
+    prepared 16L/H512, length-2,048 KuaiRand scale bridge with eight base dates, eight updates,
+    seven leak-free endpoints and the active 28-pair older-cache/current-model matrix.
+20. [../experiments/motivation/LONG_CONTEXT_SPLIT_EXPLORATION_V1.md](../experiments/motivation/LONG_CONTEXT_SPLIT_EXPLORATION_V1.md) —
+    completed 4+12 training and 66-pair fixed-cache longitudinal screen; the result rejects age as
+    a sufficient policy state without claiming a universal delayed cliff.
+21. [../experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md](../experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md) —
+    full-user rank, ridge, and HSTU-attention-weighted compiled-program design loop at
+    theta11/D16.
+22. [../experiments/migration/VERIFIED_COHORT_COMPILER_V1.md](../experiments/migration/VERIFIED_COHORT_COMPILER_V1.md) —
+    label-free semantic certification, minimum-cost plan publication, ordered fallback, and
+    522-user recommendation evaluation.
+23. [../experiments/system/KUAIRAND_PROGRESSIVE_SYNC_V1.md](../experiments/system/KUAIRAND_PROGRESSIVE_SYNC_V1.md) —
+    frozen theta11/D16 progressive synchronization design plus bounded real-checkpoint,
+    real-capsule algorithm/operator/multi-GPU diagnostics.
 
 The background figure [streaming_training_kv_cache_background.png](streaming_training_kv_cache_background.png)
 explains windows, model versions, full reuse, and full compute. It is explanatory artwork rather
@@ -48,6 +63,12 @@ StreamKV direction—cohort migration compilation, a one-pass capsule-to-KV oper
 cohort-streaming multi-GPU runtime—plus older system-paper candidates and same-slot fallbacks. It
 is a candidate-design document rather than a source of research claims, and remains subordinate
 to the roadmap and evaluation protocol.
+
+The preliminary implementation record
+[../experiments/system/STREAMKV_SYSTEM_PROTOTYPE_V1.md](../experiments/system/STREAMKV_SYSTEM_PROTOTYPE_V1.md)
+documents the first end-to-end compiler/operator/streaming prototype. Its algorithm section
+references the frozen cohort-tiered evidence, while its synthetic operator and multi-GPU results
+remain a separate `streamkv_system_prototype_v1` systems diagnostic.
 
 ## Valid artifact boundary
 
@@ -70,6 +91,7 @@ Only these result families are current:
 - `results/motivation_scale/design_discovery_seeds.json`
 - `results/motivation_scale/progressive_prefix_replay_v1_summary.json`
 - `results/motivation_scale/cohort_tiered_migration_v1_summary.json`
+- `results/system/streamkv_system_prototype_v1.json`
 - `results/motivation_scale/structural_design_discovery_summary.json`
 - matching `checkpoints/validity/core*_seed*/theta_*.pt`
 - `results/scaling/operator_cost_seed0.json`
@@ -100,6 +122,11 @@ Only these result families are current:
 - `experiments/migration/COMPILED_LOW_RANK_V1.md`
 - `experiments/migration/PROGRESSIVE_PREFIX_REPLAY_V1.md`
 - `experiments/migration/COHORT_TIERED_MIGRATION_V1.md`
+- `experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md`
+- `experiments/migration/VERIFIED_COHORT_COMPILER_V1.md`
+- `experiments/system/STREAMKV_SYSTEM_PROTOTYPE_V1.md`
+- `experiments/system/KUAIRAND_PROGRESSIVE_SYNC_V1.md`
+- matching local `results/motivation_scale/long_context_4plus12_{progressive_sync_design,compiled_rank_search,compiled_ridge_search,attention_weighted_search,verified_compiler}_seed0.json`
 - matching local `results/exposure/*_seed*.json` and `checkpoints/exposure/`
 - matching `checkpoints/scaling/`
 
@@ -156,8 +183,9 @@ aligned QK at `0.106-0.124x` full kernel time. The current capacity-tiered exten
 residual-delta structural replay and full fallback. Across 27 replication seeds its 50% point costs
 `0.121 [0.112, 0.130]x` full and recovers `0.587 [0.547, 0.627]` of the K/V gap, but the strict
 task-quality gate passes 6/9 cells because several full-maintenance endpoints are near zero or
-negative. This is an operator-level result and a motivation for cohort admission, not yet an
-end-to-end serving result.
+negative. This is an operator-level result; task quality is not used as a version admission
+oracle, and the active runtime applies an unconditional progressive synchronization ladder. It is
+not yet an end-to-end serving result.
 The fixed-endpoint matrix puts BestRank cache loss on one normalized scale across KuaiRand/QB/QK
 and shows local, update-dependent jumps; it does not prove that every tuned periodic policy fails.
 The long-context Tenrec screen confirms a larger recomputation/cheap cost separation but fails its

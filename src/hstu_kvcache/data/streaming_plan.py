@@ -30,10 +30,13 @@ class StreamingDataPlan:
     stream_dates: list[str]
     max_seq_len: int = 128
     max_items: int | None = None
+    history_window_days: int | None = None
     user_histories: dict[int, dict] = field(default_factory=dict)
     daily_segments: dict[str, pd.DataFrame] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.history_window_days is not None and self.history_window_days < 1:
+            raise ValueError("history_window_days must be positive")
         df = self.trace.interactions.copy()
         df["date"] = df["date"].astype(str)
         for date, grp in df.groupby("date"):
@@ -62,6 +65,9 @@ class StreamingDataPlan:
         max_users: int | None = None,
         min_interactions_per_user: int = 5,
         fit_vocabulary_on_base: bool = False,
+        context_hash_buckets: int = 0,
+        history_window_days: int | None = None,
+        total_num_days: int | None = None,
     ) -> StreamingDataPlan:
         trace = load_kuairand(
             csv_paths,
@@ -70,8 +76,20 @@ class StreamingDataPlan:
             max_items=max_items,
             max_users=max_users,
             fit_num_days=base_num_days if fit_vocabulary_on_base else None,
+            context_hash_buckets=context_hash_buckets,
         )
         all_dates = sorted(trace.interactions["date"].astype(str).unique())
+        if total_num_days is not None:
+            if total_num_days <= base_num_days:
+                raise ValueError("total_num_days must exceed base_num_days")
+            if len(all_dates) < total_num_days:
+                raise ValueError(
+                    f"requested {total_num_days} dates but trace contains {len(all_dates)}"
+                )
+            all_dates = all_dates[:total_num_days]
+            trace.interactions = trace.interactions[
+                trace.interactions["date"].astype(str).isin(all_dates)
+            ].reset_index(drop=True)
         base_dates = all_dates[:base_num_days]
         stream_dates = all_dates[base_num_days:]
         return cls(
@@ -80,6 +98,7 @@ class StreamingDataPlan:
             stream_dates=stream_dates,
             max_seq_len=max_seq_len,
             max_items=max_items,
+            history_window_days=history_window_days,
         )
 
     def _append_day_to_history(self, u: int, day_df: pd.DataFrame) -> None:
@@ -106,10 +125,17 @@ class StreamingDataPlan:
         hist["time_deltas"] = np.concatenate([hist["time_deltas"], td])
         hist["labels"] = np.concatenate([hist["labels"], labels])
         hist["timestamps"] = np.concatenate([hist["timestamps"], ts])
-        cap = self.max_seq_len * 4
-        if len(hist["item_ids"]) > cap:
-            for k in hist:
-                hist[k] = hist[k][-cap:]
+        if self.history_window_days is None:
+            cap = self.max_seq_len * 4
+            if len(hist["item_ids"]) > cap:
+                for k in hist:
+                    hist[k] = hist[k][-cap:]
+        elif len(hist["timestamps"]) > 0:
+            cutoff = hist["timestamps"][-1] - self.history_window_days * 86400 * 1000
+            start = int(np.searchsorted(hist["timestamps"], cutoff, side="left"))
+            if start > 0:
+                for k in hist:
+                    hist[k] = hist[k][start:]
 
     def init_base(self) -> None:
         """Load all base-period interactions into user histories."""
@@ -120,13 +146,27 @@ class StreamingDataPlan:
             for u, grp in day_df.groupby("user_idx"):
                 self._append_day_to_history(int(u), grp)
 
-    def _build_seq(self, u: int, truncate: int | None = None) -> dict:
+    def _build_seq(
+        self,
+        u: int,
+        truncate: int | None = None,
+        as_of_timestamp: int | None = None,
+    ) -> dict:
         hist = self.user_histories.get(u)
         if hist is None or len(hist["item_ids"]) == 0:
             return None
         cap = truncate or self.max_seq_len
         n = len(hist["item_ids"])
-        start = max(0, n - cap)
+        window_start = 0
+        if self.history_window_days is not None and as_of_timestamp is not None:
+            cutoff = as_of_timestamp - self.history_window_days * 86400 * 1000
+            window_start = int(
+                np.searchsorted(hist["timestamps"], cutoff, side="left")
+            )
+        available_length = n - window_start
+        start = max(window_start, n - cap)
+        if start >= n:
+            return None
         return {
             "item_ids": hist["item_ids"][start:],
             "behaviors": hist["behaviors"][start:],
@@ -134,6 +174,8 @@ class StreamingDataPlan:
             "labels": hist["labels"][start:],
             "timestamps": hist["timestamps"][start:],
             "user_id": u,
+            "available_length_before_token_cap": available_length,
+            "token_truncated": available_length > cap,
         }
 
     def _frame_sequence(self, u: int, frame: pd.DataFrame) -> dict:
@@ -182,7 +224,10 @@ class StreamingDataPlan:
         samples = []
         for u, user_day in day_df.groupby("user_idx", sort=False):
             u = int(u)
-            seq = self._build_seq(u)
+            seq = self._build_seq(
+                u,
+                as_of_timestamp=int(user_day["time_ms"].min()),
+            )
             if seq is None or len(seq["item_ids"]) < 1:
                 continue
             pos_items = user_day.loc[user_day["label"] > 0, "item_idx"].unique()
@@ -206,6 +251,8 @@ class StreamingDataPlan:
         date: str,
         batch_size: int = 32,
         all_chunks: bool = False,
+        bucket_by_length: bool = False,
+        pad_to_max_seq_len: bool = True,
     ) -> Iterator[dict]:
         """Training batches for `date`: each active user's extended sequence.
 
@@ -235,19 +282,32 @@ class StreamingDataPlan:
                 ]
             sequences.extend(candidates)
         np.random.shuffle(sequences)
-        for i in range(0, len(sequences), batch_size):
-            seqs = sequences[i : i + batch_size]
+        if bucket_by_length:
+            sequences.sort(key=lambda sequence: len(sequence["item_ids"]))
+        grouped = [
+            sequences[i : i + batch_size]
+            for i in range(0, len(sequences), batch_size)
+        ]
+        if bucket_by_length:
+            np.random.shuffle(grouped)
+        for seqs in grouped:
             if not seqs:
                 continue
             from .kuairand import collate_batch
 
-            yield collate_batch(seqs, max_seq_len=self.max_seq_len, pad_to=self.max_seq_len)
+            yield collate_batch(
+                seqs,
+                max_seq_len=self.max_seq_len,
+                pad_to=self.max_seq_len if pad_to_max_seq_len else None,
+            )
 
     def iter_base_train_batches(
         self,
         batch_size: int = 32,
         shuffle_users: bool = True,
         all_chunks: bool = False,
+        bucket_by_length: bool = False,
+        pad_to_max_seq_len: bool = True,
     ) -> Iterator[dict]:
         """Training batches over the full base-period histories (for theta_0)."""
         if all_chunks:
@@ -266,19 +326,34 @@ class StreamingDataPlan:
             sequences = [sequence for sequence in sequences if sequence is not None]
         if shuffle_users:
             np.random.shuffle(sequences)
+        if bucket_by_length:
+            sequences.sort(key=lambda sequence: len(sequence["item_ids"]))
         for sequence in sequences:
             sequence["train_mask"] = np.ones(len(sequence["item_ids"]), dtype=np.bool_)
-        for i in range(0, len(sequences), batch_size):
-            seqs = sequences[i : i + batch_size]
+        grouped = [
+            sequences[i : i + batch_size]
+            for i in range(0, len(sequences), batch_size)
+        ]
+        if bucket_by_length and shuffle_users:
+            np.random.shuffle(grouped)
+        for seqs in grouped:
             if not seqs:
                 continue
             from .kuairand import collate_batch
 
-            yield collate_batch(seqs, max_seq_len=self.max_seq_len, pad_to=self.max_seq_len)
+            yield collate_batch(
+                seqs,
+                max_seq_len=self.max_seq_len,
+                pad_to=self.max_seq_len if pad_to_max_seq_len else None,
+            )
 
     @property
     def num_items(self) -> int:
         return self.trace.num_items
+
+    @property
+    def num_prediction_items(self) -> int:
+        return self.trace.num_prediction_items
 
     @property
     def num_behaviors(self) -> int:

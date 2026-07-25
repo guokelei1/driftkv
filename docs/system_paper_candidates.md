@@ -1,6 +1,6 @@
 # 从 cohort-tiered migration 到系统论文：候选方向与当前主线
 
-> 状态：2026-07-24 第二轮收敛文档，属于设计探索，不是新的研究事实来源，也不改变
+> 状态：2026-07-25 第三轮收敛文档，属于设计探索，不是新的研究事实来源，也不改变
 > `08_core_insights_and_roadmap.md` 与 `eval_protocol.md` 的优先级。
 >
 > 目标：回答“我们做的是一个什么系统”，并给出若干可独立成文的系统中心、共同组件、
@@ -8,6 +8,9 @@
 >
 > 最新决策：第 0 节是当前优先推进的收敛方案。后面的 A–G 仍保留为设计空间与失败备选，
 > 但不再表示论文要同时实现这些系统，也不再以“模型发布系统”为当前定位。
+> 进一步收敛：系统不预测某个 version “能不能 reuse”。每个 stale cohort 都必须发布一个
+> 通过无标签 current-model semantic contract 的同步方案，再按证书中的 fallback 推进；
+> version 仅用于编译、认证、合批、placement 和调度。
 
 ## 0. 先给结论
 
@@ -67,12 +70,16 @@ target-version K/V records
 它回答“一个 old→current cohort 到底计算什么”。
 
 - 输入是 old/current model pair、少量 cohort calibration samples 和目标 fidelity/cost；
-- 主 fast path 是现有方法：拟合共享的 `fresh - cheap` K/V residual，并把它折叠进旧
-  `Norm(x)` 到目标 K/V 的单个 affine projection；
+- compiler 先生成 projection、compiled affine、structural replay 与 exact 候选，再在与
+  fit/调参用户隔离的无标签 probe 上验证 K/V、fresh-score 与 top-100 semantic recovery；
+- 主 fast path 在大模型上拟合 attention-use-weighted full-affine
+  `fresh - cheap` K/V residual，并把它折叠进旧 `Norm(x)` 到目标 K/V 的单个 affine
+  projection；rank 只影响离线统计容量，编译后不再被误当成在线 cost knob；
 - 输出不是一批迁移结果，而是该 version pair 共享的、可缓存的 migration program，包括
-  投影参数、输入/输出表示、合法长度范围和 fallback tier；
-- reuse、residual-delta replay 与 full recompute 是同一 compiler 接口下的 admission 或
-  fallback 结果，不分别包装成论文贡献。
+  投影参数、输入/输出表示、合法长度范围、证书和有序 fallback tier；
+- compiled repair 与 full recompute 构成同一 compiler 接口下的基本 fidelity ladder；
+  residual-delta replay 只有在目标 fidelity 上形成新的实测 Pareto 点时才进入 program，
+  不分别包装成论文贡献；reuse 仅是零维护 baseline。
 
 这里的关键系统价值是把 per-cache 的模型执行问题提升成一次编译、多 cache 执行的问题。
 现有 cohort-tiered 算法就是系统的计算语义核心，而不是被 runtime 替换掉的一个插件。
@@ -159,13 +166,70 @@ capsule-to-KV，engine 仍执行 cohort stream。第二，每层最终只保留�
 
 - checkpoint 何时发布、weights 分发、canary、事务式 rollout 与 rollback；
 - 通用 cache coherence 协议和复杂版本图；
-- 独立的 admission paper：admission 只负责为 compiler 选择 reuse/migrate/full；
+- 独立的 admission paper，以及任何声称能预测某版本 task-quality reuse 安全性的 classifier；
 - 独立的多级存储或多 GPU scheduler：它们只是 streaming engine backend 和 extent assignment；
 - 把 residual replay、full recompute、FP16、ragged batching、CUDA Graph 分别算成贡献；
 - 在没有 profile 与硬件条件前承诺跨节点 RDMA 或 GPU-native SSD。
 
 后文 A–G 提供了这些方向的详细设计空间。如果主流水线的某个 gate 失败，可以从中抽取一个
 同位机制替换；在当前方案成立时，不应把它们全部装入一篇论文。
+
+### 0.7 2026-07-25 实现状态
+
+第一个三层 prototype vertical slice 已经落地：
+
+- `MigrationCapsuleBatch` 把旧 `Norm(x)` 组织成连续的
+  `[layer, batch, sequence, hidden]` payload，并携带 record IDs 与
+  `migration_anchor_version`；
+- `MigrationProgram` 将 source/target version pair 与现有 compiled affine adapter
+  绑定，执行前检查 anchor、depth、width 和 device；
+- `MigratedKVBatch` 同时保留旧 `migration_anchor_version` 与新的
+  `served_kv_target`，防止把只生成 K/V 的近似迁移误当成可链式迁移的新 anchor；
+- `CohortStreamingExecutor` 已提供 CPU reference path，以及在单张 CUDA GPU 上使用独立
+  H2D、compute、D2H streams 的有界 inflight pipeline；
+- `PackedMigrationOperator` 已实现 FP16 packed execution、`baddbmm` bias fusion 和
+  in-place padding mask，并有逐阶段 CUDA-event profile；
+- `CohortBatchPlan` 已实现 contiguous 与 length-bucketed logical extents，物理重排后仍可按
+  record ID 恢复逻辑顺序；
+- `MultiGPUCohortExecutor` 已实现基于 extent work bytes 的贪心分配与 1/2/4 GPU 并发执行。
+
+独立的 `streamkv_system_prototype_v1` diagnostic 显示：packed operator 在 batch 8–128 上
+相对 FP32 reference 为 1.95–2.90x，FP16 relative error 约 3.28e-4；length bucketing 将
+payload 降至 0.81–0.83x；两 GPU 的完整 host→GPU→host 路径相对同步 FP32 reference 达到
+3.56–4.45x。四 GPU 未稳定优于两 GPU，暴露出共享 host movement/NUMA/topology 瓶颈。
+这些是 synthetic 初步系统结果，不替代真实数据上的算法证据。
+
+真实 4+12 checkpoint/capsule 的第一条受限 vertical slice 也已跑通。固定 theta11/D16，
+theta0→theta11 rank-32 repair 在 16 个 held-out diagnostic users 上为 0.061x exact resident
+compute，并恢复 61.0% K/V fidelity；p8 为 0.550x/84.6%。真实 capsule 的 packed FP16 HBM
+operator 相对 FP32 reference 为 3.97x，relative error 3.53e-4。完整 pinned-host→GPU→host
+路径在 12 records 上从 1 GPU 的 363.5 records/s 扩展到 2/3 GPU 的 623.5/759.5 records/s；
+相同 pinned-host 输入/输出位置的同步 full baseline 为 24.8 records/s。
+这些均是单 seed、小用户数、三张空闲 GPU 的 implementation diagnostic，不是论文结果。
+
+随后完成的两 GPU、全用户算法评测使用 40 fit、60 label-free probe 和 582 test users。
+attention-use-weighted full-affine program 在 age 11/7/1 上只需约 0.064x exact，就恢复
+88.6%/89.1%/93.6% K/V fidelity；相对原 rank-32 fast path，三档平均 MeanRank/AUC/NDCG@100
+绝对偏差分别下降 44.5%/44.5%/47.3%。原 p8 约需 0.549x exact，却在三个 endpoint 上都没有
+更高 K/V fidelity，因此不再自动作为主 middle tier。该程序是在同一 seed/test 上迭代得到的
+exploratory candidate，下一步必须冻结复现，不能把当前 582 users 继续用于新的算法搜索。
+详细记录在 `experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md`。
+
+在此基础上，verified compiler 已实现“生成—认证—发布”闭环。用户角色进一步固定为
+40 fit、60 早期 program selection、60 独立 label-free certificate 和 522 final test。
+冻结 contract 同时要求 cache/score/top-100 三种误差至少恢复 70%，one-sided 90% recovery
+lower bound 不低于 70%，one-sided 90% coverage lower bound 不低于 80%，primary cost
+不超过 0.30x exact。age 11/7/1 都发布 compiled full affine，certificate cost 约
+0.063x，最差 recovery lower bound 为 0.853/0.837/0.923；p8 只在 age 11/1 成为超预算
+fallback，age 7 直接 fallback 到 exact。522-user final test 上，三个 endpoint 成本约
+0.064x、K/V recovery 为 88.6%/89.1%/93.6%；最关键 age 11 的 MeanRank/AUC、NDCG@100、
+Hit@100 signed recovery 分别为 98.8%、90.3%、88.9%。详细记录在
+`experiments/migration/VERIFIED_COHORT_COMPILER_V1.md`。它仍是 adaptive seed-0 evidence，
+下一步是冻结后在新 seed 或数据集复现，而不是继续搜索当前用户。
+
+当前尚未实现的核心部分是 pipelined full recompute 强基线、真正的 fused GEMM
+epilogue/direct paged write、host topology-aware placement 和 foreground interference。
+下一开发顺序仍遵循 Gate S0→S4，不提前加入 SSD、跨节点或 rollout。
 
 ## 1. 为什么“再加几个系统组件”还不够
 

@@ -27,9 +27,31 @@ class KuaiRandTrace:
     num_behaviors: int
     user_map: dict
     item_map: dict
+    num_prediction_items: int | None = None
+    context_hash_buckets: int = 0
+
+    def __post_init__(self) -> None:
+        if self.num_prediction_items is None:
+            self.num_prediction_items = self.num_items
+        if not 1 <= self.num_prediction_items <= self.num_items:
+            raise ValueError("num_prediction_items must be in [1, num_items]")
+        if self.context_hash_buckets < 0:
+            raise ValueError("context_hash_buckets must be non-negative")
 
 
 BEHAVIOR_NAMES = ("click", "like", "follow", "comment", "forward", "hate", "long_view")
+
+
+def stable_context_hash(values: np.ndarray) -> np.ndarray:
+    hashed = values.astype(np.uint64, copy=True)
+    hashed = hashed + np.uint64(0x9E3779B97F4A7C15)
+    hashed = (hashed ^ (hashed >> np.uint64(30))) * np.uint64(
+        0xBF58476D1CE4E5B9
+    )
+    hashed = (hashed ^ (hashed >> np.uint64(27))) * np.uint64(
+        0x94D049BB133111EB
+    )
+    return hashed ^ (hashed >> np.uint64(31))
 
 
 def load_kuairand(
@@ -39,6 +61,7 @@ def load_kuairand(
     max_items: int | None = 50000,
     max_users: int | None = None,
     fit_num_days: int | None = None,
+    context_hash_buckets: int = 0,
 ) -> KuaiRandTrace:
     """Load one or more KuaiRand log CSVs into a single sorted trace.
 
@@ -48,9 +71,9 @@ def load_kuairand(
         min_interactions_per_user: drop cold users.
         max_seq_len: cap sequence length (older events truncated) for memory.
         max_items: keep only the top-N most frequent items (KuaiRand has ~2M
-            unique videos; filtering to a tractable catalog is required to fit
-            the item embedding table on 4xA40). Interactions with dropped items
-            are removed.
+            unique videos; a tractable prediction catalog is required to fit
+            the item embedding table on 4xA40). Without context hash buckets,
+            interactions with dropped items are removed.
         max_users: optionally cap the user catalog (for fast feasibility runs).
     """
     frames = []
@@ -69,15 +92,21 @@ def load_kuairand(
         dates = sorted(df["date"].astype(str).unique())[:fit_num_days]
         fit_df = df[df["date"].astype(str).isin(dates)]
 
-    # optional catalog truncation: keep top-N most frequent items
+    if context_hash_buckets < 0:
+        raise ValueError("context_hash_buckets must be non-negative")
+
     if max_items is not None:
         item_counts = fit_df["video_id"].value_counts()
         keep_items = item_counts.head(max_items).index
-        df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
-        fit_df = fit_df[fit_df["video_id"].isin(keep_items)]
+        if context_hash_buckets == 0:
+            df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
+            fit_df = fit_df[fit_df["video_id"].isin(keep_items)]
     elif fit_num_days is not None:
         keep_items = fit_df["video_id"].unique()
-        df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
+        if context_hash_buckets == 0:
+            df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
+    else:
+        keep_items = fit_df["video_id"].unique()
 
     behavior = np.ones(len(df), dtype=np.int8)
     for column, value in (
@@ -91,8 +120,14 @@ def load_kuairand(
     ):
         behavior[df[column].to_numpy(dtype=bool)] = value
     df["behavior"] = behavior
-    # positive label = any positive engagement (exclude hate)
-    df["label"] = ((df["is_click"] | df["is_like"] | df["is_follow"] | df["is_comment"] | df["is_forward"] | df["long_view"]).astype(int))
+    df["label"] = (
+        df["is_click"]
+        | df["is_like"]
+        | df["is_follow"]
+        | df["is_comment"]
+        | df["is_forward"]
+        | df["long_view"]
+    ).astype(int)
 
     # remap user/item ids to contiguous 1..N (0 reserved for padding)
     active_users = fit_df.groupby("user_id").size()
@@ -100,7 +135,8 @@ def load_kuairand(
     df = df[df["user_id"].isin(keep_users)]
     fit_df = fit_df[fit_df["user_id"].isin(keep_users)]
     user_ids = fit_df["user_id"].unique()
-    item_ids = fit_df["video_id"].unique()
+    fitted_items = set(keep_items)
+    item_ids = fit_df.loc[fit_df["video_id"].isin(fitted_items), "video_id"].unique()
     if max_users is not None and len(user_ids) > max_users:
         ranked_users = (
             active_users.loc[user_ids]
@@ -113,7 +149,26 @@ def load_kuairand(
     user_map = {u: i + 1 for i, u in enumerate(user_ids)}
     item_map = {v: i + 1 for i, v in enumerate(item_ids)}
     df["user_idx"] = df["user_id"].map(user_map)
-    df["item_idx"] = df["video_id"].map(item_map)
+    known_items = df["video_id"].isin(item_map)
+    if context_hash_buckets:
+        item_idx = df["video_id"].map(item_map).to_numpy(
+            dtype=np.float64,
+            copy=True,
+        )
+        unknown = ~known_items.to_numpy()
+        hashed = stable_context_hash(
+            df.loc[unknown, "video_id"].to_numpy(dtype=np.int64)
+        )
+        item_idx[unknown] = (
+            len(item_map)
+            + 1
+            + (hashed % np.uint64(context_hash_buckets)).astype(np.int64)
+        )
+        df["item_idx"] = item_idx.astype(np.int64)
+        df.loc[~known_items, "label"] = 0
+    else:
+        df["item_idx"] = df["video_id"].map(item_map).astype(np.int64)
+    df["is_prediction_item"] = known_items.to_numpy()
 
     # per-user time delta (seconds) between consecutive events
     df = df.sort_values(["user_idx", "time_ms"]).reset_index(drop=True)
@@ -123,10 +178,12 @@ def load_kuairand(
     return KuaiRandTrace(
         interactions=df,
         num_users=len(user_map),
-        num_items=len(item_map),
+        num_items=len(item_map) + context_hash_buckets,
         num_behaviors=len(BEHAVIOR_NAMES) + 2,
         user_map=user_map,
         item_map=item_map,
+        num_prediction_items=len(item_map),
+        context_hash_buckets=context_hash_buckets,
     )
 
 

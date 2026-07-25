@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
@@ -79,10 +80,13 @@ def build_next_item_targets(
 
 
 def train_step(
-    model: HSTU,
+    model: nn.Module,
     batch: dict,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
+    loss_scale: float = 1.0,
+    zero_grad: bool = True,
+    optimizer_step: bool = True,
 ) -> float:
     """One streaming SGD/Adam step on a next-item prediction objective.
 
@@ -93,6 +97,9 @@ def train_step(
     research focus).
     """
     model.train()
+    core_model = model.module if hasattr(model, "module") else model
+    if not isinstance(core_model, HSTU):
+        raise TypeError("train_step requires HSTU or a distributed HSTU wrapper")
     item_ids = batch["item_ids"].to(device)
     behaviors = batch["behaviors"].to(device)
     time_deltas = batch["time_deltas"].to(device)
@@ -107,7 +114,8 @@ def train_step(
     labels = None if labels is None else labels.to(device)
     train_mask = None if train_mask is None else train_mask.to(device)
 
-    optimizer.zero_grad(set_to_none=True)
+    if zero_grad:
+        optimizer.zero_grad(set_to_none=True)
     hidden, _ = model(
         item_ids,
         behaviors,
@@ -117,18 +125,28 @@ def train_step(
     )
     target_items, valid = build_next_item_targets(item_ids, lengths, labels, train_mask)
     if not torch.any(valid):
+        if (dist.is_available() and dist.is_initialized()) or not zero_grad:
+            loss = hidden.sum() * 0.0
+            loss.backward()
+            if optimizer_step:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                optimizer.step()
         return 0.0
     source_hidden = hidden[:, :-1]
     neg = torch.randint(
         1,
-        model.cfg.num_items + 1,
+        core_model.cfg.num_prediction_items + 1,
         (*target_items.shape, 8),
         device=device,
     )
     pos = target_items.unsqueeze(-1)
-    neg = torch.where(neg == pos, neg.remainder(model.cfg.num_items) + 1, neg)
+    neg = torch.where(
+        neg == pos,
+        neg.remainder(core_model.cfg.num_prediction_items) + 1,
+        neg,
+    )
     cands = torch.cat([pos, neg], dim=-1)
-    logits = model.item_emb.score(source_hidden, cands)
+    logits = core_model.item_emb.score(source_hidden, cands)
     target = torch.zeros_like(target_items)
     per_target = torch.nn.functional.cross_entropy(
         logits.flatten(0, 1),
@@ -136,9 +154,10 @@ def train_step(
         reduction="none",
     ).view_as(target_items)
     loss = (per_target * valid).sum() / valid.sum()
-    loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-    optimizer.step()
+    (loss * loss_scale).backward()
+    if optimizer_step:
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
     return float(loss.item())
 
 

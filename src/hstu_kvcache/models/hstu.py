@@ -14,6 +14,7 @@ from .kv_cache import HSTUKVCache
 class HSTUConfig:
     num_items: int
     num_behaviors: int
+    num_prediction_items: int | None = None
     hidden_size: int = 128
     num_layers: int = 2
     num_heads: int = 2
@@ -28,6 +29,14 @@ class HSTUConfig:
     norm_eps: float = 1e-6
     input_dropout: float = 0.1
     tie_item_embeddings: bool = True
+
+    def __post_init__(self) -> None:
+        if self.num_items < 1:
+            raise ValueError("num_items must be positive")
+        if self.num_prediction_items is None:
+            self.num_prediction_items = self.num_items
+        if not 1 <= self.num_prediction_items <= self.num_items:
+            raise ValueError("num_prediction_items must be in [1, num_items]")
 
 
 class HSTU(nn.Module):

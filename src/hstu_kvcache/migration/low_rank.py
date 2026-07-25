@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import torch
 
 from ..models import HSTU, HSTUKVCache
+from .capsule import MigrationCapsuleBatch
 from .layerwise import LayerwiseCacheState
 
 
@@ -209,27 +210,59 @@ def compile_low_rank_cache_adapter(
 
 
 @torch.no_grad()
-def migrate_compiled_low_rank_cache(
-    state: LayerwiseCacheState,
+def _migrate_compiled_normed_cache(
+    normed: torch.Tensor,
+    lengths: torch.Tensor,
     adapter: CompiledCacheAdapter,
 ) -> HSTUKVCache:
-    if len(state.normed_states) != adapter.weights.shape[0]:
-        raise ValueError("state and compiled adapter depth differ")
-    normed = torch.stack(state.normed_states)
+    if normed.ndim != 4:
+        raise ValueError("normed must have shape [layers, batch, sequence, hidden]")
+    if normed.shape[0] != adapter.weights.shape[0]:
+        raise ValueError("normalized capsule and compiled adapter depths differ")
+    if normed.shape[-1] != adapter.weights.shape[1]:
+        raise ValueError("normalized capsule and compiled adapter widths differ")
+    if lengths.shape != (normed.shape[1],):
+        raise ValueError("lengths and normalized capsule batch dimension differ")
+    if normed.device != lengths.device or normed.device != adapter.weights.device:
+        raise ValueError("normalized capsule, lengths, and adapter must share a device")
     projected = torch.bmm(
         normed.float().flatten(1, 2),
         adapter.weights,
     ).unflatten(1, normed.shape[1:3])
     projected = projected + adapter.biases[:, None, None, :]
-    positions = torch.arange(state.kv.seq_len, device=state.lengths.device)
-    valid = positions.unsqueeze(0) < state.lengths.unsqueeze(1)
+    positions = torch.arange(normed.shape[2], device=lengths.device)
+    valid = positions.unsqueeze(0) < lengths.unsqueeze(1)
     projected = projected * valid.unsqueeze(0).unsqueeze(-1)
     projected = projected.to(normed.dtype)
     width = projected.shape[-1] // 2
     return HSTUKVCache(
         k=projected[..., :width],
         v=projected[..., width:],
-        seq_len=state.kv.seq_len,
+        seq_len=normed.shape[2],
+    )
+
+
+@torch.no_grad()
+def migrate_compiled_cache_capsule(
+    capsule: MigrationCapsuleBatch,
+    adapter: CompiledCacheAdapter,
+) -> HSTUKVCache:
+    return _migrate_compiled_normed_cache(
+        capsule.normed,
+        capsule.lengths,
+        adapter,
+    )
+
+
+@torch.no_grad()
+def migrate_compiled_low_rank_cache(
+    state: LayerwiseCacheState,
+    adapter: CompiledCacheAdapter,
+) -> HSTUKVCache:
+    return _migrate_compiled_normed_cache(
+        torch.stack(state.normed_states),
+        state.lengths,
+        adapter,
     )
 
 

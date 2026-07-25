@@ -37,8 +37,10 @@
 - Fixed-task 3x3 data/model-capacity motivation and cohort-tiered method replication are complete
   over KuaiRand, QB, and QK. The compiled operator scales in kernel cost and K/V fidelity, but the
   strict task-quality gate passes 6/9 cells because some full-maintenance endpoints are near zero
-  or negative. The next design problem is version-cohort admission, followed by organic mixed
-  versions and end-to-end state movement.
+  or negative. Task quality is not an admission oracle: every stale cohort receives unconditional
+  compiled repair, then progressive residual replay and exact recomputation under budget. Version
+  cohorts are used for compilation, batching, placement, and scheduling, not to predict whether
+  reuse is safe. The next design problems are organic mixed versions and end-to-end state movement.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
   project crux. Its only valid role is a clearly labeled negative result in the motivation.
 
@@ -51,6 +53,9 @@
 - `src/hstu_kvcache/migration/` — layerwise state capture and migration operators.
 - `scripts/*validity.py`, `scripts/*scaling.py`, `scripts/*motivation_capacity_v2.py`, and
   `scripts/*migration*.py` — active experiment entry points.
+- `scripts/evaluate_kuairand_long_context_sync_design.py` and
+  `scripts/benchmark_kuairand_long_context_sync_system.py` — active 4+12 progressive-sync
+  algorithm/operator/runtime entry points.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

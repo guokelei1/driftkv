@@ -91,10 +91,16 @@ def build_streaming_plan(metadata: dict) -> tuple[StreamingDataPlan, dict | None
     return plan, None
 
 
-def make_model(args: argparse.Namespace, num_items: int, num_behaviors: int) -> HSTU:
+def make_model(
+    args: argparse.Namespace,
+    num_items: int,
+    num_behaviors: int,
+    num_prediction_items: int | None = None,
+) -> HSTU:
     cfg = HSTUConfig(
         num_items=num_items,
         num_behaviors=num_behaviors,
+        num_prediction_items=num_prediction_items,
         hidden_size=args.hidden_size,
         num_layers=args.num_layers,
         num_heads=args.num_heads,
@@ -161,24 +167,63 @@ def ranking_metrics(scores: torch.Tensor, positives: list[int]) -> dict[str, flo
     ranks = torch.stack([(scores > score).sum() + 1 for score in pos_scores]).float()
     best_rank = float(ranks.min().item())
     mean_rank = float(ranks.mean().item())
+    median_rank = float(ranks.median().item())
+    mean_reciprocal_rank = float((1.0 / ranks).mean().item())
+    negative_mask = torch.ones(num_items, dtype=torch.bool, device=scores.device)
+    negative_mask[pos] = False
+    negative_scores = scores[negative_mask]
+    if len(negative_scores):
+        auc = float(
+            torch.stack(
+                [
+                    (
+                        (negative_scores < score).sum()
+                        + 0.5 * (negative_scores == score).sum()
+                    )
+                    / len(negative_scores)
+                    for score in pos_scores
+                ]
+            )
+            .mean()
+            .item()
+        )
+    else:
+        auc = 1.0
     metrics = {
         "mrr": 1.0 / best_rank,
+        "mean_reciprocal_rank": mean_reciprocal_rank,
         "best_rank": best_rank,
         "mean_rank": mean_rank,
+        "median_rank": median_rank,
         "rank_utility": -math.log1p(best_rank),
+        "best_rank_percentile": (num_items - best_rank) / max(num_items - 1, 1),
+        "auc": auc,
     }
     pos_set = set(pos.tolist())
-    for k in (10, 100):
+    max_k = min(100, num_items)
+    top = torch.topk(scores, max_k).indices.tolist()
+    relevance = [1.0 if item in pos_set else 0.0 for item in top]
+    for k in (1, 5, 10, 20, 50, 100):
         actual_k = min(k, num_items)
-        top = torch.topk(scores, actual_k).indices.tolist()
-        relevance = [1.0 if item in pos_set else 0.0 for item in top]
-        dcg = sum(rel / math.log2(rank + 2) for rank, rel in enumerate(relevance))
+        at_k = relevance[:actual_k]
+        hits = sum(at_k)
+        dcg = sum(rel / math.log2(rank + 2) for rank, rel in enumerate(at_k))
         idcg = sum(
             1.0 / math.log2(rank + 2)
             for rank in range(min(len(pos_set), actual_k))
         )
-        metrics[f"hit@{k}"] = float(any(relevance))
+        cumulative_hits = 0.0
+        precision_sum = 0.0
+        for rank, rel in enumerate(at_k, start=1):
+            cumulative_hits += rel
+            if rel:
+                precision_sum += cumulative_hits / rank
+        metrics[f"hit@{k}"] = float(hits > 0)
         metrics[f"ndcg@{k}"] = dcg / idcg if idcg else 0.0
+        metrics[f"recall@{k}"] = hits / len(pos_set)
+        metrics[f"precision@{k}"] = hits / actual_k
+        metrics[f"map@{k}"] = precision_sum / min(len(pos_set), actual_k)
+        metrics[f"mrr@{k}"] = 1.0 / best_rank if best_rank <= actual_k else 0.0
     return metrics
 
 
@@ -242,7 +287,19 @@ def summarize_records(
     bootstrap_samples: int,
 ) -> dict:
     summary: dict[str, object] = {"n": len(records)}
-    for metric in ("mrr", "ndcg@10", "ndcg@100", "hit@10", "hit@100"):
+    higher_is_better = (
+        "mrr",
+        "mean_reciprocal_rank",
+        "rank_utility",
+        "best_rank_percentile",
+        "auc",
+        *[
+            f"{name}@{k}"
+            for k in (1, 5, 10, 20, 50, 100)
+            for name in ("hit", "ndcg", "recall", "precision", "map", "mrr")
+        ],
+    )
+    for metric in higher_is_better:
         fresh = np.array([record[f"fresh_{metric}"] for record in records])
         stale = np.array([record[f"stale_{metric}"] for record in records])
         gain = fresh - stale
@@ -250,10 +307,11 @@ def summarize_records(
             "fresh": float(fresh.mean()),
             "stale": float(stale.mean()),
             "gain": float(gain.mean()),
+            "fresh_minus_stale": float(gain.mean()),
             "gain_ci95": bootstrap_interval(gain, rng, bootstrap_samples),
             "fresh_better_fraction": float(np.mean(gain > 0)),
         }
-    for metric in ("best_rank", "mean_rank"):
+    for metric in ("best_rank", "mean_rank", "median_rank"):
         fresh = np.array([record[f"fresh_{metric}"] for record in records])
         stale = np.array([record[f"stale_{metric}"] for record in records])
         gain = stale - fresh
@@ -261,6 +319,7 @@ def summarize_records(
             "fresh": float(fresh.mean()),
             "stale": float(stale.mean()),
             "gain": float(gain.mean()),
+            "stale_minus_fresh": float(gain.mean()),
             "gain_ci95": bootstrap_interval(gain, rng, bootstrap_samples),
             "fresh_better_fraction": float(np.mean(gain > 0)),
         }
@@ -293,11 +352,16 @@ def evaluate_version_pair(
     samples: list[dict],
     args: argparse.Namespace,
     window: int,
+    summarize: bool = True,
 ) -> tuple[list[dict], dict]:
     device = torch.device(args.device)
     current_model.eval()
     old_model.eval()
-    all_items = torch.arange(1, current_model.cfg.num_items + 1, device=device)
+    all_items = torch.arange(
+        1,
+        current_model.cfg.num_prediction_items + 1,
+        device=device,
+    )
     records = []
     for selected, full_cpu, prefix_cpu, suffix_cpu in eval_batches(
         samples,
@@ -383,7 +447,8 @@ def evaluate_version_pair(
             )
             records.append(record)
     rng = np.random.default_rng(args.seed * 1000 + window)
-    return records, summarize_records(records, rng, args.bootstrap_samples)
+    summary = summarize_records(records, rng, args.bootstrap_samples) if summarize else {}
+    return records, summary
 
 
 def save_checkpoint(model: HSTU, directory: str | None, name: str) -> None:

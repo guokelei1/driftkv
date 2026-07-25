@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-24. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-25. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -322,7 +322,7 @@ problem evidence, while large QK must be reported as a scale boundary. Exact set
 cells are in `experiments/motivation/CAPACITY_V2.md`; the reproducible aggregate is
 `results/motivation_scale/capacity_v2_summary.json`.
 
-### 2.11 Cohort-tiered migration scales as an operator, but not every cohort should migrate
+### 2.11 Cohort-tiered migration scales as an operator; task quality is not an admission oracle
 
 The capacity design screen no longer treats a fixed suffix or prefix depth as the method. For each
 old/current model-version cohort it calibrates a shared residual map, folds that map into one
@@ -349,12 +349,125 @@ BestRank, 27/27 rank-utility, and 25/27 NDCG cases. When full is positive, the s
 also positive in 18/20, 24/24, and 19/20 cases, with median gain recovery
 0.907/0.972/0.966. These are descriptive cross-cell diagnostics. The supported conclusion is that
 the compiled operator scales in cost and cache fidelity and usually preserves an available
-quality gain. The unsupported conclusion is that every model-version cohort has a positive
-maintenance endpoint. Admission and migration must therefore be separate system decisions.
+quality gain. The unsupported conclusion is that task labels can identify which model-version
+cohort should reuse or migrate. Full recomputation is the semantic reference but is not a ranking
+upper bound, and neither cache age nor label-free drift predicts realized task gain reliably.
+Consequently the active system does not make a version-level reuse admission decision. Every stale
+cohort follows the same monotone semantic-synchronization ladder; version cohorts exist to compile,
+batch, place, and schedule work.
 
 The frozen architecture and complete result are in
 `experiments/migration/COHORT_TIERED_MIGRATION_V1.md`; the reproducible aggregate is
 `results/motivation_scale/cohort_tiered_migration_v1_summary.json`.
+
+### 2.12 The larger KuaiRand 4+12 run rejects a fixed reuse window
+
+The superseded 12+4 seed-0 exploration trained theta0-theta3. Theta0-cache MeanRank loss across
+its three moving endpoints was 1,327/1,597/2,284 and catalog-AUC loss was
+2.65/3.19/4.57 percentage points. This was enough to freeze MeanRank as the next protocol's
+primary metric and AUC as a robust secondary, but three changing dates could not establish a
+causal cache-age jump. Its prepared data, checkpoints, and raw results were removed after the
+metric decision and cannot be pooled with the replacement protocol.
+
+The replacement uses eight base dates and eight daily updates. It keeps all 5,820,867 exposures
+for 965 base-eligible users, fits a base-only top-50k prediction catalog plus 262,144 context-only
+hash buckets, and trains all chronological chunks. Histories use an eight-day window capped at
+2,048 tokens. The 16L/H512 model remains 181,082,112 parameters (0.181B). Four DDP workers use
+logical per-device batch four, micro-batch one, and four-way gradient accumulation, preserving
+effective global batch 16 while bounding the length-2,048 backward graph.
+
+The data-only dry run covers 2,914,284 base tokens and 422,097 eligible base targets per epoch.
+The fixed D16 theta7 endpoint has 746 eligible users; median history length is 2,048, and 392
+users are token-truncated after applying the eight-day window. Their logical unpadded FP32 prefix
+K/V totals 77.58 GB decimal. Cached normalized state adds 38.79 GB, making the compiled-method
+state 116.37 GB. These are capacity facts, not allocated-GPU peaks, latency, or quality results.
+
+Seed-0 theta0-theta8 training completed in 831 seconds. The first evaluator stored a partial matrix.
+The replacement v3 evaluator then completed the full strict lower triangle: for every current
+theta-i from theta1 through theta7, it evaluated cache theta0 through theta-(i-1), giving 28
+distinct pairs.
+
+The complete matrix does not show repeated late cache-age cliffs. The large discontinuity is the
+theta0-to-theta1 base-to-stream boundary. Excluding theta0, MeanRank, AUC, standard top-k metrics,
+K/V drift, hidden cosine, score cosine, and top-10 changes evolve smoothly enough that no
+non-theta0 quality step survives the post-hoc multiple-comparison screen. The supported conclusion
+is that stale reuse has a measurable endpoint cost and theta0 is special; the unsupported
+conclusion is that the 8+8 run establishes a generic “safe for two versions, then collapse”
+pattern.
+
+The new exploratory route changes only the temporal split, not model scale or serving semantics.
+It uses D1-D4 as base and D5-D16 as 12 updates, producing theta0-theta12 and 11 leak-free
+next-day current versions. The complete matrix has 66 pairs; theta0 has 11 longitudinal points and
+theta2 has nine. The prepared cohort has 945 users and 5,780,499 selected rows. At D16 its logical
+FP32 prefix K/V is 71.29 GB across 682 eligible users. Seed-0 four-GPU training completed in
+860.7 seconds and produced theta0-theta12; the 66-pair motivation matrix is complete.
+
+At the fixed theta11/D16 endpoint, cache age is strongly ordered with K/V drift but not with task
+quality. Across all pairs, age-to-MeanRank Spearman is approximately zero while age-to-K/V-drift
+Spearman is 0.817. After removing the special theta0 base boundary, age alone explains 6.15% of
+MeanRank variation, whereas current-version identity explains 60.9%. Even adjacent one-update
+cohorts have opposite effects: theta0→theta1 loses 538 MeanRank on average, while theta1→theta2
+improves it by 137. The complete matrix therefore supports a non-linear, update-dependent
+staleness effect and rejects cache age as a sufficient statistic for a fixed reuse window. It does
+not support a universal delayed cliff or a predictor that decides which version is safe to reuse.
+
+The first large-model progressive-sync diagnostic fixes theta11/D16 and evaluates source theta0,
+theta4, and theta10. On 16 held-out diagnostic users, rank-32 compiled repair costs approximately
+0.061x exact recomputation and recovers 0.610/0.589/0.636 of the K/V fidelity gap. At age 11,
+residual p8 costs 0.550x and recovers 0.846; p12 costs 0.775x and recovers 0.934. These values
+validate the action ordering and implementation only. They use one training seed, four fit users,
+and altered evaluation settings, so they are not formal paper evidence. The frozen formal
+protocol uses 40 fit, 60 label-free probe, and all remaining test users. Evaluation may use two or
+four workers because worker count changes only inference sharding and wall time.
+
+The formal two-worker evaluation is now complete on 582 test users. Rank-32 costs
+`0.0640/0.0642/0.0641x` exact and recovers `0.579/0.673/0.609` of the K/V gap at ages
+11/7/1. P8 costs approximately `0.549x`; it is not a reliable quality tier, because its K/V
+recovery is only `0.840/0.784/0.798` and its age-7 task deviations are worse than rank-32.
+
+A separate three-round design search keeps that endpoint and user split fixed. It exposes an
+important compilation fact: ranks 16 through 512 all fold into the same
+`[16,512,1024]` affine projection, so low rank is offline regularization rather than an online
+cost knob. The label-free probe selects full rank 512. An attention-use-weighted version of the
+same full-affine regression is the final exploratory candidate. It costs
+`0.0640/0.0642/0.0642x` exact and recovers `0.886/0.891/0.936` of the K/V gap. Relative to
+rank-32, its three-age mean absolute deviation from fresh falls by 44.5% for MeanRank, 44.5% for
+AUC, and 47.3% for NDCG@100 without changing the online matrix, program bytes, or measured cost.
+At age 11 it recovers 99.2% of the signed MeanRank and AUC gap, 94.4% of the NDCG@100 gap, and
+90.9% of the Hit@100 gap.
+
+The intermediate ridge search is a negative result: ridge `1e-2` wins a tiny probe
+score-cosine difference but loses test top-100 overlap and MeanRank fidelity to `1e-3`. Attention
+weighting adds only a further 1.0%-1.6% average task-fidelity improvement over uniform full rank.
+Because later rounds were designed after inspecting earlier test results, the selected program is
+exploratory and must be frozen on new seeds or datasets before becoming confirmatory evidence.
+
+A verified compiler now turns that candidate into an enforceable cohort contract. It preserves the
+40 fit and 60 earlier program-selection users, withholds another 60 users for label-free
+certification, and leaves 522 users for final recommendation evaluation. For cache error, fresh
+score cosine, and top-100 overlap, the contract requires at least 70% recovery, a one-sided 90%
+bootstrap recovery lower bound of at least 70%, at least 80% user coverage after a one-sided 90%
+Wilson bound, and primary cost no greater than 0.30x exact. The candidate library contains current
+projection, compiled full affine, structural p4/p8, and exact.
+
+At ages 11/7/1, the compiler selects compiled full affine at
+`0.0627/0.0631/0.0631x` certificate cost. The worst recovery lower bounds are
+`0.853/0.837/0.923`, and the worst coverage lower bounds are `0.922/0.900/0.946`. P8 is retained
+as a budget-overflow fallback only at ages 11 and 1; at age 7 it fails the frozen contract, so that
+plan falls directly to exact. On the 522 final users, the selected action costs
+`0.0638/0.0640/0.0641x`, recovers `0.886/0.891/0.936` of the K/V gap, and remains above every
+frozen certificate bound. At the harmful age-11 endpoint it recovers 98.8% of the signed MeanRank
+and AUC gap, 90.3% of NDCG@100, and 88.9% of Hit@100. No recommendation labels enter compilation
+or certification. This is still adaptive seed-0 exploration because the preceding program was
+developed after inspecting this seed; confirmation requires a frozen new seed or dataset.
+
+Cache age remains checkpoint-update distance over the identical resident prefix, not literal
+residence of one physical snapshot. Physical rolling eviction and organically mixed per-token
+versions remain separate system gates. The 8+8 protocol is in
+`experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md`; the split exploration is in
+`experiments/motivation/LONG_CONTEXT_SPLIT_EXPLORATION_V1.md`; the design loop is in
+`experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md`; the verified compiler is in
+`experiments/migration/VERIFIED_COHORT_COMPILER_V1.md`.
 
 ## 3. Current contribution hypothesis
 
@@ -364,10 +477,13 @@ A complete paper could make four contributions if the remaining gates pass:
    behavior append and fixed-model cache management.
 2. Characterize the time and layer structure of the resulting quality loss under leak-free
    streaming evaluation.
-3. Introduce cohort-tiered cache migration: a calibrated residual compiled into one K/V projection,
-   residual-delta structural replay for higher fidelity, and exact recomputation as the endpoint.
-4. Build a version-aware executor that first admits only useful maintenance cohorts, then selects
-   a fidelity/cost tier and demonstrates end-to-end savings against periodic recomputation.
+3. Introduce a verified cohort migration compiler that generates migration actions, certifies
+   label-free current-model semantic fidelity and user coverage, then publishes the cheapest
+   qualifying program and an ordered fallback chain. Its fast path compiles an
+   attention-use-weighted full-affine residual into one K/V projection.
+4. Build a version-cohort executor that applies an unconditional cheap synchronization, advances
+   cache extents through progressively stronger fidelity tiers under a resource budget, and
+   demonstrates end-to-end savings against periodic recomputation.
 
 The reusable idea is to move adaptation work out of the per-cache path: measure one version-pair
 cohort, learn a shared correction, compile it into a GPU-friendly operator, and batch one action
@@ -442,16 +558,18 @@ seed-0 screen, whereas folding them into one prepacked projection lowers held-ou
 kernel-only break-even cohorts are about 4.8k, 6.3k, and 7.4k caches on KuaiRand, QB, and QK.
 These amortization numbers exclude state movement and cannot yet support an end-to-end claim.
 
-The remaining policy question is when a version cohort should use reuse, its compiled adapter, or
-full recomputation under organic mixed ages. Fixed-period and age-only schedules remain mandatory
-baselines. This gate does not reopen arbitrary-layer search, and a user-specific JVP remains
-outside the active design.
+The remaining policy question is how quickly each stale extent advances through compiled repair,
+residual replay, and exact recomputation under organic mixed ages and a finite update budget.
+This is scheduling of repair strength, not prediction of whether a version is safe to reuse.
+Fixed-period and age-only schedules remain mandatory baselines. This gate does not reopen
+arbitrary-layer search, and a user-specific JVP remains outside the active design.
 
 The capacity-tiered follow-up preserves the compiled fast path across 3L/H64, 6L/H96, and 9L/H128.
 Its 27 replication runs take `0.121 [0.112, 0.130]x` full and recover
 `0.587 [0.547, 0.627]` of the K/V gap. The operator gate passes; the unconditional task-quality
-gate does not, because three cells have near-zero or negative full maintenance endpoints. The next
-method change must therefore be cohort admission, not another hidden-state arithmetic sweep.
+gate does not, because three cells have near-zero or negative full maintenance endpoints. This
+prevents using ranking gain as a synchronization contract; it does not invalidate semantic
+fidelity as the contract or justify an unobservable task-quality admission predictor.
 
 ### Gate E: expand scale and generality after the operator is fixed — motivation passes with scope limits
 
@@ -522,11 +640,13 @@ model results are in `experiments/exposure/ORDERED_EXPOSURE_V1.md` and
 
 Proceed in this order:
 
-1. Freeze a cohort-admission v2 rule before examining new training seeds. Its signal must operate
-   once per version cohort and must not revive per-user drift/JVP prediction.
-2. Add organically mixed cache versions and version-cohort batching; compare reuse, tiered
-   migration, periodic full recomputation, and age-only thresholds at equal cost and equal quality.
-3. Measure end-to-end state reads/writes, calibration/admission, throughput, and tail latency
+1. Freeze the verified compiler, including its action library and 70%/80%/90%/30% contract, and
+   replicate it on new training seeds or accepted cross-dataset checkpoints without another
+   search on the current seed's users.
+2. Add organically mixed cache versions and version-cohort batching; compare unconditional compiled
+   sync plus progressive refinement against reuse, periodic full recomputation, and age-only
+   fixed-window policies at equal cost and equal fidelity.
+3. Measure end-to-end state reads/writes, calibration amortization, throughput, and tail latency
    before optimizing another arithmetic kernel.
 4. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
    result-driven per-dataset tuning, creates a reason to revisit it.
@@ -536,8 +656,8 @@ Proceed in this order:
 The current cost is GPU-resident kernel time. A paper-grade system evaluation must include:
 
 - extra normalized/split-hidden state capacity;
-- one-time adapter fitting, compilation, admission, and cohort-size amortization;
-- HBM reads and writes, host-device transfer, allocation, and cache admission;
+- one-time adapter fitting, compilation, and cohort-size amortization;
+- HBM reads and writes, host-device transfer, allocation, and cache placement;
 - batched throughput and tail latency across version cohorts;
 - profile the prepacked projection and normalized-state reads before another kernel optimization;
 - end-to-end comparison with periodic full recomputation under equal quality or equal cost.
@@ -587,7 +707,7 @@ The route should be reconsidered if any of the following persists after the scop
    recomputation, and full recompute after calibration and end-to-end data movement are included;
 2. extra state movement removes the measured compute saving in end-to-end execution;
 3. the streaming-training and maintenance gains fail to generalize beyond the current control;
-4. the compiled adapter or cohort-level selector does not generalize across seeds, cache ages, or
+4. the compiled adapter or fixed progressive ladder does not generalize across seeds, cache ages, or
    a second dataset;
 5. a related-work audit shows that model-version cache migration and the same structural operator
    have already been established.
@@ -622,10 +742,15 @@ The route should be reconsidered if any of the following persists after the scop
 17. [x] Complete the fixed-task 3x3 joint data/model-capacity motivation matrix over four seeds.
 18. [x] Transfer the frozen compiled operator across the capacity matrix, including
     top-50k/complete-chunk KuaiRand, and run the frozen 27-seed tiered replication.
-19. [ ] Freeze a version-cohort admission rule on current results and validate it only on new
-    training seeds or a new predeclared temporal endpoint.
-20. [ ] Evaluate organically mixed cache versions with periodic, age-only, and update-aware
-    version-cohort policies.
-21. [ ] Measure end-to-end state movement, calibration amortization, throughput, tail latency, and
+19. [x] Complete the large KuaiRand scale bridge: 4+12 seed-0 training and all 66 motivation
+    pairs are done; age is not a sufficient task-quality state and no universal delayed cliff is
+    claimed.
+20. [x] Complete the full-user theta11/D16 progressive-sync evaluation, bounded compiled-program
+    search, and verified compiler. The compiler uses disjoint 40/60/60/522
+    fit/selection/certificate/final roles and publishes a measured fallback plan; the current seed
+    remains adaptive exploration and cannot supply confirmatory evidence.
+21. [ ] Evaluate organically mixed cache versions with unconditional cheap synchronization,
+    progressive refinement, periodic full, and age-only fixed-window baselines.
+22. [ ] Measure end-to-end state movement, calibration amortization, throughput, tail latency, and
     periodic recomputation.
-22. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+23. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

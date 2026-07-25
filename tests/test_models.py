@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from hstu_kvcache.models import HSTU, HSTUConfig
@@ -18,6 +19,23 @@ def _make_batch(B=2, L=8, device="cpu"):
         "behaviors": torch.randint(0, 9, (B, L), device=device),
         "time_deltas": torch.rand(B, L, device=device) * 100,
     }
+
+
+def test_prediction_catalog_can_be_smaller_than_context_vocabulary():
+    cfg = HSTUConfig(
+        num_items=100,
+        num_prediction_items=40,
+        num_behaviors=8,
+    )
+
+    assert cfg.num_prediction_items == 40
+
+    with pytest.raises(ValueError):
+        HSTUConfig(
+            num_items=40,
+            num_prediction_items=41,
+            num_behaviors=8,
+        )
 
 
 def test_forward_shapes():
