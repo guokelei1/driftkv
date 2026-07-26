@@ -1,6 +1,6 @@
 # 从 cohort-tiered migration 到系统论文：候选方向与当前主线
 
-> 状态：2026-07-25 第三轮收敛文档，属于设计探索，不是新的研究事实来源，也不改变
+> 状态：2026-07-26 第五轮收敛文档，属于设计探索，不是新的研究事实来源，也不改变
 > `08_core_insights_and_roadmap.md` 与 `eval_protocol.md` 的优先级。
 >
 > 目标：回答“我们做的是一个什么系统”，并给出若干可独立成文的系统中心、共同组件、
@@ -9,8 +9,12 @@
 > 最新决策：第 0 节是当前优先推进的收敛方案。后面的 A–G 仍保留为设计空间与失败备选，
 > 但不再表示论文要同时实现这些系统，也不再以“模型发布系统”为当前定位。
 > 进一步收敛：系统不预测某个 version “能不能 reuse”。每个 stale cohort 都必须发布一个
-> 通过无标签 current-model semantic contract 的同步方案，再按证书中的 fallback 推进；
-> version 仅用于编译、认证、合批、placement 和调度。
+> 通过无标签 current-model semantic contract 的同步方案；version 用于编译、认证和合批。
+> 当前数据不提供真实请求 arrival、热度、routing 或训练/推理共置关系，所以在线 lifecycle、
+> foreground SLO 和自动冷热 placement 已从主线移除。第三层现在是显式 destination 下的
+> out-of-core 批量更新与事务式版本发布。
+> Update Coordinator 仅解析 job spec 并调用三层接口，是必要控制面胶水，不构成第四项
+> 创新，也不恢复 admission、在线调度或自动 destination selection。
 
 ## 0. 先给结论
 
@@ -20,9 +24,10 @@
 
 > **一个面向持续更新生成式推荐的、编译式流式 KV cache 迁移系统。**
 
-暂用名 **StreamKV**。它接收一个新模型版本、旧版本的持久化 cache/capsule，以及需要迁移的
-version cohort；输出可供新版本 serving 使用的 K/V。它不负责训练模型、不决定何时发布
-checkpoint，也不负责分发或回滚 weights。模型更新只是触发 KV 迁移的外部事件。
+暂用名 **StreamKV**。它接收一个新模型版本、旧版本的持久化 cache/capsule、固定更新 cohort
+和调用方指定的 destination；输出一组完整的 target-version K/V objects 与一个已提交
+manifest。它不负责训练模型、不决定何时发布 checkpoint，也不负责分发或回滚 weights。
+模型更新只是触发 KV 更新作业的外部事件。
 
 论文的一句话 thesis 是：
 
@@ -49,10 +54,10 @@ old-version cache/capsule records
               |
               v
  [3. Cohort-streaming Migration Engine]
- read next | transform current | write previous
+ bounded waves | transform | destination publish
               |
               v
-target-version K/V records
+committed target-version K/V manifest
 ```
 
 它们的依赖关系是：
@@ -61,9 +66,10 @@ target-version K/V records
 2. 无状态 program 使每条 cache 可独立变换，从而允许按版本和长度重排、合批；
 3. 重排后的 cohort 可组织成大块顺序访问，算子可直接生成最终 K/V layout；
 4. 顺序访问和直接写出使 read–transform–write 能够重叠，并可把 extents 分给多张 GPU；
-5. 因而已有的 kernel-level 低成本才有机会转化成端到端迁移时间和前台资源占用的降低。
+5. 因而已有的 kernel-level 低成本才有机会转化成固定 destination 下的端到端更新时间、
+   峰值工作内存和数据移动降低。
 
-### 0.3 三个且仅有三个论文贡献
+### 0.3 三个且仅有三个技术贡献
 
 #### Contribution 1：Cohort Migration Compiler
 
@@ -88,8 +94,8 @@ target-version K/V records
 
 它回答“一个 migration batch 如何接近硬件上限地执行”。
 
-当前 PyTorch prototype 会 stack 逐层 `Norm(x)`、转 FP32、执行 batched projection、加
-bias、生成 padding mask、回转原 dtype，再切分 K/V。系统版 operator 的目标是：
+基线 PyTorch path 会 stack 逐层 `Norm(x)`、转 FP32、执行 batched projection、加
+bias、生成 padding mask、回转原 dtype，再切分 K/V。当前 Triton path 已实现下述目标：
 
 > 读取一次旧 capsule，在一个逻辑 pass 中完成 projection 与 epilogue，并直接写成 runtime
 > 消费的最终 K/V layout，避免 materialize 完整的中间 `projected` tensor 和二次 layout
@@ -104,23 +110,25 @@ FP16/BF16、Tensor Core、CUDA Graph、Triton/CUDA/cuBLASLt 等只是实现选�
 成贡献。是否采用 low-rank factorized execution，也由测得的算力—带宽平衡决定，不能预设为
 额外 novelty。
 
-#### Contribution 3：Cohort-streaming Migration Engine
+#### Contribution 3：Destination-oriented Out-of-core Migration Engine
 
-它回答“如何让整个持久化 cohort 在存储与多 GPU 之间高吞吐地完成迁移”。
+它回答“如何在有限工作内存下，把整个持久化 cohort 更新并完整发布到指定目的地”。
 
 engine 只主打两个互相依赖的机制：
 
 1. **Cohort-oriented organization**：保留 `user -> object` 逻辑索引，同时按
    `migration_anchor/version pair + representation + length bucket` 形成可顺序扫描的
    logical extents；
-2. **Read–Transform–Write pipeline**：异步读取 batch `i+1`、在 GPU 上变换 batch `i`、
-   同时写回 batch `i-1`，用有界 buffer 和 backpressure 避免任一阶段淹没其他阶段。
+2. **Destination-specific Read–Transform–Publish pipeline**：以有界 wave 读取 capsule、
+   在 GPU 上变换，并通过有界 publication queue 写入目标 backend；只有 complete、
+   duplicate-free record coverage 才提交 target-version manifest。
 
 多 GPU 不是第四个贡献，而是该流式引擎的自然扩展：以 extent 为工作单元分配给 GPU worker，
-每个 worker 运行相同 migration program 和同一三阶段 pipeline，运行时依据队列和传输压力
-再平衡。HBM、host DRAM、SSD 或远端存储也只是 engine 的 source/destination backend；
-论文首先在现有四张 A40 和 host DRAM 上闭环，只有 profile 证明容量或 I/O 是主瓶颈后才把
-SSD/GDS 或跨节点加入主实验。
+每个 worker 运行相同 migration program 和同一三阶段 pipeline。当前实现按预估 work bytes
+做静态 LPT；只有后续 profile 证明队列失衡时才引入动态 rebalance。destination 决定执行
+范式：HBM 由目的 GPU 直接写入，DRAM/本地文件/远端对象采用 host staging 与 manifest
+commit。论文首先在现有四张 A40、HBM 与 host DRAM 上闭环；filesystem/remote 先实现接口，
+只有真实硬件和独立 protocol 才形成 SSD 或网络结果。
 
 ### 0.4 为什么这三层合起来像一篇 system paper
 
@@ -135,14 +143,18 @@ SSD/GDS 或跨节点加入主实验。
 - **H1，compile**：共享 version-cohort program 在目标质量下的执行成本显著低于 full
   recomputation；
 - **H2，execute**：one-pass operator 将算法优势转化成 GPU time 和 memory-traffic 优势；
-- **H3，stream**：cohort organization 与流水重叠将单卡 kernel 优势转化成端到端迁移
-  throughput、completion time 和较低的 foreground interference。
+- **H3，stream**：有界 wave、destination-specific publication 与 manifest commit 将单卡
+  kernel 优势转化成固定 endpoint 下的全 cohort completion time 和可控峰值内存。
 
 最终 contribution list 应严格保持为：
 
 1. 一个 cohort migration compiler；
 2. 一个 one-pass capsule-to-KV operator；
-3. 一个 cohort-streaming multi-GPU runtime。
+3. 一个 destination-oriented out-of-core multi-GPU engine。
+
+问题定义与 motivation 是这三项贡献的研究依据，不额外扩成一个系统层。Coordinator 只把
+job specification、已发布 program、capsule shards、devices 与 destination 交给现有 runtime，
+也不单列为 contribution。
 
 ### 0.5 每一层的同位替换项
 
@@ -153,7 +165,7 @@ contributions。
 |---|---|---|---|
 | Compiler | compiled affine `old Norm(x) -> target K/V` | 某些 cohort fidelity 不足，或 calibration 无法 amortize | compiler 对困难 layer/cohort 选择 residual-delta replay；小 cohort 直接 reuse/full；若误差集中在少数层，则生成 affine + selective replay 的单一混合 program |
 | Operator | projection + fused epilogue + direct final-layout write | projection 完全支配耗时，full fusion 收益很小；或 paged random write 破坏合并访问 | 保留高效 library GEMM，只融合 epilogue；或者先写连续 staging extent，再异步 scatter 到 pages。两者仍是一个 capsule-to-KV operator |
-| Engine organization | 物理或准物理的 cohort extents | 重排成本过高，或破坏按 user serving 的访问局部性 | 不移动主对象，只维护 version/length secondary index，按索引生成 sorted gather plan；流水线仍消费 cohort batch |
+| Engine organization | 物理或准物理的 cohort extents | 重排成本高于顺序更新收益 | 不移动主对象，只维护 version/length secondary index，按索引生成 sorted gather plan；流水线仍消费 cohort batch |
 | Engine pipeline | 固定 read–transform–write 重叠 | 三阶段长期失衡，固定 batch/buffer 造成空转或拥塞 | 用同一 engine 内的自适应 batch sizing、双/三缓冲和 backpressure；若数据已 resident，则退化成多 GPU extent sharding，而不硬凑 SSD 故事 |
 
 这组替换有两个约束。第一，接口不变：compiler 仍产生 program，operator 仍完成
@@ -174,7 +186,7 @@ capsule-to-KV，engine 仍执行 cohort stream。第二，每层最终只保留�
 后文 A–G 提供了这些方向的详细设计空间。如果主流水线的某个 gate 失败，可以从中抽取一个
 同位机制替换；在当前方案成立时，不应把它们全部装入一篇论文。
 
-### 0.7 2026-07-25 实现状态
+### 0.7 2026-07-26 实现状态
 
 第一个三层 prototype vertical slice 已经落地：
 
@@ -227,11 +239,76 @@ Hit@100 signed recovery 分别为 98.8%、90.3%、88.9%。详细记录在
 `experiments/migration/VERIFIED_COHORT_COMPILER_V1.md`。它仍是 adaptive seed-0 evidence，
 下一步是冻结后在新 seed 或数据集复现，而不是继续搜索当前用户。
 
-当前尚未实现的核心部分是 pipelined full recompute 强基线、真正的 fused GEMM
-epilogue/direct paged write、host topology-aware placement 和 foreground interference。
-下一开发顺序仍遵循 Gate S0→S4，不提前加入 SSD、跨节点或 rollout。
+两 GPU 的真实 checkpoint 系统闭环现已完成。它不是把三层重新拆成更多贡献，而是让主流水线
+首次在同一 boundary 下闭合：
+
+- compiler 层直接读取 theta0/theta4/theta10 的 verified full-affine programs，不在系统用户上
+  重新选算法，也没有 version reuse admission；
+- operator 层用 Triton 融合 affine、bias、length mask 与 K/V split，并直接写两个连续的
+  K/V 目标 tensor；在 length 2,047 的真实 capsule 上相对 packed FP16 快 1.19x；
+- engine 层支持多个 source cohort 共存、三个 program 每卡常驻、pinned-host
+  H2D/compute/D2H 三流、持久化目标 extent 和两卡 LPT；最终 64-user trace 达到
+  903.7 records/s 和 1.951x 的 1→2 GPU scaling；
+- 强基线也已补齐：current model 在两卡上复制，raw histories 可跨旧 version 合批，使用独立
+  调优的 BF16/FP32 三流 full recompute 并发布同样的 FP16 host K/V。最终 compiled path
+  相对更快的 BF16 baseline 为 11.22x。
+
+这轮也得到两个有用的负/边界结果。第一，persistent destination 在 warm steady state
+只有 0.9998x，不应包装成吞吐优化；它的价值是固定地址与消除首次 pinned registration
+抖动。第二，在细粒度 batch-1 trace 上，LPT 只比 round robin 快 1.011x；调度器的主价值是
+有界负载与处理不规则 extent，而不是在当前均衡 trace 上制造大收益。额外 `Norm(x)` capsule
+仍是逻辑 FP16 K/V 的 50% 状态开销，这轮明确接受，不把压缩硬塞进当前贡献。
+
+详细协议和结果在 `experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md`。该结果闭合了受控
+host boundary，但没有覆盖全 cohort、有限工作内存、destination backend 或 durable commit。
+
+后续已经按“必须来自迁移场景”的标准实现了 cohort-jagged/page-compacted operator，而不是
+继续叠加通用 tile 调参。同一 version program 下的有效 token 可以跨用户拼接；最终实现还把
+记录拆成 256-token K/V pages，并压成最多 2,048-token tiles，直接发布到 pinned host 或
+HBM extent。全部 1,609,760,768 个有效 FP16 K/V 元素与 dense fused 完全一致。
+
+但这个候选没有通过独立 operator-contribution gate。64-user final trace 上，page packing
+把 batch 64→50、padding 0.509%→0，却只让两卡 host boundary 快 1.019x；在 direct-HBM
+boundary 上反而是 one-record path 的 0.984x。resident fusion 仍有 1.182x，但 HBM
+end-to-end fused/packed 只有 1.005x。32-user search 上约 5% 的 compaction 收益没有泛化。
+因此 page metadata 与 direct publication 可以保留为 engine 机制，但不能把
+“cohort mega-batching/去 padding”写成主要 novelty。详细记录在
+`experiments/system/COHORT_JAGGED_SYSTEM_V3.md`。
+
+冻结 v3 final trace 的四卡 follow-up 也已完成，不重新搜索 layout 或 program。host-staged
+compiled migration、direct-HBM compiled migration 和同 host boundary 的 BF16 exact
+分别达到 3.275x/3.331x/3.592x 的 1→4 scaling；四卡效率为
+81.9%/83.3%/89.8%，LPT assigned-work imbalance 不超过 0.30%。compiled migration 在
+四卡 host boundary 仍比 BF16 exact 快 10.39x。这个结果证明当前 extent sharding 能从
+单卡扩展到四卡，也显示 migration 在任务变短后比 arithmetic-heavy exact 更早受到固定
+调度/传输开销影响。它不替代 full-cohort destination-v4 gate。详细记录在
+`experiments/system/FOUR_GPU_SCALING_V1.md`。
+
+这也收紧了主线：当前 compiler 仍然强，host-backed end-to-end 优势仍然成立；operator 是
+可信的 enabling implementation，而不是已经成立的独立大贡献。
+
+最新 destination-v4 vertical slice 已实现统一的 HBM、DRAM、POSIX filesystem 与 remote
+object contract。HBM 走 direct-device publication；其他 backend 走有界 host-staged wave
+和异步 publication queue。每个 job 预声明完整 record set，只有所有 extent 都完成后才提交
+`streamkv_destination_manifest_v1`；中断作业不暴露半成品版本。filesystem 与 remote 当前
+只是正确性实现，不是 SSD/网络性能结果。代码和边界记录在
+`experiments/system/DESTINATION_OUT_OF_CORE_V4.md`。
+
+薄层 `scripts/run_streamkv_update_coordinator.py` 已把 job spec、program/capsule artifacts、
+devices、destination 与 v4 engine 串起来；默认只输出 plan。它不生成 program、不物化
+capsule、不选择 backend，也没有恢复/重试机制。当前 host-staged engine 只对 transform 输出
+与 publication backlog 做有界 wave，完整 CPU source capsules 仍由调用方准备；HBM direct
+路径保留完整 target K/V。这些是后续 full-cohort gate 的实现边界，不是新的贡献。
+
+> **历史附录边界：** 第 1–11 节冻结了早期候选与转向原因。其中关于 request trace、
+> admission、foreground SLO、模型发布和训练/推理共置的“缺口”不再是当前 StreamKV 的需求，
+> 也不能覆盖第 0 节与第 12–16 节的主线。保留它们仅为了记录同位替换和 pivot 空间。
 
 ## 1. 为什么“再加几个系统组件”还不够
+
+本节以下到第 11 节保留较宽的历史候选空间。其中依赖请求 arrival、热度、routing、前台
+SLO 或训练/推理共置的 A/C/F 等方案不再是当前主线，因为现有数据不能验证这些前提。当前
+论文闭环以第 0 节和第 12–16 节的确定性 destination update job 为准。
 
 系统论文通常不是算法外面包一层 scheduler，而是同时具备以下闭环：
 
@@ -997,13 +1074,14 @@ capacity 或 PCIe 是决定性瓶颈后，再增加 SSD/GDS。这样 SSD 是被�
 
 ### 12.1 独立 protocol
 
-建议建立独立的 `system_streamkv_v1`，不能把 end-to-end 结果写回现有 resident-kernel result
-family。每次实验至少固定：
+当前架构与发布语义使用 `streamkv_destination_out_of_core_v4`。后续真实 HBM/DRAM
+full-cohort 性能结果必须在该边界上建立独立、版本化的 performance protocol，不能写回现有
+resident-kernel result family。每次实验至少固定：
 
 - old/current model pair、compiler program 和 calibration/test split；
 - cohort size、真实 length 分布、capsule 与目标 K/V 的 dtype/layout；
 - source/destination tier、容量、实际读写 bytes 和是否包含 cold-cache I/O；
-- GPU 数、worker 数、buffer 大小和 foreground load；
+- GPU 数、worker 数、wave 大小、publication queue depth 和 manifest commit 语义；
 - compile、read、transform、write、layout conversion 是否计入端到端时间。
 
 质量仍遵守现有协议：full 是 cache-fidelity reference，而不是 ranking quality 的必然上界；
@@ -1016,7 +1094,7 @@ training seed 仍是统计复现单位。按真实分布复制 cache records 只
 |---|---|---|---|
 | Compiler | 能否以一次 version-pair 编译替代 per-cache recomputation | reuse、cheap projection、residual replay、full | K/V fidelity、paired task difference、compile time、含 calibration 的 cohort break-even |
 | Operator | 能否把 program 做成真正的 one-pass capsule-to-KV | 当前 PyTorch prototype、library GEMM + unfused epilogue、full kernel | batch latency、records/tokens per second、kernel launches、读写 bytes、临时显存、不同 shape/length |
-| Engine | 能否把单批优势转成全 cohort 与多 GPU 优势 | 同步 read→compute→write、无 cohort organization、single GPU、pipelined full | end-to-end completion time、migration throughput、1/2/4 GPU scaling、PCIe/存储带宽、GPU utilization、foreground slowdown |
+| Engine | 能否把单批优势转成全 cohort、不同 destination 与多 GPU 优势 | 同步 read→compute→write、无 cohort organization、single GPU、同 endpoint pipelined full | end-to-end completion time、peak HBM/host staging、bytes、manifest commit、1/2/4 GPU scaling |
 
 端到端比较必须给 full recompute 与 compiled migration 相同的输入位置、输出位置和计时边界，
 不能让一方只计 GPU kernel、另一方计 host/SSD movement。
@@ -1025,10 +1103,11 @@ training seed 仍是统计复现单位。按真实分布复制 cache records 只
 
 - KuaiRand 使用真实日历顺序；QB/QK 只称 ordinal replay，不伪装成 wall-clock trace；
 - 真实数据提供 cache shape、length、version-pair 和质量样本，系统规模可按这些分布扩展；
-- 首轮覆盖 HBM-resident 与 pinned-host source/destination，分别建立 compute-bound 与
-  movement-bound 边界；
+- 首轮覆盖 target-GPU HBM 与 pinned-host DRAM destination，分别建立 direct-device 与
+  host-staged 边界；
 - 多 GPU 扫 1/2/4 张 A40，报告共享 PCIe/CPU 路径是否成为瓶颈；
-- SSD 只有在 working set 超出 host budget 或 host→GPU 不再代表目标部署时才加入；
+- POSIX filesystem 与 remote object 先冻结接口和原子发布语义；
+- SSD 只有在记录物理设备、mount、缓存状态和 durability 选项后才加入；
 - 跨节点只有在获得真实网络硬件和可复现 topology 后才进入主结果。
 
 ### 12.4 最小必要 ablation
@@ -1047,17 +1126,19 @@ rollback、通用 eviction policy 和跨节点 failure protocol 不属于当前 
 - compiled program 在足够大的真实 cohort 上仍能 amortize，且质量结论不弱于现有证据；
 - one-pass operator 相对当前 prototype 带来可解释的 launch、memory traffic 或 latency 收益；
 - host-resident end-to-end 路径仍显著优于同边界的 full recompute，而不只是在 HBM kernel 上赢；
-- cohort pipeline 在 1→2→4 GPU 上有可解释的 scaling，并能控制对 foreground serving 的干扰；
+- cohort pipeline 在 1→2→4 GPU 上有可解释的 scaling，并能保持有界峰值工作内存；
 - 相对 DroidSpeak、MTServe 和通用 KV movement 系统，收益确实来自 version-cohort
   compile–execute–stream 共设计，而不是把三个已有技巧顺序连接。
 
 ## 13. 分阶段研究 gates
 
-### Gate S0：冻结 compiler contract 与 admission
+### Gate S0：冻结 compiler contract
 
-沿用当前 cohort-tiered 结果，定义 migration program 的输入、输出和 metadata，并在新
-validation split 上冻结 `reuse / compiled / residual / full` 的 cohort-level 选择。若目标
-cohort 普遍没有正 maintenance endpoint，先解决 admission，不能用系统吞吐掩盖质量问题。
+沿用当前 verified compiler，定义 migration program 的输入、输出和 metadata，并在新
+validation split 上冻结 compiled/residual/full action library。系统不依据未观测请求或
+task-quality oracle 做 per-user admission。
+
+当前状态：接口和 adaptive seed-0 certificate 已完成；冻结的新 seed/数据复现仍待完成。
 
 ### Gate S1：operator byte/roofline profile
 
@@ -1065,11 +1146,19 @@ cohort 普遍没有正 maintenance endpoint，先解决 admission，不能用系
 launch 和 bytes，确认瓶颈究竟在 GEMM、memory traffic 还是 framework overhead。这个 profile
 决定采用 direct-write fused kernel，还是 library GEMM + fused epilogue。
 
+当前状态：v1/v2 stage profile 已完成，支持 fused epilogue/direct-write；不能由此推出
+cohort compaction 必然有效。
+
 ### Gate S2：one-pass operator
 
 先实现 contiguous final-layout output，再比较 direct paged write 与 staging + scatter。
 只有相对当前 prototype 在代表性 batch/length 上形成稳定收益，才把 operator 保留为独立
 contribution。
+
+当前状态：contiguous direct-write 已实现，并在 v2 resident 与 host boundary 分别获得
+1.19x/1.176x；v3 paged compaction 在独立 final trace 上只有约 1% host 改善、HBM 略退化。
+因此 one-pass direct write 保留，page compaction 只是条件式布局，operator 作为独立论文
+贡献仍取决于后续同边界证据。
 
 ### Gate S3：单 GPU end-to-end stream
 
@@ -1077,23 +1166,33 @@ contribution。
 full recompute。若 movement 抹平计算收益，优先替换 capsule representation、output path 或
 pipeline balance，不进入复杂 scheduler。
 
+当前状态：受控 64-record host-DRAM boundary 已通过，并有 independently pipelined exact
+baseline；尚不能替代 full-cohort destination-v4 结果。
+
 ### Gate S4：cohort organization 与四 GPU
 
 比较物理/准物理 extent 和 secondary-index sorted gather，选出一个最终 organization；
-再以 extent sharding 扫 1/2/4 GPU，并加入可控 foreground serving load。这里解决的是
-stream partition、backpressure 和共享 I/O 瓶颈，不扩展成通用集群 scheduler。
+再以 extent sharding 扫 1/2/4 GPU。这里解决的是 stream partition、bounded wave、
+publication backpressure 和共享 I/O 瓶颈，不扩展成在线请求 scheduler。
 
-### Gate S5：可选存储扩展
+当前状态：controlled mixed-version trace 的 LPT 与 1→2→4 scaling 已完成；page
+compaction 为负结果。完整 source stream、全 cohort 以及把相同四卡 measurement 纳入
+destination-v4 transaction 的工作仍待完成。
 
-只有 S3/S4 证明 working-set capacity 或 I/O 是决定性问题时，才增加 SSD/GDS；只有单节点
-已经闭环且有真实网络环境时，才增加跨节点 backend。它们增强 engine 的适用范围，但不改变
-论文贡献数量。
+### Gate S5：destination backend 扩展
+
+HBM、DRAM、POSIX filesystem 和 remote-object contract 已实现 reference vertical slice。
+下一步先闭合 HBM/DRAM 的全量真实数据结果。只有记录真实 SSD/GDS 或网络硬件后，才把对应
+backend 升级为性能结果；它们增强 engine 的适用范围，但不改变论文贡献数量。
+
+当前状态：transaction/backends 与薄层 Coordinator 接口已完成正确性 vertical slice；
+source-side lazy reader、同 transaction exact baseline 和真实 backend 性能仍待完成。
 
 ## 14. 停止或转向条件
 
 先在第 0.5 节做同位替换。经过有界优化后若仍出现以下情况，应缩小或放弃 StreamKV 主线：
 
-1. admission 后可维护 cohort 普遍小于含 calibration 的端到端 break-even；
+1. 固定更新 cohort 普遍小于含 calibration 的端到端 break-even；
 2. capsule 的持久化与移动成本使 compiled path 不优于 raw history + full recompute；
 3. fused/direct-write 与 library baseline 相比没有稳定收益，无法支撑 operator contribution；
 4. cohort ordering 和 read–transform–write overlap 不优于普通 batched loader + GEMM；
@@ -1101,7 +1200,8 @@ stream partition、backpressure 和共享 I/O 瓶颈，不扩展成通用集群 
 6. compile、operator、engine 三层中有两层必须被删除，因果链不再成立；
 7. 与 DroidSpeak、MTServe 的完整对比后，剩余内容只是已有跨模型重算与通用 I/O pipeline
    的直接组合；
-8. public workload 无法支撑 cohort 规模、状态移动或 foreground interference 的可信结论。
+8. public workload 无法支撑 cohort 规模、状态移动或 out-of-core working-set 压力的可信
+   结论。
 
 ## 15. 相关系统论文给出的“布局启发”
 
@@ -1139,11 +1239,12 @@ stream partition、backpressure 和共享 I/O 瓶颈，不扩展成通用集群 
 
 1. cohort migration compiler；
 2. one-pass capsule-to-KV operator；
-3. cohort-streaming multi-GPU migration engine。
+3. destination-oriented out-of-core multi-GPU migration engine。
 
-论文定位是“compiled streaming KV migration system”，不是 model publishing、rollout、
+论文定位是“compiled destination-oriented KV update system”，不是 model publishing、rollout、
 通用 coherence、通用 hierarchical cache 或通用 scheduler system。现有算法位于 compiler
 中心，算子和 runtime 分别证明它能在单批与全 cohort 尺度转化成真实系统收益。
+Coordinator 只是将这三层接到一个 job entry point，不改变贡献数量。
 
 ### 第二优先：同接口替换，不扩展贡献数量
 

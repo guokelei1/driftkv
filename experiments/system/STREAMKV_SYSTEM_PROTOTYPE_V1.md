@@ -8,6 +8,9 @@ quality protocol. The algorithm section reuses the frozen
 with the large capacity-v2 model shape. The three evidence families remain explicitly separated
 inside the result artifact.
 
+`TWO_GPU_MIGRATION_SYSTEM_V2.md` is the current real-checkpoint system endpoint. This file remains
+the historical synthetic prototype and must not be mixed with v2 measurements.
+
 ## Implemented prototype
 
 The prototype now has one executable path across all three proposed layers:
@@ -57,8 +60,10 @@ The frozen 27-seed validation remains the algorithm evidence:
 | Primary fidelity target met | 25/27 seeds |
 | Strict cell-level task gate | 6/9 cells |
 
-The system prototype does not reinterpret the failed task cells. Version-cohort admission remains
-an open algorithm/control gate.
+The system prototype does not reinterpret the failed task cells. At this historical stage,
+version-cohort admission was still listed as an open gate; later capacity evidence retired that
+route. The active system applies a declared semantic repair plan to every stale cohort and uses
+version only for compilation, batching, placement, and scheduling.
 
 ## Operator layer
 
@@ -115,11 +120,12 @@ This prototype supports a code-level and preliminary experimental skeleton for t
 paper design. It does not yet establish:
 
 - real-checkpoint end-to-end full-recompute speedup under identical storage boundaries;
-- an admission policy that resolves the current 6/9 strict quality gate;
+- the later verified compiler's label-free semantic contract;
 - a fused GEMM epilogue or direct paged destination writer;
-- foreground serving interference or a P99 SLO;
 - SSD, GDS, RDMA, or cross-node behavior;
 - multi-seed systems performance.
 
-The immediate next experiments are real checkpoint/capsule replay, H2D/D2H and NUMA profiling,
-and a foreground-load interference harness.
+The real checkpoint/capsule replay and direct writer were completed by system v2/v3. The active
+successor is the destination-oriented out-of-core update contract in
+`DESTINATION_OUT_OF_CORE_V4.md`; online request/SLO evaluation is not a current gate because the
+available datasets do not provide the required arrival, routing, or co-location trace.

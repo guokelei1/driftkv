@@ -2,11 +2,29 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Protocol
 
 import torch
 
 from ..models import HSTUKVCache
 from .layerwise import LayerwiseCacheState
+
+
+class KVOutputExtent(Protocol):
+    @property
+    def record_ids(self) -> tuple[int, ...]: ...
+
+    @property
+    def migration_anchor_version(self) -> str: ...
+
+    @property
+    def batch_size(self) -> int: ...
+
+    @property
+    def seq_len(self) -> int: ...
+
+    @property
+    def lengths(self) -> torch.Tensor: ...
 
 
 @dataclass(frozen=True)
@@ -197,3 +215,93 @@ class MigratedKVBatch:
             ),
             lengths=self.lengths.to(device, non_blocking=non_blocking),
         )
+
+
+@dataclass(frozen=True)
+class PinnedKVOutputPool:
+    served_kv_target: str
+    outputs: dict[tuple[int, ...], MigratedKVBatch]
+
+    def __post_init__(self) -> None:
+        if not self.served_kv_target:
+            raise ValueError("served_kv_target must be nonempty")
+        if not self.outputs:
+            raise ValueError("output pool must contain at least one extent")
+        seen: set[int] = set()
+        for record_ids, output in self.outputs.items():
+            if record_ids != output.record_ids:
+                raise ValueError("output-pool key and record IDs differ")
+            if output.served_kv_target != self.served_kv_target:
+                raise ValueError("output-pool target versions differ")
+            overlap = seen.intersection(record_ids)
+            if overlap:
+                raise ValueError("output-pool record IDs must be globally unique")
+            seen.update(record_ids)
+            if output.cache.k.device.type != "cpu":
+                raise ValueError("output-pool K/V must be CPU resident")
+            if not output.cache.k.is_pinned() or not output.cache.v.is_pinned():
+                raise ValueError("output-pool K/V must be pinned")
+
+    @classmethod
+    def allocate(
+        cls,
+        batches: Sequence[KVOutputExtent],
+        served_kv_target: str,
+        num_layers: int,
+        kv_width: int,
+        dtype: torch.dtype = torch.float16,
+    ) -> PinnedKVOutputPool:
+        if not batches:
+            raise ValueError("cannot allocate an empty output pool")
+        if num_layers < 1 or kv_width < 1:
+            raise ValueError("output-pool dimensions must be positive")
+        outputs = {}
+        for batch in batches:
+            if batch.device.type != "cpu":
+                raise ValueError("output-pool source batches must be CPU resident")
+            shape = (
+                num_layers,
+                batch.batch_size,
+                batch.seq_len,
+                kv_width,
+            )
+            k = torch.empty(shape, dtype=dtype, device="cpu", pin_memory=True)
+            v = torch.empty_like(k, pin_memory=True)
+            lengths = (
+                batch.lengths
+                if batch.lengths.is_pinned()
+                else batch.lengths.pin_memory()
+            )
+            outputs[batch.record_ids] = MigratedKVBatch(
+                record_ids=batch.record_ids,
+                migration_anchor_version=batch.migration_anchor_version,
+                served_kv_target=served_kv_target,
+                cache=HSTUKVCache(k=k, v=v, seq_len=batch.seq_len),
+                lengths=lengths,
+            )
+        return cls(
+            served_kv_target=served_kv_target,
+            outputs=outputs,
+        )
+
+    @property
+    def nbytes(self) -> int:
+        return sum(output.nbytes for output in self.outputs.values())
+
+    def acquire(
+        self,
+        capsule: KVOutputExtent,
+    ) -> MigratedKVBatch:
+        try:
+            output = self.outputs[capsule.record_ids]
+        except KeyError as exc:
+            raise KeyError("capsule extent is absent from output pool") from exc
+        if output.migration_anchor_version != capsule.migration_anchor_version:
+            raise ValueError("output-pool migration anchor differs from capsule")
+        if output.batch_size != capsule.batch_size:
+            raise ValueError("output-pool batch size differs from capsule")
+        if output.cache.seq_len != capsule.seq_len:
+            raise ValueError("output-pool sequence width differs from capsule")
+        if not torch.equal(output.lengths, capsule.lengths):
+            raise ValueError("output-pool lengths differ from source extent")
+        return output

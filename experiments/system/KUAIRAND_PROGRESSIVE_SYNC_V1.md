@@ -2,10 +2,21 @@
 
 ## Status
 
-The algorithm/operator/runtime path is implemented and passes bounded real-checkpoint diagnostics.
-The current result is not a paper result: it uses one training seed, 24 design users, 12 system
-records, and three idle GPUs because physical GPU 2 was occupied by an unrelated process. The
-full-user design evaluation and four-GPU system command below remain to be run.
+The algorithm/operator/runtime path is implemented. Its original bounded real-checkpoint
+diagnostic used one training seed, 24 design users, 12 system records, and three idle GPUs because
+physical GPU 2 was occupied. The frozen formal system command has now also completed on all four
+A40 GPUs with 64 real records and 1/2/3/4-GPU points. The full-user design evaluation was later
+completed and superseded by the verified compiler record.
+
+The four-GPU v1 result is corroborating scaling evidence for a historical single-source packed
+path, not the current primary system endpoint. The active performance gate remains the
+destination-v4 full-cohort HBM/DRAM protocol, while the frozen mixed-version fused four-GPU
+follow-up is recorded separately in `FOUR_GPU_SCALING_V1.md`.
+
+The later `TWO_GPU_MIGRATION_SYSTEM_V2.md` supersedes this file's system-performance endpoint with
+verified full-affine programs, a fused operator, controlled mixed versions, persistent
+destinations, LPT, and pipelined BF16/FP32 exact baselines. The diagnostics below remain historical
+implementation evidence.
 
 ## Frozen design
 
@@ -79,17 +90,31 @@ The bounded output is
 The 3-GPU point has 22.4% assigned-work imbalance because six variable-length batches are divided
 over three workers. It is evidence that the real multidevice path works, not a scalability claim.
 
-## Formal system command
+## Completed frozen four-GPU system run
 
-Run this only after the formal design command has generated the default theta0→theta11 program and
-all four GPUs are available:
+The formal command after the design step generated the default theta0→theta11 program was:
 
 ```bash
 python scripts/benchmark_kuairand_long_context_sync_system.py
 ```
 
+Its local output is
+`results/system/kuairand_long_context_4plus12_progressive_sync_system_seed0.json`.
+
+| Point | 1 GPU | 2 GPUs | 3 GPUs | 4 GPUs |
+|---|---:|---:|---:|---:|
+| Records/s | 364.5 | 735.3 | 1,059.2 | 1,318.1 |
+| Speedup | 1.000x | 2.017x | 2.906x | 3.616x |
+| Parallel efficiency | 100.0% | 100.9% | 96.9% | 90.4% |
+| Assigned-work imbalance | 0.0% | 0.53% | 1.44% | 1.99% |
+
+The trace contains 64 users, 107,247 valid tokens, and 1.65 GiB of FP16 capsules. Packed FP16 is
+3.997x faster than the resident FP32 reference with relative K/V error `3.86e-4`. This protocol
+uses one theta0→theta11 program and a synchronous full baseline, so the later mixed-version fused
+result and independently pipelined exact comparison remain the stronger current evidence.
+
 The exact baseline now starts with pinned raw histories and ends with FP16 pinned-host K/V, matching
-the compiled path's input/output location. It is synchronous and therefore not the final strongest
-baseline; the next systems step is a similarly pipelined full-recompute executor, followed by
-organic mixed-version extents and foreground interference. SSD, cross-node storage, and model
-partitioning are not current requirements.
+the compiled path's input/output location. The later system-v2 result adds the independently
+pipelined full-recompute baseline. The current successor is the fixed-cohort, destination-oriented
+out-of-core update job; request-arrival and foreground-interference experiments are not current
+requirements.

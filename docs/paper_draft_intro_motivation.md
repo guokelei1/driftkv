@@ -3,7 +3,9 @@
 > 当前定位：这是一条已经通过当前 KuaiRand 数据/模型规模 gate 的早期研究路径，而不是一篇
 > 已经完成的论文。我们已经有了
 > `motivation → structural observation → minimal design → scaled preliminary evaluation` 的闭环；
-> 当前重点已经从“值不值得继续”转向强规模迁移、自然混合版本与端到端系统证据。
+> 当前重点已经从“值不值得继续”转向编译迁移、one-pass operator 与显式 destination 下的
+> out-of-core 全 cohort 更新。现有数据不提供真实请求 arrival、热度、routing 或训练/推理
+> 共置关系，因此在线 lifecycle 与 foreground-SLO 调度不进入当前主线。
 
 ---
 
@@ -54,6 +56,22 @@ $F(\theta_t,x_u)$ 也不再等于新模型应产生的 $F(\theta_{t+1},x_u)$。�
    Tenrec 筛选虽然把 cheap/full 降到约 0.11-0.12，却只有 1.1%-6.0% staleness tax，因此
    已按规则停止。它说明长序列会放大重算成本，但不会自动放大版本不一致的质量损失。
 
+系统侧已经形成三层 vertical slice。verified compiler 发布 source/target cohort 共享程序；
+Triton operator 融合 affine、bias、valid-length handling 与 K/V split；两卡 engine 在相同
+pinned-host 输入/输出 boundary 下达到 1.951x 的 1→2 GPU scaling，并相对 independently
+pipelined BF16 full recomputation 快 11.22x。后续 page compaction 在当前长序列 trace 上
+只有约 1% 的 host-boundary 改善，因此不能作为主要 operator claim。最新 v4 将第三层收敛为
+destination-oriented out-of-core update：HBM direct write，DRAM/filesystem/remote
+host-staged publish，并只在完整 record coverage 后提交版本 manifest。filesystem/remote
+目前只是接口正确性，不是 SSD/网络性能结果。冻结 mixed-version trace 的四卡补测中，
+host-staged migration、direct-HBM migration 和 host-staged BF16 exact 的 1→4 scaling
+分别为 3.275x、3.331x 和 3.592x；共同 host boundary 上 compiled migration 在四卡仍比
+BF16 exact 快 10.39x。该结果闭合的是受控 64-user scaling，不是 v4 全 cohort 性能。
+
+Update Coordinator 只是把 job spec、已发布 migration program、capsule shards、devices 与
+destination 交给这三层的薄控制面。它不判断某个版本能否 reuse，也不构成第四项贡献。当前
+概念脚本默认只输出 plan；它不是新的实验结果。
+
 在当前六层小模型、四个训练种子的实验中，cheap refresh 约使用优化后完整 KV 重算的 19%
 GPU 计算；随着 full suffix 加深，质量总体向 fresh 靠近。重算最深五层约使用 77% 计算，在
 两个可辨识的累计缓存年龄上，其 Best Rank 和 NDCG@100 与 full 的配对差距均未被当前
@@ -77,7 +95,7 @@ model-version cohort 为控制单位：fast tier 学习 `fresh-cheap` 的低秩 
 顺序、没有全局日历时间，因此不能把它写成三个独立来源的自然时间漂移复现。方法方面，
 aligned QB 的 cheap/suffix seed-0 失败与 QK suffix 反转仍说明“加深 suffix 就稳定逼近
 full”不能泛化；compiled adapter 则在分离的 fit/probe/test 上首次通过三数据集四-seed
-kernel gate。它尚未覆盖系统数据移动、自然混合版本和独立第三来源，因此只能称为
+kernel gate。它尚未覆盖独立第三来源和 destination-v4 全 cohort 复现，因此只能称为
 method-level preliminary pass。
 
 新的容量矩阵也要求把“成立”说得更精确。固定各数据集任务和 vocabulary 后，数据量与模型
@@ -90,15 +108,16 @@ method-level preliminary pass。
 `0.121 [0.112, 0.130]x` full kernel，并恢复 `0.587 [0.547, 0.627]` K/V gap；但严格的
 cell-level BestRank/rank-utility gate 只通过 6/9。负向 cell 基本跟随 full endpoint：
 QB-medium 的 full BestRank 在三个 replication seed 中都为负，QK-large 接近 0 且不稳定。
-因此当前结论不是“迁移对所有 cohort 必然有收益”，而是“当 full maintenance endpoint
-存在时，编译迁移通常以低成本跟随它”。正式系统还需要先做 cohort admission，再做
-fidelity-tier selection。
+因此当前结论不是“迁移对所有 task metric 必然有收益”，而是“编译迁移能够在统一的
+current-model semantic contract 下，以低成本逼近 fresh K/V”。task quality 不是 admission
+oracle；系统不会判断某个 version 是否安全 reuse，也不会恢复 per-user classifier。
 
 新的固定终点实验还把“随时间积累”推进了一步：在相同当前模型、相同用户历史和相同目标
 下，只改变 cache 的模型版本。KuaiRand 与 QB 各有一个跨 4/4 seed 同向的局部恶化点；QK
 每个 seed 都有明显局部跃升，但位置在 age 5、8、9、10 之间移动。这说明固定周期仍应作为
 baseline，却不能被当成跨更新稳定的质量控制器；更合理的下一步是 model-version cohort
-级的 update-aware trigger，而不是恢复昂贵的 per-user drift/JVP 路线。
+级的独立 calibration 与 semantic repair plan，而不是恢复昂贵的 per-user drift/JVP 路线
+或预测哪个版本可以继续 reuse。
 
 ---
 
@@ -577,8 +596,9 @@ projection，平均成本 0.122x full，BestRank/rank utility 为 9/9 正号；7
 冻结到其余 27 个训练 seed 后，projection 的成本与 K/V recovery 仍稳定，但 task metric
 会随 full endpoint 换向。selected/full 的符号在 BestRank、rank utility、NDCG@100 上分别
 一致 23/27、27/27、25/27；当 full 为正时，selected 也为正的数量分别是
-18/20、24/24、19/20。该结果支持算子的跨容量扩展性，也直接暴露了下一项系统问题：
-version cohort 是否值得迁移，不能由迁移算子自身保证。
+18/20、24/24、19/20。该结果支持算子的跨容量扩展性，也说明 task metric 不能作为
+version-level admission oracle。当前系统以 current-model semantic fidelity 为 compiler
+contract，而不预测哪个 cohort “值得迁移”。
 
 ---
 
@@ -598,16 +618,21 @@ HSTU 的 `Norm → K/V projection → block propagation` 结构，产生新的�
 projection，把适配计算移出 per-cache 热路径。这里真正值得发展的抽象是
 **structure-aware cache migration**，而不是某个固定的 suffix 数字。
 
-### 5.3 版本风险与层级迁移共同形成二维决策空间
+### 5.3 Compile–execute–publish 形成一条系统因果链
 
-Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，而且 age 本身并不是可校准的
-质量状态；method 表明 version-pair probe 可以校准共享迁移强度。因此系统可以围绕两个变量设计：
+一个 source/target version pair 共享同一个迁移程序，cohort 内 record 又能彼此独立执行。
+这个性质把三层串起来：
 
-- 版本维：old/current model pair 经历了哪些更新、当前兼容性风险有多大；
-- 算子维：reuse、编译后的 calibrated projection、residual structural replay 或 full
-  recompute，分别满足不同 fidelity SLA。
+- compiler 将模型版本差异变成一次编译、多 record 使用的 state transformation；
+- operator 一次读取 capsule 并直接生成最终 K/V layout；
+- out-of-core engine 以有界 wave 在一张或多张 GPU 上执行，再按显式 destination 的语义发布
+  完整版本 manifest。
 
-这比“更新后全部缓存立即失效”或“只挑部分用户重算”提供了更细的研究空间。
+系统选择的是执行 endpoint 和数据流，不是根据不可观测 task label 判断哪个用户或版本能够
+安全 reuse。
+
+Coordinator 只负责把 job specification 映射到这三个接口并返回 manifest；它对系统闭环
+必要，但没有新的优化目标或机制，因此不列为第四层或第四项 contribution。
 
 ### 5.4 负结果同样提供研究判断力
 
@@ -624,9 +649,10 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
 1. 我们已经修复了足以影响结论的训练和 serving 评估问题，核心现象在四个 seed 上仍成立。
 2. 模型版本 staleness 具有随 cache age 增长的质量影响，同时单步影响较小，存在迁移空间。
 3. 三个数据集的 BestRank staleness tax 已处在 2.5 倍以内；局部跃升与越界年龄变化说明
-   age-only window 不是通用的质量控制器，值得测试 model-version cohort 级触发。
+   age-only window 不是通用的质量控制器，但不推出一个能够判断 reuse 安全性的 version oracle。
 4. HSTU 的 K/V 计算可以被拆成 cheap projection refresh 与部分 state propagation。
-5. 最小设计的曲线已经在长度与 3/6/9 层上保留，值得进入混合版本和系统成本评测。
+5. 最小设计的曲线已经在长度与 3/6/9 层上保留，并已进入真实 capsule、Host movement 和
+   1/2/4 GPU 系统评测。
 6. 在 top-50k complete-base-chunk 协议下，流式训练价值、maintenance gap 与固定 suffix 曲线
    都在四个 seed 上成立，路线已通过当前 KuaiRand 数据规模 gate。
 7. 在 KuaiRand、fixed-horizon QB、top-5k QK 上，pre-design motivation 的三个环节均在四个
@@ -635,6 +661,8 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
    四-seed held-out 结果中都以约 0.11-0.12x full kernel cost 改善 reuse。
 9. 同一 tiered operator 已扩展到九个数据集—容量 cell；27 个 replication seed 的成本与
    K/V recovery 稳定，且在 full endpoint 为正时通常保留其大部分收益。
+10. verified compiler、direct-write operator 与四卡 controlled host/HBM scaling 已闭环；
+    v4 又补齐 destination contract、bounded wave 和 atomic manifest 的代码语义。
 
 ### 不能讲
 
@@ -642,8 +670,8 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
 2. 不能把小模型的相对 GPU kernel 时间直接外推到工业用户规模或端到端 serving latency。
 3. 不能声称 deepest suffix 在所有规模上最优；连续区间 oracle 只在六层模型完成，更深模型
    仅验证了预先固定的 proportional suffix，没有重新搜索任意区间。
-4. 不能忽略额外状态：compiled 方法仍需保存 normalized state，还需一次性 fit/compile 与
-   version-cohort adapter admission；host-device transfer、缓存读取、allocator 尚未测量。
+4. 不能忽略额外状态：compiled 方法仍需保存 normalized state，还需一次性 fit/compile。
+   当前系统结果已经计入受控 Host–GPU movement，但尚未覆盖全 cohort 和物理 SSD/网络。
 5. 不能把“与 full 差异不显著”表述成严格等价；当前只有四个训练种子。
 6. 不能声称完整 suffix 曲线已经跨数据集泛化；跨数据集成立的是新的 compiled adapter，
    不是 suffix。ZhihuRec 也没有形成正的累计 gap。
@@ -656,6 +684,8 @@ Motivation 表明单步 staleness 通常较弱、累计后可能局部跃升，�
     都可校准的质量状态。Fine QK 的 MeanRank、rank-utility 与 NDCG 区间仍包含 0。
 11. 不能声称 migration 在所有 cohort 上都优于 reuse；容量验证的严格 cell gate 只通过
     6/9，full maintenance endpoint 本身在 QB-medium 和 QK-large 等设置中不稳定。
+12. 不能把 HBM、DRAM、filesystem 和 remote 的 raw time 互相当作算法 speedup；每一种
+    destination 都需要同 endpoint 的 full-recompute baseline。
 
 ---
 
@@ -665,13 +695,15 @@ terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、ali
 low-rank 四-seed gate，以及九容量 tiered migration 均已完成。固定 suffix、普通 prefix 和
 任意层动态选择均不再作为主线。下一步是：
 
-1. **把 admission 与 migration 分开。** 在查看新 seed 前冻结 version-cohort admission
-   信号；它只能在 cohort 级使用更新/验证信息，不能恢复 per-user drift/JVP 路线。
-2. **把自然 cache-version 分布纳入评估。** 当前 theta-0→theta-5 是可控 stress test；下一步
-   应在可辨识的 KuaiRand/QB/QK 设置上比较 cohort batching、periodic full、age threshold
-   与 tiered migration 的等质量/等成本策略。
-3. **进入系统成本。** 测量 normalized-state 读取、fit/compile amortization、adapter admission、
-   host-device transfer、端到端 latency、吞吐和显存。
+1. **冻结 compiler contract 并复现。** 不再从当前 seed 用户搜索新 program；在新 seed 或
+   已接受的外部 checkpoint 上复现 verified plan。
+2. **完成 full-cohort destination job。** 加入 source-side capsule streaming，对全量固定
+   records 在相同 HBM 和 DRAM endpoint 下比较 compiled migration 与 independently tuned
+   full recomputation。
+3. **把受控扩展性移入完整 job。** 当前已报告 controlled trace 的 peak HBM 与
+   1/2/4-GPU completion time；下一步补 normalized-state source streaming、
+   fit/compile amortization、logical/physical bytes 和 manifest commit。filesystem/remote
+   只有接入真实设备后才升级为性能实验。
 
 ---
 
@@ -679,21 +711,23 @@ low-rank 四-seed gate，以及九容量 tiered migration 均已完成。固定 
 
 1. **一张图讲问题：** 模型持续更新，旧版本用户 KV 在输入不变时也整体失效。
 2. **一张图讲 motivation：** 单步通常较弱，累计后会出现平台、局部跃升与反转；age 只能
-   粗排风险，说明 reuse 与 recompute 之间既有迁移空间，也需要 update-aware 触发。
+   粗排风险，说明 reuse 与 recompute 之间存在迁移空间，但不能充当 reuse-safety oracle。
 3. **一张结构图讲 design：** 用少量 version-pair probe 学习 `fresh-cheap` 低秩残差并
    编译进一次 prepacked projection；更高 fidelity 才进入 residual structural replay，
    最后回退 full。
-4. **一张 Pareto 图讲结果：** 横轴 measured compute，纵轴 quality/cache fidelity；标
+4. **一张系统图讲三层：** compiler 产生 cohort program，one-pass operator 生成目标 K/V，
+   out-of-core engine 按 HBM/DRAM/filesystem/remote destination 提交完整 manifest。
+5. **一张 Pareto 图讲结果：** 横轴 measured compute，纵轴 quality/cache fidelity；标
    reuse、compiled projection、residual replay、full，并展示 50%/75% SLA 自动动作。
-5. **一张小表讲规模：** 九个 discovery checkpoint 的两个主指标均为正；27-seed 验证以
+6. **一张小表讲规模：** 九个 discovery checkpoint 的两个主指标均为正；27-seed 验证以
    0.121x full 恢复 58.7% K/V gap，同时明确严格 task gate 只通过 6/9。
-6. **最后主动讲边界：** 算子 fidelity 与成本已经跨容量稳定，但 full maintenance endpoint
+7. **最后主动讲边界：** 算子 fidelity 与成本已经跨容量稳定，但 full maintenance endpoint
    并非每个 cohort 都为正；QB/QK 来自同一 collection，Tenrec 无全局日历时间，QB 还使用
-   完整活跃 horizon 条件。校准摊销和系统数据移动尚未计入端到端结果。
+   完整活跃 horizon 条件。destination-v4 尚未完成全 cohort 与物理 SSD/网络结果。
 
 汇报时最核心的一句话可以是：
 
-> 我们不为每个用户预测缓存是否已坏，而是先在 model-version cohort 上判断是否值得维护，
-> 再把共享 K/V 残差编译成一次 projection，并只在更高 fidelity SLA 下启动结构 replay；
-> 当前算子约用十分之一 full kernel cost 恢复一半以上 K/V gap，下一步是把 cohort admission
-> 与 mixed-version 调度补成端到端系统。
+> 我们不为每个用户或版本预测缓存是否已坏，而是把一个 model-version cohort 的共享 K/V
+> 修复编译成一次 projection，再通过 one-pass operator 和 destination-oriented out-of-core
+> engine，以有界 transform/publication waves 把完整 target-version K/V 发布到 HBM、DRAM
+> 或持久存储；source-side 全量流式化是下一项系统实现 gate。

@@ -152,9 +152,10 @@ labels. QB/QK are related Tenrec tables, not independent collections, and have o
 ordinal order rather than global timestamps. Absolute BestRank gains are not comparable across
 catalog sizes. In the fixed-endpoint matrix, within-seed BestRank staleness tax is
 `0.176/0.315/0.276` on KuaiRand/QB/QK, only a 1.79x range; the fine matrix remains within 2.48x
-and shows update-local jumps whose ages move most strongly on QK. This supports an update-aware
-version-cohort trigger, not the stronger claim that every tuned periodic window fails. ZhihuRec
-remains a negative maintenance boundary.
+and shows update-local jumps whose ages move most strongly on QK. This supports treating each
+source/target version pair as its own calibration unit rather than using age as a universal rule;
+it does not supply a reuse-safety trigger or prove that every tuned periodic window fails.
+ZhihuRec remains a negative maintenance boundary.
 
 The first fixed-suffix method result is mixed and separate. On the aligned top-5k QK setting, cheap refresh
 costs 0.194x full and gains `9.17 [6.71, 11.63]` BestRank over four seeds, recovering 70.6% of

@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-25. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-26. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -26,6 +26,18 @@ recomputing the history but no longer version-consistent. The research question 
 
 The active abstraction is **structure-aware cache migration**. It is not a per-user prediction
 problem and it is not ordinary tail-token cache append.
+
+The active systems scope is a **destination-oriented out-of-core K/V update job**. A model update
+supplies fixed old capsules, published source-to-target programs, a complete record set, execution
+GPUs, and an explicit HBM/DRAM/filesystem/remote destination. The job transforms bounded waves and
+publishes one complete target-version manifest. Training, request arrival, user hotness, routing,
+and training/serving GPU co-location are outside the current boundary because the available data
+does not identify them.
+
+The technical design has exactly three connected layers: a cohort migration compiler, a
+capsule-to-K/V operator, and a destination-oriented execution engine. A thin update coordinator
+may parse a job specification and invoke these interfaces, but it is control-plane glue rather
+than a fourth research contribution, a reuse-safety predictor, or an online scheduler.
 
 ## 2. What the corrected evidence supports
 
@@ -247,8 +259,10 @@ The first age at which BestRank tax reaches 10% is 14 in every KuaiRand seed, bu
 fixed reuse window is not a calibrated quality policy: it can recompute during a benign plateau
 or miss an earlier harmful update. This does not prove that every tuned periodic policy fails;
 KuaiRand is a counterexample at the current operating point and periodic recomputation remains a
-required baseline. The supported design implication is an update-aware action chosen once per
-old/current model-version cohort, not a return to per-user JVP estimation.
+required baseline. The supported design implication is that the old/current version pair must be
+an explicit calibration and compilation unit rather than being reduced to cache age. It does not
+require predicting whether a version is safe to reuse: every stale cohort receives the declared
+semantic repair plan, and version remains a compilation and batching key.
 
 The local maximum-step statistic was identified in exploratory analysis and must be frozen before
 new confirmatory data. Fine QK MeanRank, rank-utility, and NDCG intervals include zero, so the
@@ -312,8 +326,8 @@ The systems pressure grows cleanly. At batch 32 and length 128, full resident-GP
 about 1.05/2.09/3.36 ms from small to large, while cheap projection refresh remains
 18.5%-20.4% of full. Only large KuaiRand's seed-0-selected local jump replicates at the same fixed
 age: age 10→11 adds 16.8 tax points `[6.0, 27.5]` over seeds 1-3. Large QB and QK do not share a
-replicated jump location. This reinforces an update-aware policy motivation, but does not justify
-a universal sudden-failure age.
+replicated jump location. This reinforces version-pair-specific calibration rather than an
+age-only rule, but does not justify a universal sudden-failure age or a version-safety predictor.
 
 This matrix completes the requested capacity expansion of the motivation. It does not select or
 tune a migration method. Large KuaiRand and large QB are the strongest joint quality-cost
@@ -461,9 +475,64 @@ and AUC gap, 90.3% of NDCG@100, and 88.9% of Hit@100. No recommendation labels e
 or certification. This is still adaptive seed-0 exploration because the preceding program was
 developed after inspecting this seed; confirmation requires a frozen new seed or dataset.
 
+The first controlled mixed-version, end-to-end systems replay is also complete. It uses disjoint
+32-user layout-search and 64-user systems traces drawn from the verified compiler's final-user
+pool, assigns the 64 real histories to theta0/theta4/theta10 cohorts in a fixed 20%/30%/50% mix,
+and publishes complete FP16 K/V back to pinned host memory. The implementation contains a fused
+affine/bias/length-mask/direct-K/V Triton operator, multi-program cohort dispatch, a three-stream
+H2D/compute/D2H pipeline, persistent destination extents, and two-GPU LPT assignment. The fused
+operator is 1.19x faster than packed FP16 on the representative resident shape and 1.176x faster
+at the one-GPU host boundary, with `3.66e-4` relative K/V error from the FP32 operator. The
+selected path reaches 903.7 records/s, scales 1.951x from one to two A40s, and is 11.22x faster
+than an independently tuned, pipelined two-GPU BF16 full-recompute baseline under the same
+raw-host-to-FP16-K/V-host publication boundary.
+
+This closes the controlled host-DRAM state-movement gate, not the whole systems paper. The
+normalized capsule remains a 50% space overhead relative to logical FP16 K/V; the mix is assigned
+rather than produced by a full-cohort update job, and calibration amortization, bounded working
+memory, durable publication, and destination-specific completion time remain open. The system
+trace uses the already published programs and no labels, but the overall study is still adaptive
+seed-0 development. Details are in
+`experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md`.
+
+A migration-specific operator follow-up is also complete under
+`kuairand_long_context_4plus12_cohort_jagged_system_v3`. It replaces padded per-record execution
+with layer-major valid-token capsules, supports direct pinned-host or target-GPU HBM
+publication, and tests 256-token cache pages compacted by version cohort into bounded 2,048-token
+tiles. Both whole-record and 403-page outputs match the dense fused path exactly over all
+1,609,760,768 valid FP16 K/V elements.
+
+The central performance hypothesis is negative on the disjoint 64-user trace. Page compaction
+reduces 64 dense batches to 50 and removes the existing 0.509% padding, but improves the two-GPU
+host boundary only 1.019x and is 0.984x relative to one-record execution at the direct-HBM
+boundary. The resident fused operator remains 1.182x faster than packed FP16, while fused versus
+packed page execution is only 1.005x end to end in HBM. The 32-user layout-search trace showed an
+approximately 5% page-compaction gain that did not transfer to the final trace. Thus token
+compaction, padding removal, and launch reduction are retained as exact layout mechanisms but
+cannot be claimed as independent performance contributions at this operating point.
+
+Direct HBM publication is 2.159x faster than publishing the same paged output back to host because
+it removes complete D2H writeback. This is a destination-placement boundary, not a migration
+operator speedup, and it has no same-boundary full-recompute comparison yet. The result strengthens
+the case for making destination semantics explicit in an out-of-core update engine, but it does
+not justify another arithmetic kernel-tuning round on the current seed. Details are in
+`experiments/system/COHORT_JAGGED_SYSTEM_V3.md`.
+
+A frozen-layout four-GPU follow-up now extends the same disjoint 64-user mixed-version trace
+without refitting programs or reselecting layouts. Host-staged compiled migration, direct-HBM
+compiled migration, and host-staged BF16 full recomputation scale by 3.275x/3.331x/3.592x from
+one to four A40s, with four-GPU efficiencies of 81.9%/83.3%/89.8%. Greedy-LPT assigned-work
+imbalance is at most 0.30%, and the five-repeat timing coefficient of variation is at most 1.10%.
+At the common host boundary, compiled migration remains 10.39x faster than BF16 exact on four
+GPUs. Maximum per-device peak allocation is 0.43 GiB for host-staged migration, 0.93 GiB for
+direct-HBM migration, and 1.79 GiB for exact. This closes controlled 1/2/4-GPU scaling, not the
+destination-v4 full-cohort gate. Details are in
+`experiments/system/FOUR_GPU_SCALING_V1.md`.
+
 Cache age remains checkpoint-update distance over the identical resident prefix, not literal
-residence of one physical snapshot. Physical rolling eviction and organically mixed per-token
-versions remain separate system gates. The 8+8 protocol is in
+residence of one physical snapshot. No current dataset supplies a defensible request-arrival,
+hotness, routing, or training/serving co-location trace, so online lifecycle and foreground-SLO
+control are not current paper gates. The 8+8 protocol is in
 `experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md`; the split exploration is in
 `experiments/motivation/LONG_CONTEXT_SPLIT_EXPLORATION_V1.md`; the design loop is in
 `experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md`; the verified compiler is in
@@ -471,19 +540,23 @@ versions remain separate system gates. The 8+8 protocol is in
 
 ## 3. Current contribution hypothesis
 
-A complete paper could make four contributions if the remaining gates pass:
+A complete paper could make three connected technical contributions if the remaining gates pass:
 
-1. Define model-version invalidation of generative-recommendation prefix K/V as distinct from
-   behavior append and fixed-model cache management.
-2. Characterize the time and layer structure of the resulting quality loss under leak-free
-   streaming evaluation.
-3. Introduce a verified cohort migration compiler that generates migration actions, certifies
+1. Introduce a verified cohort migration compiler that generates migration actions, certifies
    label-free current-model semantic fidelity and user coverage, then publishes the cheapest
    qualifying program and an ordered fallback chain. Its fast path compiles an
    attention-use-weighted full-affine residual into one K/V projection.
-4. Build a version-cohort executor that applies an unconditional cheap synchronization, advances
-   cache extents through progressively stronger fidelity tiers under a resource budget, and
-   demonstrates end-to-end savings against periodic recomputation.
+2. Build a one-pass capsule-to-K/V operator that executes the shared program with fused epilogue
+   and direct final-layout publication. Jagged/page compaction remains a conditional layout
+   mechanism, not a positive contribution on the current long-context trace.
+3. Build a destination-oriented out-of-core executor that applies the published cohort program,
+   bounds transform/publication waves, streams complete extents across one or more GPUs, and
+   commits a complete target-version K/V manifest to an explicit HBM, DRAM, filesystem, or remote
+   endpoint.
+
+Defining model-version K/V invalidation and characterizing its quality/cost structure are the
+problem statement and empirical evidence for these contributions, not extra system layers. The
+update coordinator is likewise necessary integration code but is not a separate contribution.
 
 The reusable idea is to move adaptation work out of the per-cache path: measure one version-pair
 cohort, learn a shared correction, compile it into a GPU-friendly operator, and batch one action
@@ -558,11 +631,10 @@ seed-0 screen, whereas folding them into one prepacked projection lowers held-ou
 kernel-only break-even cohorts are about 4.8k, 6.3k, and 7.4k caches on KuaiRand, QB, and QK.
 These amortization numbers exclude state movement and cannot yet support an end-to-end claim.
 
-The remaining policy question is how quickly each stale extent advances through compiled repair,
-residual replay, and exact recomputation under organic mixed ages and a finite update budget.
-This is scheduling of repair strength, not prediction of whether a version is safe to reuse.
-Fixed-period and age-only schedules remain mandatory baselines. This gate does not reopen
-arbitrary-layer search, and a user-specific JVP remains outside the active design.
+The compiler may publish stronger residual or exact fallbacks, but the current system does not use
+an unobserved request process to decide which user receives one. A fixed update job executes its
+declared program or a predeclared cohort-wide fidelity plan. This gate does not reopen
+arbitrary-layer search, version-safety prediction, or a user-specific JVP.
 
 The capacity-tiered follow-up preserves the compiled fast path across 3L/H64, 6L/H96, and 9L/H128.
 Its 27 replication runs take `0.121 [0.112, 0.130]x` full and recover
@@ -643,24 +715,52 @@ Proceed in this order:
 1. Freeze the verified compiler, including its action library and 70%/80%/90%/30% contract, and
    replicate it on new training seeds or accepted cross-dataset checkpoints without another
    search on the current seed's users.
-2. Add organically mixed cache versions and version-cohort batching; compare unconditional compiled
-   sync plus progressive refinement against reuse, periodic full recomputation, and age-only
-   fixed-window policies at equal cost and equal fidelity.
-3. Measure end-to-end state reads/writes, calibration amortization, throughput, and tail latency
-   before optimizing another arithmetic kernel.
+2. Define a deterministic full-cohort source manifest and streaming reader, then compare compiled
+   migration with independently tuned full recomputation at identical HBM and DRAM destination
+   boundaries.
+3. Extend the completed controlled 1/2/4-GPU scaling to the full destination-v4 job: measure
+   calibration amortization, bounded-wave peak memory, backend publication time, manifest commit,
+   and identical-boundary exact before adding another arithmetic kernel.
 4. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
    result-driven per-dataset tuning, creates a reason to revisit it.
 
-### Gate F: turn kernel savings into a system result — parallel systems task
+### Gate F: turn kernel savings into a system result — controlled replay passed
 
-The current cost is GPU-resident kernel time. A paper-grade system evaluation must include:
+The two-GPU v2 replay now includes:
 
-- extra normalized/split-hidden state capacity;
-- one-time adapter fitting, compilation, and cohort-size amortization;
-- HBM reads and writes, host-device transfer, allocation, and cache placement;
-- batched throughput and tail latency across version cohorts;
-- profile the prepacked projection and normalized-state reads before another kernel optimization;
-- end-to-end comparison with periodic full recomputation under equal quality or equal cost.
+- the exact 50% normalized-state capacity overhead;
+- real versioned capsules and all host-device reads/writes through target K/V publication;
+- a fused direct-write operator and packed/operator/runtime ablations;
+- controlled theta0/theta4/theta10 cohort batching and two-GPU scheduling;
+- independently tuned pipelined BF16 and FP32 full-recompute baselines.
+
+The remaining paper-grade system gate is a deterministic full-cohort, destination-oriented update
+job with source-side streaming, bounded transient working memory, fit/compile amortization, atomic
+version publication, and same-boundary full-recompute baselines. SSD and remote execution are
+backend extensions only after identified hardware is available; an interface smoke test is not a
+storage result.
+
+The v3 cohort-jagged follow-up closes the proposed padding/batching optimization gate negatively.
+On this long-context trace, a single record already supplies a large projection dimension, dense
+padding is only 0.509%, and host state movement dominates. Page compaction is exact and useful for
+publication metadata, but does not materially accelerate either host-backed or direct-HBM
+execution. Future operator work requires a newly measured migration-specific bottleneck and a
+same-boundary strong baseline; otherwise the fused kernel remains enabling engineering and the
+system contribution must come from out-of-core execution and destination-specific publication.
+
+The v4 architecture now exposes a common destination transaction and an initial out-of-core
+engine. HBM uses direct-device publication. DRAM, POSIX filesystem, and remote-object interfaces
+use bounded host-staged waves and publish a manifest only after complete record coverage. The
+filesystem and remote paths are correctness implementations, not measured SSD or network claims.
+The direct-HBM transaction has now been validated across cuda:0–3 with one extent per GPU and a
+complete atomic manifest; excess idle HBM workers are also trimmed safely. This is interface
+correctness, separate from the real-capsule four-GPU scaling result.
+The current engine still receives caller-materialized CPU capsule batches; host-staged waves bound
+transient outputs and publication backlog, not total source-capsule memory. Its HBM path retains
+the complete target K/V in the destination and currently executes as one direct job. A thin
+`run_streamkv_update_coordinator.py` entry point now expresses job-spec-to-engine orchestration,
+but adds no scheduling, compiler, or performance claim.
+Details are in `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`.
 
 ## 5. Evaluation rules for the next phase
 
@@ -681,17 +781,26 @@ The current cost is GPU-resident kernel time. A paper-grade system evaluation mu
 - Version any material protocol change and never merge it into existing validity-v1 summaries.
 - For a new dataset, publish the temporal audit and freeze target semantics before method results.
 - Report operator state and data-movement cost alongside arithmetic time.
+- For system comparisons, freeze the destination first. Compiled migration and full recomputation
+  must start and end at identical locations, dtype/layout, durability, and manifest boundaries.
+- Treat filesystem/remote interface validation as correctness only until physical storage/network
+  hardware and cache/durability conditions are recorded.
 
 ## 6. Claims that are not yet supported
 
 - deepest suffix is optimal;
 - the current method is statistically equivalent to full recomputation;
-- relative kernel-time savings transfer to industrial end-to-end latency;
+- the controlled host-DRAM speedup transfers to industrial serving latency or an SLO;
+- destination-v4 has a full-cohort performance result; its current filesystem and remote paths are
+  interface/correctness implementations;
+- destination-v4 bounds the complete source-capsule working set or provides a
+  same-engine exact-recompute path; source materialization and the identical-boundary exact
+  baseline remain open;
 - the full KuaiRand suffix quality-recovery curve generalizes across datasets or architectures;
 - the problem is novel relative to all current literature;
 - dynamic layer selection can be predicted cheaply without probe evaluation;
-- the compiled adapter's kernel-time savings survive normalized-state movement and end-to-end
-  serving;
+- the compiled adapter's host-DRAM savings survive a physical SSD, network, or remote-GPU
+  destination;
 - the current 50% fidelity target is optimal, or transfers beyond the tested 3L/6L/9L
   theta-0/theta-11 capacity cells;
 - every tuned fixed-window policy fails; current evidence only rejects age as a universal,
@@ -749,8 +858,16 @@ The route should be reconsidered if any of the following persists after the scop
     search, and verified compiler. The compiler uses disjoint 40/60/60/522
     fit/selection/certificate/final roles and publishes a measured fallback plan; the current seed
     remains adaptive exploration and cannot supply confirmatory evidence.
-21. [ ] Evaluate organically mixed cache versions with unconditional cheap synchronization,
-    progressive refinement, periodic full, and age-only fixed-window baselines.
-22. [ ] Measure end-to-end state movement, calibration amortization, throughput, tail latency, and
-    periodic recomputation.
-23. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+21. [x] Implement controlled mixed-version batching, fused direct-K/V execution, persistent
+    host-backed movement, two-GPU scheduling, and an independently pipelined full-recompute
+    baseline on disjoint system-search/final traces.
+22. [x] Define and implement the destination-v4 transaction, DRAM/HBM/filesystem/remote backend
+    interfaces, host-staged bounded-wave update engine, atomic manifest semantics, a thin
+    coordinator entry point, and reference correctness tests. This is an architecture closure,
+    not a storage-performance result or a fourth contribution.
+23. [ ] Add source-side full-cohort streaming and run the first destination-v4 DRAM/HBM update
+    with identical-boundary compiled and exact baselines; report peak memory, bytes, completion
+    time, and 1/2/4-GPU scaling.
+24. [ ] Add a physical SSD or remote backend only after recording reproducible hardware and
+    extending the protocol; do not turn an in-memory/object-interface smoke test into evidence.
+25. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

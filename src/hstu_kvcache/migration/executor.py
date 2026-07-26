@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 import torch
 
 from ..models import HSTUKVCache
-from .capsule import MigratedKVBatch, MigrationCapsuleBatch
+from .capsule import (
+    MigratedKVBatch,
+    MigrationCapsuleBatch,
+    PinnedKVOutputPool,
+)
 from .operator import MigrationOperator, ReferenceMigrationOperator
 from .program import MigrationProgram
 
@@ -21,6 +25,7 @@ class CohortExecutionMetrics:
     input_bytes: int
     output_bytes: int
     auto_pinned_batches: int
+    preallocated_output_batches: int
     elapsed_seconds: float
 
     @property
@@ -60,11 +65,12 @@ class _PendingCudaBatch:
 class CohortStreamingExecutor:
     def __init__(
         self,
-        program: MigrationProgram,
+        program: MigrationProgram | Sequence[MigrationProgram],
         device: torch.device | str,
         max_inflight_batches: int = 3,
         pin_inputs: bool = True,
         operator: MigrationOperator | None = None,
+        output_pool: PinnedKVOutputPool | None = None,
     ) -> None:
         device = torch.device(device)
         if device.type not in {"cpu", "cuda"}:
@@ -77,7 +83,35 @@ class CohortStreamingExecutor:
         self.max_inflight_batches = max_inflight_batches
         self.pin_inputs = pin_inputs
         self.operator = operator or ReferenceMigrationOperator()
-        self.program = self.operator.prepare_program(program, device)
+        programs = (
+            (program,)
+            if isinstance(program, MigrationProgram)
+            else tuple(program)
+        )
+        if not programs:
+            raise ValueError("at least one migration program is required")
+        sources = [value.source_version for value in programs]
+        if len(set(sources)) != len(sources):
+            raise ValueError("migration program sources must be unique")
+        targets = {value.target_version for value in programs}
+        shapes = {
+            (value.num_layers, value.input_width, value.kv_width)
+            for value in programs
+        }
+        if len(targets) != 1 or len(shapes) != 1:
+            raise ValueError("migration programs must share target and tensor shape")
+        self.target_version = next(iter(targets))
+        self.programs = {
+            value.source_version: self.operator.prepare_program(value, device)
+            for value in programs
+        }
+        self.program = self.programs[programs[0].source_version]
+        self.output_pool = output_pool
+        if (
+            output_pool is not None
+            and output_pool.served_kv_target != self.target_version
+        ):
+            raise ValueError("output pool and program target versions differ")
         self._h2d_stream = None
         self._compute_stream = None
         self._d2h_stream = None
@@ -86,6 +120,15 @@ class CohortStreamingExecutor:
                 self._h2d_stream = torch.cuda.Stream(device=device)
                 self._compute_stream = torch.cuda.Stream(device=device)
                 self._d2h_stream = torch.cuda.Stream(device=device)
+
+    def _program_for(
+        self,
+        capsule: MigrationCapsuleBatch,
+    ) -> MigrationProgram:
+        try:
+            return self.programs[capsule.migration_anchor_version]
+        except KeyError as exc:
+            raise ValueError("no migration program matches capsule anchor") from exc
 
     @torch.no_grad()
     def run(
@@ -123,7 +166,8 @@ class CohortStreamingExecutor:
         for capsule in batches:
             records, tokens = self._account_capsule(capsule, seen_record_ids)
             device_capsule = capsule.to(self.device)
-            result = self.operator.execute(self.program, device_capsule)
+            program = self._program_for(capsule)
+            result = self.operator.execute(program, device_capsule)
             results.append(result)
             batch_count += 1
             record_count += records
@@ -140,6 +184,7 @@ class CohortStreamingExecutor:
                 input_bytes=input_bytes,
                 output_bytes=output_bytes,
                 auto_pinned_batches=0,
+                preallocated_output_batches=0,
                 elapsed_seconds=elapsed,
             ),
         )
@@ -159,6 +204,7 @@ class CohortStreamingExecutor:
         input_bytes = 0
         output_bytes = 0
         auto_pinned_batches = 0
+        preallocated_output_batches = 0
 
         with torch.cuda.device(self.device):
             if (
@@ -188,35 +234,48 @@ class CohortStreamingExecutor:
                 compute_done = torch.cuda.Event()
                 with torch.cuda.stream(compute_stream):
                     compute_stream.wait_event(h2d_done)
+                    program = self._program_for(host_capsule)
                     device_result = self.operator.execute(
-                        self.program,
+                        program,
                         device_capsule,
                     )
                     compute_done.record(compute_stream)
 
-                host_k = torch.empty(
-                    device_result.cache.k.shape,
-                    dtype=device_result.cache.k.dtype,
-                    device="cpu",
-                    pin_memory=True,
-                )
-                host_v = torch.empty(
-                    device_result.cache.v.shape,
-                    dtype=device_result.cache.v.dtype,
-                    device="cpu",
-                    pin_memory=True,
-                )
-                host_result = MigratedKVBatch(
-                    record_ids=host_capsule.record_ids,
-                    migration_anchor_version=host_capsule.migration_anchor_version,
-                    served_kv_target=self.program.target_version,
-                    cache=HSTUKVCache(
-                        k=host_k,
-                        v=host_v,
-                        seq_len=device_result.cache.seq_len,
-                    ),
-                    lengths=host_capsule.lengths,
-                )
+                if self.output_pool is None:
+                    host_k = torch.empty(
+                        device_result.cache.k.shape,
+                        dtype=device_result.cache.k.dtype,
+                        device="cpu",
+                        pin_memory=True,
+                    )
+                    host_v = torch.empty(
+                        device_result.cache.v.shape,
+                        dtype=device_result.cache.v.dtype,
+                        device="cpu",
+                        pin_memory=True,
+                    )
+                    host_result = MigratedKVBatch(
+                        record_ids=host_capsule.record_ids,
+                        migration_anchor_version=host_capsule.migration_anchor_version,
+                        served_kv_target=self.target_version,
+                        cache=HSTUKVCache(
+                            k=host_k,
+                            v=host_v,
+                            seq_len=device_result.cache.seq_len,
+                        ),
+                        lengths=host_capsule.lengths,
+                    )
+                else:
+                    host_result = self.output_pool.acquire(host_capsule)
+                    host_k = host_result.cache.k
+                    host_v = host_result.cache.v
+                    if host_k.shape != device_result.cache.k.shape:
+                        raise ValueError("preallocated K shape differs from device result")
+                    if host_v.shape != device_result.cache.v.shape:
+                        raise ValueError("preallocated V shape differs from device result")
+                    if host_k.dtype != device_result.cache.k.dtype:
+                        raise ValueError("preallocated output dtype differs from device result")
+                    preallocated_output_batches += 1
                 d2h_done = torch.cuda.Event()
                 with torch.cuda.stream(d2h_stream):
                     d2h_stream.wait_event(compute_done)
@@ -259,6 +318,7 @@ class CohortStreamingExecutor:
                 input_bytes=input_bytes,
                 output_bytes=output_bytes,
                 auto_pinned_batches=auto_pinned_batches,
+                preallocated_output_batches=preallocated_output_batches,
                 elapsed_seconds=elapsed,
             ),
         )

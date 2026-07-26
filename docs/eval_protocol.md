@@ -649,6 +649,208 @@ The existing 12-user run on three currently idle GPUs is explicitly diagnostic. 
 points and resident-operator profile verify the real data path, not four-GPU scaling or
 end-to-end serving benefit.
 
+### 5.11 KuaiRand controlled mixed-version two-GPU system
+
+`kuairand_long_context_4plus12_two_gpu_migration_system_v2` is a separate system family. It uses
+the three programs and manifests already published by
+`kuairand_long_context_4plus12_verified_compiler_v1`; it may not refit, recertify, or select an
+action from system users. The system script consumes no recommendation labels.
+
+The verified compiler's 522 final users are deterministically ordered with seed `43091 + seed`.
+The first 32 users are system-layout search users. The next 64 are the disjoint final system
+trace. Layout search maximizes median records/s and retains a setting only when it improves
+throughput or padding. The frozen migration layout is batch one, 32-token length buckets, and
+three in-flight batches while preserving source-version cohort boundaries. The independently
+tuned exact baseline uses batch two, 32-token buckets, and three in-flight batches and may mix
+raw histories across old source versions.
+
+The final trace assigns theta0/theta4/theta10 anchors with a deterministic 20%/30%/50% controlled
+mix, producing 13/19/32 records. This validates multi-program cohort dispatch and scheduling but
+is not a complete update cohort. All 64 histories and token values are real. The source
+assignment is independent of recommendation labels.
+
+The migration boundary begins with FP16 old `Norm(x)` capsules in pinned host memory and ends
+after complete FP16 target K/V has been copied into persistent pinned host extents. It includes
+H2D, the fused or packed operator, D2H, stream synchronization, worker dispatch, and scheduling.
+Program loading, capsule construction, checkpoint loading, and program fitting are excluded and
+reported as setup/state. The exact boundary begins with pinned raw histories and ends at the same
+FP16 pinned-host K/V representation. Exact BF16 and FP32 executions both use the pipelined
+executor, persistent outputs, independent length batching, replicated current models, and
+two-GPU LPT scheduling.
+
+Formal defaults require two CUDA devices, source versions 0/4/10, target 11, 64 final records, one
+warmup, three timing repetitions, the frozen layouts above, and training seed 0. The result must
+report:
+
+- all timing samples and medians;
+- resident FP32, packed FP16, and fused FP16 operator error and latency;
+- input/output bytes, records/s, tokens/s, and aggregate GiB/s;
+- program and model replica bytes, normalized-capsule bytes, target extent bytes, and padding;
+- per-device assigned work, cohort counts, load imbalance, and 1-to-2-GPU efficiency;
+- BF16-published K/V error from FP32 and finite-value validation;
+- speedup against the faster independently tuned two-GPU exact implementation.
+
+The current formal-default run has `status=adaptive_system_complete` and
+`study_stage=adaptive_seed0_system_development`. Timing repetitions quantify run stability on one
+machine; they are not independent training replications. The controlled mix, layout search, and
+seed-0 programs prevent a confirmatory systems claim. Its current successor is the deterministic
+destination-v4 full-cohort update protocol. Request arrival, hotness, routing, and foreground
+serving are not inferred from the available recommendation logs.
+
+### 5.12 KuaiRand cohort-jagged and direct-HBM operator development
+
+`kuairand_long_context_4plus12_cohort_jagged_system_v3` is a separate adaptive system family. It
+uses the same verified programs, deterministic final-user ordering, 32-user label-free search
+role, disjoint 64-user final role, and controlled 13/19/32 theta0/theta4/theta10 mix as system v2.
+It may not fit, certify, or select a migration action. Its purpose is to test a migration-specific
+layout hypothesis rather than to change algorithm quality.
+
+The whole-record layout concatenates valid `Norm(x)` tokens only within a common source/target
+version cohort. The paged layout splits each record into fixed cache pages, assigns every page an
+explicit `(record, token_start, length)` identity, and compacts pages from one version cohort into
+bounded valid-token tiles. The fused operator writes separate contiguous K/V directly; no padded
+K/V tensor or dense-to-page conversion is permitted after the timed operator.
+
+Whole-record search crosses token budgets `2,048/4,096/8,192/16,384` independently at two
+publication boundaries. Page search crosses page sizes `128/256/512/1,024` with tile budgets
+`2,048/4,096`. Both searches maximize median valid-token throughput on the first 32 users and use
+no recommendation labels. The final trace may report the selected layouts only; final-user
+results cannot be used to retune them.
+
+The two timing boundaries must remain separate:
+
+- `host_backed` starts with pinned-host FP16 capsules and ends with complete FP16 K/V in persistent
+  pinned-host extents, including H2D, compute, D2H, worker, and scheduling time;
+- `hbm_direct` starts with the same pinned-host capsules and ends with complete FP16 K/V in
+  preallocated target-GPU HBM extents. Destination allocation and static page metadata are
+  prepared before timing, and no D2H is included.
+
+Host-backed migration may reference the v2 pipelined exact result only after checking identical
+users, source counts, logical token count, and host publication semantics. Direct-HBM migration
+must not be compared against that host-publishing exact result as an equal-boundary speedup. A
+future HBM exact baseline requires its own protocol record.
+
+The result must report all timing samples, selected and rejected search layouts, logical and
+allocated tokens, page table and tile fill, per-device assignment, resident packed/fused latency,
+and full valid-element correctness against dense fused FP16. Search repetitions and the 64 users
+are systems diagnostics, not training replications.
+
+The completed seed-0 result is a negative performance boundary. The selected 256-page/2,048-tile
+layout is exactly equal to dense fused output but does not beat one-record HBM execution on the
+disjoint final trace. It may support claims about implementation feasibility, exact layout, and
+destination-placement cost; it may not support a positive cohort-compaction operator claim.
+
+### 5.13 Destination-oriented out-of-core update system
+
+`streamkv_destination_out_of_core_v4` defines the current system architecture and publication
+semantics. It is a model-update-triggered batch job, not an online request scheduler. Training,
+request arrival, user hotness, request routing, and foreground serving interference are outside
+this protocol. Inputs are a fixed set of old capsules, already published migration programs, an
+execution-device set, and one explicit destination. The output is one complete target-version K/V
+manifest.
+
+`scripts/run_streamkv_update_coordinator.py` is a thin orchestration entry point for this
+protocol. Its default plan-only mode is not an experiment and does not define another result
+family. With `--execute`, it resolves declared artifacts, groups source-version cohorts, invokes
+the existing v4 engine, and returns that engine's manifest and metrics. It does not compile a
+program, materialize source capsules, predict reuse safety, choose a destination, or introduce a
+fourth system contribution.
+
+The destination manifest protocol is `streamkv_destination_manifest_v1`. A valid publication must:
+
+- declare the complete expected record-ID set before execution;
+- preserve every extent's migration anchor and target K/V version separately;
+- stage every record exactly once and reject unknown, duplicate, or missing records;
+- expose no target manifest before all extents are complete;
+- expose one immutable target manifest as the publication point;
+- leave no visible target version after an aborted incomplete transaction.
+
+The current implementation supports four interface families with different timing boundaries:
+
+- `hbm_direct`: pinned-host capsules through H2D and migration execution into preallocated K/V on
+  the destination CUDA workers; no D2H is included;
+- `dram_host_staged`: pinned-host capsules through H2D, migration, D2H, and committed in-memory
+  target extents;
+- `posix_file_host_staged`: the DRAM path plus serialization, local file writes, optional `fsync`,
+  and same-filesystem version-directory publication;
+- `remote_object_host_staged`: the DRAM path plus immutable object upload and a manifest object
+  written last as the commit marker.
+
+An in-memory object store validates the remote interface but is not a network experiment.
+Likewise, a filesystem path validates the POSIX backend but may not be called an SSD result unless
+the physical device and mount are recorded. HBM direct execution currently requires compute on
+the destination GPU; P2P publication to a different GPU is outside v4.
+
+The current reference implementation has two additional boundaries. First, host-staged execution
+accepts a caller-materialized sequence of CPU capsule batches. Its wave and queue limits bound
+transformed outputs and pending publication, but not the memory occupied by the complete source
+capsule sequence. Second, direct-HBM execution retains the complete target K/V in HBM and currently
+runs the destination path as one job rather than applying the host-staged wave limit. These are
+implementation facts, not full-cohort bounded-memory results.
+
+The v4 engine currently executes published compiled-affine `MigrationProgram` objects. Residual
+replay and exact recomputation exist elsewhere in the method/runtime code but are not yet routed
+through the same destination transaction. A paper-grade exact baseline must therefore be added
+under the identical source, destination, layout, dtype, durability, and manifest boundary before a
+v4 algorithm speedup is reported.
+
+The reference code may use tiny synthetic tensors to test interface and transaction semantics.
+Such runs must be labeled `implementation_validation` and cannot support throughput claims. A
+paper-grade performance result requires real fixed-cohort capsules and records:
+
+- source and destination location, dtype, layout, and durability semantics;
+- whether source-manifest scanning, capsule construction/materialization, serialization, `fsync`,
+  network acknowledgement, coordinator overhead, and manifest commit are included;
+- total records/tokens, logical and physical input/output bytes, and complete record coverage;
+- wave size, publication queue depth, peak HBM, peak host staging, and backpressure;
+- per-device assigned bytes, completion time, throughput, and 1/2/4-GPU scaling;
+- numerical K/V error and failure-injection publication visibility.
+
+The current manifest's `payload_bytes` is a logical tensor-footprint field. It must not be used as
+physical filesystem or object-store traffic without separately measuring serialized bytes and
+backend write amplification.
+
+Compiled migration and full recomputation may be compared only within the same destination
+boundary. HBM, DRAM, filesystem, and remote jobs answer different endpoint questions; their raw
+times may be reported as a destination matrix but not converted into an algorithm or operator
+speedup. SSD and remote results require actual reproducible hardware and their own protocol
+records. Details of the initial implementation contract are in
+`experiments/system/DESTINATION_OUT_OF_CORE_V4.md`.
+
+### 5.14 KuaiRand mixed-version four-GPU scaling
+
+`kuairand_long_context_4plus12_mixed_version_four_gpu_scaling_v1` is a frozen-layout systems
+follow-up to v2/v3. It reuses the disjoint 64-user v3 final trace, theta0/theta4/theta10 counts
+13/19/32, the three published verified programs, and the v3-selected 2,048-valid-token jagged
+layout. It may not fit or certify a program, search a layout, inspect recommendation labels, or
+change the final users.
+
+Formal defaults use cuda:0–3, device counts 1/2/4, one warmup, five timing repetitions, three
+in-flight batches, and greedy-LPT assignment. It reports three separately labeled paths:
+
+- fused compiled migration from pinned-host capsules to persistent pinned-host FP16 K/V;
+- fused compiled migration from pinned-host capsules to preallocated target-GPU HBM K/V;
+- independently pipelined BF16 full recomputation from pinned histories to persistent pinned-host
+  FP16 K/V.
+
+Only the first and third paths share an endpoint and may be used for migration-versus-exact
+speedup. HBM/DRAM completion-time ratios describe different destinations. The result must report
+all timing samples, per-device assigned work and execution time, load imbalance, program/model
+replica bytes, persistent target bytes, CUDA peak allocated/reserved memory, and 1/2/4 speedup and
+efficiency.
+
+The completed seed-0 run contains 98,252 valid tokens. Host-staged migration, direct-HBM
+migration, and host-staged BF16 exact reach 1→4 speedups of 3.275x, 3.331x, and 3.592x,
+respectively. Four-GPU assigned-work imbalance is at most 0.30%; timing coefficients of variation
+are at most 1.10%. At the common host boundary, compiled migration remains 10.39x faster than
+BF16 exact on four GPUs. These are controlled adaptive systems results, not independent training
+replications or destination-v4 full-cohort evidence.
+
+The separate tiny destination-v4 HBM validation distributes four extents across cuda:0–3,
+commits one complete manifest, and has maximum absolute error `9.77e-4`. It is interface
+correctness only. Details and commands are in
+`experiments/system/FOUR_GPU_SCALING_V1.md`.
+
 ## 6. Metrics and statistics
 
 Primary quality views:
@@ -682,8 +884,18 @@ Statistical rules:
 - Report extra normalized/split-hidden state as both elements/bytes and a ratio to K/V capacity.
 - For a calibrated operator, report adapter-fit size, one-time fit/compile time, shared parameter
   bytes, and an amortized or break-even cohort calculation separately from per-cache kernel time.
-- Current numbers exclude host-device transfer, allocator, cache admission, and scheduler overhead;
-  they must be labeled kernel-level rather than end-to-end serving cost.
+- Resident-kernel result families exclude host-device transfer, allocator, cache admission, and
+  scheduler overhead and must remain labeled kernel-level. The two-GPU system-v2 family includes
+  pinned host-device transfer, publication, worker, and scheduling overhead within its declared
+  boundary, but still excludes lifecycle admission, storage below host DRAM, and foreground
+  serving.
+- Destination-v4 results include exactly the source-to-committed-manifest stages declared for
+  their backend. Cross-destination timing differences are endpoint costs, not operator speedups.
+  Filesystem and remote interface validation without identified physical I/O hardware remains a
+  correctness artifact.
+- Plan-only coordinator output is architecture metadata, not a timing or correctness result. If a
+  later end-to-end protocol includes coordinator or source-reader overhead, that boundary must be
+  declared symmetrically for compiled migration and exact recomputation.
 
 ## 8. Current artifacts
 
@@ -817,6 +1029,20 @@ KuaiRand temporal-split exploration:
   `checkpoints/kuairand_long_context_4plus12_exploration/seed0/verified_plans/theta{0,4,10}_to_theta11_verified.json`
 - diagnostic local
   `results/system/kuairand_long_context_4plus12_progressive_sync_system_diagnostic_seed0.json`
+- local
+  `results/system/kuairand_long_context_4plus12_progressive_sync_system_seed0.json`
+- local
+  `results/system/kuairand_long_context_4plus12_two_gpu_migration_system_seed0.json`
+- `experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md`
+- local
+  `results/system/kuairand_long_context_4plus12_cohort_jagged_system_seed0.json`
+- `experiments/system/COHORT_JAGGED_SYSTEM_V3.md`
+- local
+  `results/system/kuairand_long_context_4plus12_four_gpu_scaling_seed0.json`
+- local
+  `results/system/streamkv_destination_hbm_4gpu_validation.json`
+- `experiments/system/FOUR_GPU_SCALING_V1.md`
+- `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`
 
 `smoke.json` files, old `results/phase0`, and old `results/streaming` are not research artifacts.
 Per-seed exposure JSON and all checkpoints are current local artifacts but ignored by Git. Taobao

@@ -53,6 +53,19 @@ order is:
 23. [../experiments/system/KUAIRAND_PROGRESSIVE_SYNC_V1.md](../experiments/system/KUAIRAND_PROGRESSIVE_SYNC_V1.md) —
     frozen theta11/D16 progressive synchronization design plus bounded real-checkpoint,
     real-capsule algorithm/operator/multi-GPU diagnostics.
+24. [../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md](../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md) —
+    controlled mixed-version real-capsule execution, fused direct-K/V operator, persistent
+    host-backed state movement, two-GPU scheduling, and independently pipelined exact baselines.
+25. [../experiments/system/COHORT_JAGGED_SYSTEM_V3.md](../experiments/system/COHORT_JAGGED_SYSTEM_V3.md) —
+    exact cohort-jagged and page-compacted direct publication, separate host/HBM boundaries, and
+    the negative final-trace result for token compaction as an operator contribution.
+26. [../experiments/system/DESTINATION_OUT_OF_CORE_V4.md](../experiments/system/DESTINATION_OUT_OF_CORE_V4.md) —
+    current destination-oriented architecture: bounded out-of-core update jobs, HBM/DRAM/
+    filesystem/remote backend contracts, atomic target-version manifest publication, and the
+    current source-materialization/full-cohort limitations.
+27. [../experiments/system/FOUR_GPU_SCALING_V1.md](../experiments/system/FOUR_GPU_SCALING_V1.md) —
+    frozen mixed-version 1/2/4-GPU host/HBM scaling, same-boundary BF16 exact comparison, GPU
+    memory, load balance, and four-GPU destination-manifest validation.
 
 The background figure [streaming_training_kv_cache_background.png](streaming_training_kv_cache_background.png)
 explains windows, model versions, full reuse, and full compute. It is explanatory artwork rather
@@ -60,15 +73,31 @@ than evidence.
 
 The planning note [system_paper_candidates.md](system_paper_candidates.md) records the current
 StreamKV direction—cohort migration compilation, a one-pass capsule-to-KV operator, and a
-cohort-streaming multi-GPU runtime—plus older system-paper candidates and same-slot fallbacks. It
-is a candidate-design document rather than a source of research claims, and remains subordinate
-to the roadmap and evaluation protocol.
+destination-oriented out-of-core multi-GPU runtime—plus older system-paper candidates and
+same-slot fallbacks. It is a candidate-design document rather than a source of research claims,
+and remains subordinate to the roadmap and evaluation protocol.
 
 The preliminary implementation record
 [../experiments/system/STREAMKV_SYSTEM_PROTOTYPE_V1.md](../experiments/system/STREAMKV_SYSTEM_PROTOTYPE_V1.md)
 documents the first end-to-end compiler/operator/streaming prototype. Its algorithm section
 references the frozen cohort-tiered evidence, while its synthetic operator and multi-GPU results
 remain a separate `streamkv_system_prototype_v1` systems diagnostic.
+
+The current real-checkpoint systems record is
+[../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md](../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md).
+It remains adaptive seed-0 development and uses a controlled fixed-size version mix.
+The migration-specific layout follow-up is
+[../experiments/system/COHORT_JAGGED_SYSTEM_V3.md](../experiments/system/COHORT_JAGGED_SYSTEM_V3.md);
+it retains exact page publication but rejects a material cohort-compaction speedup on the final
+trace. The active successor is
+[../experiments/system/DESTINATION_OUT_OF_CORE_V4.md](../experiments/system/DESTINATION_OUT_OF_CORE_V4.md);
+it is currently an implementation/correctness contract rather than a new performance result.
+The controlled four-GPU systems supplement is
+[../experiments/system/FOUR_GPU_SCALING_V1.md](../experiments/system/FOUR_GPU_SCALING_V1.md);
+it closes frozen-trace 1/2/4-GPU scaling but not the successor's full-cohort/source-streaming
+performance gate.
+`scripts/run_streamkv_update_coordinator.py` is the thin plan/execute wrapper for that contract.
+It is control-plane integration rather than a new protocol, result family, or fourth contribution.
 
 ## Valid artifact boundary
 
@@ -92,6 +121,13 @@ Only these result families are current:
 - `results/motivation_scale/progressive_prefix_replay_v1_summary.json`
 - `results/motivation_scale/cohort_tiered_migration_v1_summary.json`
 - `results/system/streamkv_system_prototype_v1.json`
+- local `results/system/kuairand_long_context_4plus12_two_gpu_migration_system_seed0.json`
+- local `results/system/kuairand_long_context_4plus12_cohort_jagged_system_seed0.json`
+- local `results/system/kuairand_long_context_4plus12_progressive_sync_system_seed0.json`
+- local `results/system/kuairand_long_context_4plus12_four_gpu_scaling_seed0.json`
+- local `results/system/streamkv_destination_hbm_4gpu_validation.json`
+- `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`
+- `experiments/system/FOUR_GPU_SCALING_V1.md`
 - `results/motivation_scale/structural_design_discovery_summary.json`
 - matching `checkpoints/validity/core*_seed*/theta_*.pt`
 - `results/scaling/operator_cost_seed0.json`
@@ -126,6 +162,10 @@ Only these result families are current:
 - `experiments/migration/VERIFIED_COHORT_COMPILER_V1.md`
 - `experiments/system/STREAMKV_SYSTEM_PROTOTYPE_V1.md`
 - `experiments/system/KUAIRAND_PROGRESSIVE_SYNC_V1.md`
+- `experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md`
+- `experiments/system/COHORT_JAGGED_SYSTEM_V3.md`
+- `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`
+- `experiments/system/FOUR_GPU_SCALING_V1.md`
 - matching local `results/motivation_scale/long_context_4plus12_{progressive_sync_design,compiled_rank_search,compiled_ridge_search,attention_weighted_search,verified_compiler}_seed0.json`
 - matching local `results/exposure/*_seed*.json` and `checkpoints/exposure/`
 - matching `checkpoints/scaling/`

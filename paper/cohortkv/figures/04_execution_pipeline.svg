@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#ecfeff"/>
+    </linearGradient>
+    <marker id="a4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg4)"/>
+  <text x="60" y="58" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="700" fill="#0f172a">Host-staged execution preserves the operator gain across movement and publication</text>
+  <text x="60" y="91" font-family="Inter,Arial,sans-serif" font-size="17" fill="#475569">Programs remain resident; capsule and target extents flow through bounded waves and a bounded publication queue.</text>
+
+  <rect x="60" y="131" width="1160" height="390" rx="24" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="84" y="164" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#64748b" letter-spacing="1.2">ONE HOST-STAGED WAVE</text>
+
+  <g>
+    <rect x="88" y="204" width="202" height="210" rx="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+    <text x="111" y="237" font-family="Inter,Arial,sans-serif" font-size="17" font-weight="700" fill="#334155">CPU source capsules</text>
+    <rect x="111" y="263" width="156" height="34" rx="9" fill="#e2e8f0"/>
+    <text x="127" y="285" font-family="Inter,Arial,sans-serif" font-size="13" fill="#334155">source cohort v₀ → t</text>
+    <rect x="111" y="307" width="156" height="34" rx="9" fill="#e2e8f0"/>
+    <text x="127" y="329" font-family="Inter,Arial,sans-serif" font-size="13" fill="#334155">source cohort v₄ → t</text>
+    <rect x="111" y="351" width="156" height="34" rx="9" fill="#e2e8f0"/>
+    <text x="127" y="373" font-family="Inter,Arial,sans-serif" font-size="13" fill="#334155">source cohort v₁₀ → t</text>
+    <text x="111" y="404" font-family="Inter,Arial,sans-serif" font-size="12" fill="#64748b">length bucket + pinned host</text>
+  </g>
+
+  <path d="M290 309 H358" fill="none" stroke="#475569" stroke-width="3" marker-end="url(#a4)"/>
+  <text x="307" y="291" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">H2D</text>
+
+  <g>
+    <rect x="370" y="189" width="300" height="240" rx="18" fill="#eff6ff" stroke="#60a5fa" stroke-width="2.5"/>
+    <text x="394" y="224" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="700" fill="#1e3a8a">GPU worker</text>
+    <rect x="394" y="248" width="252" height="50" rx="11" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="414" y="270" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">Resident program table</text>
+    <text x="414" y="289" font-family="Inter,Arial,sans-serif" font-size="12" fill="#2563eb">one program per source → shared target</text>
+    <rect x="394" y="313" width="252" height="82" rx="11" fill="#2563eb"/>
+    <text x="414" y="340" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="700" fill="#ffffff">Fused capsule-to-K/V kernel</text>
+    <text x="414" y="364" font-family="Inter,Arial,sans-serif" font-size="13" fill="#dbeafe">affine · bias · mask · split</text>
+    <text x="414" y="384" font-family="Inter,Arial,sans-serif" font-size="13" fill="#dbeafe">direct contiguous K/V write</text>
+    <text x="394" y="416" font-family="Inter,Arial,sans-serif" font-size="12" fill="#1e40af">multi-stream H2D / compute / D2H overlap</text>
+  </g>
+
+  <path d="M670 309 H738" fill="none" stroke="#475569" stroke-width="3" marker-end="url(#a4)"/>
+  <text x="685" y="291" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">D2H</text>
+
+  <g>
+    <rect x="750" y="204" width="202" height="210" rx="18" fill="#f0fdfa" stroke="#2dd4bf" stroke-width="2"/>
+    <text x="773" y="237" font-family="Inter,Arial,sans-serif" font-size="17" font-weight="700" fill="#115e59">Target K/V extents</text>
+    <rect x="773" y="263" width="156" height="34" rx="9" fill="#ccfbf1"/>
+    <text x="788" y="285" font-family="Inter,Arial,sans-serif" font-size="13" fill="#115e59">extent 00000000</text>
+    <rect x="773" y="307" width="156" height="34" rx="9" fill="#ccfbf1"/>
+    <text x="788" y="329" font-family="Inter,Arial,sans-serif" font-size="13" fill="#115e59">extent 00000001</text>
+    <rect x="773" y="351" width="156" height="34" rx="9" fill="#ccfbf1"/>
+    <text x="788" y="373" font-family="Inter,Arial,sans-serif" font-size="13" fill="#115e59">extent 00000002</text>
+    <text x="773" y="404" font-family="Inter,Arial,sans-serif" font-size="12" fill="#0f766e">persistent pinned addresses</text>
+  </g>
+
+  <path d="M952 309 H1020" fill="none" stroke="#475569" stroke-width="3" marker-end="url(#a4)"/>
+  <text x="963" y="291" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">stage</text>
+
+  <g>
+    <rect x="1032" y="204" width="160" height="210" rx="18" fill="#fffbeb" stroke="#fbbf24" stroke-width="2"/>
+    <text x="1054" y="237" font-family="Inter,Arial,sans-serif" font-size="17" font-weight="700" fill="#92400e">Destination</text>
+    <text x="1054" y="271" font-family="Inter,Arial,sans-serif" font-size="13" fill="#a16207">DRAM / POSIX</text>
+    <text x="1054" y="294" font-family="Inter,Arial,sans-serif" font-size="13" fill="#a16207">/ remote object</text>
+    <rect x="1054" y="323" width="116" height="48" rx="9" fill="#fef3c7"/>
+    <text x="1072" y="344" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#92400e">bounded</text>
+    <text x="1072" y="361" font-family="Inter,Arial,sans-serif" font-size="12" fill="#a16207">publish queue</text>
+    <text x="1054" y="402" font-family="Inter,Arial,sans-serif" font-size="12" fill="#a16207">async service + backpressure</text>
+  </g>
+
+  <rect x="84" y="454" width="1084" height="42" rx="11" fill="#f1f5f9" stroke="#cbd5e1" stroke-dasharray="7 5"/>
+  <text x="105" y="481" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#475569">Bounded transient state:</text>
+  <text x="280" y="481" font-family="Inter,Arial,sans-serif" font-size="14" fill="#64748b">wave input + wave output + pending publication queue; the current caller still materializes all source batches.</text>
+
+  <path d="M1112 414 V562 H920" fill="none" stroke="#0f766e" stroke-width="3" marker-end="url(#a4)"/>
+  <rect x="626" y="544" width="294" height="72" rx="15" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+  <text x="648" y="573" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#115e59">Commit target-version manifest</text>
+  <text x="648" y="597" font-family="Inter,Arial,sans-serif" font-size="13" fill="#0f766e">only after complete, duplicate-free coverage</text>
+
+  <rect x="60" y="645" width="1160" height="45" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="82" y="673" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#9a3412">Endpoint discipline:</text>
+  <text x="220" y="673" font-family="Inter,Arial,sans-serif" font-size="14" fill="#7c2d12">HBM direct-write omits D2H and answers a different question; speedups use the same target-publication boundary.</text>
+</svg>

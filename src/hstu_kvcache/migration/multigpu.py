@@ -7,7 +7,11 @@ from dataclasses import dataclass
 
 import torch
 
-from .capsule import MigratedKVBatch, MigrationCapsuleBatch
+from .capsule import (
+    MigratedKVBatch,
+    MigrationCapsuleBatch,
+    PinnedKVOutputPool,
+)
 from .executor import CohortExecutionMetrics, CohortStreamingExecutor
 from .operator import MigrationOperator, ReferenceMigrationOperator
 from .program import MigrationProgram
@@ -23,6 +27,7 @@ class DeviceExecutionMetrics:
 @dataclass(frozen=True)
 class MultiGPUExecutionMetrics:
     device_count: int
+    program_count: int
     batch_count: int
     record_count: int
     token_count: int
@@ -31,6 +36,9 @@ class MultiGPUExecutionMetrics:
     program_replica_bytes: int
     elapsed_seconds: float
     load_imbalance: float
+    partition_strategy: str
+    cohort_batch_counts: dict[str, int]
+    cohort_record_counts: dict[str, int]
     devices: tuple[DeviceExecutionMetrics, ...]
 
     @property
@@ -61,11 +69,13 @@ class MultiGPUExecutionReport:
 class MultiGPUCohortExecutor:
     def __init__(
         self,
-        program: MigrationProgram,
+        program: MigrationProgram | Sequence[MigrationProgram],
         devices: Sequence[torch.device | str],
         max_inflight_batches: int = 3,
         pin_inputs: bool = True,
         operator: MigrationOperator | None = None,
+        output_pool: PinnedKVOutputPool | None = None,
+        partition_strategy: str = "greedy_lpt",
     ) -> None:
         resolved = tuple(torch.device(device) for device in devices)
         if not resolved:
@@ -81,18 +91,44 @@ class MultiGPUCohortExecutor:
             for device in resolved
         ):
             raise ValueError("requested CUDA device is unavailable")
+        if partition_strategy not in {
+            "round_robin",
+            "greedy_input_order",
+            "greedy_lpt",
+        }:
+            raise ValueError("unsupported partition strategy")
+        programs = (
+            (program,)
+            if isinstance(program, MigrationProgram)
+            else tuple(program)
+        )
+        if not programs:
+            raise ValueError("at least one migration program is required")
+        sources = [value.source_version for value in programs]
+        if len(set(sources)) != len(sources):
+            raise ValueError("migration program sources must be unique")
+        targets = {value.target_version for value in programs}
+        shapes = {
+            (value.num_layers, value.input_width, value.kv_width)
+            for value in programs
+        }
+        if len(targets) != 1 or len(shapes) != 1:
+            raise ValueError("migration programs must share target and tensor shape")
         shared_operator = operator or ReferenceMigrationOperator()
-        self.program = program
+        self.programs = programs
+        self.program = programs[0]
         self.devices = resolved
+        self.partition_strategy = partition_strategy
         self._closed = False
         self._pool = ThreadPoolExecutor(max_workers=len(resolved))
         self.executors = tuple(
             CohortStreamingExecutor(
-                program,
+                programs,
                 device=device,
                 max_inflight_batches=max_inflight_batches,
                 pin_inputs=pin_inputs,
                 operator=shared_operator,
+                output_pool=output_pool,
             )
             for device in resolved
         )
@@ -126,8 +162,20 @@ class MultiGPUCohortExecutor:
         assignments: list[list[tuple[int, MigrationCapsuleBatch]]] = [
             [] for _ in self.devices
         ]
+        if self.partition_strategy == "round_robin":
+            for index, capsule in enumerate(batches):
+                assignments[index % len(self.devices)].append((index, capsule))
+            return tuple(tuple(assignment) for assignment in assignments)
         loads = [0 for _ in self.devices]
-        for index, capsule in enumerate(batches):
+        indexed = list(enumerate(batches))
+        if self.partition_strategy == "greedy_lpt":
+            indexed.sort(
+                key=lambda value: (
+                    -self._work_bytes(value[1]),
+                    value[0],
+                )
+            )
+        for index, capsule in indexed:
             worker = min(range(len(loads)), key=lambda value: (loads[value], value))
             assignments[worker].append((index, capsule))
             loads[worker] += self._work_bytes(capsule)
@@ -199,6 +247,7 @@ class MultiGPUCohortExecutor:
             batches=tuple(result for result in ordered if result is not None),
             metrics=MultiGPUExecutionMetrics(
                 device_count=len(self.devices),
+                program_count=len(self.programs),
                 batch_count=sum(
                     value.execution.batch_count for value in device_metrics
                 ),
@@ -214,9 +263,41 @@ class MultiGPUCohortExecutor:
                 output_bytes=sum(
                     value.execution.output_bytes for value in device_metrics
                 ),
-                program_replica_bytes=self.program.nbytes * len(self.devices),
+                program_replica_bytes=sum(
+                    sum(
+                        program.nbytes
+                        for program in executor.programs.values()
+                    )
+                    for executor in self.executors
+                ),
                 elapsed_seconds=elapsed,
                 load_imbalance=load_imbalance,
+                partition_strategy=self.partition_strategy,
+                cohort_batch_counts={
+                    source: sum(
+                        batch.migration_anchor_version == source
+                        for batch in batches
+                    )
+                    for source in sorted(
+                        {
+                            batch.migration_anchor_version
+                            for batch in batches
+                        }
+                    )
+                },
+                cohort_record_counts={
+                    source: sum(
+                        batch.batch_size
+                        for batch in batches
+                        if batch.migration_anchor_version == source
+                    )
+                    for source in sorted(
+                        {
+                            batch.migration_anchor_version
+                            for batch in batches
+                        }
+                    )
+                },
                 devices=tuple(device_metrics),
             ),
         )

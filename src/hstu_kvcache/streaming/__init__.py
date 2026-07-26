@@ -9,6 +9,7 @@ from .distributed import (
     train_distributed_batches,
 )
 from .long_context import (
+    COHORT_JAGGED_SYSTEM_PROTOCOL,
     LONG_CONTEXT_DATES,
     METHOD_PROTOCOL,
     MOTIVATION_PROTOCOL,
@@ -16,6 +17,7 @@ from .long_context import (
     SYNC_DESIGN_PROTOCOL,
     SYNC_SYSTEM_PROTOCOL,
     TRAINING_PROTOCOL,
+    TWO_GPU_SYSTEM_PROTOCOL,
     load_checkpoint_model,
     long_context_dates,
     long_context_split_name,
@@ -54,9 +56,11 @@ __all__ = [
     "shard_train_batches",
     "train_distributed_batches",
     "TRAINING_PROTOCOL",
+    "COHORT_JAGGED_SYSTEM_PROTOCOL",
     "MOTIVATION_PROTOCOL",
     "SYNC_DESIGN_PROTOCOL",
     "SYNC_SYSTEM_PROTOCOL",
+    "TWO_GPU_SYSTEM_PROTOCOL",
     "METHOD_PROTOCOL",
     "LONG_CONTEXT_DATES",
     "SUPPORTED_LONG_CONTEXT_BASE_DAYS",

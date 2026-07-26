@@ -18,6 +18,12 @@ SYNC_DESIGN_PROTOCOL = (
 SYNC_SYSTEM_PROTOCOL = (
     "kuairand_long_context_4plus12_progressive_sync_system_v1"
 )
+TWO_GPU_SYSTEM_PROTOCOL = (
+    "kuairand_long_context_4plus12_two_gpu_migration_system_v2"
+)
+COHORT_JAGGED_SYSTEM_PROTOCOL = (
+    "kuairand_long_context_4plus12_cohort_jagged_system_v3"
+)
 LONG_CONTEXT_DATES = tuple(f"202204{day:02d}" for day in range(8, 24))
 LONG_CONTEXT_BASE_DATES = LONG_CONTEXT_DATES[:8]
 LONG_CONTEXT_ONLINE_DATES = LONG_CONTEXT_DATES[8:]
