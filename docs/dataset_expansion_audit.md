@@ -1,7 +1,7 @@
 # Exposure-compatible dataset expansion audit
 
 > Status: data-capacity audit and frozen ordered-exposure materialization complete as of
-> 2026-07-23. Model results are reported separately in
+> 2026-07-27. Model results and the accepted expansion boundary are reported separately in
 > `experiments/exposure/ORDERED_EXPOSURE_V1.md`.
 
 ## 1. Decision
@@ -21,8 +21,12 @@ feedback and therefore preserve the KuaiRand task structure:
 Tenrec QK-video is the closest field-level match to KuaiRand because it is a video dataset with
 click, follow, like, and share feedback. ZhihuRec is the cleanest temporal complement because it
 has impression timestamps and comes from a different domain. Tenrec QB-video is small enough to
-be the first loader and one-seed pipeline check. A strong paper should eventually use both the
-Tenrec and ZhihuRec evidence rather than treating two Tenrec tables as two independent datasets.
+be the first loader and one-seed pipeline check. The accepted positive extensions are QB and QK,
+reported explicitly as related tables from one Tenrec collection rather than two independent data
+sources. ZhihuRec is retained as a documented negative maintenance boundary: its exposure
+semantics pass, but the current stream construction does not yield a task-independent maintenance
+signal. It should not be revived merely to increase the dataset count; doing so requires a new,
+predeclared protocol that resolves that boundary.
 
 ## 2. Raw comparison
 

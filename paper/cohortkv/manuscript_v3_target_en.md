@@ -125,7 +125,7 @@ QB and QK are related tables from Tenrec [7], not independent industrial domains
 
 We next vary data and model capacity in a frozen 3×3 screen. All nine cells have positive full-compute and full-reuse streaming value in 4/4 seeds, but Figure 2 shows that the mean BestRank staleness tax is neither uniformly positive nor monotone with capacity: large KuaiRand and large QB expose substantial taxes of 0.360 and 0.548, while large QK is −0.005 and QB-medium is −0.060. At a fixed target, every 3×3 age curve has monotonicity violations. In the controlled 16-layer long-context diagnostic, age strongly orders K/V drift, yet after removing the special base-to-stream boundary it explains only 6.15% of MeanRank variation, compared with 60.9% explained by current version identity.
 
-![⟨TBD asset⟩ Staleness tax across the 3×3 data/capacity screen, and age versus drift versus task utility on the long-context chain.](figures/05_admission_signals.svg)
+![Staleness tax across the 3×3 data/capacity screen, and age versus drift versus task utility on the long-context chain.](figures/05_admission_signals.svg)
 
 **Figure 2: Neither age, drift, nor capacity calibrates task-level maintenance value.** Cost scales smoothly with capacity while task maintenance does not; age orders drift but not ranking impact.
 
@@ -294,11 +294,23 @@ Residual-\(p\) executes the first \(p\) current-model blocks exactly, computes t
 
 and approximates deeper states by \(h_\ell^v+\Delta_p\) before the current layer's `Norm + Wk/Wv` projection. It supplies a predefined structural escalation tier without a per-user predictor or another learned online operator. Exact recomputation is the terminal K/V reference.
 
-The tiers are selected per operating point rather than fixed globally. In the primary 50% replicated operating point, all 27 held-out chains select compiled projection; at the 75% discovery point, three large cells select residual depths 5, 6, and 7. The same library also positions the strongest external alternative: selective layer recomputation in the style of DroidSpeak [4], which recomputes the \(m\) most drift-sensitive layers with the current model and reuses the rest. Section 8.4 evaluates this baseline under the identical certificate and publication boundary.
+Residual-\(p\) is not executable from the normalized migration capsule alone. It additionally
+requires the old pre-block hidden suffix
+\(\{h_\ell^v\}_{\ell=p}^{L-1}\), which CohortKV treats as an optional, separately accounted source
+representation. A plan may publish this tier only when that suffix is retained; otherwise its
+fallback chain proceeds directly to exact recomputation. Section 8.7 reports these auxiliary bytes
+separately rather than hiding them in the default capsule footprint.
+
+The tiers are selected per operating point rather than fixed globally. In the primary 50% replicated operating point, all 27 held-out chains select compiled projection; at the 75% discovery point, three large cells select residual depths 5, 6, and 7. The same library also positions the strongest external alternative: a DroidSpeak-adapted contiguous layer group [4], which starts from one stored old-version transition activation, recomputes that interval with the current model, and reuses old K/V elsewhere. Section 8.4 independently profiles this baseline under the identical label-free certificate and publication boundary.
 
 ### 4.4 Published program and fallback interface
 
 Compilation ends in an immutable program artifact: one folded affine projection per layer, together with a verified plan recording the certificates, the selected action, and the ordered fallback chain that the runtime sentinel consumes (§6.2). This artifact is the only channel between the compiler and the engine, which is what makes escalation possible without re-entering the compiler at run time. Serialization, metadata layout, and strict version/shape validation follow standard practice and are described in §7.
+
+The certificate is applied to the deployed numeric representation, not only to the FP32 fitting
+path. Before publication, CohortKV reloads the serialized FP16 capsules and prepared runtime
+program, emits FP16 K/V, and repeats the frozen label-free views without changing thresholds or
+candidate selection.
 
 ## 5. Design 2: Capsule-to-K/V operator
 
@@ -443,7 +455,7 @@ The cells that miss the strict task gate are informative rather than disqualifyi
 
 Across seeds, the certificate selects the full-affine program in ⟨TBD⟩ of ⟨TBD⟩ cohorts and escalates the remainder through the published chain; no cohort is published without passing its contract. Threshold sensitivity (Figure 5) shows the selection is stable for recovery targets between ⟨TBD⟩% and ⟨TBD⟩%, so the contract is an interior operating point.
 
-![⟨TBD asset⟩ Certificate threshold sweep and per-seed recovery distribution.](figures/06_frozen_contract.svg)
+![Certificate threshold sweep and per-seed recovery distribution.](figures/06_frozen_contract.svg)
 
 **Figure 5: The frozen contract replicates across seeds and is not threshold-tuned.**
 
@@ -453,11 +465,11 @@ At the harmful age-11 endpoint of the development seed, the selected action reco
 
 ### 8.4 RQ3: Against selective layer recomputation
 
-The strongest external alternative treats cross-version reuse as a layer-selection problem: recompute the \(m\) most drift-sensitive layers with the current model and reuse the remaining layers' old K/V, as DroidSpeak does for fine-tuned LLM variants [4]. We implement this baseline for HSTU, tune it independently (layer-selection statistic, \(m\in\{2,4,6,8,12\}\)), and evaluate it under the identical label-free certificate, source residency, and publication boundary. The frontier is measured on three chains from the §8.3 infrastructure: the primary 16-layer KuaiRand long-context chain, the KuaiRand medium chain (capacity axis), and the QB large chain (dataset axis). Figure 6 reports the primary chain; Table ⟨TBD⟩ summarizes the other two, which must show the same dominance ordering for the claim to stand.
+The strongest external alternative treats cross-version reuse as a layer-group recomputation problem. DroidSpeak profiles contiguous groups because each transition from reused state to receiver-model recomputation needs a sender activation (`E` cache), and scattered groups add both state and propagated mismatch [4]. We adapt that semantic path to HSTU: for each \(m\in\{2,4,6,8,12\}\), the development split profiles every legal contiguous \(m\)-layer interval; execution starts from the old pre-block hidden state, recomputes that interval with the current model, and reuses old K/V outside it. The profiler uses the same label-free cache/score/top-100 views as CohortKV rather than recommendation labels, and its old K/V, transition-state, and raw-history bytes are counted at the common source tier. The interval and \(m\) are frozen before the certificate and final users. This is a compatible DroidSpeak-adapted algorithmic baseline, not a reproduction of its distributed LLM serving runtime. The frontier is first measured on the primary 16-layer KuaiRand long-context chain; cross-capacity and cross-dataset cells are deferred until the single-configuration implementation is frozen. Figure 6 reports the primary chain.
 
 Figure 6 plots the cost–fidelity frontier. Selective recomputation improves smoothly with \(m\) but pays per-record forward cost for every recomputed layer: at the \(m\) needed to reach the 70% cache-recovery contract, its cost is ⟨TBD⟩× exact, compared with ⟨TBD⟩× for the compiled full-affine program at equal or higher recovery. The compiled program dominates the frontier at every certified operating point because its adaptation is amortized per version pair rather than executed per record. Internal structural controls (p4/p8 prefix replay, residual-\(p\)) fall between the two, consistent with the §4.3 tiering.
 
-![⟨TBD asset⟩ Cost/exact versus semantic recovery for compiled affine, selective layer recomputation at m∈{2,4,6,8,12}, structural replay, and residual-p.](figures/07_pareto_frontier.svg)
+![Cost/exact versus semantic recovery for compiled affine, selective contiguous recomputation at m∈{2,4,6,8,12}, structural replay, and residual-p.](figures/07_pareto_frontier.svg)
 
 **Figure 6: Compiled affine repair dominates the certified cost–fidelity frontier.** Per-version-pair amortization beats per-record layer recomputation at every contract level.
 
@@ -467,7 +479,7 @@ Two boundary cases are reported for completeness. A no-transform placement basel
 
 ### 8.5 RQ4: Complete cohort through an identical destination transaction
 
-**Workload.** The full update job migrates every eligible KuaiRand long-context record: ⟨TBD⟩ records across three source cohorts (theta0/theta4/theta10 → theta11), totaling ⟨TBD⟩ M logical prefix tokens and ⟨TBD⟩ GiB of logical capsule bytes. Capsules stream from ⟨TBD: source tier⟩ through the lazy shard reader. Exact recomputation and the selective-layer baseline read the corresponding raw histories from the same tier. All three pipelines are independently tuned and publish complete FP16 K/V through the same destination transaction; the manifest commit is included in completion time.
+**Workload.** The full update job migrates every eligible KuaiRand long-context record: 682 records and 1.087785 M logical prefix tokens across a predeclared controlled source mix (theta0/theta4/theta10 counts 136/205/341 → theta11), totaling 16.60 GiB of logical FP16 capsule bytes. The records are real, but the source versions are label-free controlled assignments rather than an organic cache-refresh trace. Capsules stream from buffered POSIX shards on the `/data` ext4 tier through the lazy shard reader. Exact recomputation reads raw histories from the same tier; the selective-contiguous baseline reads raw histories, old K/V, and its selected transition hidden state there. Any residual-\(p\) control also reads its explicitly retained old hidden suffix. The paths share a physical tier rather than identical source bytes, so logical and physical input traffic is reported separately. All three primary pipelines are independently tuned per destination and GPU count and publish complete FP16 K/V through the same destination transaction; source read, target allocation, and manifest commit are included in completion time.
 
 **Operator microbenchmark.** Table 7 retains the resident-batch comparison (one record, sequence width 2047): the fused Triton path is 1.19× faster than packed FP16 `baddbmm` and 4.42× faster than the FP32 reference, and it is the only path that writes contiguous destination-layout K/V.
 
@@ -500,7 +512,7 @@ Two boundary cases are reported for completeness. A no-transform placement basel
 - Peak host residency is bounded at ⟨TBD⟩ GiB by the wave and queue depths, independent of cohort size; peak HBM is ⟨TBD⟩ GiB per GPU.
 - Compile-plus-certificate time amortizes to ⟨TBD⟩% of job time; the sentinel at \(k=\)⟨TBD⟩ adds ⟨TBD⟩% overhead; manifest commit takes ⟨TBD⟩% of completion.
 
-![⟨TBD asset⟩ Completion-time breakdown (read, H2D, compute, D2H, publish, commit) for compiled and exact paths at 1/2/4 GPUs.](figures/08_full_cohort_breakdown.svg)
+![Completion-time breakdown (read, H2D, compute, D2H, publish, commit) for compiled and exact paths at 1/2/4 GPUs.](figures/08_full_cohort_breakdown.svg)
 
 **Figure 7: Where full-cohort time goes.** The compiled path shifts the bottleneck from GPU compute to source bandwidth; the identical transaction keeps the comparison honest.
 
@@ -520,9 +532,9 @@ Two boundary cases are reported for completeness. A no-transform placement basel
 
 ### 8.7 RQ5: Capsule economics
 
-The capsule is the system's principal standing cost. Unpadded FP16 `Norm(x)` is 50% of logical FP16 K/V at equal widths. Three measurements bound this cost. First, capsule capture adds ⟨TBD⟩% to the forward pass that materializes fresh K/V, because the normalized states are already computed and only need a strided copy; this is the same capture point for initial ingestion and for exact recomputation. Second, an INT8 storage layout with per-layer scales reduces the capsule footprint to ⟨TBD⟩% of logical K/V; capsules are dequantized to FP16 during host staging, so the fused operator and the compiled program are unchanged, and final K/V recovery drops by only ⟨TBD⟩ points. Third, the break-even analysis (Figure 8) is deliberately workload-free: it expresses total maintenance cost as a function of the number of migrations a record undergoes between capsule creations, using only quantities measured in this paper (capsule bytes, capture overhead, compiled-migration cost, exact-replay cost). Retaining capsules is cheaper than history replay once a record is migrated more than ⟨TBD⟩ times; deployment-specific parameters such as re-access frequency are outside the datasets we use, so we report the crossover, not a workload claim.
+The capsule is the system's principal standing cost. Unpadded FP16 `Norm(x)` is 50% of logical FP16 K/V at equal widths. Three measurements bound this cost. First, capsule capture adds ⟨TBD⟩% to the forward pass that materializes fresh K/V, because the normalized states are already computed and only need a strided copy; this is the same capture point for initial ingestion and for exact recomputation. Second, a symmetric signed INT8 storage layout with one FP32 absmax scale per record and layer reduces the capsule data footprint to 25% of logical FP16 K/V before scale and offset metadata; capsules are dequantized to FP16 during host staging, so the fused operator and the compiled program are unchanged, and final K/V recovery drops by only ⟨TBD⟩ points. Third, the break-even analysis (Figure 8) is deliberately workload-free: it expresses total maintenance cost as a function of the number of migrations a record undergoes between capsule creations, using only quantities measured in this paper (capsule capture overhead, complete compiled-migration cost, compiler/certificate amortization, and complete exact-replay cost). Retaining capsules is cheaper than history replay once a record is migrated more than ⟨TBD⟩ times; a nonpositive measured denominator is instead reported as no time break-even. Deployment-specific parameters such as re-access frequency and monetary byte cost are outside the datasets we use, so we report the measured time crossover and byte ratios, not a workload or cost claim. Optional transition activations and residual hidden suffixes are reported in a separate auxiliary-state row; they are never folded into the headline 16.60-GiB capsule number.
 
-![⟨TBD asset⟩ Capsule storage/precision frontier and update-frequency break-even.](figures/09_capsule_economics.svg)
+![Capsule storage/precision frontier and update-frequency break-even.](figures/09_capsule_economics.svg)
 
 **Figure 8: The capsule is a measured space-for-update-time trade, not free metadata.**
 

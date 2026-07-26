@@ -34,8 +34,16 @@ Current status:
 - v2 measures 64 real histories with an assigned 13/19/32 version mix at matched host residency
   and target publication;
 - v4 has a destination contract but no complete-cohort performance result;
+- Stage 0 has frozen the exact 682-record workload, 136/205/341 controlled source counts, common
+  buffered-POSIX source tier, HBM/DRAM boundaries, timing fields, failure points, and aggregate
+  result schema under `cohortkv_single_config_full_chain_development_v1`;
 - verified plans record residual/structural/exact fallbacks, but the destination engine currently
-  accepts compiled affine programs and does not automatically execute that escalation chain.
+  accepts compiled affine programs and does not automatically execute that escalation chain;
+- residual-p additionally needs an old hidden suffix, not the normalized capsule plus one
+  transition activation. The current theta0/theta10 p8 fallback scope adds 5.83 GiB FP16 and is
+  executable only if that auxiliary shard is retained;
+- the existing certificate used in-memory FP32 layerwise state and must be reapplied unchanged to
+  serialized FP16 sources/programs/output before the full-chain plan is executable.
 
 Required experiment:
 
@@ -45,6 +53,8 @@ Required experiment:
   force at least one cohort through an automatic stronger-action escalation;
 - make compiled migration and exact recomputation publish through the same transaction;
 - compare separately at fixed HBM and pinned-DRAM destinations;
+- run retained-target HBM capacity preflight before timing, and revise the protocol rather than
+  silently deleting a matrix point if the frozen grid cannot fit it;
 - independently tune both methods under the same source tier/residency, target dtype/layout,
   destination, and publication semantics, while reporting capsule and raw-history source bytes
   separately;
@@ -64,6 +74,9 @@ Required experiment:
 
 - inject failures before first extent, mid-wave, during publication, and immediately before
   manifest commit;
+- republish a structurally valid theta4 degradation with valid integrity metadata so semantic
+  preflight/runtime guard, rather than the hash check, must escalate it to exact; report detection
+  phase and replaced extents;
 - verify no incomplete target version becomes visible;
 - verify retry behavior and cleanup cost;
 - report manifest and extent metadata overhead for the full cohort.
@@ -103,10 +116,15 @@ Current status:
 
 Required experiment:
 
-- compare source capsule layouts and precision;
-- report total extra capacity, creation cost, read bandwidth, compression error, and break-even
-  update frequency;
+- compare FP16 with the frozen symmetric signed INT8 layout using one FP32 absmax scale per record
+  and layer, including scale/offset metadata and timed staging dequantization;
+- separately time fresh-K/V only, plus device capture, and plus D2H/encode/POSIX persistence on
+  the 60 program-selection histories;
+- report total extra capacity, creation cost, read bandwidth, compression error, and the measured
+  time crossover `ceil(capture/(exact-compiled-compiler_amortized))`; a nonpositive denominator is
+  no break-even, not a missing value;
 - evaluate whether capsules replace another retained state or are purely additional.
+- keep selective transition and residual hidden-suffix bytes outside the default capsule ratio.
 
 Admission criterion:
 
@@ -129,6 +147,8 @@ Required experiment:
 Current status:
 
 - structural p4/p8 and residual-\(p\) are internal recomputation controls;
+- Stage 0 has frozen a 53-point DroidSpeak-adapted contiguous-interval grid over
+  `m in {2,4,6,8,12}`, including transition-state and old-K/V source accounting;
 - the current evaluation does not implement DroidSpeak's selective-layer sharing and pipelined
   cache-loading system on a compatible model.
 
@@ -136,6 +156,8 @@ Required experiment:
 
 - implement the closest compatible selective-layer recomputation baseline without borrowing
   recommendation labels;
+- use a new old-K/V-reuse reference; the repository's existing contiguous helper applies current
+  projections outside the interval and is therefore a different internal method;
 - tune it independently under the same source-residency, semantic-certificate, and
   target-publication boundaries;
 - report both semantic recovery and complete-job cost rather than comparing only recomputed layer

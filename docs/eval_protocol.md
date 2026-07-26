@@ -4,6 +4,13 @@
 > serving semantics, model family, or timing semantics requires a new protocol name and separate
 > result files.
 
+The active implementation sequence is
+[`09_single_configuration_full_chain_plan.md`](09_single_configuration_full_chain_plan.md).
+That document is a development plan, not a result protocol: it creates no comparable evidence by
+itself. Before an integrated run is promoted from development evidence, its final configuration,
+metrics, timing boundary, baselines, and artifact schema must be frozen here under a new protocol
+name. Existing protocol strings and result families must not be silently reused for that run.
+
 ## 1. Protocol families
 
 ### `validity_v1_incremental_prefix_cache`
@@ -851,6 +858,130 @@ commits one complete manifest, and has maximum absolute error `9.77e-4`. It is i
 correctness only. Details and commands are in
 `experiments/system/FOUR_GPU_SCALING_V1.md`.
 
+### 5.15 CohortKV single-configuration full-chain development
+
+`cohortkv_single_config_full_chain_development_v1` is the only protocol for the current
+single-configuration implementation round. Its Stage 0 contract is frozen in
+`configs/cohortkv_single_config_v1/` and documented by
+`experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md`. The blueprint and workload
+manifest are plan/configuration artifacts, not empirical evidence.
+
+The frozen data/model endpoint is KuaiRand 4+12, training seed 0, theta11/D16, 16 layers,
+hidden/K/V width 512, and maximum history 2,048. The complete workload contains 682 unique
+records and 1,087,785 valid prefix tokens. Record IDs are the positions of eligible one-based
+prepared model user indices sorted ascending; each record separately retains its source-log raw
+user ID. All source state and target K/V cover `history[:-1]`, while `history[-1]` remains the
+current-model latest token. The existing seed-9151 and seed-27183 permutations retain disjoint 40
+fit / 60 program-selection / 60 certificate / 522 final-test roles.
+
+Every one of the 682 records enters the system job after method and layout selection is frozen.
+The system path never reads recommendation labels. Source versions theta0/theta4/theta10 are a
+predeclared, label-free controlled mix: largest-remainder counts from weights 20/30/50, followed
+by a seed-58211 shuffle over canonical record order. The exact counts are 136/205/341. This is a
+complete real-record workload with controlled anchors, not an organic cache-version trace.
+
+All compared source representations use buffered POSIX shards on the `/data` ext4 tier. One
+complete untimed warmup precedes three measured repetitions without explicit page-cache eviction,
+and source reads remain inside job completion. The representation is action-specific and its
+logical and physical bytes must be reported:
+
+- compiled and cheap projection read FP16 normalized-state capsules;
+- selective-contiguous reads old FP16 K/V, its selected FP16 transition hidden state, and raw
+  history;
+- residual-p reads raw history plus every old pre-block hidden state from layer `p` through the
+  final layer;
+- exact reads raw history;
+- reuse/no-transform reads old FP16 K/V.
+
+These paths share a physical source tier, not identical inputs. Source-shard creation, checkpoint
+loading, and offline tuning are excluded from job completion and reported separately. The
+residual-p hidden suffix is auxiliary state, not part of the default normalized capsule. It costs
+12.45 GiB at p4 or 8.30 GiB at p8 over the full workload; the current theta0/theta10 p8 fallback
+scope costs 5.83 GiB. If that state is absent, residual-p is not executable and a revised verified
+plan must fall through to exact. Shard materialization requires a source-device/filesystem check
+and at least 128 GiB free.
+
+The earlier verified compiler result used in-memory FP32 layerwise state. Before the plan is
+executable in this protocol, the unchanged certificate must pass again on serialized FP16 source
+representations, prepared runtime programs, and FP16 output. This is not a new hyperparameter
+search. Transport/layout correctness uses the same selected numeric path on the same serialized
+input as its resident oracle, requires finite values, and uses `atol=0.02, rtol=0.02`; semantic
+recovery remains measured against FP32 current-model exact K/V and score views.
+
+The closest external baseline is `selective_contiguous`, an HSTU adaptation of DroidSpeak's
+contiguous recomputation-group and transition-state semantics. For each
+`m in {2,4,6,8,12}`, all legal contiguous intervals are evaluated on the 60 program-selection
+records using the common label-free cache/score/top-100 views. Ties prefer lower measured GPU cost
+and then the earlier start. The certificate role publishes the minimum-cost frozen interval that
+passes the primary contract, with exact fallback. Final-test records cannot change the interval,
+`m`, action, or contract. This is an adapted algorithm baseline, not a reproduction of
+DroidSpeak's distributed serving runtime. The existing `migrate_contiguous_cache` helper is not
+the reference implementation because it applies current projections outside the interval; the
+baseline must instead copy source old K/V there. Candidate transition states are profiling-only on
+program-selection records, while final system shards retain one frozen transition per cohort.
+The frontier is complete per source-target pair: 53 selective intervals, p4/p8, compiled, cheap,
+reuse, and exact, or 59 selection points per pair and 177 total. The aggregate must audit every
+declared interval; selection and certification do not pool source versions.
+
+The primary destination matrix is compiled/selective-contiguous/exact over HBM and pinned DRAM at
+1/2/4 GPUs. Residual-p and no-transform are controls. Every method publishes the same contiguous,
+unpadded, FP16 K/V extent layout with lengths/offsets and the same
+`streamkv_destination_manifest_v1` coverage/visibility contract. Fresh target allocation,
+source-manifest scan/read, decode/pinning, H2D, compute, D2H when required, staging, coverage
+validation, coordinator overhead, and commit are inside completion time. HBM and DRAM remain
+different endpoints. The one-GPU HBM point retains 33.20 GiB of target K/V and must pass a
+pre-timing capacity check including model/program residency, maximum-batch temporary memory, and
+allocator margin. An infeasible point triggers protocol revision rather than silent omission.
+The DRAM path similarly probes pinned allocation and available host memory for its retained target
+plus bounded queues. Each repetition destroys the previous target, allocates a fresh destination,
+and reopens and decodes source shards; only the OS page cache, not decoded tensors, remains warm.
+All methods use byte-weighted LPT with method-specific declared logical source plus target bytes.
+Per-GPU record/token/byte totals, elapsed time, peak HBM, assigned-byte imbalance, and aggregate
+source/staging/publication-queue peaks are required and must sum to the run aggregate.
+
+Runtime tuning uses only the 60 program-selection records and is independent per method and
+destination/GPU count. The frozen grid is batch size `1/2/4`, length bucket `16/32/64`, and
+in-flight depth `2/3/4`; compiled additionally compares packed and fused FP16, and exact compares
+BF16 and FP32 compute. Correctness precedes timing. After one complete source read establishes the
+warm page-cache condition, every legal candidate receives one screen pass in seed-73421 order,
+then the fastest three receive one warmup and three measured passes; every candidate result is
+retained, and ties prefer lower peak memory then lower padding. The point-specific winner is frozen
+before the complete workload.
+
+Guard selection uses only program-selection records and no recommendation labels. It chooses the
+lowest normal-job overhead mechanism that detects the frozen theta4 perturbation while preserving
+unperturbed cohort certificates, and records reference bytes/time, no-fault overhead, false
+escalations, and detection phase. If no runtime sentinel qualifies, an executable semantic
+preflight is permitted and the claim is renamed before the mechanism is frozen.
+
+Failure experiments predeclare artifact-hash mismatch, a structurally valid and
+integrity-accepted semantic theta4-program perturbation, failure before the first extent, mid-wave,
+during publication, and immediately before commit after complete coverage. The semantic
+perturbation must be caught by semantic preflight or the runtime guard, escalate theta4 to its
+published exact fallback, replace any already generated theta4 extents, and commit only a complete
+corrected target. The other five jobs abort with the old current pointer preserved. No failure may
+expose partial theta11. Each result records pointer/visibility state, staging reclamation, cleanup,
+detection phase, and reworked records. Resume is optional until a journal validates
+at-most-one-wave redo; atomic abort and prior-version visibility are mandatory.
+
+The aggregate result must validate against
+`configs/cohortkv_single_config_v1/result.schema.json`. Until that artifact exists with
+`status=development_complete`, none of the Stage 0 files support a new speedup, fidelity,
+full-cohort, failure-recovery, or capsule-economics claim. Even after completion, seed 0 remains
+adaptive development evidence; timing repeats are not training replications.
+The schema requires exactly one aggregate run for each of the 18 primary
+method/destination/GPU-count combinations and one result for each predeclared failure. Controls
+cannot satisfy a missing primary point.
+
+RQ5 capture timing uses theta11, one GPU, and the 60 program-selection histories for matched
+fresh-K/V-only, plus-device-capture, and plus-D2H/encode/buffered-POSIX-persist paths, each with one
+warmup and three repetitions. INT8 is symmetric signed quantization with a per-record/per-layer
+FP32 absmax scale and timed FP16 dequantization during staging; its frozen certificate is applied
+on certificate users, with a complete 682-record one-GPU HBM run. Time break-even is
+`ceil(capture_overhead / (exact - compiled - compiler_amortized))`; a nonpositive denominator is
+reported as no break-even. Auxiliary transition/residual state is a separate row and cannot be
+folded into the default capsule ratio.
+
 ## 6. Metrics and statistics
 
 Primary quality views:
@@ -1043,6 +1174,8 @@ KuaiRand temporal-split exploration:
   `results/system/streamkv_destination_hbm_4gpu_validation.json`
 - `experiments/system/FOUR_GPU_SCALING_V1.md`
 - `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`
+- `configs/cohortkv_single_config_v1/{blueprint,workload_manifest,result.schema}.json`
+- `experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md`
 
 `smoke.json` files, old `results/phase0`, and old `results/streaming` are not research artifacts.
 Per-seed exposure JSON and all checkpoints are current local artifacts but ignored by Git. Taobao

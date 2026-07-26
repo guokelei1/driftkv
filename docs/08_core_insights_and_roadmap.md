@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-26. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-27. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -38,6 +38,26 @@ The technical design has exactly three connected layers: a cohort migration comp
 capsule-to-K/V operator, and a destination-oriented execution engine. A thin update coordinator
 may parse a job specification and invoke these interfaces, but it is control-plane glue rather
 than a fourth research contribution, a reuse-safety predictor, or an online scheduler.
+
+The immediate implementation phase is a complete single-configuration vertical slice on the
+KuaiRand 4+12, 16L/H512, seed-0 chain. It closes experiment design, the closest baselines, all
+three modules, full-cohort execution, failure semantics, and capsule economics before new
+training seeds or datasets are added. This phase is development evidence. Its active sequence and
+same-interface fallback rules are in
+`docs/09_single_configuration_full_chain_plan.md`.
+
+The Stage-0 re-audit exposed two implementation-critical boundaries. Manifest `user_id` is the
+prepared one-based model index, not the raw log identifier; both are now frozen separately.
+Residual-p is also not executable from the normalized capsule plus one transition activation: it
+requires every old pre-block hidden state from layer p through the final layer. That hidden suffix
+is an auxiliary representation whose bytes and reads must be counted separately. If it is absent,
+the published fallback must skip residual-p and end at exact under a revised protocol.
+
+The planned mechanism is never protected from falsification. If a stage shows that full affine,
+the fused operator, a runtime sentinel, a layout, or a backend is unsound or unhelpful, stop that
+branch, retain the negative result, and replace it with a simpler mechanism that preserves the
+module's logical contract. A material semantic change requires a new protocol and rerunning every
+affected downstream result.
 
 ## 2. What the corrected evidence supports
 
@@ -474,6 +494,13 @@ frozen certificate bound. At the harmful age-11 endpoint it recovers 98.8% of th
 and AUC gap, 90.3% of NDCG@100, and 88.9% of Hit@100. No recommendation labels enter compilation
 or certification. This is still adaptive seed-0 exploration because the preceding program was
 developed after inspecting this seed; confirmation requires a frozen new seed or dataset.
+The p8 fallback at ages 11 and 1 is only an executable full-chain fallback if its old hidden
+suffix is retained. Over the frozen theta0/theta10 records this adds 5.83 GiB FP16 beyond the
+16.60-GiB normalized capsule; the resident-kernel certificate did not account source I/O for that
+state.
+The existing certificate also consumed in-memory FP32 layerwise state. The single-configuration
+path must reapply the unchanged certificate to serialized FP16 capsules, prepared runtime
+programs, and FP16 publication before it treats those programs as executable full-chain plans.
 
 The first controlled mixed-version, end-to-end systems replay is also complete. It uses disjoint
 32-user layout-search and 64-user systems traces drawn from the verified compiler's final-user
@@ -712,16 +739,19 @@ model results are in `experiments/exposure/ORDERED_EXPOSURE_V1.md` and
 
 Proceed in this order:
 
-1. Freeze the verified compiler, including its action library and 70%/80%/90%/30% contract, and
-   replicate it on new training seeds or accepted cross-dataset checkpoints without another
-   search on the current seed's users.
-2. Define a deterministic full-cohort source manifest and streaming reader, then compare compiled
-   migration with independently tuned full recomputation at identical HBM and DRAM destination
-   boundaries.
-3. Extend the completed controlled 1/2/4-GPU scaling to the full destination-v4 job: measure
-   calibration amortization, bounded-wave peak memory, backend publication time, manifest commit,
-   and identical-boundary exact before adding another arithmetic kernel.
-4. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
+1. Complete the single-configuration plan: freeze the experiment blueprint, implement and
+   independently tune the selective-layer baseline, close the compiler/operator/engine
+   interfaces, and run one complete KuaiRand long-context vertical slice.
+2. Within that slice, define a deterministic full-cohort source manifest and lazy reader, then
+   compare compiled, selective-layer, residual/exact, and no-transform paths at identical HBM and
+   DRAM destination boundaries over 1/2/4 GPUs. Residual points must read their explicit hidden
+   suffix; the one-GPU HBM point must pass retained-target capacity preflight.
+3. Add runtime guard/fallback and failure semantics only after the normal full-cohort path is
+   measured. Treat a named SSD and INT8 capsule as secondary endpoint/economics experiments, not
+   new contributions.
+4. Freeze the resulting v1 and replicate it first on new training seeds of the same primary
+   configuration, then on predeclared dataset/model-capacity cells.
+5. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
    result-driven per-dataset tuning, creates a reason to revisit it.
 
 ### Gate F: turn kernel savings into a system result — controlled replay passed
@@ -865,9 +895,29 @@ The route should be reconsidered if any of the following persists after the scop
     interfaces, host-staged bounded-wave update engine, atomic manifest semantics, a thin
     coordinator entry point, and reference correctness tests. This is an architecture closure,
     not a storage-performance result or a fourth contribution.
-23. [ ] Add source-side full-cohort streaming and run the first destination-v4 DRAM/HBM update
-    with identical-boundary compiled and exact baselines; report peak memory, bytes, completion
-    time, and 1/2/4-GPU scaling.
-24. [ ] Add a physical SSD or remote backend only after recording reproducible hardware and
-    extending the protocol; do not turn an in-memory/object-interface smoke test into evidence.
-25. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+23. [x] Freeze the single-configuration experiment blueprint, 682-record workload manifest,
+    40/60/60/522 roles, controlled 136/205/341 source mix, action-specific source
+    representations, HBM/DRAM boundaries, result schema, failure points, and paper artifact map
+    under `cohortkv_single_config_full_chain_development_v1`; re-audit internal/raw user identity,
+    residual hidden-suffix state, primary-matrix schema coverage, and HBM capacity before Stage 1.
+24. [ ] Implement and independently tune the DroidSpeak-adapted contiguous-layer baseline; close
+    reuse/exact anchors, cheap/residual/no-transform controls, and the single-cell Pareto frontier.
+    Do not reuse the existing current-projection-outside-interval helper as the old-K/V-reuse
+    external baseline.
+25. [ ] Close the compiler artifact path, certificate-threshold sweep, compile/certificate cost,
+    and end-to-end amortization accounting without another search on the 522 final users.
+26. [ ] Consolidate the capsule/operator contract and reference/packed/fused correctness and
+    ablations. Do not reopen jagged/page search without a new measured bottleneck.
+27. [ ] Add source-side lazy full-cohort streaming and route compiled, certified selective-layer,
+    residual, exact, and no-transform paths through one destination-v4 job interface.
+28. [ ] Run the complete KuaiRand 4+12 cohort at identical HBM/DRAM boundaries over 1/2/4 GPUs;
+    report physical/logical bytes, peak source/staging/HBM memory, completion breakdown, and
+    manifest commit.
+29. [ ] Evaluate a concrete runtime guard, connect the published fallback chain, and run forced
+    degradation plus failure-injection/visibility tests. Replace the sentinel with preflight or
+    canary verification if its reference or overhead is unsound.
+30. [ ] Measure capsule capture and FP16/INT8 economics. Add a named physical SSD result only if
+    the target manuscript retains it; remote remains interface-only.
+31. [ ] Freeze and run the complete single-configuration matrix once, update every claim from
+    measured artifacts, and then begin same-configuration new-seed replication.
+32. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

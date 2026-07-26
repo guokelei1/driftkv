@@ -693,17 +693,26 @@ Coordinator 只负责把 job specification 映射到这三个接口并返回 man
 
 terminal 优化、连续区间 gate、流式训练价值链、逐轴规模、aligned motivation、compiled
 low-rank 四-seed gate，以及九容量 tiered migration 均已完成。固定 suffix、普通 prefix 和
-任意层动态选择均不再作为主线。下一步是：
+任意层动态选择均不再作为主线。当前不直接铺开“多数据集 × 多模型容量 × 多 seed”，而是
+先按 [`09_single_configuration_full_chain_plan.md`](09_single_configuration_full_chain_plan.md)
+把 KuaiRand 4+12、16L/H512、seed 0 的开发链路完整跑通。Stage 0 已经冻结 682-record
+workload、角色、受控 source mix、输入/输出边界、结果 schema 和 paper artifact map；下一步
+从 Stage 1 开始：
 
-1. **冻结 compiler contract 并复现。** 不再从当前 seed 用户搜索新 program；在新 seed 或
-   已接受的外部 checkpoint 上复现 verified plan。
-2. **完成 full-cohort destination job。** 加入 source-side capsule streaming，对全量固定
-   records 在相同 HBM 和 DRAM endpoint 下比较 compiled migration 与 independently tuned
-   full recomputation。
-3. **把受控扩展性移入完整 job。** 当前已报告 controlled trace 的 peak HBM 与
-   1/2/4-GPU completion time；下一步补 normalized-state source streaming、
-   fit/compile amortization、logical/physical bytes 和 manifest commit。filesystem/remote
-   只有接入真实设备后才升级为性能实验。
+1. **先冻结实验设计并补齐 baseline。** 明确每个 RQ、指标、比较边界和失败判据，实现
+   full recomputation、stale reuse 与独立调优的 selective recomputation；已有动机结果
+   只作为上下界或机制对照。
+2. **闭合论文核心模块。** 将 cohort compiler、normalized-state capsule、
+   compiled/replay/exact 统一动作接口和 full-cohort lazy engine 接成一条真实数据路径。
+3. **补齐系统与失败路径。** 在相同 endpoint 下测 1/2/4-GPU HBM/DRAM，
+   加入 runtime guard、升级到 replay/exact 的逻辑、原子 manifest 和失败注入；SSD 仅在
+   接入具名真实设备后作为次级 endpoint。
+4. **冻结后再复现和扩展。** 单配置集成结果只算开发证据；结构和协议冻结后，先做同配置
+   新 seed，再做跨数据集和跨容量扩展。
+
+若开发中发现预设机制不成立，不以“和草稿一致”为理由强行实现。应暂停该模块、保存负面
+证据，并在不改变其逻辑目标和比较边界的前提下换一条实现路径；若连逻辑目标也需改变，
+则先修订路线图、评测协议和论文表述，再重跑受影响的下游实验。
 
 ---
 

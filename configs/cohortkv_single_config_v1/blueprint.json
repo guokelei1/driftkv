@@ -1,0 +1,1056 @@
+{
+  "action_contracts": {
+    "cheap_projection": {
+      "inputs": [
+        "normalized_capsule_fp16"
+      ],
+      "role": "internal compiler ablation"
+    },
+    "compiled": {
+      "inputs": [
+        "normalized_capsule_fp16"
+      ],
+      "primary_contract": {
+        "max_cost_ratio_to_exact": 0.3,
+        "minimum_coverage": 0.8,
+        "one_sided_confidence": 0.9,
+        "recovery_target": 0.7,
+        "views": [
+          "relative_kv_error",
+          "fresh_score_cosine",
+          "fresh_top100_overlap"
+        ]
+      },
+      "program_scope": "one immutable program per source/target pair",
+      "role": "primary candidate",
+      "threshold_sweep": [
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9
+      ]
+    },
+    "exact": {
+      "compute_candidates": [
+        "bfloat16",
+        "float32"
+      ],
+      "inputs": [
+        "raw_history"
+      ],
+      "published_dtype": "float16",
+      "role": "current-model K/V semantic reference"
+    },
+    "no_transform": {
+      "inputs": [
+        "old_kv_fp16"
+      ],
+      "role": "pure placement and transaction floor",
+      "semantic_contract_expected_to_pass": false
+    },
+    "residual_p": {
+      "current_verified_fallback": {
+        "logical_bytes": 6255345664,
+        "p": 8,
+        "source_versions": [
+          "theta0",
+          "theta10"
+        ]
+      },
+      "implementation_guard": {
+        "existing_operator_semantics_compatible": true,
+        "existing_required_state_label_is_too_coarse": true,
+        "required_reference_tests": [
+          "p-specific hidden suffix is sufficient",
+          "p=L matches exact current K/V",
+          "missing hidden suffix rejects before job begin"
+        ]
+      },
+      "inputs": [
+        "raw_history",
+        "residual_hidden_suffix_fp16"
+      ],
+      "p_values": [
+        4,
+        8
+      ],
+      "role": "internal escalation tier",
+      "state_semantics": "depth p requires every old pre-block hidden state from layer p through L-1; one transition state and the normalized capsule cannot reconstruct this action",
+      "storage_policy": "auxiliary hidden suffix bytes are counted separately from the default capsule; if the shard is absent, remove residual-p from the executable fallback chain under a revised protocol and fall through to exact"
+    },
+    "reuse": {
+      "inputs": [
+        "old_kv_fp16"
+      ],
+      "publishable_sync_action": false,
+      "role": "zero-maintenance semantic anchor"
+    },
+    "selective_contiguous": {
+      "adaptation_boundary": "DroidSpeak profiles contiguous recomputation groups with task quality and transition E-cache; this HSTU adaptation replaces task labels with the common label-free semantic contract",
+      "candidate_intervals_by_m": {
+        "12": [
+          [
+            0,
+            11
+          ],
+          [
+            1,
+            12
+          ],
+          [
+            2,
+            13
+          ],
+          [
+            3,
+            14
+          ],
+          [
+            4,
+            15
+          ]
+        ],
+        "2": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            8,
+            9
+          ],
+          [
+            9,
+            10
+          ],
+          [
+            10,
+            11
+          ],
+          [
+            11,
+            12
+          ],
+          [
+            12,
+            13
+          ],
+          [
+            13,
+            14
+          ],
+          [
+            14,
+            15
+          ]
+        ],
+        "4": [
+          [
+            0,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            4,
+            7
+          ],
+          [
+            5,
+            8
+          ],
+          [
+            6,
+            9
+          ],
+          [
+            7,
+            10
+          ],
+          [
+            8,
+            11
+          ],
+          [
+            9,
+            12
+          ],
+          [
+            10,
+            13
+          ],
+          [
+            11,
+            14
+          ],
+          [
+            12,
+            15
+          ]
+        ],
+        "6": [
+          [
+            0,
+            5
+          ],
+          [
+            1,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            8
+          ],
+          [
+            4,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            6,
+            11
+          ],
+          [
+            7,
+            12
+          ],
+          [
+            8,
+            13
+          ],
+          [
+            9,
+            14
+          ],
+          [
+            10,
+            15
+          ]
+        ],
+        "8": [
+          [
+            0,
+            7
+          ],
+          [
+            1,
+            8
+          ],
+          [
+            2,
+            9
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            4,
+            11
+          ],
+          [
+            5,
+            12
+          ],
+          [
+            6,
+            13
+          ],
+          [
+            7,
+            14
+          ],
+          [
+            8,
+            15
+          ]
+        ]
+      },
+      "certificate_rule": "on certificate users, publish the minimum-cost frozen m/interval that passes the same primary contract; exact is the terminal fallback",
+      "implementation_guard": {
+        "existing_migrate_contiguous_cache_is_compatible": false,
+        "reason": "the existing helper applies current K/V projections to old normalized states outside the interval instead of reusing source old K/V",
+        "required_reference_tests": [
+          "outside-interval output equals source old K/V",
+          "inside-interval output matches minimal current replay",
+          "full-depth interval matches exact current K/V"
+        ]
+      },
+      "inputs": [
+        "old_kv_fp16",
+        "transition_hidden_fp16",
+        "raw_history"
+      ],
+      "m_values": [
+        2,
+        4,
+        6,
+        8,
+        12
+      ],
+      "profiling_materialization": "candidate transition states may be captured only for program-selection records outside timed system jobs; final source shards retain one frozen transition per source-target cohort",
+      "role": "DroidSpeak-adapted external baseline",
+      "selection_rule": "on program-selection users, choose the interval for each m with the best worst-view label-free recovery; break ties by lower measured GPU cost then earlier start",
+      "semantics": "recompute one contiguous current-model interval and reuse old K/V outside it",
+      "terminal_semantics": "execute full current blocks before the terminal layer; at the terminal layer execute only current Norm and K/V projection because no later current hidden state is used"
+    }
+  },
+  "data_and_model": {
+    "base_dates": [
+      "20220408",
+      "20220409",
+      "20220410",
+      "20220411"
+    ],
+    "dataset": "KuaiRand-1K standard logs",
+    "endpoint_date": "20220423",
+    "model": {
+      "activation": "relu",
+      "attn_dropout": 0.0,
+      "gating": "silu_gate",
+      "head_dim": 64,
+      "hidden_size": 512,
+      "input_dropout": 0.1,
+      "max_seq_len": 2048,
+      "norm_eps": 1e-06,
+      "num_behaviors": 9,
+      "num_heads": 8,
+      "num_items": 312144,
+      "num_layers": 16,
+      "num_prediction_items": 50000,
+      "qk_scale": 1.0,
+      "temporal_max_period": 86400.0,
+      "temporal_num_freqs": 16,
+      "tie_item_embeddings": true
+    },
+    "source_versions": [
+      "theta0",
+      "theta4",
+      "theta10"
+    ],
+    "split": "4+12",
+    "target_version": "theta11",
+    "training_seed": 0,
+    "update_dates": [
+      "20220412",
+      "20220413",
+      "20220414",
+      "20220415",
+      "20220416",
+      "20220417",
+      "20220418",
+      "20220419",
+      "20220420",
+      "20220421",
+      "20220422",
+      "20220423"
+    ]
+  },
+  "destination_contract": {
+    "common_output": {
+      "allocation": "fresh target extents are allocated inside each timed job for every method",
+      "coverage": "all 682 record IDs exactly once before manifest commit",
+      "dtype": "float16",
+      "layout": "separate contiguous unpadded [L,T,Dkv] K and V per extent with lengths and offsets",
+      "manifest_protocol": "streamkv_destination_manifest_v1",
+      "valid_elements": "only unpadded prefix-token elements exist in the published extents; internal dense padding is never counted as logical output"
+    },
+    "dram": {
+      "capacity_preflight": {
+        "failure_policy": "stop before timing instead of silently publishing pageable or non-retained output",
+        "logical_target_bytes": 35644538880,
+        "probe": "allocate and release one maximum-size pinned extent before tuning; verify aggregate available host memory before every complete job",
+        "required_peak_formula": "retained pinned target bytes plus bounded source wave, decode, and publication-queue host bytes"
+      },
+      "commit": "atomic in-memory manifest visibility",
+      "durable": false,
+      "includes_d2h": true,
+      "publication_mode": "host_staged",
+      "target_residency": "retained pinned CPU extents"
+    },
+    "excluded_from_primary_matrix": [
+      "filesystem_destination",
+      "remote_destination"
+    ],
+    "hbm": {
+      "capacity_preflight": {
+        "expected_gpu_name": "NVIDIA A40",
+        "expected_total_bytes_per_gpu": 47699722240,
+        "one_gpu_logical_target_bytes": 35644538880,
+        "oom_policy": "reduce batch/inflight only within the frozen grid; if the one-GPU point remains infeasible, stop and revise the protocol instead of dropping or changing the destination",
+        "required_peak_formula": "assigned retained target bytes plus model/program residency, measured maximum-batch temporary bytes, and allocator margin"
+      },
+      "commit": "atomic in-memory manifest visibility",
+      "durable": false,
+      "includes_d2h": false,
+      "publication_mode": "direct_device",
+      "target_residency": "extent-partitioned retained tensors on the active destination GPUs"
+    },
+    "primary_matrix": {
+      "additional_controls": [
+        "residual_p",
+        "no_transform"
+      ],
+      "destinations": [
+        "hbm",
+        "dram"
+      ],
+      "gpu_counts": [
+        1,
+        2,
+        4
+      ],
+      "methods": [
+        "compiled",
+        "selective_contiguous",
+        "exact"
+      ],
+      "required_points": [
+        {
+          "destination": "hbm",
+          "gpu_count": 1,
+          "method": "compiled"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 2,
+          "method": "compiled"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 4,
+          "method": "compiled"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 1,
+          "method": "compiled"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 2,
+          "method": "compiled"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 4,
+          "method": "compiled"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 1,
+          "method": "selective_contiguous"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 2,
+          "method": "selective_contiguous"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 4,
+          "method": "selective_contiguous"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 1,
+          "method": "selective_contiguous"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 2,
+          "method": "selective_contiguous"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 4,
+          "method": "selective_contiguous"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 1,
+          "method": "exact"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 2,
+          "method": "exact"
+        },
+        {
+          "destination": "hbm",
+          "gpu_count": 4,
+          "method": "exact"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 1,
+          "method": "exact"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 2,
+          "method": "exact"
+        },
+        {
+          "destination": "dram",
+          "gpu_count": 4,
+          "method": "exact"
+        }
+      ]
+    }
+  },
+  "economics_contract": {
+    "auxiliary_state_reporting": {
+      "current_verified_p8_fallback_fp16": 6255345664,
+      "excluded_from_default_capsule_ratio": true,
+      "residual_hidden_suffix_fp16_by_p": {
+        "4": 13366702080,
+        "8": 8911134720
+      },
+      "transition_hidden_fp16": 1113891840
+    },
+    "break_even": {
+      "forbidden": "convert bytes or update frequency to money or workload frequency without an external declared parameter",
+      "formula": "ceil(capture_overhead / (exact - compiled - compiler_amortized))",
+      "if_denominator_nonpositive": "no_time_break_even",
+      "report_fp16_and_int8_separately": true,
+      "unit": "seconds per record"
+    },
+    "capture": {
+      "gpu_count": 1,
+      "measured_repetitions": 3,
+      "model_version": "theta11",
+      "paths": [
+        "forward materializing fresh K/V only",
+        "same forward plus FP16 normalized-state device capture",
+        "same forward plus device capture, D2H, encode, and buffered-POSIX shard persistence"
+      ],
+      "records": 60,
+      "role": "program_selection",
+      "shared_input": "the same frozen prefix histories",
+      "warmup_runs": 1
+    },
+    "fp16": {
+      "logical_bytes": 17822269440,
+      "logical_ratio_to_fp16_kv": 0.5,
+      "physical_bytes_required": true
+    },
+    "int8": {
+      "complete_job_endpoint": {
+        "destination": "hbm",
+        "gpu_count": 1,
+        "records": 682
+      },
+      "dequantization": "dequantize to FP16 during timed host staging without changing the prepared compiled program",
+      "equation": "scale=max(abs(z))/127; q=round(clamp(z/scale,-127,127)); all-zero tensors use scale 1",
+      "layout": "symmetric signed int8 per record and layer with float32 absmax scale",
+      "logical_data_bytes": 8911134720,
+      "logical_data_ratio_to_fp16_kv": 0.25,
+      "semantic_evaluation": "apply the frozen certificate on certificate users and report the frozen representation on final-test users"
+    }
+  },
+  "failure_contract": {
+    "injections": [
+      {
+        "expected": "abort before the first extent",
+        "name": "artifact_hash_mismatch_before_begin"
+      },
+      {
+        "expected": "the perturbation remains structurally valid and passes integrity checks, then semantic preflight or the runtime guard detects it; theta4 escalates to its published exact recompute fallback and any earlier theta4 extents are replaced before a complete commit",
+        "name": "semantic_theta4_program_perturbation"
+      },
+      {
+        "expected": "abort with no theta11 visibility",
+        "name": "before_first_extent"
+      },
+      {
+        "expected": "abort with no theta11 visibility",
+        "name": "mid_wave"
+      },
+      {
+        "expected": "abort and reclaim private staging",
+        "name": "during_publication"
+      },
+      {
+        "expected": "abort with the previous version still visible",
+        "name": "pre_commit_after_complete_coverage"
+      }
+    ],
+    "reader_state": {
+      "after_abort": "the previous version remains visible and theta11 staging is unreachable",
+      "after_commit": "one atomic pointer/manifest transition exposes theta11",
+      "before_commit": "the logical current pointer remains on the previously committed version; theta11 is not visible"
+    },
+    "resume_claim": "optional until an extent journal proves at-most-one-wave redo; absence of resume does not block atomic abort"
+  },
+  "frontier_contract": {
+    "certification_scope": "one frozen selective candidate per m and source-target pair may proceed from program selection to certificate; final users evaluate only the certified action or exact fallback",
+    "families_per_pair": {
+      "cheap_projection": 1,
+      "compiled": 1,
+      "exact": 1,
+      "residual_p": 2,
+      "reuse": 1,
+      "selective_contiguous": 53
+    },
+    "grid_audit": "the aggregator verifies every declared interval and anchor configuration exactly once for each source-target pair",
+    "selection_points_per_pair": 59,
+    "source_target_pairs": [
+      {
+        "source_version": "theta0",
+        "target_version": "theta11"
+      },
+      {
+        "source_version": "theta4",
+        "target_version": "theta11"
+      },
+      {
+        "source_version": "theta10",
+        "target_version": "theta11"
+      }
+    ],
+    "total_minimum_selection_points": 177
+  },
+  "frozen_date": "2026-07-27",
+  "frozen_inputs": {
+    "checkpoints": [
+      {
+        "bytes": 724367093,
+        "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_0.pt",
+        "sha256": "80dc39061c19f0739182144c04d4a7478f730dcfbfaa901d5e562fd7d5eee971",
+        "version": "theta0"
+      },
+      {
+        "bytes": 724367093,
+        "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_4.pt",
+        "sha256": "2650b2710d607d628dfd172738bd0fbe22b9cdbfc87d467ca4888d913e0abb00",
+        "version": "theta4"
+      },
+      {
+        "bytes": 724367776,
+        "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_10.pt",
+        "sha256": "5d23bfcb087b8c9b2dc220c6fa58a4f1ad7f6f453a88ae91e164040abcf92664",
+        "version": "theta10"
+      },
+      {
+        "bytes": 724367776,
+        "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_11.pt",
+        "sha256": "6e847a56266acc6e0f52b840ade3cf0085ab87cb88da3f1ecdc64183933e6501",
+        "version": "theta11"
+      }
+    ],
+    "freeze_script": {
+      "bytes": 103076,
+      "path": "scripts/freeze_cohortkv_single_config_v1.py",
+      "sha256": "c1bf2279b3abd4bce726c928a6cd0f9ae8fddeedcf03b832280151bac44cf8c6"
+    },
+    "prepared_data": {
+      "bytes": 23605339,
+      "path": "data/processed/kuairand_long_context_4plus12_exploration_v1.npz",
+      "sha256": "e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8"
+    },
+    "result_schema": {
+      "file_sha256": "6f7fe182b9de6def6858c2951d13d52d997478e53aabcdb55f3dce73a1553716",
+      "path": "configs/cohortkv_single_config_v1/result.schema.json"
+    },
+    "training_result": {
+      "bytes": 12289,
+      "path": "results/motivation_scale/long_context_4plus12_training_exploration_seed0.json",
+      "sha256": "1c3786bc38a670419cb80bcc3b9ee9edbd8be8979a78914e37ed70025b328cd0"
+    },
+    "verified_compiler_result": {
+      "bytes": 11661827,
+      "path": "results/motivation_scale/long_context_4plus12_verified_compiler_seed0.json",
+      "sha256": "fb30539d5b4943380726a2782a17dd1c8f15b6744698fa9b7f9a6c5b52b95101"
+    },
+    "verified_programs": [
+      {
+        "fallback_actions": [
+          "structural_p8",
+          "recompute"
+        ],
+        "selected_action": "compiled_full_affine",
+        "selected_program": {
+          "bytes": 33623509,
+          "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/attention_weighted_search/theta0_to_theta11_compiled_attention_mix_1.00.pt",
+          "sha256": "5cb65cad278f9e0763ac8f06260bdee20683936cac32c572f8ca5fe2f5fd9d5c"
+        },
+        "source_version": "theta0",
+        "target_version": "theta11",
+        "verified_plan": {
+          "bytes": 8164,
+          "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/verified_plans/theta0_to_theta11_verified.json",
+          "sha256": "3b0995517dd8019c0e80aa1236c2bd4f0d51c49b15bdb7b469a2a10387f180a4"
+        }
+      },
+      {
+        "fallback_actions": [
+          "recompute"
+        ],
+        "selected_action": "compiled_full_affine",
+        "selected_program": {
+          "bytes": 33623509,
+          "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/attention_weighted_search/theta4_to_theta11_compiled_attention_mix_1.00.pt",
+          "sha256": "99cf5ed3d7ca7388fa2cab765526e4d99dd1cf494ee02c44423a1adf5d36e0fe"
+        },
+        "source_version": "theta4",
+        "target_version": "theta11",
+        "verified_plan": {
+          "bytes": 8136,
+          "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/verified_plans/theta4_to_theta11_verified.json",
+          "sha256": "50faa98062fce5fb56fad561b987b1b12e0aa64863883d7eb8aaf272678594c1"
+        }
+      },
+      {
+        "fallback_actions": [
+          "structural_p8",
+          "recompute"
+        ],
+        "selected_action": "compiled_full_affine",
+        "selected_program": {
+          "bytes": 33623517,
+          "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/attention_weighted_search/theta10_to_theta11_compiled_attention_mix_1.00.pt",
+          "sha256": "54d6f317164b9853f98840edda4ce873a149d5127cae744660503ed771de7573"
+        },
+        "source_version": "theta10",
+        "target_version": "theta11",
+        "verified_plan": {
+          "bytes": 8225,
+          "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/verified_plans/theta10_to_theta11_verified.json",
+          "sha256": "4a1bc5f49fedeaa4dcf7c75e6a860854a3c4df2b73424aa2a462a36462e8f37d"
+        }
+      }
+    ],
+    "workload_manifest": {
+      "content_sha256": "e7f2bc0567e779e5096bf7436c3484949f277b6d92189b9c28d31a8cc4450cb0",
+      "file_sha256": "6dd01569db95067a12d06b11587d98d3a9882db0b0d8892443e753397b047ba4",
+      "path": "configs/cohortkv_single_config_v1/workload_manifest.json"
+    }
+  },
+  "guard_selection_contract": {
+    "freeze_boundary": "freeze the mechanism and parameters before the six complete failure jobs; final-test recommendation labels are forbidden",
+    "labels_used": false,
+    "logical_requirement": "detect the frozen integrity-valid theta4 semantic perturbation before commit while reporting false escalation on all unperturbed source cohorts",
+    "reference_accounting": [
+      "reference source representation and bytes",
+      "reference compute seconds",
+      "normal no-fault job overhead seconds",
+      "perturbed detection phase",
+      "false-escalated cohort count"
+    ],
+    "role": "program_selection",
+    "selection_rule": "choose the lowest normal-job overhead mechanism that detects the frozen perturbation and preserves unperturbed cohort certificates; if no runtime sentinel qualifies, use an executable semantic preflight and narrow the manuscript claim"
+  },
+  "numeric_contract": {
+    "deployment_recertification": "apply the frozen certificate again on serialized FP16 source shards, prepared runtime programs, and published FP16 K/V before final-test or complete-job execution",
+    "existing_verified_result_boundary": "the frozen verified compiler evaluated in-memory FP32 layerwise state; it is algorithm evidence, not a certificate for the deployed FP16 source representation",
+    "method_specific_guards": {
+      "exact_bfloat16": "selection users must compare BF16-compute published FP16 K/V with FP32-compute published FP16 K/V",
+      "selective_contiguous": "outside-interval FP16 values must equal source old K/V exactly before the common transport tolerance is applied"
+    },
+    "semantic_oracle": "FP32 current-model exact K/V and full-catalog score views",
+    "transport_allclose": {
+      "atol": 0.02,
+      "finite_required": true,
+      "rtol": 0.02
+    },
+    "transport_oracle": "the same selected method and numeric path executed resident on the same serialized source representation"
+  },
+  "paper_contract": {
+    "record": "experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md",
+    "rule": "every target TBD is marked measured, deleted, downgraded, or still open before any prose is promoted",
+    "target_manuscript": "paper/cohortkv/manuscript_v3_target_en.md"
+  },
+  "placement_contract": {
+    "aggregate_validation": "per-GPU counts and bytes must sum exactly to the aggregate run and active device indices must be unique",
+    "extent_weight": "declared logical source bytes plus logical target bytes for that method and extent",
+    "policy": "byte_weighted_lpt",
+    "program_and_model_residency": "replicated on every active worker and included in peak HBM, not in per-extent source bytes",
+    "required_reporting": [
+      "per-GPU records and prefix tokens",
+      "per-GPU logical input and output bytes",
+      "per-GPU elapsed and peak HBM",
+      "aggregate assigned-byte imbalance",
+      "records/s and tokens/s",
+      "peak source, staging, and publication-queue bytes"
+    ]
+  },
+  "protocol": "cohortkv_single_config_full_chain_development_v1",
+  "result_contract": {
+    "aggregate_output": "results/system/cohortkv_single_config_full_chain_v1/final_summary_seed0.json",
+    "required_artifacts": [
+      "raw per-run JSON",
+      "aggregate JSON",
+      "correctness report",
+      "timing and memory breakdown",
+      "committed destination manifests",
+      "negative-results log",
+      "repository commit and code-snapshot hash"
+    ],
+    "schema": "configs/cohortkv_single_config_v1/result.schema.json",
+    "semantic_validation": "JSON Schema enforces one run for every primary method/destination/GPU point and one record for every failure injection; the aggregator additionally verifies component-byte sums and source/action compatibility"
+  },
+  "role_contract": {
+    "certificate": {
+      "allowed": [
+        "apply the frozen label-free fidelity contract",
+        "select the minimum-cost passing action from a predeclared library"
+      ],
+      "forbidden": [
+        "change candidate grids",
+        "use recommendation labels"
+      ],
+      "records": 60
+    },
+    "final_test": {
+      "allowed": [
+        "report final semantic and recommendation behavior"
+      ],
+      "forbidden": [
+        "fit, tune, select, or change any method or layout"
+      ],
+      "records": 522
+    },
+    "fit": {
+      "allowed": [
+        "fit compiled affine parameters"
+      ],
+      "forbidden": [
+        "select hyperparameters",
+        "certify actions",
+        "report final quality"
+      ],
+      "records": 40
+    },
+    "program_selection": {
+      "allowed": [
+        "select compiled hyperparameters already recorded",
+        "profile selective contiguous intervals",
+        "tune each method's runtime layout"
+      ],
+      "forbidden": [
+        "fit affine parameters",
+        "change the primary certificate",
+        "report final quality"
+      ],
+      "records": 60
+    },
+    "system_workload": {
+      "records": 682,
+      "relationship": "the destination job processes all four roles after every algorithm and layout is frozen; it never reads recommendation labels"
+    }
+  },
+  "runtime_tuning_contract": {
+    "candidate_order_seed": 73421,
+    "freeze_before_complete_workload": true,
+    "grid": {
+      "batch_size": [
+        1,
+        2,
+        4
+      ],
+      "compiled_operator": [
+        "packed_fp16",
+        "fused_fp16"
+      ],
+      "exact_compute": [
+        "bfloat16",
+        "float32"
+      ],
+      "length_bucket_width": [
+        16,
+        32,
+        64
+      ],
+      "max_inflight": [
+        2,
+        3,
+        4
+      ]
+    },
+    "labels_used": false,
+    "measured_repetitions": 3,
+    "objective": "minimize median complete tuning-job elapsed time after correctness; ties prefer lower peak memory then less padding",
+    "retain_every_candidate_result": true,
+    "role": "program_selection",
+    "search_procedure": "open and read the method's complete selection source once to establish the warm page-cache condition, screen every legal candidate once after correctness in seed-73421 order, then rerun the fastest three with one warmup and three measured repetitions; publish the winner before any 682-record run",
+    "separate_per_method_destination_and_gpu_count": true,
+    "warmup_runs": 1
+  },
+  "schema_version": 1,
+  "scope": {
+    "confirmation_unit": "future independent training seed",
+    "creates_performance_evidence": false,
+    "implementation_rule": "preserve each module's logical contract, but pause and replace a mechanism when measurements falsify it",
+    "objective": "close one complete compiler-to-manifest vertical slice before new seeds, datasets, or model capacities"
+  },
+  "source_contract": {
+    "common_physical_tier": {
+      "cache_condition": "one complete untimed warmup, then three measured repetitions without explicit page-cache eviction",
+      "claim_boundary": "this is a common source tier, not identical source bytes and not a cold-device SSD benchmark",
+      "device": "/dev/nvme2n1p1",
+      "device_model": "INTEL SSDPF2KX038XZ",
+      "filesystem": "ext4",
+      "kind": "buffered_posix_files",
+      "minimum_free_bytes_before_materialization": 137438953472,
+      "mount": "/data",
+      "preflight": "resolve shard_root with findmnt, verify device, model, filesystem, and free-space floor, and record observations in the result before creating shards",
+      "timed_read_included": true
+    },
+    "representations": {
+      "normalized_capsule_fp16": {
+        "layout": "layer-major unpadded [L,T,H] plus offsets",
+        "logical_bytes": 17822269440
+      },
+      "old_kv_fp16": {
+        "layout": "separate contiguous unpadded [L,T,Dkv] K and V plus offsets",
+        "logical_bytes": 35644538880
+      },
+      "raw_history": {
+        "fields": [
+          "item_ids",
+          "behaviors",
+          "time_deltas",
+          "lengths"
+        ],
+        "physical_bytes_must_be_measured": true
+      },
+      "residual_hidden_suffix_fp16": {
+        "current_verified_p8_fallback_bytes": 6255345664,
+        "current_verified_p8_fallback_scope": [
+          "theta0",
+          "theta10"
+        ],
+        "layout": "old-version pre-block hidden states [layers p..L-1,T,H] plus offsets",
+        "logical_bytes_by_p_for_all_records": {
+          "4": 13366702080,
+          "8": 8911134720
+        },
+        "not_part_of_default_normalized_capsule": true,
+        "physical_bytes_must_be_measured": true
+      },
+      "transition_hidden_fp16": {
+        "layout": "one selected old-version pre-block hidden state [T,H] per record",
+        "logical_bytes_for_one_transition_per_record": 1113891840,
+        "physical_bytes_must_be_measured": true
+      }
+    },
+    "shard_root": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/single_config_v1/source_shards",
+    "source_shard_creation": {
+      "outside_job_completion": true,
+      "reported_separately": true,
+      "temporary_and_final_bytes_must_fit_preflight": true
+    }
+  },
+  "status": "stage0_frozen",
+  "study_stage": "adaptive_seed0_development",
+  "timing_contract": {
+    "compiler_accounting": "fit and certificate wall time are reported separately and also amortized over the 682-record job",
+    "excluded_but_reported": [
+      "streaming_training",
+      "checkpoint_loading",
+      "source_shard_creation",
+      "offline_method_and_layout_tuning"
+    ],
+    "included_phases": [
+      "source_manifest_scan",
+      "source_read",
+      "decode_and_pin",
+      "target_allocation",
+      "h2d",
+      "compute",
+      "d2h_when_required",
+      "stage",
+      "coverage_validation",
+      "manifest_commit",
+      "coordinator_overhead"
+    ],
+    "job_end": "after the complete target manifest is visible",
+    "job_start": "before opening the frozen source manifest and beginning the destination transaction",
+    "measured_repetitions": 3,
+    "repetition_lifecycle": "destroy the prior private target and synchronize before each warmup or measured job; each job creates fresh target extents, reopens and decodes source shards, and no repetition may reuse a committed target or application-decoded input",
+    "statistical_boundary": "timing repetitions describe stability; seed 0 is the only training replication in this development protocol",
+    "warmup_runs": 1
+  },
+  "workload_contract": {
+    "logical_capsule_bytes_fp16": 17822269440,
+    "logical_residual_hidden_suffix_bytes_fp16": {
+      "4": 13366702080,
+      "8": 8911134720
+    },
+    "logical_target_kv_bytes_fp16": 35644538880,
+    "logical_transition_hidden_bytes_fp16": 1113891840,
+    "prefix_tokens": 1087785,
+    "record_count": 682,
+    "source_assignment": {
+      "claim_boundary": "the complete record set is real; source versions are predeclared controlled assignments, not organic cache ages",
+      "counts": {
+        "theta0": 136,
+        "theta10": 341,
+        "theta4": 205
+      },
+      "kind": "controlled_label_free_mix",
+      "organic": false,
+      "rule": "largest-remainder 20/30/50 counts followed by a seed-58211 shuffle over canonical record order",
+      "seed": 58211,
+      "uses_recommendation_labels": false,
+      "versions": [
+        "theta0",
+        "theta4",
+        "theta10"
+      ],
+      "weights": [
+        0.2,
+        0.3,
+        0.5
+      ]
+    },
+    "tensor_scope": "all source state and target K/V cover history[:-1] only; history[-1] remains the current-model query token"
+  }
+}
