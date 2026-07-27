@@ -213,13 +213,21 @@
                   "passed": {
                     "const": true
                   },
+                  "program_dtype": {
+                    "const": "float16"
+                  },
+                  "residual_hidden_suffix_dtype": {
+                    "const": "bfloat16"
+                  },
                   "source_dtype": {
                     "const": "float16"
                   }
                 },
                 "required": [
                   "source_dtype",
+                  "program_dtype",
                   "output_dtype",
+                  "residual_hidden_suffix_dtype",
                   "passed"
                 ],
                 "type": "object"
@@ -542,6 +550,101 @@
           "minItems": 3,
           "type": "array"
         },
+        "profiled_selective_actions": {
+          "allOf": [
+            {
+              "contains": {
+                "properties": {
+                  "source_version": {
+                    "const": "theta0"
+                  }
+                },
+                "required": [
+                  "source_version"
+                ],
+                "type": "object"
+              },
+              "maxContains": 1,
+              "minContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "source_version": {
+                    "const": "theta4"
+                  }
+                },
+                "required": [
+                  "source_version"
+                ],
+                "type": "object"
+              },
+              "maxContains": 1,
+              "minContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "source_version": {
+                    "const": "theta10"
+                  }
+                },
+                "required": [
+                  "source_version"
+                ],
+                "type": "object"
+              },
+              "maxContains": 1,
+              "minContains": 1
+            }
+          ],
+          "items": {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "const": {
+                  "end_layer": 11,
+                  "m": 12,
+                  "start_layer": 0
+                }
+              },
+              "certificate_passed": {
+                "const": false
+              },
+              "publishable_sync_action": {
+                "const": false
+              },
+              "source_representations": {
+                "const": [
+                  "old_kv_fp16",
+                  "raw_history"
+                ]
+              },
+              "source_version": {
+                "enum": [
+                  "theta0",
+                  "theta4",
+                  "theta10"
+                ]
+              },
+              "system_role": {
+                "const": "frozen_diagnostic_external_baseline"
+              }
+            },
+            "required": [
+              "source_version",
+              "action",
+              "certificate_passed",
+              "publishable_sync_action",
+              "system_role",
+              "source_representations"
+            ],
+            "type": "object"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
         "selection_points": {
           "items": {
             "additionalProperties": true,
@@ -695,6 +798,7 @@
       "required": [
         "selection_points",
         "selective_grid_audit",
+        "profiled_selective_actions",
         "certified_selective_actions"
       ],
       "type": "object"
@@ -1470,7 +1574,6 @@
                     "source_representations": {
                       "const": [
                         "old_kv_fp16",
-                        "transition_hidden_fp16",
                         "raw_history"
                       ]
                     }
@@ -1493,7 +1596,7 @@
                     "source_representations": {
                       "const": [
                         "raw_history",
-                        "residual_hidden_suffix_fp16"
+                        "residual_hidden_suffix_bf16"
                       ]
                     }
                   }
@@ -1539,6 +1642,40 @@
                       ]
                     }
                   }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "selective_contiguous"
+                    }
+                  },
+                  "required": [
+                    "method"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "action_configuration": {
+                      "const": {
+                        "end_layer": 11,
+                        "m": 12,
+                        "start_layer": 0
+                      }
+                    },
+                    "certificate_passed": {
+                      "const": false
+                    },
+                    "publishable_sync_action": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "action_configuration",
+                    "certificate_passed",
+                    "publishable_sync_action"
+                  ]
                 }
               },
               {
@@ -1603,6 +1740,9 @@
               }
             ],
             "properties": {
+              "action_configuration": {
+                "type": "object"
+              },
               "capacity_preflight": {
                 "additionalProperties": true,
                 "properties": {
@@ -1634,6 +1774,9 @@
                   "passed"
                 ],
                 "type": "object"
+              },
+              "certificate_passed": {
+                "type": "boolean"
               },
               "correctness": {
                 "additionalProperties": true,
@@ -1749,7 +1892,7 @@
                     "const": 682
                   },
                   "workload_content_sha256": {
-                    "const": "e7f2bc0567e779e5096bf7436c3484949f277b6d92189b9c28d31a8cc4450cb0"
+                    "const": "41b7ad10a8dc3a05ce99342a0d73a09e09847ddf42b9111d318b3ddd3c62a910"
                   }
                 },
                 "required": [
@@ -1854,6 +1997,9 @@
               "prefix_tokens": {
                 "const": 1087785
               },
+              "publishable_sync_action": {
+                "type": "boolean"
+              },
               "record_count": {
                 "const": 682
               },
@@ -1871,7 +2017,7 @@
                     "old_kv_fp16",
                     "raw_history",
                     "transition_hidden_fp16",
-                    "residual_hidden_suffix_fp16"
+                    "residual_hidden_suffix_bf16"
                   ]
                 },
                 "minItems": 1,
@@ -1995,13 +2141,13 @@
         "auxiliary_state": {
           "additionalProperties": true,
           "properties": {
-            "current_verified_p8_fallback_fp16_bytes": {
+            "current_verified_p8_fallback_bf16_bytes": {
               "const": 6255345664
             },
-            "residual_p4_hidden_suffix_fp16_bytes": {
+            "residual_p4_hidden_suffix_bf16_bytes": {
               "const": 13366702080
             },
-            "residual_p8_hidden_suffix_fp16_bytes": {
+            "residual_p8_hidden_suffix_bf16_bytes": {
               "const": 8911134720
             },
             "transition_hidden_fp16_bytes": {
@@ -2010,9 +2156,9 @@
           },
           "required": [
             "transition_hidden_fp16_bytes",
-            "residual_p4_hidden_suffix_fp16_bytes",
-            "residual_p8_hidden_suffix_fp16_bytes",
-            "current_verified_p8_fallback_fp16_bytes"
+            "residual_p4_hidden_suffix_bf16_bytes",
+            "residual_p8_hidden_suffix_bf16_bytes",
+            "current_verified_p8_fallback_bf16_bytes"
           ],
           "type": "object"
         },
@@ -2313,7 +2459,7 @@
       "const": "adaptive_seed0_development"
     },
     "workload_content_sha256": {
-      "const": "e7f2bc0567e779e5096bf7436c3484949f277b6d92189b9c28d31a8cc4450cb0"
+      "const": "41b7ad10a8dc3a05ce99342a0d73a09e09847ddf42b9111d318b3ddd3c62a910"
     }
   },
   "required": [

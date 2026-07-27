@@ -1,0 +1,1554 @@
+{
+  "protocol": "cohortkv_executable_migration_plan_v1",
+  "status": "executable",
+  "parent_protocol": "cohortkv_single_config_stage2_compiler_v1",
+  "source_version": "theta4",
+  "target_version": "theta11",
+  "labels_used": false,
+  "model": {
+    "num_items": 312144,
+    "num_behaviors": 9,
+    "num_prediction_items": 50000,
+    "hidden_size": 512,
+    "num_layers": 16,
+    "num_heads": 8,
+    "head_dim": 64,
+    "max_seq_len": 2048,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "relu",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.1,
+    "tie_item_embeddings": true
+  },
+  "frozen_inputs": {
+    "source_checkpoint": {
+      "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_4.pt",
+      "sha256": "2650b2710d607d628dfd172738bd0fbe22b9cdbfc87d467ca4888d913e0abb00"
+    },
+    "target_checkpoint": {
+      "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/theta_11.pt",
+      "sha256": "6e847a56266acc6e0f52b840ade3cf0085ab87cb88da3f1ecdc64183933e6501"
+    },
+    "source_program": {
+      "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/attention_weighted_search/theta4_to_theta11_compiled_attention_mix_1.00.pt",
+      "sha256": "99cf5ed3d7ca7388fa2cab765526e4d99dd1cf494ee02c44423a1adf5d36e0fe"
+    },
+    "role_manifest": {
+      "path": "configs/cohortkv_single_config_v1/workload_manifest.json",
+      "sha256": "1784f000feda423825c67de2385c0990a455ede4101d156bc61faf12b56f86d4"
+    },
+    "training_result": {
+      "path": "results/motivation_scale/long_context_4plus12_training_exploration_seed0.json",
+      "sha256": "1c3786bc38a670419cb80bcc3b9ee9edbd8be8979a78914e37ed70025b328cd0"
+    },
+    "prepared_data": {
+      "path": "data/processed/kuairand_long_context_4plus12_exploration_v1.npz",
+      "sha256": "e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8"
+    }
+  },
+  "runtime_program": {
+    "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/single_config_v1/stage2_runtime/theta4_to_theta11_runtime_fp16.pt",
+    "sha256": "60c384d3ec454e11327e04670790a404876f7fce87320a0a151c6774d99842ac",
+    "bytes": 16813213,
+    "protocol": "cohortkv_runtime_program_v1",
+    "source_version": "theta4",
+    "target_version": "theta11",
+    "dtype": "float16",
+    "weights_shape": [
+      16,
+      512,
+      1024
+    ],
+    "biases_shape": [
+      16,
+      1024
+    ],
+    "provenance": {
+      "source_program": {
+        "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/attention_weighted_search/theta4_to_theta11_compiled_attention_mix_1.00.pt",
+        "sha256": "99cf5ed3d7ca7388fa2cab765526e4d99dd1cf494ee02c44423a1adf5d36e0fe",
+        "protocol": "kuairand_long_context_4plus12_attention_weighted_search_v1"
+      },
+      "source_checkpoint_sha256": "2650b2710d607d628dfd172738bd0fbe22b9cdbfc87d467ca4888d913e0abb00",
+      "target_checkpoint_sha256": "6e847a56266acc6e0f52b840ade3cf0085ab87cb88da3f1ecdc64183933e6501",
+      "role_manifest_sha256": "1784f000feda423825c67de2385c0990a455ede4101d156bc61faf12b56f86d4",
+      "attention_mix": 1.0,
+      "ridge": 0.001,
+      "fit_users": 40,
+      "sampled_tokens_per_layer": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "labels_used": false
+    }
+  },
+  "actions": [
+    {
+      "name": "projection_only",
+      "kind": "projection",
+      "required_state": "normalized_capsule_fp16",
+      "program_path": null,
+      "replay_depth": null
+    },
+    {
+      "name": "compiled_full_affine",
+      "kind": "compiled",
+      "required_state": "normalized_capsule_fp16",
+      "program_path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/single_config_v1/stage2_runtime/theta4_to_theta11_runtime_fp16.pt",
+      "replay_depth": null
+    },
+    {
+      "name": "structural_p4",
+      "kind": "structural_replay",
+      "required_state": "raw_history_and_residual_hidden_suffix_bf16",
+      "program_path": null,
+      "replay_depth": 4
+    },
+    {
+      "name": "structural_p8",
+      "kind": "structural_replay",
+      "required_state": "raw_history_and_residual_hidden_suffix_bf16",
+      "program_path": null,
+      "replay_depth": 8
+    },
+    {
+      "name": "recompute",
+      "kind": "exact",
+      "required_state": "raw_history",
+      "program_path": null,
+      "replay_depth": null
+    }
+  ],
+  "source_representations": {
+    "projection_only": [
+      "normalized_capsule_fp16"
+    ],
+    "compiled_full_affine": [
+      "normalized_capsule_fp16"
+    ],
+    "structural_p4": [
+      "raw_history",
+      "residual_hidden_suffix_p4_bf16"
+    ],
+    "structural_p8": [
+      "raw_history",
+      "residual_hidden_suffix_p8_bf16"
+    ],
+    "recompute": [
+      "raw_history"
+    ]
+  },
+  "selected_action": "compiled_full_affine",
+  "selection_reason": "minimum_cost_certified_within_budget",
+  "fallback_actions": [
+    "recompute"
+  ],
+  "executable_fallback_actions": [
+    "recompute"
+  ],
+  "contract": {
+    "recovery_target": 0.7,
+    "minimum_coverage": 0.8,
+    "confidence_level": 0.9,
+    "max_cost_ratio": 0.3,
+    "bootstrap_samples": 1000,
+    "minimum_probe_users": 50,
+    "metrics": [
+      "cache",
+      "score",
+      "top100"
+    ]
+  },
+  "certificates": [
+    {
+      "action_name": "projection_only",
+      "action_kind": "projection",
+      "cost_ratio": 0.01648694331758654,
+      "metrics": [
+        {
+          "metric": "cache",
+          "point_recovery": 0.23266762685189699,
+          "bootstrap_lower_bound": 0.22857357814792237,
+          "qualifying_users": 0,
+          "valid_users": 60,
+          "observed_coverage": 0.0,
+          "coverage_lower_bound": 0.0,
+          "passed": false
+        },
+        {
+          "metric": "score",
+          "point_recovery": 0.37613319706473725,
+          "bootstrap_lower_bound": 0.35472425095687315,
+          "qualifying_users": 0,
+          "valid_users": 60,
+          "observed_coverage": 0.0,
+          "coverage_lower_bound": 0.0,
+          "passed": false
+        },
+        {
+          "metric": "top100",
+          "point_recovery": 0.2246520612704576,
+          "bootstrap_lower_bound": 0.20849647070166083,
+          "qualifying_users": 0,
+          "valid_users": 60,
+          "observed_coverage": 0.0,
+          "coverage_lower_bound": 0.0,
+          "passed": false
+        }
+      ],
+      "fidelity_passed": false,
+      "budget_passed": true,
+      "worst_recovery_lower_bound": 0.20849647070166083,
+      "worst_coverage_lower_bound": 0.0
+    },
+    {
+      "action_name": "compiled_full_affine",
+      "action_kind": "compiled",
+      "cost_ratio": 0.016518433907073995,
+      "metrics": [
+        {
+          "metric": "cache",
+          "point_recovery": 0.8896577383424031,
+          "bootstrap_lower_bound": 0.8610838827417011,
+          "qualifying_users": 58,
+          "valid_users": 60,
+          "observed_coverage": 0.9666666666666667,
+          "coverage_lower_bound": 0.9224035666491434,
+          "passed": true
+        },
+        {
+          "metric": "score",
+          "point_recovery": 0.9200604005908349,
+          "bootstrap_lower_bound": 0.8391052977534407,
+          "qualifying_users": 59,
+          "valid_users": 60,
+          "observed_coverage": 0.9833333333333333,
+          "coverage_lower_bound": 0.9459098220580521,
+          "passed": true
+        },
+        {
+          "metric": "top100",
+          "point_recovery": 0.9045724575947844,
+          "bootstrap_lower_bound": 0.8754308170687816,
+          "qualifying_users": 57,
+          "valid_users": 60,
+          "observed_coverage": 0.95,
+          "coverage_lower_bound": 0.9004694495077846,
+          "passed": true
+        }
+      ],
+      "fidelity_passed": true,
+      "budget_passed": true,
+      "worst_recovery_lower_bound": 0.8391052977534407,
+      "worst_coverage_lower_bound": 0.9004694495077846
+    },
+    {
+      "action_name": "structural_p4",
+      "action_kind": "structural_replay",
+      "cost_ratio": 0.3286686580170144,
+      "metrics": [
+        {
+          "metric": "cache",
+          "point_recovery": 0.5393340598482252,
+          "bootstrap_lower_bound": 0.5327844753913622,
+          "qualifying_users": 0,
+          "valid_users": 60,
+          "observed_coverage": 0.0,
+          "coverage_lower_bound": 0.0,
+          "passed": false
+        },
+        {
+          "metric": "score",
+          "point_recovery": 0.79855423578773,
+          "bootstrap_lower_bound": 0.7697565947261985,
+          "qualifying_users": 37,
+          "valid_users": 60,
+          "observed_coverage": 0.6166666666666667,
+          "coverage_lower_bound": 0.5341358832176853,
+          "passed": false
+        },
+        {
+          "metric": "top100",
+          "point_recovery": 0.5394300277251636,
+          "bootstrap_lower_bound": 0.5128154855179264,
+          "qualifying_users": 7,
+          "valid_users": 60,
+          "observed_coverage": 0.11666666666666667,
+          "coverage_lower_bound": 0.07349387119253108,
+          "passed": false
+        }
+      ],
+      "fidelity_passed": false,
+      "budget_passed": false,
+      "worst_recovery_lower_bound": 0.5128154855179264,
+      "worst_coverage_lower_bound": 0.0
+    },
+    {
+      "action_name": "structural_p8",
+      "action_kind": "structural_replay",
+      "cost_ratio": 0.5523816934271927,
+      "metrics": [
+        {
+          "metric": "cache",
+          "point_recovery": 0.7837999329582235,
+          "bootstrap_lower_bound": 0.7781471551246153,
+          "qualifying_users": 60,
+          "valid_users": 60,
+          "observed_coverage": 1.0,
+          "coverage_lower_bound": 0.9733564057073995,
+          "passed": true
+        },
+        {
+          "metric": "score",
+          "point_recovery": 0.9147730270920373,
+          "bootstrap_lower_bound": 0.902282674863164,
+          "qualifying_users": 60,
+          "valid_users": 60,
+          "observed_coverage": 1.0,
+          "coverage_lower_bound": 0.9733564057073995,
+          "passed": true
+        },
+        {
+          "metric": "top100",
+          "point_recovery": 0.6984757553030682,
+          "bootstrap_lower_bound": 0.6790042584021229,
+          "qualifying_users": 29,
+          "valid_users": 60,
+          "observed_coverage": 0.48333333333333334,
+          "coverage_lower_bound": 0.4022072101813197,
+          "passed": false
+        }
+      ],
+      "fidelity_passed": false,
+      "budget_passed": false,
+      "worst_recovery_lower_bound": 0.6790042584021229,
+      "worst_coverage_lower_bound": 0.4022072101813197
+    },
+    {
+      "action_name": "recompute",
+      "action_kind": "exact",
+      "cost_ratio": 1.0,
+      "metrics": [
+        {
+          "metric": "cache",
+          "point_recovery": 1.0,
+          "bootstrap_lower_bound": 1.0,
+          "qualifying_users": 60,
+          "valid_users": 60,
+          "observed_coverage": 1.0,
+          "coverage_lower_bound": 0.9733564057073995,
+          "passed": true
+        },
+        {
+          "metric": "score",
+          "point_recovery": 1.0,
+          "bootstrap_lower_bound": 1.0,
+          "qualifying_users": 60,
+          "valid_users": 60,
+          "observed_coverage": 1.0,
+          "coverage_lower_bound": 0.9733564057073995,
+          "passed": true
+        },
+        {
+          "metric": "top100",
+          "point_recovery": 1.0,
+          "bootstrap_lower_bound": 1.0,
+          "qualifying_users": 60,
+          "valid_users": 60,
+          "observed_coverage": 1.0,
+          "coverage_lower_bound": 0.9733564057073995,
+          "passed": true
+        }
+      ],
+      "fidelity_passed": true,
+      "budget_passed": false,
+      "worst_recovery_lower_bound": 1.0,
+      "worst_coverage_lower_bound": 0.9733564057073995
+    }
+  ],
+  "threshold_sweep": [
+    {
+      "recovery_target": 0.5,
+      "selected_action": "compiled_full_affine",
+      "selection_reason": "minimum_cost_certified_within_budget",
+      "fallback_actions": [
+        "structural_p8",
+        "recompute"
+      ],
+      "certificates": [
+        {
+          "action_name": "projection_only",
+          "action_kind": "projection",
+          "cost_ratio": 0.01648694331758654,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.23266762685189699,
+              "bootstrap_lower_bound": 0.22857357814792237,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.37613319706473725,
+              "bootstrap_lower_bound": 0.35472425095687315,
+              "qualifying_users": 8,
+              "valid_users": 60,
+              "observed_coverage": 0.13333333333333333,
+              "coverage_lower_bound": 0.08676212485994192,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.2246520612704576,
+              "bootstrap_lower_bound": 0.20849647070166083,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.20849647070166083,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "compiled_full_affine",
+          "action_kind": "compiled",
+          "cost_ratio": 0.016518433907073995,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.8896577383424031,
+              "bootstrap_lower_bound": 0.8610838827417011,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9200604005908349,
+              "bootstrap_lower_bound": 0.8391052977534407,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.9045724575947844,
+              "bootstrap_lower_bound": 0.8754308170687816,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.8391052977534407,
+          "worst_coverage_lower_bound": 0.9459098220580521
+        },
+        {
+          "action_name": "structural_p4",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.3286686580170144,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.5393340598482252,
+              "bootstrap_lower_bound": 0.5327844753913622,
+              "qualifying_users": 47,
+              "valid_users": 60,
+              "observed_coverage": 0.7833333333333333,
+              "coverage_lower_bound": 0.7081160231892745,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.79855423578773,
+              "bootstrap_lower_bound": 0.7697565947261985,
+              "qualifying_users": 57,
+              "valid_users": 60,
+              "observed_coverage": 0.95,
+              "coverage_lower_bound": 0.9004694495077846,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.5394300277251636,
+              "bootstrap_lower_bound": 0.5128154855179264,
+              "qualifying_users": 37,
+              "valid_users": 60,
+              "observed_coverage": 0.6166666666666667,
+              "coverage_lower_bound": 0.5341358832176853,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.5128154855179264,
+          "worst_coverage_lower_bound": 0.5341358832176853
+        },
+        {
+          "action_name": "structural_p8",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.5523816934271927,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.7837999329582235,
+              "bootstrap_lower_bound": 0.7781471551246153,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9147730270920373,
+              "bootstrap_lower_bound": 0.902282674863164,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.6984757553030682,
+              "bootstrap_lower_bound": 0.6790042584021229,
+              "qualifying_users": 56,
+              "valid_users": 60,
+              "observed_coverage": 0.9333333333333333,
+              "coverage_lower_bound": 0.8794661082652271,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.6790042584021229,
+          "worst_coverage_lower_bound": 0.8794661082652271
+        },
+        {
+          "action_name": "recompute",
+          "action_kind": "exact",
+          "cost_ratio": 1.0,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 1.0,
+          "worst_coverage_lower_bound": 0.9733564057073995
+        }
+      ]
+    },
+    {
+      "recovery_target": 0.6,
+      "selected_action": "compiled_full_affine",
+      "selection_reason": "minimum_cost_certified_within_budget",
+      "fallback_actions": [
+        "recompute"
+      ],
+      "certificates": [
+        {
+          "action_name": "projection_only",
+          "action_kind": "projection",
+          "cost_ratio": 0.01648694331758654,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.23266762685189699,
+              "bootstrap_lower_bound": 0.22857357814792237,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.37613319706473725,
+              "bootstrap_lower_bound": 0.35472425095687315,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.2246520612704576,
+              "bootstrap_lower_bound": 0.20849647070166083,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.20849647070166083,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "compiled_full_affine",
+          "action_kind": "compiled",
+          "cost_ratio": 0.016518433907073995,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.8896577383424031,
+              "bootstrap_lower_bound": 0.8610838827417011,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9200604005908349,
+              "bootstrap_lower_bound": 0.8391052977534407,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.9045724575947844,
+              "bootstrap_lower_bound": 0.8754308170687816,
+              "qualifying_users": 58,
+              "valid_users": 60,
+              "observed_coverage": 0.9666666666666667,
+              "coverage_lower_bound": 0.9224035666491434,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.8391052977534407,
+          "worst_coverage_lower_bound": 0.9224035666491434
+        },
+        {
+          "action_name": "structural_p4",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.3286686580170144,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.5393340598482252,
+              "bootstrap_lower_bound": 0.5327844753913622,
+              "qualifying_users": 7,
+              "valid_users": 60,
+              "observed_coverage": 0.11666666666666667,
+              "coverage_lower_bound": 0.07349387119253108,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.79855423578773,
+              "bootstrap_lower_bound": 0.7697565947261985,
+              "qualifying_users": 47,
+              "valid_users": 60,
+              "observed_coverage": 0.7833333333333333,
+              "coverage_lower_bound": 0.7081160231892745,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.5394300277251636,
+              "bootstrap_lower_bound": 0.5128154855179264,
+              "qualifying_users": 22,
+              "valid_users": 60,
+              "observed_coverage": 0.36666666666666664,
+              "coverage_lower_bound": 0.2914799892975566,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.5128154855179264,
+          "worst_coverage_lower_bound": 0.07349387119253108
+        },
+        {
+          "action_name": "structural_p8",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.5523816934271927,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.7837999329582235,
+              "bootstrap_lower_bound": 0.7781471551246153,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9147730270920373,
+              "bootstrap_lower_bound": 0.902282674863164,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.6984757553030682,
+              "bootstrap_lower_bound": 0.6790042584021229,
+              "qualifying_users": 44,
+              "valid_users": 60,
+              "observed_coverage": 0.7333333333333333,
+              "coverage_lower_bound": 0.6546668434104568,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.6790042584021229,
+          "worst_coverage_lower_bound": 0.6546668434104568
+        },
+        {
+          "action_name": "recompute",
+          "action_kind": "exact",
+          "cost_ratio": 1.0,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 1.0,
+          "worst_coverage_lower_bound": 0.9733564057073995
+        }
+      ]
+    },
+    {
+      "recovery_target": 0.7,
+      "selected_action": "compiled_full_affine",
+      "selection_reason": "minimum_cost_certified_within_budget",
+      "fallback_actions": [
+        "recompute"
+      ],
+      "certificates": [
+        {
+          "action_name": "projection_only",
+          "action_kind": "projection",
+          "cost_ratio": 0.01648694331758654,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.23266762685189699,
+              "bootstrap_lower_bound": 0.22857357814792237,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.37613319706473725,
+              "bootstrap_lower_bound": 0.35472425095687315,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.2246520612704576,
+              "bootstrap_lower_bound": 0.20849647070166083,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.20849647070166083,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "compiled_full_affine",
+          "action_kind": "compiled",
+          "cost_ratio": 0.016518433907073995,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.8896577383424031,
+              "bootstrap_lower_bound": 0.8610838827417011,
+              "qualifying_users": 58,
+              "valid_users": 60,
+              "observed_coverage": 0.9666666666666667,
+              "coverage_lower_bound": 0.9224035666491434,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9200604005908349,
+              "bootstrap_lower_bound": 0.8391052977534407,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.9045724575947844,
+              "bootstrap_lower_bound": 0.8754308170687816,
+              "qualifying_users": 57,
+              "valid_users": 60,
+              "observed_coverage": 0.95,
+              "coverage_lower_bound": 0.9004694495077846,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.8391052977534407,
+          "worst_coverage_lower_bound": 0.9004694495077846
+        },
+        {
+          "action_name": "structural_p4",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.3286686580170144,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.5393340598482252,
+              "bootstrap_lower_bound": 0.5327844753913622,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.79855423578773,
+              "bootstrap_lower_bound": 0.7697565947261985,
+              "qualifying_users": 37,
+              "valid_users": 60,
+              "observed_coverage": 0.6166666666666667,
+              "coverage_lower_bound": 0.5341358832176853,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.5394300277251636,
+              "bootstrap_lower_bound": 0.5128154855179264,
+              "qualifying_users": 7,
+              "valid_users": 60,
+              "observed_coverage": 0.11666666666666667,
+              "coverage_lower_bound": 0.07349387119253108,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.5128154855179264,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "structural_p8",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.5523816934271927,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.7837999329582235,
+              "bootstrap_lower_bound": 0.7781471551246153,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9147730270920373,
+              "bootstrap_lower_bound": 0.902282674863164,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.6984757553030682,
+              "bootstrap_lower_bound": 0.6790042584021229,
+              "qualifying_users": 29,
+              "valid_users": 60,
+              "observed_coverage": 0.48333333333333334,
+              "coverage_lower_bound": 0.4022072101813197,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.6790042584021229,
+          "worst_coverage_lower_bound": 0.4022072101813197
+        },
+        {
+          "action_name": "recompute",
+          "action_kind": "exact",
+          "cost_ratio": 1.0,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 1.0,
+          "worst_coverage_lower_bound": 0.9733564057073995
+        }
+      ]
+    },
+    {
+      "recovery_target": 0.8,
+      "selected_action": "compiled_full_affine",
+      "selection_reason": "minimum_cost_certified_within_budget",
+      "fallback_actions": [
+        "recompute"
+      ],
+      "certificates": [
+        {
+          "action_name": "projection_only",
+          "action_kind": "projection",
+          "cost_ratio": 0.01648694331758654,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.23266762685189699,
+              "bootstrap_lower_bound": 0.22857357814792237,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.37613319706473725,
+              "bootstrap_lower_bound": 0.35472425095687315,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.2246520612704576,
+              "bootstrap_lower_bound": 0.20849647070166083,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.20849647070166083,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "compiled_full_affine",
+          "action_kind": "compiled",
+          "cost_ratio": 0.016518433907073995,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.8896577383424031,
+              "bootstrap_lower_bound": 0.8610838827417011,
+              "qualifying_users": 54,
+              "valid_users": 60,
+              "observed_coverage": 0.9,
+              "coverage_lower_bound": 0.8392276496817528,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9200604005908349,
+              "bootstrap_lower_bound": 0.8391052977534407,
+              "qualifying_users": 59,
+              "valid_users": 60,
+              "observed_coverage": 0.9833333333333333,
+              "coverage_lower_bound": 0.9459098220580521,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.9045724575947844,
+              "bootstrap_lower_bound": 0.8754308170687816,
+              "qualifying_users": 56,
+              "valid_users": 60,
+              "observed_coverage": 0.9333333333333333,
+              "coverage_lower_bound": 0.8794661082652271,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.8391052977534407,
+          "worst_coverage_lower_bound": 0.8392276496817528
+        },
+        {
+          "action_name": "structural_p4",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.3286686580170144,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.5393340598482252,
+              "bootstrap_lower_bound": 0.5327844753913622,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.79855423578773,
+              "bootstrap_lower_bound": 0.7697565947261985,
+              "qualifying_users": 31,
+              "valid_users": 60,
+              "observed_coverage": 0.5166666666666667,
+              "coverage_lower_bound": 0.4346524237048998,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.5394300277251636,
+              "bootstrap_lower_bound": 0.5128154855179264,
+              "qualifying_users": 1,
+              "valid_users": 60,
+              "observed_coverage": 0.016666666666666666,
+              "coverage_lower_bound": 0.004998629874232387,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.5128154855179264,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "structural_p8",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.5523816934271927,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.7837999329582235,
+              "bootstrap_lower_bound": 0.7781471551246153,
+              "qualifying_users": 21,
+              "valid_users": 60,
+              "observed_coverage": 0.35,
+              "coverage_lower_bound": 0.27603892228257737,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9147730270920373,
+              "bootstrap_lower_bound": 0.902282674863164,
+              "qualifying_users": 57,
+              "valid_users": 60,
+              "observed_coverage": 0.95,
+              "coverage_lower_bound": 0.9004694495077846,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.6984757553030682,
+              "bootstrap_lower_bound": 0.6790042584021229,
+              "qualifying_users": 10,
+              "valid_users": 60,
+              "observed_coverage": 0.16666666666666666,
+              "coverage_lower_bound": 0.11407124411087179,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.6790042584021229,
+          "worst_coverage_lower_bound": 0.11407124411087179
+        },
+        {
+          "action_name": "recompute",
+          "action_kind": "exact",
+          "cost_ratio": 1.0,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 1.0,
+          "worst_coverage_lower_bound": 0.9733564057073995
+        }
+      ]
+    },
+    {
+      "recovery_target": 0.9,
+      "selected_action": "recompute",
+      "selection_reason": "minimum_cost_certified_budget_overflow",
+      "fallback_actions": [],
+      "certificates": [
+        {
+          "action_name": "projection_only",
+          "action_kind": "projection",
+          "cost_ratio": 0.01648694331758654,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.23266762685189699,
+              "bootstrap_lower_bound": 0.22857357814792237,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.37613319706473725,
+              "bootstrap_lower_bound": 0.35472425095687315,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.2246520612704576,
+              "bootstrap_lower_bound": 0.20849647070166083,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.20849647070166083,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "compiled_full_affine",
+          "action_kind": "compiled",
+          "cost_ratio": 0.016518433907073995,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.8896577383424031,
+              "bootstrap_lower_bound": 0.8610838827417011,
+              "qualifying_users": 47,
+              "valid_users": 60,
+              "observed_coverage": 0.7833333333333333,
+              "coverage_lower_bound": 0.7081160231892745,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9200604005908349,
+              "bootstrap_lower_bound": 0.8391052977534407,
+              "qualifying_users": 57,
+              "valid_users": 60,
+              "observed_coverage": 0.95,
+              "coverage_lower_bound": 0.9004694495077846,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.9045724575947844,
+              "bootstrap_lower_bound": 0.8754308170687816,
+              "qualifying_users": 44,
+              "valid_users": 60,
+              "observed_coverage": 0.7333333333333333,
+              "coverage_lower_bound": 0.6546668434104568,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": true,
+          "worst_recovery_lower_bound": 0.8391052977534407,
+          "worst_coverage_lower_bound": 0.6546668434104568
+        },
+        {
+          "action_name": "structural_p4",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.3286686580170144,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.5393340598482252,
+              "bootstrap_lower_bound": 0.5327844753913622,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.79855423578773,
+              "bootstrap_lower_bound": 0.7697565947261985,
+              "qualifying_users": 11,
+              "valid_users": 60,
+              "observed_coverage": 0.18333333333333332,
+              "coverage_lower_bound": 0.12804980418518594,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.5394300277251636,
+              "bootstrap_lower_bound": 0.5128154855179264,
+              "qualifying_users": 1,
+              "valid_users": 60,
+              "observed_coverage": 0.016666666666666666,
+              "coverage_lower_bound": 0.004998629874232387,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.5128154855179264,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "structural_p8",
+          "action_kind": "structural_replay",
+          "cost_ratio": 0.5523816934271927,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 0.7837999329582235,
+              "bootstrap_lower_bound": 0.7781471551246153,
+              "qualifying_users": 0,
+              "valid_users": 60,
+              "observed_coverage": 0.0,
+              "coverage_lower_bound": 0.0,
+              "passed": false
+            },
+            {
+              "metric": "score",
+              "point_recovery": 0.9147730270920373,
+              "bootstrap_lower_bound": 0.902282674863164,
+              "qualifying_users": 31,
+              "valid_users": 60,
+              "observed_coverage": 0.5166666666666667,
+              "coverage_lower_bound": 0.4346524237048998,
+              "passed": false
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 0.6984757553030682,
+              "bootstrap_lower_bound": 0.6790042584021229,
+              "qualifying_users": 3,
+              "valid_users": 60,
+              "observed_coverage": 0.05,
+              "coverage_lower_bound": 0.024448684371125098,
+              "passed": false
+            }
+          ],
+          "fidelity_passed": false,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 0.6790042584021229,
+          "worst_coverage_lower_bound": 0.0
+        },
+        {
+          "action_name": "recompute",
+          "action_kind": "exact",
+          "cost_ratio": 1.0,
+          "metrics": [
+            {
+              "metric": "cache",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "score",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            },
+            {
+              "metric": "top100",
+              "point_recovery": 1.0,
+              "bootstrap_lower_bound": 1.0,
+              "qualifying_users": 60,
+              "valid_users": 60,
+              "observed_coverage": 1.0,
+              "coverage_lower_bound": 0.9733564057073995,
+              "passed": true
+            }
+          ],
+          "fidelity_passed": true,
+          "budget_passed": false,
+          "worst_recovery_lower_bound": 1.0,
+          "worst_coverage_lower_bound": 0.9733564057073995
+        }
+      ]
+    }
+  ],
+  "deployed_representation_certificate": {
+    "source_dtype": "float16",
+    "residual_hidden_suffix_dtype": "bfloat16",
+    "program_dtype": "float16",
+    "output_dtype": "float16",
+    "passed": true,
+    "certificate_users": 60,
+    "views": [
+      "cache",
+      "score",
+      "top100"
+    ],
+    "selected_certificate": {
+      "action_name": "compiled_full_affine",
+      "action_kind": "compiled",
+      "cost_ratio": 0.016518433907073995,
+      "metrics": [
+        {
+          "metric": "cache",
+          "point_recovery": 0.8896577383424031,
+          "bootstrap_lower_bound": 0.8610838827417011,
+          "qualifying_users": 58,
+          "valid_users": 60,
+          "observed_coverage": 0.9666666666666667,
+          "coverage_lower_bound": 0.9224035666491434,
+          "passed": true
+        },
+        {
+          "metric": "score",
+          "point_recovery": 0.9200604005908349,
+          "bootstrap_lower_bound": 0.8391052977534407,
+          "qualifying_users": 59,
+          "valid_users": 60,
+          "observed_coverage": 0.9833333333333333,
+          "coverage_lower_bound": 0.9459098220580521,
+          "passed": true
+        },
+        {
+          "metric": "top100",
+          "point_recovery": 0.9045724575947844,
+          "bootstrap_lower_bound": 0.8754308170687816,
+          "qualifying_users": 57,
+          "valid_users": 60,
+          "observed_coverage": 0.95,
+          "coverage_lower_bound": 0.9004694495077846,
+          "passed": true
+        }
+      ],
+      "fidelity_passed": true,
+      "budget_passed": true,
+      "worst_recovery_lower_bound": 0.8391052977534407,
+      "worst_coverage_lower_bound": 0.9004694495077846
+    },
+    "selected_summary": {
+      "cache_error_rel": 0.07842164890219767,
+      "hidden_cosine": 0.9980829020341238,
+      "score_cosine": 0.9996237357457479,
+      "top100_overlap": 0.9759999712308248,
+      "cache_recovery": 0.8896577383424031,
+      "score_recovery": 0.9200604005908349,
+      "top100_recovery": 0.9045724575947844,
+      "worst_view_recovery": 0.8896577383424031,
+      "migration_ms_per_user": 0.5998080005248387,
+      "cost_ratio_to_exact": 0.016518433907073995
+    },
+    "serialized_source": {
+      "protocol": "cohortkv_stage2_certificate_shard_v1",
+      "batches": 15,
+      "records": 60,
+      "valid_prefix_tokens": 95660,
+      "logical_tensor_bytes": 6092671360,
+      "physical_bytes": 6092751520,
+      "aggregate_batch_sha256": "60b44dd7ffc52ab31554c23e2ce579d5571dd962b32ed90fb464c4b4eaaa5e78",
+      "residual_hidden_suffix_dtype": "bfloat16",
+      "residual_hidden_suffix_absmax": 7384595.0,
+      "residual_hidden_suffix_fp16_overflow_values": 339192724,
+      "materialize_seconds": 12.525048203882761,
+      "serialize_seconds": 4.2291137661086395,
+      "deserialize_seconds": 2.961015114095062,
+      "temporary_shards_retained": false
+    }
+  },
+  "compiler_cost": {
+    "historical_fit_seconds": 9.79141623293981,
+    "runtime_prepare_seconds": 1.3897244279505685,
+    "runtime_load_validation_seconds": 0.04516942298505455,
+    "certificate_seconds": 91.11330319510307,
+    "full_catalog_score_seconds": 0.25185178184509277,
+    "resident_migration_seconds": 4.170126342356205
+  },
+  "workload_content_sha256": "41b7ad10a8dc3a05ce99342a0d73a09e09847ddf42b9111d318b3ddd3c62a910"
+}

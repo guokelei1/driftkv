@@ -14,7 +14,7 @@ is outside this writing task.
 
 ## Deliverables
 
-- `manuscript.md`: the complete English systems-paper working draft.
+- `manuscript_v3_target_en.md`: the current English target manuscript.
 - `references.bib`: bibliography source.
 - `figures/`: paper-native SVG figures.
 - `process/01_project_plan.md`: boundary-controlled, multi-round writing plan.
@@ -42,7 +42,6 @@ is outside this writing task.
 2. `docs/eval_protocol.md`
 3. current experiment records and current result families
 4. implementation, used to verify mechanics rather than recover abandoned claims
-5. `docs/paper_draft_intro_motivation.md`, used only for advisor-facing exposition
 
 When an older experiment note conflicts with the roadmap, the draft follows the roadmap. In
 particular, task quality is **not** an admission oracle, version cohorts are **not** predictors of
@@ -52,8 +51,21 @@ safe reuse, and fixed-prefix/suffix/interval actions are baselines rather than t
 
 The manuscript is a complete working draft after three substantive revision rounds: factual and
 protocol audit, narrative and system-closure audit, and reviewer-attack/final-presentation audit.
-It can support discussion with an advisor and guide the remaining experiments. It is not
-represented as submission-ready because the verified compiler still needs frozen replication and
-the destination-oriented engine still lacks automatic fallback execution and a complete-cohort,
-identical-boundary compiled-versus-exact evaluation. Physical storage measurements and
-venue-specific typesetting also remain open.
+It can support discussion with an advisor and guide the remaining experiments. The seed-0
+compiler artifact and deployed-representation certificate path are complete, but frozen
+new-seed replication remains open. The capsule/operator path now has one common unpadded extent
+API and a full development-length-distribution resident result; it remains controlled seed-0
+evidence. The Stage-4 destination engine now has a complete 30-point normal-path
+compiled/selective/exact/control evaluation at HBM/DRAM over 1/2/4 GPUs. That result contradicts
+the expected endpoint speedup: the current FP16 capsule source path loses to exact in all six
+matched conditions because source processing dominates. The manuscript records this negative
+result. Stage 4.5 then freezes a direct-old-K/V hot-HBM source policy: it eliminates additional
+per-record `Norm(x)`, preserves the deployed certificate and complete real transport, reclaims old
+extents, and beats paired raw-history-resident exact on full-cohort 1/2/4-GPU points. Stage 4.6
+then freezes one KuaiRand seed-0/one-A40 theta0-to-theta11 lifecycle: balanced edge-severity and
+age/deadline scheduling costs 0.2134× cumulative all-exact GPU time, keeps refresh near 15%–25%,
+and bounds migration depth at four. Its per-cache threshold predecessor remains a refresh-wave
+negative result. This is still controlled fixed-history evidence, not cold storage, automatic
+tiering, organic traffic, or replicated lifecycle evidence. Automatic fallback, failure
+injection, the remaining comparison economics, physical durable-storage measurements, new-seed
+replication, and venue-specific typesetting remain open.

@@ -8,6 +8,7 @@ from hstu_kvcache.migration import (
     FusedJaggedMigrationOperator,
     FusedMigrationOperator,
     JaggedCohortStreamingExecutor,
+    JaggedMigratedKVBatch,
     JaggedMigrationCapsuleBatch,
     MigrationCapsuleBatch,
     MultiGPUCohortExecutor,
@@ -18,6 +19,7 @@ from hstu_kvcache.migration import (
     PinnedJaggedKVOutputPool,
     PinnedKVOutputPool,
     RawHistoryBatch,
+    ReferenceMigrationOperator,
     build_contiguous_cohort_plan,
     build_length_bucketed_cohort_plan,
     capture_layerwise_state,
@@ -26,6 +28,7 @@ from hstu_kvcache.migration import (
     migrate_compiled_low_rank_cache,
     profile_packed_operator_stages,
     profile_reference_operator_stages,
+    validate_contiguous_output_extent,
 )
 from hstu_kvcache.models import HSTU, HSTUConfig
 
@@ -105,6 +108,30 @@ def make_jagged_capsule(capsule):
     )
 
 
+def make_output_extent(capsule, program, device="cpu"):
+    lengths = capsule.lengths.to(device)
+    offsets = torch.cat(
+        (
+            torch.zeros(1, dtype=torch.long, device=device),
+            lengths.long().cumsum(dim=0),
+        )
+    )
+    shape = (
+        program.num_layers,
+        int(offsets[-1]),
+        program.kv_width,
+    )
+    return JaggedMigratedKVBatch(
+        record_ids=capsule.record_ids,
+        migration_anchor_version=capsule.migration_anchor_version,
+        served_kv_target=program.target_version,
+        k=torch.empty(shape, dtype=capsule.normed.dtype, device=device),
+        v=torch.empty(shape, dtype=capsule.normed.dtype, device=device),
+        lengths=lengths,
+        offsets=offsets,
+    )
+
+
 def test_capsule_split_preserves_contiguous_records_and_anchor():
     _, capsule, _ = make_runtime_inputs()
 
@@ -134,6 +161,76 @@ def test_program_execution_matches_existing_compiled_operator():
     assert result.record_ids == capsule.record_ids
     assert torch.allclose(result.cache.k, expected.k, atol=1e-5, rtol=1e-5)
     assert torch.allclose(result.cache.v, expected.v, atol=1e-5, rtol=1e-5)
+
+
+def test_reference_and_packed_write_the_same_unpadded_extent():
+    _, capsule, program = make_runtime_inputs()
+    reference_destination = make_output_extent(capsule, program)
+    packed_destination = make_output_extent(capsule, program)
+    reference = ReferenceMigrationOperator()
+    packed = PackedMigrationOperator(torch.float32)
+
+    reference_result = reference.execute_into(
+        reference.prepare_program(program, "cpu"),
+        capsule,
+        reference_destination,
+    )
+    packed_result = packed.execute_into(
+        packed.prepare_program(program, "cpu"),
+        capsule,
+        packed_destination,
+    )
+
+    validate_contiguous_output_extent(
+        program,
+        capsule,
+        reference_result,
+        check_metadata_values=True,
+    )
+    assert reference_result.k.shape[1] == int(capsule.lengths.sum())
+    assert reference_result.k.is_contiguous()
+    assert reference_result.v.is_contiguous()
+    assert torch.allclose(reference_result.k, packed_result.k)
+    assert torch.allclose(reference_result.v, packed_result.v)
+
+
+def test_output_extent_rejects_changed_offsets_and_aliased_storage():
+    _, capsule, program = make_runtime_inputs()
+    destination = make_output_extent(capsule, program)
+    destination.offsets[1] = 0
+
+    with pytest.raises(ValueError, match="offsets"):
+        validate_contiguous_output_extent(
+            program,
+            capsule,
+            destination,
+            check_metadata_values=True,
+        )
+
+    offsets = torch.cat(
+        (
+            torch.zeros(1, dtype=torch.long),
+            capsule.lengths.long().cumsum(0),
+        )
+    )
+    shape = (
+        program.num_layers,
+        int(offsets[-1]),
+        program.kv_width,
+    )
+    shared = torch.empty(shape)
+    aliased = JaggedMigratedKVBatch(
+        record_ids=capsule.record_ids,
+        migration_anchor_version=capsule.migration_anchor_version,
+        served_kv_target=program.target_version,
+        k=shared,
+        v=shared,
+        lengths=capsule.lengths,
+        offsets=offsets,
+    )
+
+    with pytest.raises(ValueError, match="share storage"):
+        validate_contiguous_output_extent(program, capsule, aliased)
 
 
 def test_program_rejects_capsule_from_wrong_anchor():
@@ -362,6 +459,51 @@ def test_cuda_fused_operator_matches_packed_float16():
     mask = invalid.unsqueeze(0).unsqueeze(-1)
     assert float(fused.cache.k.masked_select(mask).abs().max()) == 0.0
     assert float(fused.cache.v.masked_select(mask).abs().max()) == 0.0
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
+def test_cuda_dense_operators_write_identical_contiguous_extents():
+    _, capsule, program = make_runtime_inputs()
+    capsule = MigrationCapsuleBatch(
+        record_ids=capsule.record_ids,
+        migration_anchor_version=capsule.migration_anchor_version,
+        normed=capsule.normed.half(),
+        lengths=capsule.lengths,
+    ).to("cuda")
+    operators = (
+        ReferenceMigrationOperator(),
+        PackedMigrationOperator(torch.float16),
+        FusedMigrationOperator(),
+    )
+    outputs = {}
+    pointers = {}
+    for operator in operators:
+        destination = make_output_extent(capsule, program, "cuda")
+        prepared = operator.prepare_program(program, "cuda")
+        pointers[operator.name] = (
+            destination.k.data_ptr(),
+            destination.v.data_ptr(),
+        )
+        outputs[operator.name] = operator.execute_into(
+            prepared,
+            capsule,
+            destination,
+        )
+        validate_contiguous_output_extent(
+            prepared,
+            capsule,
+            outputs[operator.name],
+            check_metadata_values=True,
+        )
+
+    reference = outputs["reference_fp32"]
+    for name, output in outputs.items():
+        assert pointers[name] == (output.k.data_ptr(), output.v.data_ptr())
+        assert output.k.shape[1] == int(capsule.lengths.sum())
+        assert torch.isfinite(output.k).all()
+        assert torch.isfinite(output.v).all()
+        assert torch.allclose(output.k, reference.k, atol=2e-2, rtol=2e-2)
+        assert torch.allclose(output.v, reference.v, atol=2e-2, rtol=2e-2)
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")

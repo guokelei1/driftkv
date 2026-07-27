@@ -864,7 +864,21 @@ correctness only. Details and commands are in
 single-configuration implementation round. Its Stage 0 contract is frozen in
 `configs/cohortkv_single_config_v1/` and documented by
 `experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md`. The blueprint and workload
-manifest are plan/configuration artifacts, not empirical evidence.
+manifest are plan/configuration artifacts. The separate
+`cohortkv_single_config_stage1_frontier_v1` raw result and its
+`cohortkv_single_config_stage1_frozen_v1` checked-in summary are adaptive resident algorithmic
+evidence under the same data/model/role contract. The separate
+`cohortkv_single_config_stage2_compiler_v1` raw result and
+`cohortkv_single_config_stage2_frozen_v1` checked-in summary are adaptive
+deployed-representation compiler evidence. The separate
+`cohortkv_single_config_stage3_operator_v1` raw result and
+`cohortkv_single_config_stage3_frozen_v1` checked-in summary are adaptive resident
+capsule/operator evidence under the common final-layout extent boundary. The separate
+`cohortkv_single_config_stage4_system_v1` raw result and
+`cohortkv_single_config_stage4_frozen_v1` checked-in summary are adaptive full-cohort normal-path
+evidence under the HBM/DRAM destination boundary. Stage 2 and Stage 3 do not constitute the
+complete 682-record job; Stage 4 does, but it does not include automatic fallback, fault
+injection, cold-cache SSD timing, or final-test recommendation quality.
 
 The frozen data/model endpoint is KuaiRand 4+12, training seed 0, theta11/D16, 16 layers,
 hidden/K/V width 512, and maximum history 2,048. The complete workload contains 682 unique
@@ -886,27 +900,54 @@ and source reads remain inside job completion. The representation is action-spec
 logical and physical bytes must be reported:
 
 - compiled and cheap projection read FP16 normalized-state capsules;
-- selective-contiguous reads old FP16 K/V, its selected FP16 transition hidden state, and raw
-  history;
-- residual-p reads raw history plus every old pre-block hidden state from layer `p` through the
-  final layer;
+- selective-contiguous reads old FP16 K/V and raw history, plus one selected FP16 transition
+  hidden state only when the frozen interval starts after layer zero; the Stage-1 frozen
+  `m12/layers0-11` diagnostic therefore has zero transition-hidden bytes;
+- residual-p reads raw history plus every BF16 old pre-block hidden state from layer `p` through
+  the final layer;
 - exact reads raw history;
 - reuse/no-transform reads old FP16 K/V.
 
 These paths share a physical source tier, not identical inputs. Source-shard creation, checkpoint
 loading, and offline tuning are excluded from job completion and reported separately. The
-residual-p hidden suffix is auxiliary state, not part of the default normalized capsule. It costs
+residual-p BF16 hidden suffix is auxiliary state, not part of the default normalized capsule. It costs
 12.45 GiB at p4 or 8.30 GiB at p8 over the full workload; the current theta0/theta10 p8 fallback
 scope costs 5.83 GiB. If that state is absent, residual-p is not executable and a revised verified
 plan must fall through to exact. Shard materialization requires a source-device/filesystem check
 and at least 128 GiB free.
 
-The earlier verified compiler result used in-memory FP32 layerwise state. Before the plan is
-executable in this protocol, the unchanged certificate must pass again on serialized FP16 source
-representations, prepared runtime programs, and FP16 output. This is not a new hyperparameter
-search. Transport/layout correctness uses the same selected numeric path on the same serialized
-input as its resident oracle, requires finite values, and uses `atol=0.02, rtol=0.02`; semantic
-recovery remains measured against FP32 current-model exact K/V and score views.
+The earlier verified compiler result used in-memory FP32 layerwise state. Stage 2 has reapplied the
+unchanged certificate to serialized FP16 capsules, prepared FP16 runtime programs, and FP16
+output, without a new hyperparameter search or any final-test execution. All three primary plans
+pass. Real shard materialization found that the optional unnormalized residual hidden suffix
+exceeds the FP16 finite range, so that auxiliary representation alone is frozen as BF16 at the
+same two bytes per element. Transport/layout correctness still uses the same selected numeric path
+on the same serialized input as its resident oracle, requires finite values, and uses
+`atol=0.02, rtol=0.02`. The Stage-3 `reference_fp32` operator widens the serialized FP16 capsule
+and serialized FP16 runtime program for FP32 arithmetic, then writes the common FP16 extent. It is
+an arithmetic and layout oracle for those deployed bytes, not the original FP32 fitted program
+and not fresh current-model K/V. Semantic recovery remains measured separately against FP32
+current-model exact K/V and score views.
+
+Stage 3 uses only the 60 program-selection records and their predeclared theta0/theta4/theta10
+assignments. It materializes unpadded FP16 normalized capsules without recommendation labels,
+packs them into every `batch {1,2,4} × bucket {16,32,64}` dense layout, and compares the
+FP32-arithmetic transport oracle, packed FP16, and fused FP16 through one preallocated output API.
+The common operator endpoint is separate contiguous, unpadded FP16
+`[layers, valid_tokens, kv_width]` K/V with lengths and offsets. Correctness covers every valid
+element, finite values, dense padding zeros, exact dense-to-extent identity, and
+destination-pointer preservation. Allocation, source I/O, H2D/D2H, publication, and commit remain
+outside this resident boundary.
+
+All 18 packed/fused layout candidates receive one screen pass in seed-73421 order after
+correctness. The fastest three and the fastest per-operator stability controls receive one warmup
+and three measured passes. The resident default is fused FP16, batch four, bucket width 32. It is
+selected only when every measured run of the selected fused candidate is faster than every
+measured run of the fastest packed control; otherwise the protocol falls back to packed. This
+establishes the operator choice, not a stable ordering among close fused batch/bucket finalists.
+The default is an input to Stage 4, not a replacement for Stage 4's independent
+per-method/destination/GPU tuning. The prior jagged/page exactness and negative performance result
+is retained without another layout search.
 
 The closest external baseline is `selective_contiguous`, an HSTU adaptation of DroidSpeak's
 contiguous recomputation-group and transition-state semantics. For each
@@ -918,14 +959,28 @@ passes the primary contract, with exact fallback. Final-test records cannot chan
 DroidSpeak's distributed serving runtime. The existing `migrate_contiguous_cache` helper is not
 the reference implementation because it applies current projections outside the interval; the
 baseline must instead copy source old K/V there. Candidate transition states are profiling-only on
-program-selection records, while final system shards retain one frozen transition per cohort.
+program-selection records; a final system shard retains one frozen transition only when its
+selected interval begins after layer zero.
+
 The frontier is complete per source-target pair: 53 selective intervals, p4/p8, compiled, cheap,
 reuse, and exact, or 59 selection points per pair and 177 total. The aggregate must audit every
 declared interval; selection and certification do not pool source versions.
 
-The primary destination matrix is compiled/selective-contiguous/exact over HBM and pinned DRAM at
-1/2/4 GPUs. Residual-p and no-transform are controls. Every method publishes the same contiguous,
-unpadded, FP16 K/V extent layout with lengths/offsets and the same
+The completed Stage-1 result adds a downstream distinction that was not known at Stage 0. No
+selective interval passes the frozen 70% three-view contract for any of the three source pairs, so
+its publishable action is exact. The highest-worst-view profiled action is nevertheless frozen on
+program-selection users as `m=12, layers=0..11` for all three pairs. Stage 4 measures that action
+through the common destination transaction only as a diagnostic external baseline and must report
+`certificate_passed=false`; it may not call the resulting K/V a certified or publishable
+synchronized target. Because the interval starts at layer zero, its executable source
+representation is old FP16 K/V plus raw history, with zero transition-hidden bytes. The generic
+transition-hidden requirement remains applicable to any future frozen interval whose start is
+greater than zero.
+
+The primary destination matrix is compiled/profiled-selective-diagnostic/exact over HBM and pinned
+DRAM at 1/2/4 GPUs. Residual-p and no-transform are controls. The diagnostic selective row retains
+the `selective_contiguous` artifact method name and its failed-certificate metadata. Every method
+publishes the same contiguous, unpadded, FP16 K/V extent layout with lengths/offsets and the same
 `streamkv_destination_manifest_v1` coverage/visibility contract. Fresh target allocation,
 source-manifest scan/read, decode/pinning, H2D, compute, D2H when required, staging, coverage
 validation, coordinator overhead, and commit are inside completion time. HBM and DRAM remain
@@ -948,6 +1003,272 @@ then the fastest three receive one warmup and three measured passes; every candi
 retained, and ties prefer lower peak memory then lower padding. The point-specific winner is frozen
 before the complete workload.
 
+Stage 4 is frozen only when all 30 method/destination/GPU points exist: 18 primary points and
+12 residual/no-transform controls. Every formal point performs one complete-workload transport
+correctness pass, one untimed warmup, and three measured repetitions. Correctness covers all
+17,822,269,440 valid FP16 K/V elements and verifies order, lengths, offsets, finiteness, and the
+same selected numeric path at `atol=0.02, rtol=0.02`. Each of those five executions has an
+independent capacity preflight. The HBM bound combines complete target residency, current
+model/program residency, a full-cohort in-flight source/output wave, compute slack measured on
+the tuning role, and a 512 MiB allocator margin. Compute slack is shared across equivalent GPUs;
+the smaller tuning role's device assignment cannot be reused as a per-device full-workload bound.
+
+The frozen Stage-4 result is a negative end-to-end gate for the current FP16 capsule source path.
+Compiled beats the certificate-failed selective diagnostic at all six matched endpoints but
+beats exact at zero of six. Compiled source read/decode/pinning consumes 91.35%–96.91% of
+completion. This finding does not alter the Stage-2 semantic certificate or Stage-3 resident
+operator measurements; it prohibits using them as an endpoint speedup.
+
+The planned source/state-footprint redesign uses a new
+`cohortkv_single_config_stage4_5_source_state_v1` protocol and does not mutate Stage 4. Its
+method-level objective is fixed while its mechanism is open: deliver complete compiled K/V faster
+than paired exact at the same source tier, HBM destination, FP16 extent layout, coverage, and
+manifest boundary. Compression, residency, direct transformation from old K/V, decode fusion,
+parallel source supply, and reclamation are candidates rather than required mechanisms.
+
+Stage 4.5 begins with matched ceilings on the 60 program-selection records:
+
+- `hbm_resident` gives compiled source state and exact raw history their respective complete
+  inputs already resident on the assigned GPUs;
+- `dram_resident` gives both paths decoded, pinned, pre-sharded host inputs and includes H2D;
+- the Stage-4 buffered-POSIX path remains the frozen cold-source control.
+
+These ceilings separately report source access, decode/dequantization, H2D, compute, allocation,
+commit, and total completion. They determine whether source supply is sufficient to explain the
+Stage-4 gap and define the time budget for later candidates. They are not endpoint wins by
+themselves. A resident capsule must report its standing occupancy and lifecycle; exact may never
+be left on a less favorable source tier.
+
+Candidate screening uses only program-selection records and no recommendation labels. Every
+candidate record contains:
+
+- representation and placement, logical/physical/metadata bytes, source traffic, and creation
+  path;
+- capture/materialization, preload, eviction, decode/dequantization, H2D, compute, and complete
+  update time;
+- peak per-GPU HBM and host memory, including model, program, temporary, allocator margin, old
+  K/V, source state, and new K/V overlap;
+- transport error against its arithmetic oracle and semantic cache/score/top-100 recovery against
+  current-model exact.
+
+The first candidate families are resident FP16 ceilings, direct compiled transformation or
+reparameterization from already retained old K/V, compact or INT8/FP8 normalized state, fused
+decode/dequantization plus affine, and extent-wise overwrite/reclamation. Other mechanisms are
+permitted when they preserve the same logical objective. Candidates are tested separately before
+being combined, and only a candidate that changes the measured time/space Pareto frontier
+survives. Once a representation is selected, the unchanged three-view contract is reapplied once
+on the disjoint certificate role. A material semantic change requires its own frozen certificate
+protocol; system timing cannot substitute for fidelity.
+
+A candidate that passes numerical, certificate, standing-byte, and capacity gates may run the
+complete cohort only at `compiled:hbm:1` and `compiled:hbm:4`. Paired exact is independently tuned
+on program-selection records and rerun under the same new source-tier and destination boundary;
+the Stage-4 exact numbers are only initial budgets. The formal representative experiment uses one
+correctness run, one warmup, and at least five measured complete jobs per method and point.
+Compiled passes a point only when its median is below paired exact and every measured compiled
+completion is below every measured exact completion. The primary Stage-4.5 performance gate
+requires both representative points to pass. A single passing, capacity-feasible point may define
+only a scoped resident/hot operating regime whose policy sends every other cohort to exact.
+
+Resident or compressed state is never free. Formal results must report update completion from the
+declared steady-state tier, one-shot completion including preload when applicable, standing bytes,
+capture/materialization cost, eviction/rebuild cost, and the reuse/update count required to
+amortize setup. They must also report whether old K/V, source state, and new K/V coexist or are
+reclaimed extent by extent. A candidate need not reduce stored bytes if another mechanism creates
+a capacity-feasible Pareto point, but no storage or lifecycle cost may be omitted.
+
+Other endpoints, one-GPU stress, and baselines are expanded only after a representative source
+plan passes. The winning plan freezes representation, placement, lifecycle, decoder/operator,
+reclamation, capacity preflight, and exact fallback before one final affected matrix is run.
+Stage 4.6 was blocked until such a plan created an end-to-end Pareto point in its declared regime;
+Stage 4.5 passed that gate and Stage 4.6 is now frozen. If no regime had passed after the bounded
+candidate search, the negative result would have been frozen and the endpoint claim or method
+route reconsidered; failure alone was not a lifecycle-stage admission.
+
+Stage 4.5 is now complete under the frozen
+`cohortkv_single_config_stage4_5_frozen_v1` aggregate. The selected source plan is
+`compiled_old_kv`: for each source version, stack its old K/V projections, form their
+minimum-norm right inverse, and compose it with the already frozen deployed capsule affine. The
+result is a direct FP16 old-K/V-to-repaired-K/V affine. The three programs total 100,777,103 bytes
+and are replicated per worker; the plan retains zero extra per-record source state and zero
+`Norm(x)` bytes. The normal-path admission predicate requires a passing capacity preflight,
+available existing old K/V, and a verified direct program. Any failed predicate selects exact.
+This pure decision interface is implemented; automatic transactional exact execution remains a
+Stage-5 obligation.
+
+Operator selection uses only program-selection records. The unchanged three-view certificate is
+then reapplied on the disjoint certificate role: all theta0/theta4/theta10 pairs select
+`compiled_old_kv`, the minimum worst-view recovery is 0.8810287, the maximum measured cost ratio
+to exact is 0.0367779, and exact terminates every fallback chain. A separate actual-data fused
+transport traverses all 682 records, all four role partitions, and all 17,822,269,440 valid
+elements. It has zero `atol=0.02, rtol=0.02` mismatches and maximum absolute error 0.01171875
+against the deployed normalized-capsule program output. Final-test records participate only in
+this label-free transport check and do not affect candidate, operator, policy, or threshold
+selection.
+
+The formal system boundary begins with complete existing old FP16 K/V already resident in HBM
+for compiled and complete raw history already resident in HBM for exact, and ends with complete
+replacement FP16 HBM extents plus atomic manifest commit. Each 1/2/4-GPU method point runs one
+correctness pass, one warmup, and five measured complete jobs. Direct compiled medians are
+0.929860/0.493566/0.254635 seconds; paired exact medians are
+18.694872/9.729133/4.765541 seconds. Every compiled sample is below every exact sample at its
+point. Capacity preflight includes the model, direct programs, complete old K/V, the maximum
+replacement wave, and a 2-GiB allocator margin. Old extents are retired only after replacement
+staging is accepted; final old-K/V bytes are zero, and peak old-plus-new K/V is
+35.91/36.18/37.79 GB decimal at 1/2/4 GPUs.
+
+The performance runs use shape-, dtype-, layout-, and occupancy-equivalent old-K/V values so that
+five large repetitions are tractable; they do not establish numeric transport on their own. The
+independent complete actual-data fused transport above supplies that evidence. Conversely,
+transport correctness does not substitute for system timing. The result declares only an
+existing-old-K/V hot-HBM regime. It does not claim cold filesystem, durable SSD, automatic tier
+selection, organic mixed versions, or failure-safe fallback. The earlier pinned-DRAM normalized
+capsule candidate is retained as a valid backup/negative economics result because it needs about
+17.86 GB of extra host state and 24.7–39.5 seconds of preload. These artifacts admit Stage 4.6 but
+do not satisfy it or Stage 5.
+
+`cohortkv_single_config_stage4_6_lifecycle_development_v1` is the frozen protocol for the
+single-configuration sequential-cache lifecycle round. Stage 4.5 starts every direct transform from exact
+source-version K/V. It does not certify
+
+```text
+approximate C_hat_t -> direct(t -> t+1) -> approximate C_hat_(t+1)
+```
+
+and its reclamation path removes the original exact source extent after replacement. The
+theta0/theta4/theta10-to-theta11 mix is therefore one controlled multi-source target job, not
+evidence about repeated migration.
+
+Stage 4.6 has exactly one development configuration: KuaiRand 4+12, seed 0, 16 layers,
+hidden/K/V width 512, maximum history 2,048, one A40, and a hot-HBM source/target boundary. It
+uses the actual sequence `theta0 -> theta1 -> ... -> theta11`: 12 checkpoints and 11 consecutive
+updates. All 11 edges use the same Stage-0-frozen 682 histories/prefixes; only model version and
+cache state evolve. This isolates accumulated version-migration error and is not an organic
+growing-history/request trace. No other seed, dataset, model size, GPU count, DRAM, or SSD point
+enters this stage. Exact current K/V is materialized at every version for offline evaluation. The
+recursively migrated path must consume the previous step's actual output; regenerating exact K/V
+before each measured edge is prohibited. At every update, every record receives exactly one
+action:
+
+- `migrate`: the direct-old-K/V affine, initially unchanged from the Stage-4.5 operator form;
+- `exact`: current-model raw-history replay, which resets `state_kind=exact`,
+  `last_exact_version=current`, and `migration_depth=0`.
+
+There is no normal `reuse` action. A migrated result records `state_kind=migrated`,
+`served_version=current`, its last exact version, incremented migration depth, risk components,
+selected action, and program lineage. `served_version` never implies that an approximate state is
+exact. A later migration uses the adjacent `served_version -> current_target` program; it cannot
+pretend that the input is still exact at `last_exact_version`.
+
+For `C_hat_t=C_t+e_t` and `T_t(y)=yB_t+c_t`, the measured lifecycle uses the decomposition
+
+```text
+C_hat_(t+1) - C_(t+1)
+= [T_t(C_t) - C_(t+1)] + e_t B_t.
+```
+
+The first term is the current one-hop residual and the second propagates prior error. This
+identity motivates the recursive risk budget but does not by itself provide a tight deployment
+bound; both terms must be calibrated on disjoint exact trajectories.
+
+The routing question is label-free current-model state fidelity and bounded maintenance load, not
+per-user recommendation utility. Recommendation labels, realized task gain, and the retired
+per-user drift/JVP/Fisher route are unavailable to the router. The first explored implementation
+used two conditions:
+
+```text
+exact if migration_depth >= max_migration_depth or risk_score >= risk_threshold
+migrate otherwise
+```
+
+Per-layer risk is
+
+```text
+calibrated_one_hop_error(normalized_correction_magnitude)
++ propagation_gain * previous_risk,
+```
+
+where `normalized_correction_magnitude=||T(KV)-KV||/(||KV||+eps)`. The 40 fit records build
+exact-referenced recursive trajectories. Global correction magnitude has negligible one-hop
+ranking value; a fused absolute-log K/V norm-ratio sketch supplies the strongest small threshold
+diagnostic. That diagnostic beats matched-random p95 on the selection role but is not frozen: its
+cumulative-only objective produces exact-refresh waves from 0% to 61.7% on selection and 0.15% to
+65.1% on the diagnostic complete chain. This operational failure is preserved rather than hidden
+by its acceptable cumulative cost and fidelity.
+
+The frozen replacement is deterministic balanced age/deadline scheduling. For each adjacent edge,
+the median fit-record one-hop cache-error q90 is a label-free program-level severity. Severity rank
+maps the edge to a configured exact fraction in `[0.15,0.25]` around a 0.20 base. Caches already at
+depth four are mandatory exact; remaining exact slots select greater migration depth first and use
+a seeded SHA256 record hash only to break ties. Every other cache migrates. Exact resets risk and
+depth to zero; migration increments depth. The action plan is produced before candidate execution,
+so the frozen path does not compute and discard speculative migration candidates.
+
+The resulting edge fractions are `25/19/15/17/22/16/20/18/23/24/21%`. The complete-cohort
+contract permits one-record nearest-integer tolerance. This is an empirically selected bounded
+development heuristic, not a global-optimality or learned per-user risk claim.
+
+The current data has no defensible request-arrival or cache-hotness trace. Constructed hotness is
+therefore not a routing feature in this protocol, and hotness would in any case weight operational
+value rather than certify state fidelity.
+
+Roles remain disjoint. The 40 fit records produce 11 adjacent-edge programs, edge severities, and
+exact-referenced transition states. The 60 program-selection records share one precomputed
+transition DAG to compare a bounded set of threshold, periodic, fixed-quota, and
+severity-bounded-quota points. This is not a repeated full-cohort matrix. The independent 60
+certificate records receive the frozen balanced policy once. The final experiment then runs
+exactly one complete 682-record `theta0 -> theta11` balanced-policy chain plus its necessary
+all-exact evaluation reference. The earlier threshold complete chain is explicitly a diagnostic
+that exposed the missing per-step peak objective; it did not supply recommendation labels or
+numeric parameters to the replacement policy. The 522 final-test records provide primary
+recommendation results and cannot change the policy.
+
+The selection trajectory contains `all_migrate` and `all_exact` endpoints and one
+matched-exact-fraction random-refresh diagnostic for the threshold candidate. All candidate
+points are derived from the same cached DAG; they do not trigger 1/2/4-GPU or HBM/DRAM matrices.
+The desired operating region is approximately 20%–30% of cumulative all-exact
+GPU cost with approximately 80%–90% or higher minimum label-free cache/score/top-100
+exact-relative fidelity. Recommendation labels do not select the threshold. Real task metrics are
+an independent outcome and should remain close to all-exact, but cannot be used to tune the
+router. This is a target, not an admission to alter the data, metrics, or protocol when the result
+misses it.
+
+At each target, mixed policy and all-exact use the same current checkpoint, frozen history,
+engaged positive, and existing stale-inference evaluator; only the prefix-K/V path differs. Every
+one of the 11 targets reports MeanRank, Catalog AUC, NDCG@100, Hit@100, and paired differences.
+Reuse-to-exact recommendation recovery is reported only when its denominator is stable;
+otherwise absolute metrics and paired differences remain primary.
+Cache error, score cosine, top-100 overlap, exact fraction, migration-depth distribution,
+scheduler CPU time, per-step GPU cost ratio, and cumulative GPU cost ratio are also mandatory.
+The all-record exact evaluation reference is isolated from the router and excluded from
+mixed-policy cost. Mixed GPU cost includes only exact-subset gather/replay, records actually
+migrated, and common publication; GPU cost is measured, never inferred from a handwritten
+constant. Raw histories and old K/V use the declared hot-HBM boundary, so source preload is
+outside this ratio. Scheduler CPU time is measured and disclosed separately rather than
+mislabelled as GPU time.
+
+If the exact-source program fails on migrated inputs, a migrated-input or depth-bucketed affine
+may be fit behind the same runtime ABI, but that change requires a new program protocol and
+certificate; the Stage-4.5 one-hop equivalence cannot be reused.
+
+Stage 4.6 passes only if the complete recursive trajectory is reproducible, lineage is
+unambiguous, all 11 steps have recommendation/fidelity/cost comparisons, a frozen policy passes
+its predeclared per-step and terminal contract on certificate records, consecutive migration is
+bounded, and per-step refresh/cost peaks are bounded. Beating matched random is insufficient for
+an adaptive claim when an operational wave contract fails. Missing the desired 0.2–0.3× cost and
+0.8–0.9 label-free fidelity region, or observing large independent task-metric gaps, is reported
+as a real result rather than hidden. If no reasonable refresh fraction controls cumulative error,
+the paper scope contracts to at-most-one migration per exact anchor.
+
+The frozen outputs are
+`configs/cohortkv_single_config_v1/stage4_6_lifecycle_policy.json` and
+`stage4_6_lifecycle_summary.json`. The independent certificate records `0.2142×` cumulative GPU
+cost, `0.2814×` maximum step cost, and minimum cache/score/top-100 values
+`0.9613/0.999759/0.9898`. The complete 682-record chain records `0.2134×` cumulative cost,
+`0.2543×` maximum step cost, `14.956%–25.073%` exact fractions after record rounding, and minimum
+`0.9632/0.999950/0.9918`. All 7,502 lineage rows rebuild from the frozen policy, consume the
+previous actual output, reset exact states, and stay at depth four or below. Stage 5 is admitted.
+
 Guard selection uses only program-selection records and no recommendation labels. It chooses the
 lowest normal-job overhead mechanism that detects the frozen theta4 perturbation while preserving
 unperturbed cohort certificates, and records reference bytes/time, no-fault overhead, false
@@ -965,19 +1286,25 @@ detection phase, and reworked records. Resume is optional until a journal valida
 at-most-one-wave redo; atomic abort and prior-version visibility are mandatory.
 
 The aggregate result must validate against
-`configs/cohortkv_single_config_v1/result.schema.json`. Until that artifact exists with
-`status=development_complete`, none of the Stage 0 files support a new speedup, fidelity,
-full-cohort, failure-recovery, or capsule-economics claim. Even after completion, seed 0 remains
-adaptive development evidence; timing repeats are not training replications.
+`configs/cohortkv_single_config_v1/result.schema.json`. The parent blueprint retains
+`stage4_core_frozen` for compatibility with the immutable Stage-4 inputs and separately registers
+`stage4_5_source_plan_summary.json` as a completed amendment. Together they support the complete
+normal-path result, the negative normalized-source finding, and the scoped direct-old-K/V hot-HBM
+Pareto point, but not failure recovery, automatic fallback execution, cold/durable SSD, or
+capsule-economics claims. Even after later full-chain completion, seed 0 remains adaptive
+development evidence; timing repeats are not training replications.
 The schema requires exactly one aggregate run for each of the 18 primary
 method/destination/GPU-count combinations and one result for each predeclared failure. Controls
 cannot satisfy a missing primary point.
 
-RQ5 capture timing uses theta11, one GPU, and the 60 program-selection histories for matched
-fresh-K/V-only, plus-device-capture, and plus-D2H/encode/buffered-POSIX-persist paths, each with one
-warmup and three repetitions. INT8 is symmetric signed quantization with a per-record/per-layer
-FP32 absmax scale and timed FP16 dequantization during staging; its frozen certificate is applied
-on certificate users, with a complete 682-record one-GPU HBM run. Time break-even is
+RQ5 first verifies that the frozen direct-old-K/V path requires no independent per-record capture
+or encode beyond the serving K/V that already exists, and reports its once-per-version-pair
+program compilation/publication cost. The normalized-capsule controls use theta11, one GPU, and
+the 60 program-selection histories for matched fresh-K/V-only, plus-device-capture, and
+plus-D2H/encode/buffered-POSIX-persist paths, each with one warmup and three repetitions. INT8 is
+symmetric signed quantization with a per-record/per-layer FP32 absmax scale and timed FP16
+dequantization during staging; its frozen certificate is applied on certificate users, with a
+complete 682-record one-GPU HBM run. Time break-even is
 `ceil(capture_overhead / (exact - compiled - compiler_amortized))`; a nonpositive denominator is
 reported as no break-even. Auxiliary transition/residual state is a separate row and cannot be
 folded into the default capsule ratio.
@@ -1174,6 +1501,21 @@ KuaiRand temporal-split exploration:
   `results/system/streamkv_destination_hbm_4gpu_validation.json`
 - `experiments/system/FOUR_GPU_SCALING_V1.md`
 - `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`
+- local
+  `results/system/cohortkv_single_config_full_chain_v1/stage1_frontier_seed0.json`
+- `configs/cohortkv_single_config_v1/stage1_frontier_summary.json`
+- `experiments/system/COHORTKV_STAGE1_FRONTIER_V1.md`
+- local
+  `results/system/cohortkv_single_config_full_chain_v1/stage2_compiler_seed0.json`
+- local
+  `checkpoints/kuairand_long_context_4plus12_exploration/seed0/single_config_v1/stage2_runtime/*.pt`
+- `configs/cohortkv_single_config_v1/stage2_compiler_summary.json`
+- `configs/cohortkv_single_config_v1/stage2_plans/*.json`
+- `experiments/system/COHORTKV_STAGE2_COMPILER_V1.md`
+- local
+  `results/system/cohortkv_single_config_full_chain_v1/stage3_operator_seed0.json`
+- `configs/cohortkv_single_config_v1/stage3_operator_summary.json`
+- `experiments/system/COHORTKV_STAGE3_OPERATOR_V1.md`
 - `configs/cohortkv_single_config_v1/{blueprint,workload_manifest,result.schema}.json`
 - `experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md`
 

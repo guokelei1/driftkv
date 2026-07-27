@@ -85,7 +85,7 @@ DistServe 把 observation 写成设计义务：
 | stale K/V 留下可测 maintenance gap | 不能永久 reuse | unconditional compiled repair plus escalation | cross-dataset and 3×3 opportunity |
 | age 与 task quality 不稳定、full endpoint 可近零/负 | 不能用 age/task gain 做 admission | version-pair program plus label-free semantic contract | age matrix and 6/9 strict gate |
 | HSTU K/V 是 old normalized state 上的当前 projection 加共享 residual | 把 repair 变成一遍式 program | compiled affine projection | 27-cell fidelity/cost and verified compiler |
-| kernel gain可能被 H2D/D2H、padding、publication 吞掉 | 端到端必须保持相同 endpoint | fused direct-write operator and destination engine | controlled two-GPU host boundary; v4 open gate |
+| kernel gain可能被 H2D/D2H、padding、publication 吞掉 | 端到端必须保持相同 endpoint | fused direct-write operator and destination engine | Stage-4 FP16 capsule path loses at 0/6; Stage-4.5 direct old K/V removes extra source state and passes scoped hot-HBM 1/2/4-GPU points |
 
 ## 5. Orca：version cohort 是系统执行单位
 

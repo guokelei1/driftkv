@@ -12,8 +12,12 @@ except ImportError:
     tl = None
 
 from ..models import HSTUKVCache
-from .capsule import MigratedKVBatch, MigrationCapsuleBatch
-from .low_rank import CompiledCacheAdapter
+from .capsule import (
+    ContiguousKVOutputExtent,
+    MigratedKVBatch,
+    MigrationCapsuleBatch,
+)
+from .low_rank import CompiledCacheAdapter, migrate_compiled_cache_capsule
 from .program import MigrationProgram, execute_migration_program
 
 if triton is not None:
@@ -100,8 +104,205 @@ if triton is not None:
             & (output_offsets[None, :] < output_width),
         )
 
+    @triton.jit
+    def _fused_affine_extent_kernel(
+        normed,
+        weights,
+        biases,
+        lengths,
+        offsets,
+        output_k,
+        output_v,
+        rows,
+        sequence_width,
+        output_tokens,
+        input_width: tl.constexpr,
+        output_width: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        layer = tl.program_id(0)
+        row_offsets = tl.program_id(1) * BLOCK_M + tl.arange(0, BLOCK_M)
+        output_offsets = tl.program_id(2) * BLOCK_N + tl.arange(0, BLOCK_N)
+        reduction_offsets = tl.arange(0, BLOCK_K)
+        record_offsets = row_offsets // sequence_width
+        token_offsets = row_offsets - record_offsets * sequence_width
+        valid_lengths = tl.load(
+            lengths + record_offsets,
+            mask=row_offsets < rows,
+            other=0,
+        )
+        valid = (row_offsets < rows) & (token_offsets < valid_lengths)
+        accumulator = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+        for start in range(0, input_width, BLOCK_K):
+            current_reduction = start + reduction_offsets
+            normed_values = tl.load(
+                normed
+                + layer * rows * input_width
+                + row_offsets[:, None] * input_width
+                + current_reduction[None, :],
+                mask=valid[:, None]
+                & (current_reduction[None, :] < input_width),
+                other=0.0,
+            )
+            weight_values = tl.load(
+                weights
+                + layer * input_width * output_width
+                + current_reduction[:, None] * output_width
+                + output_offsets[None, :],
+                mask=(current_reduction[:, None] < input_width)
+                & (output_offsets[None, :] < output_width),
+                other=0.0,
+            )
+            accumulator += tl.dot(normed_values, weight_values)
+        bias = tl.load(
+            biases + layer * output_width + output_offsets,
+            mask=output_offsets < output_width,
+            other=0.0,
+        )
+        compact_rows = tl.load(
+            offsets + record_offsets,
+            mask=row_offsets < rows,
+            other=0,
+        ) + token_offsets
+        valid = valid & (compact_rows >= 0) & (compact_rows < output_tokens)
+        values = accumulator + bias[None, :]
+        kv_width = output_width // 2
+        tl.store(
+            output_k
+            + layer * output_tokens * kv_width
+            + compact_rows[:, None] * kv_width
+            + output_offsets[None, :],
+            values,
+            mask=valid[:, None] & (output_offsets[None, :] < kv_width),
+        )
+        value_offsets = output_offsets - kv_width
+        tl.store(
+            output_v
+            + layer * output_tokens * kv_width
+            + compact_rows[:, None] * kv_width
+            + value_offsets[None, :],
+            values,
+            mask=valid[:, None]
+            & (output_offsets[None, :] >= kv_width)
+            & (output_offsets[None, :] < output_width),
+        )
+
 else:
     _fused_affine_kv_kernel = None
+    _fused_affine_extent_kernel = None
+
+
+def validate_contiguous_output_extent(
+    program: MigrationProgram,
+    capsule: MigrationCapsuleBatch,
+    destination: ContiguousKVOutputExtent,
+    check_metadata_values: bool = False,
+) -> None:
+    if destination.record_ids != capsule.record_ids:
+        raise ValueError("destination and capsule record IDs differ")
+    if destination.migration_anchor_version != capsule.migration_anchor_version:
+        raise ValueError("destination and capsule anchors differ")
+    if destination.served_kv_target != program.target_version:
+        raise ValueError("destination and program targets differ")
+    if destination.k.ndim != 3 or destination.v.ndim != 3:
+        raise ValueError("destination K/V must have shape [layers, tokens, width]")
+    if destination.k.shape != destination.v.shape:
+        raise ValueError("destination K and V shapes differ")
+    if destination.k.shape[0] != program.num_layers:
+        raise ValueError("destination and program depths differ")
+    if destination.k.shape[2] != program.kv_width:
+        raise ValueError("destination and program K/V widths differ")
+    if destination.k.shape[1] < 1:
+        raise ValueError("destination must contain at least one token")
+    if destination.token_count != destination.k.shape[1]:
+        raise ValueError("destination token count metadata is invalid")
+    if destination.lengths.shape != capsule.lengths.shape:
+        raise ValueError("destination and capsule length shapes differ")
+    if destination.offsets.shape != (capsule.batch_size + 1,):
+        raise ValueError("destination offsets have the wrong shape")
+    integer_dtypes = {
+        torch.int8,
+        torch.int16,
+        torch.int32,
+        torch.int64,
+        torch.uint8,
+    }
+    if destination.lengths.dtype not in integer_dtypes:
+        raise ValueError("destination lengths must have an integer dtype")
+    if destination.offsets.dtype not in {torch.int32, torch.int64}:
+        raise ValueError("destination offsets must be int32 or int64")
+    tensors = (
+        destination.k,
+        destination.v,
+        destination.lengths,
+        destination.offsets,
+    )
+    if any(value.device != capsule.device for value in tensors):
+        raise ValueError("destination and capsule must share a device")
+    if destination.k.dtype != capsule.normed.dtype:
+        raise ValueError("destination and capsule dtypes differ")
+    if destination.v.dtype != destination.k.dtype:
+        raise ValueError("destination K and V dtypes differ")
+    if not destination.k.is_contiguous() or not destination.v.is_contiguous():
+        raise ValueError("destination K and V must be contiguous")
+    if (
+        not destination.lengths.is_contiguous()
+        or not destination.offsets.is_contiguous()
+    ):
+        raise ValueError("destination metadata must be contiguous")
+    write_storages = {
+        destination.k.untyped_storage().data_ptr(),
+        destination.v.untyped_storage().data_ptr(),
+    }
+    if len(write_storages) != 2:
+        raise ValueError("destination K and V must not share storage")
+    read_tensors = (
+        capsule.normed,
+        capsule.lengths,
+        program.adapter.weights,
+        program.adapter.biases,
+        destination.lengths,
+        destination.offsets,
+    )
+    if any(
+        value.untyped_storage().data_ptr() in write_storages
+        for value in read_tensors
+    ):
+        raise ValueError("destination storage must not alias operator inputs")
+    if check_metadata_values:
+        if bool(torch.any(capsule.lengths < 0)) or bool(
+            torch.any(capsule.lengths > capsule.seq_len)
+        ):
+            raise ValueError("capsule lengths exceed the dense sequence width")
+        offsets = torch.cat(
+            (
+                torch.zeros(
+                    1,
+                    dtype=destination.offsets.dtype,
+                    device=capsule.device,
+                ),
+                capsule.lengths.to(destination.offsets.dtype).cumsum(0),
+            )
+        )
+        if not torch.equal(destination.lengths, capsule.lengths):
+            raise ValueError("destination and capsule lengths differ")
+        if not torch.equal(destination.offsets, offsets):
+            raise ValueError("destination offsets do not match lengths")
+        if destination.k.shape[1] != int(offsets[-1].item()):
+            raise ValueError("destination token count does not match lengths")
+
+
+def _copy_dense_cache_to_extent(
+    cache: HSTUKVCache,
+    lengths: torch.Tensor,
+    destination: ContiguousKVOutputExtent,
+) -> None:
+    positions = torch.arange(cache.seq_len, device=lengths.device)
+    valid = positions.unsqueeze(0) < lengths.unsqueeze(1)
+    destination.k.copy_(cache.k[:, valid])
+    destination.v.copy_(cache.v[:, valid])
 
 
 class MigrationOperator(Protocol):
@@ -119,6 +320,13 @@ class MigrationOperator(Protocol):
         program: MigrationProgram,
         capsule: MigrationCapsuleBatch,
     ) -> MigratedKVBatch: ...
+
+    def execute_into(
+        self,
+        program: MigrationProgram,
+        capsule: MigrationCapsuleBatch,
+        destination: ContiguousKVOutputExtent,
+    ) -> ContiguousKVOutputExtent: ...
 
 
 class ReferenceMigrationOperator:
@@ -140,6 +348,19 @@ class ReferenceMigrationOperator:
         capsule: MigrationCapsuleBatch,
     ) -> MigratedKVBatch:
         return execute_migration_program(program, capsule)
+
+    @torch.no_grad()
+    def execute_into(
+        self,
+        program: MigrationProgram,
+        capsule: MigrationCapsuleBatch,
+        destination: ContiguousKVOutputExtent,
+    ) -> ContiguousKVOutputExtent:
+        program.validate_capsule(capsule)
+        validate_contiguous_output_extent(program, capsule, destination)
+        cache = migrate_compiled_cache_capsule(capsule, program.adapter)
+        _copy_dense_cache_to_extent(cache, capsule.lengths, destination)
+        return destination
 
 
 class PackedMigrationOperator:
@@ -174,6 +395,19 @@ class PackedMigrationOperator:
             cache=cache,
             lengths=capsule.lengths,
         )
+
+    @torch.no_grad()
+    def execute_into(
+        self,
+        program: MigrationProgram,
+        capsule: MigrationCapsuleBatch,
+        destination: ContiguousKVOutputExtent,
+    ) -> ContiguousKVOutputExtent:
+        program.validate_capsule(capsule)
+        validate_contiguous_output_extent(program, capsule, destination)
+        cache = migrate_packed_cache_capsule(capsule, program.adapter)
+        _copy_dense_cache_to_extent(cache, capsule.lengths, destination)
+        return destination
 
 
 class FusedMigrationOperator:
@@ -275,6 +509,57 @@ class FusedMigrationOperator:
             ),
             lengths=capsule.lengths,
         )
+
+    @torch.no_grad()
+    def execute_into(
+        self,
+        program: MigrationProgram,
+        capsule: MigrationCapsuleBatch,
+        destination: ContiguousKVOutputExtent,
+    ) -> ContiguousKVOutputExtent:
+        program.validate_capsule(capsule)
+        validate_contiguous_output_extent(program, capsule, destination)
+        if capsule.device.type != "cuda":
+            raise ValueError("fused migration requires a CUDA capsule")
+        if capsule.normed.dtype != torch.float16:
+            raise ValueError("fused migration requires FP16 capsules")
+        if program.adapter.weights.dtype != torch.float16:
+            raise ValueError("fused migration requires FP16 program weights")
+        if not capsule.normed.is_contiguous():
+            raise ValueError("fused migration requires contiguous capsules")
+        if (
+            not program.adapter.weights.is_contiguous()
+            or not program.adapter.biases.is_contiguous()
+        ):
+            raise ValueError("fused migration requires a contiguous program")
+        layers, batch, sequence, hidden = capsule.normed.shape
+        output_width = program.adapter.weights.shape[-1]
+        rows = batch * sequence
+        grid = (
+            layers,
+            triton.cdiv(rows, self.block_m),
+            triton.cdiv(output_width, self.block_n),
+        )
+        _fused_affine_extent_kernel[grid](
+            capsule.normed,
+            program.adapter.weights,
+            program.adapter.biases,
+            capsule.lengths,
+            destination.offsets,
+            destination.k,
+            destination.v,
+            rows,
+            sequence,
+            destination.k.shape[1],
+            input_width=hidden,
+            output_width=output_width,
+            BLOCK_M=self.block_m,
+            BLOCK_N=self.block_n,
+            BLOCK_K=self.block_k,
+            num_warps=self.num_warps,
+            num_stages=self.num_stages,
+        )
+        return destination
 
 
 @torch.no_grad()

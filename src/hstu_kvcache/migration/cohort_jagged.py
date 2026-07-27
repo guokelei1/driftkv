@@ -158,6 +158,29 @@ class JaggedMigratedKVBatch:
             raise ValueError("K/V must have shape [layers, tokens, width]")
         if self.k.shape != self.v.shape:
             raise ValueError("K and V shapes differ")
+        if not self.k.is_floating_point() or self.k.dtype != self.v.dtype:
+            raise ValueError("K/V must share one floating-point dtype")
+        if min(self.k.shape) < 1:
+            raise ValueError("K/V dimensions must be positive")
+        if not self.k.is_contiguous() or not self.v.is_contiguous():
+            raise ValueError("K/V must be contiguous")
+        if self.lengths.ndim != 1 or self.offsets.ndim != 1:
+            raise ValueError("lengths and offsets must be one-dimensional")
+        integer_dtypes = {
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.uint8,
+        }
+        if self.lengths.dtype not in integer_dtypes:
+            raise ValueError("lengths must have an integer dtype")
+        if self.offsets.dtype not in {torch.int32, torch.int64}:
+            raise ValueError("offsets must be int32 or int64")
+        if not self.record_ids:
+            raise ValueError("K/V batch must contain at least one record")
+        if len(set(self.record_ids)) != len(self.record_ids):
+            raise ValueError("record_ids must be unique within a batch")
         if len(self.record_ids) != self.lengths.shape[0]:
             raise ValueError("record_ids and lengths differ")
         if self.offsets.shape != (len(self.record_ids) + 1,):
@@ -169,6 +192,8 @@ class JaggedMigratedKVBatch:
         ):
             raise ValueError("K/V and jagged metadata must share a device")
         if self.k.device.type == "cpu":
+            if bool(torch.any(self.lengths <= 0)):
+                raise ValueError("jagged record lengths must be positive")
             if int(self.offsets[0]) != 0:
                 raise ValueError("jagged offsets must start at zero")
             if int(self.offsets[-1]) != self.k.shape[1]:

@@ -41,6 +41,17 @@ WORKLOAD_NAME = "workload_manifest.json"
 BLUEPRINT_NAME = "blueprint.json"
 RESULT_SCHEMA_NAME = "result.schema.json"
 FREEZE_SCRIPT_PATH = Path("scripts/freeze_cohortkv_single_config_v1.py")
+STAGE1_SUMMARY_PATH = OUTPUT_DIR / "stage1_frontier_summary.json"
+STAGE2_SUMMARY_PATH = OUTPUT_DIR / "stage2_compiler_summary.json"
+STAGE3_SUMMARY_PATH = OUTPUT_DIR / "stage3_operator_summary.json"
+STAGE4_SUMMARY_PATH = OUTPUT_DIR / "stage4_system_summary.json"
+STAGE45_SUMMARY_PATH = OUTPUT_DIR / "stage4_5_source_plan_summary.json"
+STAGE4_SOURCE_MANIFEST_PATH = (
+    CHECKPOINT_DIR
+    / "single_config_v1"
+    / "source_shards"
+    / "source_manifest.json"
+)
 SOURCE_VERSIONS = (0, 4, 10)
 SOURCE_WEIGHTS = (0.2, 0.3, 0.5)
 TARGET_VERSION = 11
@@ -84,6 +95,11 @@ DESTINATIONS = ("hbm", "dram")
 GPU_COUNTS = (1, 2, 4)
 RESIDUAL_DEPTHS = (4, 8)
 SELECTIVE_WIDTHS = (2, 4, 6, 8, 12)
+STAGE1_PROFILED_SELECTIVE_ACTION = {
+    "m": 12,
+    "start_layer": 0,
+    "end_layer": 11,
+}
 EXPECTED_SELECTIVE_INTERVALS = sum(
     EXPECTED_MODEL["num_layers"] - width + 1
     for width in SELECTIVE_WIDTHS
@@ -379,7 +395,7 @@ def build_workload(
             "logical_transition_hidden_bytes_fp16": (
                 prefix_tokens * hidden_size * 2
             ),
-            "logical_residual_hidden_suffix_bytes_fp16": {
+            "logical_residual_hidden_suffix_bytes_bf16": {
                 str(depth): (
                     prefix_tokens
                     * (num_layers - depth)
@@ -591,12 +607,11 @@ def build_result_schema(
         "compiled": ["normalized_capsule_fp16"],
         "selective_contiguous": [
             "old_kv_fp16",
-            "transition_hidden_fp16",
             "raw_history",
         ],
         "residual_p": [
             "raw_history",
-            "residual_hidden_suffix_fp16",
+            "residual_hidden_suffix_bf16",
         ],
         "exact": ["raw_history"],
         "no_transform": ["old_kv_fp16"],
@@ -621,6 +636,30 @@ def build_result_schema(
             for method, representations in (
                 source_representations_by_method.items()
             )
+        ]
+        + [
+            {
+                "if": {
+                    "required": ["method"],
+                    "properties": {
+                        "method": {"const": "selective_contiguous"}
+                    },
+                },
+                "then": {
+                    "required": [
+                        "action_configuration",
+                        "certificate_passed",
+                        "publishable_sync_action",
+                    ],
+                    "properties": {
+                        "action_configuration": {
+                            "const": STAGE1_PROFILED_SELECTIVE_ACTION
+                        },
+                        "certificate_passed": {"const": False},
+                        "publishable_sync_action": {"const": False},
+                    },
+                },
+            }
         ]
         + [
             {
@@ -689,7 +728,7 @@ def build_result_schema(
                         "old_kv_fp16",
                         "raw_history",
                         "transition_hidden_fp16",
-                        "residual_hidden_suffix_fp16",
+                        "residual_hidden_suffix_bf16",
                     ]
                 },
             },
@@ -749,6 +788,9 @@ def build_result_schema(
             "records_per_second": nonnegative,
             "tokens_per_second": nonnegative,
             "selected_runtime_config": {"type": "object"},
+            "action_configuration": {"type": "object"},
+            "certificate_passed": {"type": "boolean"},
+            "publishable_sync_action": {"type": "boolean"},
             "capacity_preflight": {
                 "type": "object",
                 "additionalProperties": True,
@@ -1156,15 +1198,23 @@ def build_result_schema(
                                     "type": "object",
                                     "required": [
                                         "source_dtype",
+                                        "program_dtype",
                                         "output_dtype",
+                                        "residual_hidden_suffix_dtype",
                                         "passed",
                                     ],
                                     "properties": {
                                         "source_dtype": {
                                             "const": "float16"
                                         },
+                                        "program_dtype": {
+                                            "const": "float16"
+                                        },
                                         "output_dtype": {
                                             "const": "float16"
+                                        },
+                                        "residual_hidden_suffix_dtype": {
+                                            "const": "bfloat16"
                                         },
                                         "passed": {"const": True},
                                     },
@@ -1210,6 +1260,7 @@ def build_result_schema(
                 "required": [
                     "selection_points",
                     "selective_grid_audit",
+                    "profiled_selective_actions",
                     "certified_selective_actions",
                 ],
                 "properties": {
@@ -1312,6 +1363,52 @@ def build_result_schema(
                                 },
                                 "certificate_passed": {
                                     "type": "boolean"
+                                },
+                            },
+                            "additionalProperties": True,
+                        },
+                    },
+                    "profiled_selective_actions": {
+                        "type": "array",
+                        "minItems": len(SOURCE_VERSIONS),
+                        "maxItems": len(SOURCE_VERSIONS),
+                        "allOf": source_version_coverage,
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "source_version",
+                                "action",
+                                "certificate_passed",
+                                "publishable_sync_action",
+                                "system_role",
+                                "source_representations",
+                            ],
+                            "properties": {
+                                "source_version": {
+                                    "enum": [
+                                        f"theta{version}"
+                                        for version in SOURCE_VERSIONS
+                                    ]
+                                },
+                                "action": {
+                                    "const": (
+                                        STAGE1_PROFILED_SELECTIVE_ACTION
+                                    )
+                                },
+                                "certificate_passed": {"const": False},
+                                "publishable_sync_action": {
+                                    "const": False
+                                },
+                                "system_role": {
+                                    "const": (
+                                        "frozen_diagnostic_external_baseline"
+                                    )
+                                },
+                                "source_representations": {
+                                    "const": [
+                                        "old_kv_fp16",
+                                        "raw_history",
+                                    ]
                                 },
                             },
                             "additionalProperties": True,
@@ -1546,9 +1643,9 @@ def build_result_schema(
                         "type": "object",
                         "required": [
                             "transition_hidden_fp16_bytes",
-                            "residual_p4_hidden_suffix_fp16_bytes",
-                            "residual_p8_hidden_suffix_fp16_bytes",
-                            "current_verified_p8_fallback_fp16_bytes",
+                            "residual_p4_hidden_suffix_bf16_bytes",
+                            "residual_p8_hidden_suffix_bf16_bytes",
+                            "current_verified_p8_fallback_bf16_bytes",
                         ],
                         "properties": {
                             "transition_hidden_fp16_bytes": {
@@ -1558,7 +1655,7 @@ def build_result_schema(
                                     * 2
                                 )
                             },
-                            "residual_p4_hidden_suffix_fp16_bytes": {
+                            "residual_p4_hidden_suffix_bf16_bytes": {
                                 "const": (
                                     EXPECTED_PREFIX_TOKENS
                                     * (
@@ -1569,7 +1666,7 @@ def build_result_schema(
                                     * 2
                                 )
                             },
-                            "residual_p8_hidden_suffix_fp16_bytes": {
+                            "residual_p8_hidden_suffix_bf16_bytes": {
                                 "const": (
                                     EXPECTED_PREFIX_TOKENS
                                     * (
@@ -1580,7 +1677,7 @@ def build_result_schema(
                                     * 2
                                 )
                             },
-                            "current_verified_p8_fallback_fp16_bytes": {
+                            "current_verified_p8_fallback_bf16_bytes": {
                                 "const": 6_255_345_664
                             },
                         },
@@ -1651,6 +1748,11 @@ def build_blueprint(
     repo_root: Path,
     training: dict[str, Any],
     workload: dict[str, Any],
+    stage1_summary: dict[str, Any],
+    stage2_summary: dict[str, Any],
+    stage3_summary: dict[str, Any],
+    stage4_summary: dict[str, Any],
+    stage45_summary: dict[str, Any],
     workload_file_sha256: str,
     schema_file_sha256: str,
 ) -> dict[str, Any]:
@@ -1679,7 +1781,7 @@ def build_blueprint(
     return {
         "protocol": PROTOCOL,
         "schema_version": SCHEMA_VERSION,
-        "status": "stage0_frozen",
+        "status": "stage4_core_frozen",
         "frozen_date": FROZEN_DATE,
         "study_stage": "adaptive_seed0_development",
         "scope": {
@@ -1687,7 +1789,18 @@ def build_blueprint(
                 "close one complete compiler-to-manifest vertical slice "
                 "before new seeds, datasets, or model capacities"
             ),
-            "creates_performance_evidence": False,
+            "creates_performance_evidence": True,
+            "completed_stages": [0, 1, 2, 3, 4],
+            "completed_amendments": ["stage4_5_source_plan"],
+            "performance_evidence_boundary": (
+                "Stages 1-4 contribute adaptive seed-0 resident frontier, "
+                "deployed-representation compiler, common-layout resident "
+                "operator evidence, and complete 682-record HBM/DRAM "
+                "normal-path results; Stage 4.5 freezes the direct existing-"
+                "old-K/V HBM source plan at 1/2/4 GPUs with zero extra "
+                "per-record source state; automatic guard/fallback and "
+                "failure recovery remain open"
+            ),
             "confirmation_unit": "future independent training seed",
             "implementation_rule": (
                 "preserve each module's logical contract, but pause and "
@@ -1720,6 +1833,30 @@ def build_blueprint(
                 repo_root,
                 VERIFIED_RESULT_PATH,
             ),
+            "stage1_frontier_summary": artifact_entry(
+                repo_root,
+                STAGE1_SUMMARY_PATH,
+            ),
+            "stage2_compiler_summary": artifact_entry(
+                repo_root,
+                STAGE2_SUMMARY_PATH,
+            ),
+            "stage3_operator_summary": artifact_entry(
+                repo_root,
+                STAGE3_SUMMARY_PATH,
+            ),
+            "stage4_system_summary": artifact_entry(
+                repo_root,
+                STAGE4_SUMMARY_PATH,
+            ),
+            "stage4_5_source_plan_summary": artifact_entry(
+                repo_root,
+                STAGE45_SUMMARY_PATH,
+            ),
+            "stage4_source_manifest": artifact_entry(
+                repo_root,
+                STAGE4_SOURCE_MANIFEST_PATH,
+            ),
             "checkpoints": checkpoint_artifacts,
             "verified_programs": validate_verified_plans(repo_root),
             "workload_manifest": {
@@ -1731,6 +1868,25 @@ def build_blueprint(
                 "path": str(OUTPUT_DIR / RESULT_SCHEMA_NAME),
                 "file_sha256": schema_file_sha256,
             },
+        },
+        "source_plan_contract": {
+            "protocol": stage45_summary["protocol"],
+            "normal_action": stage45_summary["source_plan"][
+                "normal_action"
+            ],
+            "source_representation": stage45_summary["source_plan"][
+                "source_representation"
+            ],
+            "additional_normx_bytes": stage45_summary["source_plan"][
+                "additional_normx_bytes"
+            ],
+            "fallback_action": stage45_summary["source_plan"][
+                "fallback_action"
+            ],
+            "declared_operating_regime": stage45_summary[
+                "declared_operating_regime"
+            ],
+            "stage5_admitted": stage45_summary["gate"]["stage5_admitted"],
         },
         "role_contract": {
             "fit": {
@@ -1799,8 +1955,8 @@ def build_blueprint(
             "logical_transition_hidden_bytes_fp16": logical[
                 "logical_transition_hidden_bytes_fp16"
             ],
-            "logical_residual_hidden_suffix_bytes_fp16": logical[
-                "logical_residual_hidden_suffix_bytes_fp16"
+            "logical_residual_hidden_suffix_bytes_bf16": logical[
+                "logical_residual_hidden_suffix_bytes_bf16"
             ],
             "logical_target_kv_bytes_fp16": logical[
                 "logical_target_kv_bytes_fp16"
@@ -1869,13 +2025,13 @@ def build_blueprint(
                     ],
                     "physical_bytes_must_be_measured": True,
                 },
-                "residual_hidden_suffix_fp16": {
+                "residual_hidden_suffix_bf16": {
                     "layout": (
                         "old-version pre-block hidden states "
                         "[layers p..L-1,T,H] plus offsets"
                     ),
                     "logical_bytes_by_p_for_all_records": logical[
-                        "logical_residual_hidden_suffix_bytes_fp16"
+                        "logical_residual_hidden_suffix_bytes_bf16"
                     ],
                     "current_verified_p8_fallback_bytes": (
                         current_p8_fallback_bytes
@@ -1920,14 +2076,33 @@ def build_blueprint(
                     ],
                 },
                 "threshold_sweep": [0.5, 0.6, 0.7, 0.8, 0.9],
+                "stage2_observation": {
+                    "selected_action_by_source": {
+                        pair["source_version"]: pair["selected_action"]
+                        for pair in stage2_summary["pairs"]
+                    },
+                    "fallback_actions_by_source": {
+                        pair["source_version"]: pair["fallback_actions"]
+                        for pair in stage2_summary["pairs"]
+                    },
+                    "deployed_certificate_passed": True,
+                    "final_test_evaluated": False,
+                    "summary_protocol": stage2_summary["protocol"],
+                },
             },
             "selective_contiguous": {
                 "role": "DroidSpeak-adapted external baseline",
-                "inputs": [
-                    "old_kv_fp16",
-                    "transition_hidden_fp16",
-                    "raw_history",
-                ],
+                "candidate_inputs": {
+                    "start_layer_zero": [
+                        "old_kv_fp16",
+                        "raw_history",
+                    ],
+                    "start_layer_positive": [
+                        "old_kv_fp16",
+                        "transition_hidden_fp16",
+                        "raw_history",
+                    ],
+                },
                 "semantics": (
                     "recompute one contiguous current-model interval and "
                     "reuse old K/V outside it"
@@ -1957,6 +2132,27 @@ def build_blueprint(
                     "m/interval that passes the same primary contract; exact "
                     "is the terminal fallback"
                 ),
+                "stage1_observation": {
+                    "all_source_pairs_certificate_passed": False,
+                    "publishable_fallback": "exact",
+                    "profiled_system_action": (
+                        STAGE1_PROFILED_SELECTIVE_ACTION
+                    ),
+                    "profiled_system_action_role": (
+                        "frozen_diagnostic_external_baseline"
+                    ),
+                    "profiled_system_action_inputs": [
+                        "old_kv_fp16",
+                        "raw_history",
+                    ],
+                    "transition_hidden_bytes": 0,
+                    "claim_boundary": (
+                        "the Stage-4 selective_contiguous row must retain "
+                        "certificate_passed=false and cannot be called a "
+                        "certified or publishable synchronized target"
+                    ),
+                    "summary_protocol": stage1_summary["protocol"],
+                },
                 "adaptation_boundary": (
                     "DroidSpeak profiles contiguous recomputation groups "
                     "with task quality and transition E-cache; this HSTU "
@@ -1987,7 +2183,7 @@ def build_blueprint(
                 "role": "internal escalation tier",
                 "inputs": [
                     "raw_history",
-                    "residual_hidden_suffix_fp16",
+                    "residual_hidden_suffix_bf16",
                 ],
                 "p_values": [4, 8],
                 "state_semantics": (
@@ -1996,7 +2192,7 @@ def build_blueprint(
                     "normalized capsule cannot reconstruct this action"
                 ),
                 "storage_policy": (
-                    "auxiliary hidden suffix bytes are counted separately "
+                    "BF16 auxiliary hidden suffix bytes are counted separately "
                     "from the default capsule; if the shard is absent, remove "
                     "residual-p from the executable fallback chain under a "
                     "revised protocol and fall through to exact"
@@ -2032,11 +2228,15 @@ def build_blueprint(
             "semantic_oracle": (
                 "FP32 current-model exact K/V and full-catalog score views"
             ),
-            "deployment_recertification": (
-                "apply the frozen certificate again on serialized FP16 "
-                "source shards, prepared runtime programs, and published "
-                "FP16 K/V before final-test or complete-job execution"
-            ),
+            "deployment_recertification": {
+                "status": "complete",
+                "primary_capsule_dtype": "float16",
+                "program_dtype": "float16",
+                "output_dtype": "float16",
+                "residual_hidden_suffix_dtype": "bfloat16",
+                "summary_protocol": stage2_summary["protocol"],
+                "final_test_evaluated": False,
+            },
             "existing_verified_result_boundary": (
                 "the frozen verified compiler evaluated in-memory FP32 "
                 "layerwise state; it is algorithm evidence, not a certificate "
@@ -2088,8 +2288,10 @@ def build_blueprint(
             ),
             "certification_scope": (
                 "one frozen selective candidate per m and source-target pair "
-                "may proceed from program selection to certificate; final "
-                "users evaluate only the certified action or exact fallback"
+                "may proceed from program selection to certificate; the "
+                "completed certificate publishes exact, while the strongest "
+                "profiled selective action proceeds only to label-free "
+                "diagnostic system timing"
             ),
         },
         "runtime_tuning_contract": {
@@ -2121,6 +2323,29 @@ def build_blueprint(
             ),
             "warmup_runs": 1,
             "measured_repetitions": 3,
+            "stage3_observation": {
+                "selection_role": "program_selection",
+                "default_operator": stage3_summary["selection"]["operator"],
+                "default_batch_size": stage3_summary["selection"][
+                    "batch_size"
+                ],
+                "default_bucket_width": stage3_summary["selection"][
+                    "bucket_width"
+                ],
+                "common_output_layout": (
+                    "separate contiguous unpadded FP16 [L,T,Dkv] K/V "
+                    "plus lengths and offsets"
+                ),
+                "fused_speedup_over_fastest_packed_resident": (
+                    stage3_summary["selection"]["fused_stability_gate"][
+                        "fused_speedup_over_packed"
+                    ]
+                ),
+                "stage4_retunes_every_endpoint": True,
+                "labels_used": False,
+                "final_test_evaluated": False,
+                "summary_protocol": stage3_summary["protocol"],
+            },
         },
         "destination_contract": {
             "common_output": {
@@ -2202,6 +2427,14 @@ def build_blueprint(
                 "destinations": list(DESTINATIONS),
                 "gpu_counts": list(GPU_COUNTS),
                 "methods": list(PRIMARY_METHODS),
+                "selective_contiguous_semantics": {
+                    "action": STAGE1_PROFILED_SELECTIVE_ACTION,
+                    "certificate_passed": False,
+                    "publishable_sync_action": False,
+                    "system_role": (
+                        "frozen_diagnostic_external_baseline"
+                    ),
+                },
                 "required_points": [
                     {
                         "method": method,
@@ -2216,6 +2449,28 @@ def build_blueprint(
                     "residual_p",
                     "no_transform",
                 ],
+            },
+            "stage4_observation": {
+                "summary_protocol": stage4_summary["protocol"],
+                "normal_path_complete": True,
+                "full_points": stage4_summary["measurement_boundary"][
+                    "full_points"
+                ],
+                "primary_points": stage4_summary["measurement_boundary"][
+                    "primary_points"
+                ],
+                "control_points": stage4_summary["measurement_boundary"][
+                    "control_points"
+                ],
+                "all_capacity_preflights_passed": stage4_summary["derived"][
+                    "all_capacity_preflights_passed"
+                ],
+                "all_manifests_complete_and_duplicate_free": (
+                    stage4_summary["derived"][
+                        "all_manifests_complete_and_duplicate_free"
+                    ]
+                ),
+                "automatic_guard_and_fallback_open": True,
             },
             "excluded_from_primary_matrix": [
                 "filesystem_destination",
@@ -2339,10 +2594,10 @@ def build_blueprint(
                 "transition_hidden_fp16": logical[
                     "logical_transition_hidden_bytes_fp16"
                 ],
-                "residual_hidden_suffix_fp16_by_p": logical[
-                    "logical_residual_hidden_suffix_bytes_fp16"
+                "residual_hidden_suffix_bf16_by_p": logical[
+                    "logical_residual_hidden_suffix_bytes_bf16"
                 ],
-                "current_verified_p8_fallback_fp16": (
+                "current_verified_p8_fallback_bf16": (
                     current_p8_fallback_bytes
                 ),
                 "excluded_from_default_capsule_ratio": True,
@@ -2486,12 +2741,199 @@ def build_outputs(repo_root: Path) -> dict[Path, bytes]:
     workload_bytes = canonical_json_bytes(workload)
     verified = json.loads((repo_root / VERIFIED_RESULT_PATH).read_text())
     validate_verified_result(verified, workload)
+    stage1_summary = json.loads(
+        (repo_root / STAGE1_SUMMARY_PATH).read_text()
+    )
+    if (
+        stage1_summary.get("protocol")
+        != "cohortkv_single_config_stage1_frozen_v1"
+        or stage1_summary.get("status") != "stage1_frozen"
+        or len(stage1_summary.get("pairs", [])) != len(SOURCE_VERSIONS)
+    ):
+        raise ValueError("Stage 1 frozen summary is invalid")
+    for pair in stage1_summary["pairs"]:
+        action = pair["profiled_selective_action"]
+        if (
+            action["configuration"]
+            != STAGE1_PROFILED_SELECTIVE_ACTION
+            or action["source_representations"]
+            != ["old_kv_fp16", "raw_history"]
+            or action["publishable_sync_action"] is not False
+            or pair["certificate"]["passed"] is not False
+        ):
+            raise ValueError("Stage 1 downstream selective action mismatch")
+    stage2_summary = json.loads(
+        (repo_root / STAGE2_SUMMARY_PATH).read_text()
+    )
+    if (
+        stage2_summary.get("protocol")
+        != "cohortkv_single_config_stage2_frozen_v1"
+        or stage2_summary.get("status") != "stage2_frozen"
+        or len(stage2_summary.get("pairs", [])) != len(SOURCE_VERSIONS)
+        or stage2_summary.get("measurement_boundary", {}).get(
+            "final_test_users_evaluated"
+        )
+        is not False
+    ):
+        raise ValueError("Stage 2 frozen summary is invalid")
+    expected_stage2_fallbacks = {
+        "theta0": ["structural_p8", "recompute"],
+        "theta4": ["recompute"],
+        "theta10": ["structural_p8", "recompute"],
+    }
+    for pair in stage2_summary["pairs"]:
+        certificate = pair["selected_certificate"]
+        if (
+            pair["selected_action"] != "compiled_full_affine"
+            or pair["fallback_actions"]
+            != expected_stage2_fallbacks[pair["source_version"]]
+            or certificate["certificate_passed"] is not True
+            or certificate["worst_recovery_lower_bound"] < 0.7
+            or certificate["worst_coverage_lower_bound"] < 0.8
+        ):
+            raise ValueError("Stage 2 downstream compiler decision mismatch")
+    stage3_summary = json.loads(
+        (repo_root / STAGE3_SUMMARY_PATH).read_text()
+    )
+    if (
+        stage3_summary.get("protocol")
+        != "cohortkv_single_config_stage3_frozen_v1"
+        or stage3_summary.get("status") != "stage3_frozen"
+        or stage3_summary.get("measurement_boundary", {}).get(
+            "source_role"
+        )
+        != "program_selection"
+        or stage3_summary.get("measurement_boundary", {}).get(
+            "final_test_evaluated"
+        )
+        is not False
+        or stage3_summary.get("correctness", {}).get("layouts") != 9
+        or stage3_summary.get("correctness", {}).get(
+            "transport_mismatched_elements"
+        )
+        != 0
+        or stage3_summary.get("selection", {}).get("operator")
+        != "fused_fp16"
+        or stage3_summary.get("selection", {}).get("batch_size") != 4
+        or stage3_summary.get("selection", {}).get("bucket_width") != 32
+        or stage3_summary.get("selection", {}).get(
+            "fused_stability_gate", {}
+        ).get("all_fused_samples_below_all_packed_samples")
+        is not True
+    ):
+        raise ValueError("Stage 3 frozen summary is invalid")
+    stage4_summary = json.loads(
+        (repo_root / STAGE4_SUMMARY_PATH).read_text()
+    )
+    stage4_runs = stage4_summary.get("runs", [])
+    stage4_tuning = stage4_summary.get("runtime_tuning", {}).get(
+        "points",
+        [],
+    )
+    stage4_run_keys = {
+        (
+            value.get("method"),
+            value.get("destination"),
+            value.get("gpu_count"),
+        )
+        for value in stage4_runs
+    }
+    expected_stage4_keys = {
+        (method, destination, gpu_count)
+        for method in (
+            "compiled",
+            "selective_contiguous",
+            "exact",
+            "residual_p",
+            "no_transform",
+        )
+        for destination in DESTINATIONS
+        for gpu_count in GPU_COUNTS
+    }
+    if (
+        stage4_summary.get("protocol")
+        != "cohortkv_single_config_stage4_frozen_v1"
+        or stage4_summary.get("status") != "stage4_frozen"
+        or stage4_summary.get("measurement_boundary", {}).get(
+            "full_points"
+        )
+        != 30
+        or stage4_summary.get("measurement_boundary", {}).get(
+            "primary_points"
+        )
+        != 18
+        or stage4_summary.get("measurement_boundary", {}).get(
+            "control_points"
+        )
+        != 12
+        or len(stage4_tuning) != 30
+        or len(stage4_runs) != 30
+        or stage4_run_keys != expected_stage4_keys
+        or stage4_summary.get("derived", {}).get(
+            "all_capacity_preflights_passed"
+        )
+        is not True
+        or stage4_summary.get("derived", {}).get(
+            "all_outputs_finite_and_allclose"
+        )
+        is not True
+        or stage4_summary.get("derived", {}).get(
+            "all_manifests_complete_and_duplicate_free"
+        )
+        is not True
+        or stage4_summary.get("source_manifest", {}).get("path")
+        != str(STAGE4_SOURCE_MANIFEST_PATH)
+        or stage4_summary.get("source_manifest", {}).get("sha256")
+        != sha256_file(repo_root / STAGE4_SOURCE_MANIFEST_PATH)
+    ):
+        raise ValueError("Stage 4 frozen summary is invalid")
+    stage45_summary = json.loads(
+        (repo_root / STAGE45_SUMMARY_PATH).read_text()
+    )
+    stage45_comparisons = stage45_summary.get("system", {}).get(
+        "comparisons",
+        [],
+    )
+    if (
+        stage45_summary.get("protocol")
+        != "cohortkv_single_config_stage4_5_frozen_v1"
+        or stage45_summary.get("status")
+        != "stage4_5_source_plan_frozen"
+        or stage45_summary.get("upstream", {})
+        .get("stage4_summary", {})
+        .get("sha256")
+        != sha256_file(repo_root / STAGE4_SUMMARY_PATH)
+        or stage45_summary.get("source_plan", {}).get(
+            "source_representation"
+        )
+        != "existing_old_kv_fp16"
+        or stage45_summary.get("source_plan", {}).get(
+            "additional_normx_bytes"
+        )
+        != 0
+        or stage45_summary.get("source_plan", {}).get("fallback_action")
+        != "exact"
+        or {
+            value.get("gpu_count")
+            for value in stage45_comparisons
+            if value.get("completion_gate_passed") is True
+        }
+        != {1, 2, 4}
+        or stage45_summary.get("gate", {}).get("stage5_admitted")
+        is not True
+    ):
+        raise ValueError("Stage 4.5 frozen source plan is invalid")
     schema = build_result_schema(workload["content_sha256"])
     schema_bytes = canonical_json_bytes(schema)
     blueprint = build_blueprint(
         repo_root,
         training,
         workload,
+        stage1_summary,
+        stage2_summary,
+        stage3_summary,
+        stage4_summary,
+        stage45_summary,
         sha256_bytes(workload_bytes),
         sha256_bytes(schema_bytes),
     )

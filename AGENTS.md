@@ -16,8 +16,6 @@
 
 - `docs/08_core_insights_and_roadmap.md` is the authoritative research state and roadmap.
 - `docs/eval_protocol.md` defines which experimental results are valid and comparable.
-- `docs/paper_draft_intro_motivation.md` is the current advisor-facing story, not a source for
-  implementation semantics.
 - When documents conflict, follow the roadmap and evaluation protocol. Do not recover claims from
   deleted early documents or old result paths.
 
@@ -43,6 +41,26 @@
   reuse is safe. The next design problems are organic mixed versions and end-to-end state movement.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
   project crux. Its only valid role is a clearly labeled negative result in the motivation.
+- Single-configuration Stages 0–4.6 are frozen. The closest selective baseline fails its certificate;
+  the deployed compiler plans pass on serialized FP16 capsule/program/output, while the optional
+  residual hidden suffix is BF16 after measured FP16 overflow. Reference, packed, and fused
+  operators share one unpadded extent API. The 30-point full-cohort normal-path matrix closes
+  lazy source streaming and HBM/DRAM publication, but the current 17.82-GB physical FP16 capsule
+  path loses to exact at all six matched endpoints and spends 91.35%–96.91% of compiled time in
+  source processing. Stage 4.5 is now frozen separately: the primary hot-HBM plan composes the
+  deployed affine into a direct transform over existing old K/V, retains zero extra per-record
+  `Norm(x)`, reclaims old extents after replacement staging, preserves the certificate and full
+  real transport, and beats paired HBM-resident raw-history exact at full-cohort 1/2/4-GPU points.
+  This is not a cold-filesystem or SSD claim, and its equivalence/certificate assumes exact
+  source-version K/V. Stage 4.6 now supplies the repeated-input evidence on the single frozen
+  KuaiRand seed-0/16L-H512 configuration and one A40: exact theta0 K/V is recursively advanced
+  through 11 updates under a balanced age/deadline policy with program-level label-free edge
+  severity, 15%–25% exact budgets, and maximum migration depth four. The complete 682-record chain
+  costs 0.2134x all-exact GPU time and preserves minimum cache/score/top100 fidelity
+  0.9632/0.999950/0.9918. Its per-cache threshold predecessor is a negative result because it
+  produced severe refresh waves; do not recover an adaptive-risk or optimal-selector claim.
+  Recommendation labels never route caches. Stage 5 guard, automatic fallback, transactional
+  rework, and failure visibility are the active next stage.
 
 ## Code layout
 
@@ -56,6 +74,21 @@
 - `scripts/evaluate_kuairand_long_context_sync_design.py` and
   `scripts/benchmark_kuairand_long_context_sync_system.py` — active 4+12 progressive-sync
   algorithm/operator/runtime entry points.
+- `scripts/evaluate_cohortkv_stage1_frontier.py`, `scripts/compile_cohortkv_stage2.py`, and
+  `scripts/benchmark_cohortkv_stage3_operator.py` — frozen single-configuration baseline,
+  deployed-compiler, and common-layout operator entry points.
+- `scripts/compile_cohortkv_stage4_6_edges.py`,
+  `scripts/evaluate_cohortkv_stage4_6_lifecycle.py`,
+  `scripts/run_cohortkv_stage4_6_full_chain.py`, and
+  `scripts/freeze_cohortkv_stage4_6.py` — frozen continuous-lifecycle entry points.
+- `scripts/materialize_cohortkv_stage4_sources.py`,
+  `scripts/benchmark_cohortkv_stage4_system.py`, and `scripts/freeze_cohortkv_stage4.py` — frozen
+  full-cohort source, normal-path system, and checked-summary entry points.
+- `scripts/compile_cohortkv_stage4_5_oldkv.py`,
+  `scripts/evaluate_cohortkv_stage4_5_oldkv_certificate.py`,
+  `scripts/validate_cohortkv_stage4_5_oldkv_full_transport.py`,
+  `scripts/benchmark_cohortkv_stage4_5_oldkv.py`, and
+  `scripts/freeze_cohortkv_stage4_5.py` — frozen direct-old-K/V source-plan entry points.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

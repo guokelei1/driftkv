@@ -1,8 +1,8 @@
 # Current documentation index
 
-This directory contains only current research state, protocol, implementation planning, and
-advisor-facing context. Historical design exploration is recoverable from Git history but is not
-kept beside active instructions.
+This directory contains only current research state, protocol, and implementation planning.
+Historical design exploration is recoverable from Git history but is not kept beside active
+instructions.
 
 ## Precedence
 
@@ -16,8 +16,7 @@ When documents disagree, use this order:
    active implementation sequence for the KuaiRand long-context vertical slice.
 4. [CohortKV target manuscript](../paper/cohortkv/manuscript_v3_target_en.md) — the paper shape to
    test, not a source for unmeasured facts or implementation semantics.
-5. [paper_draft_intro_motivation.md](paper_draft_intro_motivation.md) — advisor-facing narrative.
-6. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
+5. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
    ordered-exposure settings, and negative boundaries.
 
 The target manuscript may describe expected findings using `TBD`. Those statements remain
@@ -40,7 +39,32 @@ same-interface fallback rules are in the active plan. Stage 0 is complete: the m
 blueprint, 682-record workload manifest, and result schema are under
 `configs/cohortkv_single_config_v1/`. Its re-audit separates internal/raw user identity, makes
 residual hidden-suffix storage explicit, enforces all 18 primary system points, and requires HBM
-capacity preflight; Stage 1 is the next implementation step.
+capacity preflight. Stage 1 is also complete: the 177-point selective-contiguous frontier and
+certificate are frozen in `configs/cohortkv_single_config_v1/stage1_frontier_summary.json`.
+No selective interval certifies; `m12/layers0-11` is retained only as a diagnostic external
+baseline, while exact is its publishable fallback. Stage 2 is also complete: serialized deployed
+certificates, FP16 runtime programs, threshold sweeps, and executable fallback plans are frozen in
+`configs/cohortkv_single_config_v1/stage2_compiler_summary.json` and `stage2_plans/`. The measured
+residual hidden suffix uses BF16 after real FP16 overflow; the primary capsule/program/output path
+remains FP16. Stage 3 is also complete: reference, packed, and fused paths share one contiguous
+unpadded output-extent API, all nine batch/bucket layouts pass full valid-element and padding
+checks, and the resident development default is fused FP16 with batch 4 and bucket width 32. The
+frozen record is `configs/cohortkv_single_config_v1/stage3_operator_summary.json`. Stage 4 is
+also complete: all 30 full-cohort HBM/DRAM × 1/2/4-GPU method/control points pass capacity,
+transport, and manifest checks. Compiled remains 2.70–3.49× faster than the certificate-failed
+selective diagnostic but loses to exact at all six matched endpoints because the 17.82-GB FP16
+capsule source path consumes 91.35%–96.91% of completion. The frozen record is
+`configs/cohortkv_single_config_v1/stage4_system_summary.json`. Stage 4.5 is also complete and
+frozen in `stage4_5_source_plan_summary.json`: a direct affine over the already resident old K/V
+eliminates extra `Norm(x)` state, preserves the deployed certificate and full real transport, and
+beats paired HBM-resident raw-history exact at the complete 1/2/4-GPU cohort points. The result is
+limited to the declared existing-old-K/V hot-HBM regime. Stage 4.6 is now frozen in
+`stage4_6_lifecycle_policy.json` and `stage4_6_lifecycle_summary.json`: one
+KuaiRand/seed-0/one-A40 `theta0 -> theta11` chain uses a balanced 15%–25% exact-refresh schedule,
+maximum migration depth four, and the actual previous output at every update. It costs 0.2134×
+all-exact GPU time on the complete 682-record chain. The rejected per-cache threshold remains a
+refresh-wave negative result. Stage 5 is the active next stage: connect the frozen policy to
+automatic fallback, semantic guard, transactional rework, and failure visibility.
 
 ## Key experiment records
 
@@ -72,6 +96,11 @@ Migration:
 System:
 
 - [Single-configuration full-chain v1](../experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md)
+- [Stage 1 selective frontier](../experiments/system/COHORTKV_STAGE1_FRONTIER_V1.md)
+- [Stage 2 deployed compiler certificate](../experiments/system/COHORTKV_STAGE2_COMPILER_V1.md)
+- [Stage 4.5 direct old-K/V source plan](../experiments/system/COHORTKV_STAGE4_5_SOURCE_PLAN_V1.md)
+- [Stage 3 capsule/operator](../experiments/system/COHORTKV_STAGE3_OPERATOR_V1.md)
+- [Stage 4 full-cohort system](../experiments/system/COHORTKV_STAGE4_SYSTEM_V1.md)
 - [Two-GPU controlled migration](../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md)
 - [Cohort-jagged negative result](../experiments/system/COHORT_JAGGED_SYSTEM_V3.md)
 - [Four-GPU controlled scaling](../experiments/system/FOUR_GPU_SCALING_V1.md)

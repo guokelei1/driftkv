@@ -40,18 +40,113 @@ may parse a job specification and invoke these interfaces, but it is control-pla
 than a fourth research contribution, a reuse-safety predictor, or an online scheduler.
 
 The immediate implementation phase is a complete single-configuration vertical slice on the
-KuaiRand 4+12, 16L/H512, seed-0 chain. It closes experiment design, the closest baselines, all
-three modules, full-cohort execution, failure semantics, and capsule economics before new
-training seeds or datasets are added. This phase is development evidence. Its active sequence and
-same-interface fallback rules are in
+KuaiRand 4+12, 16L/H512, seed-0 chain. Stages 0–4 have closed experiment design, the closest
+baselines, compiler/operator artifacts, and the normal full-cohort HBM/DRAM engine. Stage 4.5 has
+now replaced the failed FP16 normalized-capsule supply path with a frozen direct old-K/V source
+plan: it composes the compiled affine through the source model's stacked K/V projection, reads the
+already resident serving K/V, and needs no extra per-record `Norm(x)` state. Stage 4.6 has now
+closed the repeated-update gap on one A40: exact theta0 K/V is recursively advanced through all
+11 edges to theta11 under a frozen balanced age/deadline policy. Program-level fit severity maps
+each edge to a 15%–25% exact budget, older caches receive priority, and no cache migrates more than
+four consecutive times. The complete 682-record chain costs `0.2134×` all-exact GPU time, keeps
+per-step cost below `0.2543×`, and has minimum cache/score/top-100 fidelity
+`0.9632/0.999950/0.9918`. The former per-cache norm-sketch threshold is retained as a negative
+diagnostic because it created 0.15%–65.1% refresh waves. Stage 5 guard, fallback, transactional
+rework, and failure visibility are now the active task. This remains single-seed development
+evidence. Its active sequence and same-interface fallback rules are in
 `docs/09_single_configuration_full_chain_plan.md`.
 
 The Stage-0 re-audit exposed two implementation-critical boundaries. Manifest `user_id` is the
 prepared one-based model index, not the raw log identifier; both are now frozen separately.
 Residual-p is also not executable from the normalized capsule plus one transition activation: it
 requires every old pre-block hidden state from layer p through the final layer. That hidden suffix
-is an auxiliary representation whose bytes and reads must be counted separately. If it is absent,
+is a BF16 auxiliary representation whose bytes and reads must be counted separately. FP16 was
+rejected after real certificate shards overflowed its finite range. If the BF16 suffix is absent,
 the published fallback must skip residual-p and end at exact under a revised protocol.
+
+Stage 1 is now complete. A new old-K/V-reuse reference evaluated all 53 DroidSpeak-adapted
+contiguous intervals for each theta0/theta4/theta10→theta11 pair on the frozen 60-user selection
+role, followed by the disjoint 60-user certificate role. Compiled repair costs
+0.0656–0.0664× exact with 0.8755–0.9258 worst-view recovery and strictly dominates every
+selective point. The strongest selective point is consistently `m=12, layers=0..11`, costs about
+0.698× exact, and reaches only 0.4495–0.4850 worst-view recovery. No selective action passes the
+70% three-view contract, so exact remains its publishable fallback. The strongest frozen
+selective point is retained only as a certificate-failed diagnostic external baseline for the
+common Stage-4 destination transaction; because it begins at layer zero, it requires old K/V and
+raw history but no transition-hidden shard.
+
+Stage 2 is now complete. The three source pairs each publish a hash-checked FP16 runtime program
+and directly loadable executable plan. On the disjoint 60-user certificate role, reloaded
+serialized FP16 capsules/programs/output pass the frozen three-view contract for compiled full
+affine at `0.01651–0.01657x` resident exact cost, with cache recovery
+`0.8810/0.8897/0.9365`, worst recovery lower bounds `0.8514/0.8391/0.9231`, and worst coverage
+lower bounds `0.9224/0.9005/0.9459`. Theta0/theta10 retain `p8 -> exact`; theta4 falls directly to
+exact. Recovery targets 50%–80% select compiled for all pairs; 90% selects exact. The 522
+final-test users remain untouched. This closes deployed compiler artifacts and certificate
+semantics, not full-cohort I/O, publication, automatic fallback dispatch, or end-to-end cost.
+
+Stage 3 is now complete. Reference, packed, and fused operators share one unpadded direct-extent
+API. All nine development batch/bucket layouts pass every valid-element and padding check, and
+fused FP16 batch-4/bucket-32 is the resident default with a 1.995× median advantage over the
+fastest packed control. This is a resident operator result, not an endpoint result.
+
+Stage 4 is now complete and frozen. A lazy reader, common destination transaction, independent
+per-point tuning, full-cohort capacity preflight, and 1/2/4-GPU HBM/DRAM execution cover all
+682 records and 1,087,785 prefix tokens for compiled, selective, exact, residual-p, and
+no-transform. Compiled is 2.70–3.49× faster than the certificate-failed selective diagnostic at
+all six matched endpoints, but it is slower than exact at all six. Its source read/decode/pinning
+accounts for 91.35%–96.91% of completion because the physical FP16 capsule is 17.82 GB whereas
+exact reads 89.1 MB of physical raw-history shards. The compiled semantic-recovery and resident
+operator findings remain valid; the current capsule supply path does not support an end-to-end
+speedup claim.
+
+Stage 4.5 is complete and frozen. The winning route is direct transformation from the already
+retained FP16 old K/V in HBM. Each source model's stacked K/V projection has full row rank with
+measured condition numbers 5.97–10.74; composing its minimum-norm right inverse with the frozen
+compiled affine produces three 33.59-MB direct programs (100.78 MB total). The route preserves the
+unchanged three-view certificate: all three source pairs select direct compiled repair, minimum
+worst-view recovery is 0.8810, and maximum measured certificate cost is 0.0368× exact. A fused
+full-cohort transport over all 682 records and 17,822,269,440 valid elements has zero tolerance
+mismatches and maximum absolute error 0.01172 against the deployed normalized-capsule output.
+
+At the complete HBM transaction boundary, direct compiled repair takes 0.930/0.494/0.255 seconds
+on 1/2/4 GPUs versus paired raw-history-resident exact at 18.695/9.729/4.766 seconds, or
+20.11×/19.71×/18.72× speedups. Every one of the five compiled repetitions is below every paired
+exact repetition. Extent-wise reclamation leaves zero old-K/V bytes after commit; observed peak
+old-plus-new K/V is 35.91/36.18/37.79 GB decimal. The source plan adds zero per-record state and
+zero `Norm(x)` bytes; its only new standing artifact is the 100.78-MB program set replicated per
+worker. Exact receives its complete raw history already resident in HBM, so this is a hot
+existing-cache operating regime rather than a cold-filesystem or SSD claim.
+
+The earlier pinned-DRAM normalized-capsule candidate remains a valid backup and negative
+economics result: although it beats exact after preload, it retains about 17.86 GB of extra host
+state and needs 24.7–39.5 seconds to preload. It is not the frozen primary route. Stage 4.5 admits
+the lifecycle gate, not the full failure-safe engine. The direct transform is mathematically
+equivalent to the deployed capsule program only when its input is exact source-version K/V. After
+one approximate migration, applying the next adjacent program may propagate prior error and is not
+covered by that one-hop certificate. This boundary motivated Stage 4.6's real sequential chain and
+exact-reset lifecycle. Automatic guard dispatch, transactional rework, and failure recovery
+remain Stage-5 work.
+
+Stage 4.6 is complete and frozen. The first correction- and norm-sketch threshold route had
+acceptable cumulative cost/fidelity and beat matched-random p95, but its missing peak objective
+synchronized exact work: the diagnostic 682-record chain refreshed
+`39/3/35/209/444/1/65/53/139/431/105` records. It is not the deployed selector. The replacement
+is a deterministic bounded heuristic, not a learned reuse-safety predictor: the median fit
+one-hop cache-error q90 ranks adjacent model edges into exact fractions
+`25/19/15/17/22/16/20/18/23/24/21%`; caches at depth four are mandatory exact, then older
+caches win the remaining quota with a stable hash tie-break.
+
+The independent 60-record certificate costs `0.2142×` cumulative all-exact GPU time, with
+`0.2814×` maximum step cost and minimum cache/score/top-100 values
+`0.9613/0.999759/0.9898`. The one final 682-record chain costs `0.2134×`, has a `0.2543×`
+maximum step, and minimum `0.9632/0.999950/0.9918`; exact refresh stays
+`14.956%–25.073%` after one-record rounding. Its 7,502 lineage rows mechanically prove that every
+edge consumes the previous actual output, exact actions reset state, depth never exceeds four, and
+all adjacent program hashes match. Final-test recommendation labels did not route or tune the
+policy; maximum per-step mixed-minus-exact absolute gaps are 4.171 MeanRank, 8.35e-5 AUC,
+3.49e-4 NDCG@100, and 0.00384 Hit@100. Stage 5 is therefore admitted, without turning this
+single-seed result into a replicated or organic-traffic claim.
 
 The planned mechanism is never protected from falsification. If a stage shows that full affine,
 the fused operator, a runtime sentinel, a layout, or a backend is unsound or unhelpful, stop that
@@ -495,12 +590,44 @@ and AUC gap, 90.3% of NDCG@100, and 88.9% of Hit@100. No recommendation labels e
 or certification. This is still adaptive seed-0 exploration because the preceding program was
 developed after inspecting this seed; confirmation requires a frozen new seed or dataset.
 The p8 fallback at ages 11 and 1 is only an executable full-chain fallback if its old hidden
-suffix is retained. Over the frozen theta0/theta10 records this adds 5.83 GiB FP16 beyond the
-16.60-GiB normalized capsule; the resident-kernel certificate did not account source I/O for that
-state.
-The existing certificate also consumed in-memory FP32 layerwise state. The single-configuration
-path must reapply the unchanged certificate to serialized FP16 capsules, prepared runtime
-programs, and FP16 publication before it treats those programs as executable full-chain plans.
+suffix is retained. Over the frozen theta0/theta10 records this adds 5.83 GiB BF16 beyond the
+16.60-GiB normalized capsule; Stage 4 must count source I/O for that state. Stage 2 has now
+reapplied the unchanged certificate to serialized FP16 capsules, prepared FP16 runtime programs,
+and FP16 publication. All three executable plans pass. During shard materialization, the
+unnormalized hidden suffix reached absolute maxima of 7.38–19.58 million and would overflow FP16,
+so only that optional auxiliary representation changed to BF16 at the same two bytes per element.
+The earlier final-user evidence remains an in-memory FP32 adaptive result and is not relabeled as
+deployed or replicated evidence. The Stage-2 freeze check now independently reconstructs all
+action summaries and 15 threshold certificates from the raw certificate records and verifies each
+plan's own hash plus its frozen inputs; the published decisions are unchanged.
+
+The capsule/operator boundary is now consolidated under
+`cohortkv_single_config_stage3_operator_v1`. The FP32-arithmetic transport reference, packed
+FP16, and fused FP16 consume the same dense length-bucketed capsule API and write into the same
+preallocated contiguous, unpadded FP16 `[layers, valid_tokens, kv_width]` K/V extent with lengths
+and offsets. Across the complete 60-record program-selection distribution (88,085 tokens), all
+nine batch/bucket layouts match their dense output exactly over 1,443,184,640 valid K/V elements
+per layout; source and dense-output padding remain zero, and packed/fused both pass the frozen
+transport tolerance.
+The program-selection record identity is hashed against the workload manifest, extent metadata is
+fully checked before timing, aliased output storage is rejected, and the direct-write kernel masks
+every destination row to the allocated token range.
+
+Here `reference_fp32` means FP32 arithmetic after widening the same serialized FP16 capsule and
+FP16 runtime program, followed by the common FP16 extent write. It is the resident
+transport/layout oracle for deployed bytes, not the original FP32 fitted program and not
+current-model exact K/V; the semantic-fidelity comparison remains separate.
+
+The 18-candidate resident screen selects fused FP16, batch four, and bucket width 32. Its three
+complete-distribution passes are 30.142/31.070/31.154 ms; the fastest packed control has a
+61.970-ms median. Every fused sample is below every packed sample, for a 1.995x median advantage.
+The exact bucket choice is a development default rather than a stable ordering among the close
+fused finalists. On the representative four-record, length-2,047 shape, reference/packed/fused are
+14.610/5.378/2.729 ms. Packed reaches a 402.6-MB temporary peak because its compact K/V write
+follows the concatenated projection; fused writes the extent without a global temporary after
+target preallocation. These are resident operator measurements, not full-cohort endpoint
+speedups. Stage 4 must still retune the entire frozen grid independently per method, destination,
+and GPU count.
 
 The first controlled mixed-version, end-to-end systems replay is also complete. It uses disjoint
 32-user layout-search and 64-user systems traces drawn from the verified compiler's final-user
@@ -739,22 +866,22 @@ model results are in `experiments/exposure/ORDERED_EXPOSURE_V1.md` and
 
 Proceed in this order:
 
-1. Complete the single-configuration plan: freeze the experiment blueprint, implement and
-   independently tune the selective-layer baseline, close the compiler/operator/engine
-   interfaces, and run one complete KuaiRand long-context vertical slice.
-2. Within that slice, define a deterministic full-cohort source manifest and lazy reader, then
-   compare compiled, selective-layer, residual/exact, and no-transform paths at identical HBM and
-   DRAM destination boundaries over 1/2/4 GPUs. Residual points must read their explicit hidden
-   suffix; the one-GPU HBM point must pass retained-target capacity preflight.
-3. Add runtime guard/fallback and failure semantics only after the normal full-cohort path is
-   measured. Treat a named SSD and INT8 capsule as secondary endpoint/economics experiments, not
-   new contributions.
-4. Freeze the resulting v1 and replicate it first on new training seeds of the same primary
+1. Preserve the frozen Stage-4 normal-path matrix as the baseline and negative endpoint result.
+2. Preserve the frozen Stage-4.5 direct old-K/V plan as the hot-HBM source policy. Its
+   normalized-capsule resident ceilings and pinned-DRAM candidate remain diagnostic evidence, not
+   the primary route.
+3. Preserve the frozen Stage-4.6 balanced lifecycle. Its per-cache threshold predecessor remains a
+   refresh-wave negative result; do not recover an adaptive-risk or global-optimality claim.
+4. Implement Stage 5: connect mixed migrate/exact dispatch to semantic
+   guard, invalidation/rework, and atomic failure visibility.
+5. Treat a named SSD and capsule quantization as measured state/economics questions, not new
+   contributions or assumed wins.
+6. Freeze the resulting v1 and replicate it first on new training seeds of the same primary
    configuration, then on predeclared dataset/model-capacity cells.
-5. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
+7. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
    result-driven per-dataset tuning, creates a reason to revisit it.
 
-### Gate F: turn kernel savings into a system result — controlled replay passed
+### Gate F: turn kernel savings into a system result — normalized source fails, direct old K/V passes
 
 The two-GPU v2 replay now includes:
 
@@ -764,11 +891,27 @@ The two-GPU v2 replay now includes:
 - controlled theta0/theta4/theta10 cohort batching and two-GPU scheduling;
 - independently tuned pipelined BF16 and FP32 full-recompute baselines.
 
-The remaining paper-grade system gate is a deterministic full-cohort, destination-oriented update
-job with source-side streaming, bounded transient working memory, fit/compile amortization, atomic
-version publication, and same-boundary full-recompute baselines. SSD and remote execution are
-backend extensions only after identified hardware is available; an interface smoke test is not a
-storage result.
+The deterministic full-cohort destination job is now measured. Source-side streaming, bounded
+transient working memory, full retained targets, atomic manifest publication, independently tuned
+exact/selective paths, and HBM/DRAM boundaries all execute at 1/2/4 GPUs. All 30 points pass
+capacity, transport correctness, and complete duplicate-free coverage.
+
+The result falsifies the expected endpoint speedup for the current FP16 source representation.
+Compiled takes 27.083/18.943/13.707 seconds on 1/2/4-GPU HBM versus exact at
+18.881/9.644/5.742 seconds; on DRAM the pair is 22.567/12.231/15.662 versus
+18.886/9.391/5.448 seconds. Compiled still beats the frozen selective diagnostic by
+2.70–3.49×, but exact is 1.20–2.87× faster. The 17.82-GB physical capsule path is
+source-bound while exact reads 89.1 MB of physical raw history and is compute-bound.
+
+Stage 4.5 closes this source/state-footprint gate for one declared hot-cache regime. The first
+experiment established HBM-resident and pinned-DRAM-resident ceilings for both compiled and exact,
+so the selected placement cannot win merely by leaving exact on the filesystem. The eventual
+winner eliminates the normalized-state source entirely: it derives a direct affine over the
+existing serving old K/V, uses fused FP16 execution, and retires old extents as their replacements
+are accepted. The paired 1/4-GPU representative points and the 2-GPU expansion all pass capacity,
+correctness, stable-repetition, and complete-publication gates. This does not repair the Stage-4
+cold-source result; it defines a separate hot-HBM source policy with exact fallback.
+SSD durability and remote execution remain separate backend extensions.
 
 The v3 cohort-jagged follow-up closes the proposed padding/batching optimization gate negatively.
 On this long-context trace, a single record already supplies a large projection dimension, dense
@@ -778,19 +921,12 @@ execution. Future operator work requires a newly measured migration-specific bot
 same-boundary strong baseline; otherwise the fused kernel remains enabling engineering and the
 system contribution must come from out-of-core execution and destination-specific publication.
 
-The v4 architecture now exposes a common destination transaction and an initial out-of-core
-engine. HBM uses direct-device publication. DRAM, POSIX filesystem, and remote-object interfaces
-use bounded host-staged waves and publish a manifest only after complete record coverage. The
-filesystem and remote paths are correctness implementations, not measured SSD or network claims.
-The direct-HBM transaction has now been validated across cuda:0–3 with one extent per GPU and a
-complete atomic manifest; excess idle HBM workers are also trimmed safely. This is interface
-correctness, separate from the real-capsule four-GPU scaling result.
-The current engine still receives caller-materialized CPU capsule batches; host-staged waves bound
-transient outputs and publication backlog, not total source-capsule memory. Its HBM path retains
-the complete target K/V in the destination and currently executes as one direct job. A thin
-`run_streamkv_update_coordinator.py` entry point now expresses job-spec-to-engine orchestration,
-but adds no scheduling, compiler, or performance claim.
-Details are in `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`.
+The v4 transaction remains the underlying destination interface. Stage 4 adds the missing lazy
+source manifest/reader and full-cohort common engine for HBM and pinned DRAM; POSIX destination
+and remote-object paths remain correctness implementations without performance claims. A thin
+coordinator remains control-plane glue. Details are in
+`experiments/system/DESTINATION_OUT_OF_CORE_V4.md` and
+`experiments/system/COHORTKV_STAGE4_SYSTEM_V1.md`.
 
 ## 5. Evaluation rules for the next phase
 
@@ -821,11 +957,11 @@ Details are in `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`.
 - deepest suffix is optimal;
 - the current method is statistically equivalent to full recomputation;
 - the controlled host-DRAM speedup transfers to industrial serving latency or an SLO;
-- destination-v4 has a full-cohort performance result; its current filesystem and remote paths are
-  interface/correctness implementations;
-- destination-v4 bounds the complete source-capsule working set or provides a
-  same-engine exact-recompute path; source materialization and the identical-boundary exact
-  baseline remain open;
+- the current FP16 capsule path is faster end to end than exact recomputation; Stage 4 observes
+  the opposite at all six HBM/DRAM × 1/2/4-GPU points;
+- the extra normalized-state capsule has a favorable standing-capacity or time break-even;
+- the HBM/DRAM normal-path result includes cold-cache SSD bandwidth, durable destination writes,
+  automatic fallback, or failure recovery;
 - the full KuaiRand suffix quality-recovery curve generalizes across datasets or architectures;
 - the problem is novel relative to all current literature;
 - dynamic layer selection can be predicted cheaply without probe evaluation;
@@ -850,6 +986,16 @@ The route should be reconsidered if any of the following persists after the scop
    a second dataset;
 5. a related-work audit shows that model-version cache migration and the same structural operator
    have already been established.
+
+Stage 4 triggered conditions 1–2 for the current FP16 normalized-capsule source path. Stage 4.5
+resolved that scoped failure for the declared existing-old-K/V HBM regime: both representative
+1/4-GPU points and the 2-GPU expansion beat same-boundary exact beyond measured timing variation,
+without extra per-record source state. Stage 4.6 now bounds repeated migration on the fixed
+theta0-to-theta11 chain with a 15%–25% balanced exact-refresh schedule and maximum depth four.
+This is not permission to recover a global speedup, selector-optimality, or organic-traffic
+narrative. Cold filesystem, durable SSD, automatic tier selection, capacity-infeasible cohorts,
+and missing/unverified programs still route to exact; Stage 5 must make the selected refresh
+policy and fallback executable and failure-safe before the full-chain claim closes.
 
 ## 8. Recommended execution order
 
@@ -900,24 +1046,45 @@ The route should be reconsidered if any of the following persists after the scop
     representations, HBM/DRAM boundaries, result schema, failure points, and paper artifact map
     under `cohortkv_single_config_full_chain_development_v1`; re-audit internal/raw user identity,
     residual hidden-suffix state, primary-matrix schema coverage, and HBM capacity before Stage 1.
-24. [ ] Implement and independently tune the DroidSpeak-adapted contiguous-layer baseline; close
+24. [x] Implement and independently tune the DroidSpeak-adapted contiguous-layer baseline; close
     reuse/exact anchors, cheap/residual/no-transform controls, and the single-cell Pareto frontier.
-    Do not reuse the existing current-projection-outside-interval helper as the old-K/V-reuse
-    external baseline.
-25. [ ] Close the compiler artifact path, certificate-threshold sweep, compile/certificate cost,
-    and end-to-end amortization accounting without another search on the 522 final users.
-26. [ ] Consolidate the capsule/operator contract and reference/packed/fused correctness and
-    ablations. Do not reopen jagged/page search without a new measured bottleneck.
-27. [ ] Add source-side lazy full-cohort streaming and route compiled, certified selective-layer,
-    residual, exact, and no-transform paths through one destination-v4 job interface.
-28. [ ] Run the complete KuaiRand 4+12 cohort at identical HBM/DRAM boundaries over 1/2/4 GPUs;
+    The 177-point resident result strictly favors compiled repair; no selective interval certifies,
+    so exact is the publishable fallback and `m12/layers0-11` is frozen only as a diagnostic system
+    baseline. The implementation does not reuse the incompatible current-projection helper.
+25. [x] Close the compiler artifact path, deployed-representation certificate-threshold sweep,
+    compile/certificate cost, and resident amortization floor without another search on the 522
+    final users. All three primary plans select compiled full affine; FP16 overflow forced the
+    optional residual hidden suffix to BF16 without changing its byte count. Full endpoint
+    amortization remains a Stage-4 measurement.
+26. [x] Consolidate the capsule/operator contract and reference/packed/fused correctness and
+    ablations. All paths now share one unpadded direct-extent ABI; nine full development layouts
+    pass all valid-element and padding checks, and fused batch-4/bucket-32 is the stable resident
+    default. Jagged/page search remains closed without a new measured bottleneck.
+27. [x] Add source-side lazy full-cohort streaming and route compiled, the frozen profiled
+    selective diagnostic, residual, exact, and no-transform paths through one destination-v4 job
+    interface. Preserve the selective certificate-failed status and exact publication fallback.
+28. [x] Run the complete KuaiRand 4+12 cohort at identical HBM/DRAM boundaries over 1/2/4 GPUs;
     report physical/logical bytes, peak source/staging/HBM memory, completion breakdown, and
-    manifest commit.
-29. [ ] Evaluate a concrete runtime guard, connect the published fallback chain, and run forced
-    degradation plus failure-injection/visibility tests. Replace the sentinel with preflight or
-    canary verification if its reference or overhead is unsound.
-30. [ ] Measure capsule capture and FP16/INT8 economics. Add a named physical SSD result only if
+    manifest commit. The current FP16 capsule path loses to exact at all six matched points, while
+    source processing consumes 91.35%–96.91% of compiled completion.
+29. [x] Run the bounded Stage-4.5 source/state-footprint redesign. The frozen source plan composes
+    the deployed affine into a direct transform over existing FP16 old K/V, adds zero per-record
+    state, preserves all three certificates, passes real fused transport over all 17.82 billion
+    valid elements, and beats paired HBM-resident raw-history exact by 18.72–20.11× at full-cohort
+    1/2/4-GPU points. Extent-wise reclamation closes the one-GPU capacity boundary. The earlier
+    pinned-DRAM normalized capsule is retained only as a higher-state backup/negative economics
+    result.
+30. [x] Run and freeze Stage 4.6 on the fixed KuaiRand seed-0, 16L/H512, one-A40 hot-HBM
+    configuration. The first per-cache norm-sketch threshold was rejected for refresh waves.
+    The frozen balanced age/deadline and edge-severity policy completes all 11 recursive updates
+    at `0.2134×` cumulative all-exact cost, with 15%–25% refresh, maximum depth four, and full
+    lineage verification.
+31. [ ] Evaluate a concrete runtime guard, connect the frozen per-cache lifecycle policy and
+    published fallback chain, and run forced degradation plus failure-injection/visibility tests.
+    Replace the sentinel with preflight or canary verification if its reference or overhead is
+    unsound.
+32. [ ] Measure capsule capture and FP16/INT8 economics. Add a named physical SSD result only if
     the target manuscript retains it; remote remains interface-only.
-31. [ ] Freeze and run the complete single-configuration matrix once, update every claim from
+33. [ ] Freeze and run the complete single-configuration matrix once, update every claim from
     measured artifacts, and then begin same-configuration new-seed replication.
-32. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+34. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

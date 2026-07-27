@@ -23,6 +23,29 @@
       },
       "program_scope": "one immutable program per source/target pair",
       "role": "primary candidate",
+      "stage2_observation": {
+        "deployed_certificate_passed": true,
+        "fallback_actions_by_source": {
+          "theta0": [
+            "structural_p8",
+            "recompute"
+          ],
+          "theta10": [
+            "structural_p8",
+            "recompute"
+          ],
+          "theta4": [
+            "recompute"
+          ]
+        },
+        "final_test_evaluated": false,
+        "selected_action_by_source": {
+          "theta0": "compiled_full_affine",
+          "theta10": "compiled_full_affine",
+          "theta4": "compiled_full_affine"
+        },
+        "summary_protocol": "cohortkv_single_config_stage2_frozen_v1"
+      },
       "threshold_sweep": [
         0.5,
         0.6,
@@ -69,7 +92,7 @@
       },
       "inputs": [
         "raw_history",
-        "residual_hidden_suffix_fp16"
+        "residual_hidden_suffix_bf16"
       ],
       "p_values": [
         4,
@@ -77,7 +100,7 @@
       ],
       "role": "internal escalation tier",
       "state_semantics": "depth p requires every old pre-block hidden state from layer p through L-1; one transition state and the normalized capsule cannot reconstruct this action",
-      "storage_policy": "auxiliary hidden suffix bytes are counted separately from the default capsule; if the shard is absent, remove residual-p from the executable fallback chain under a revised protocol and fall through to exact"
+      "storage_policy": "BF16 auxiliary hidden suffix bytes are counted separately from the default capsule; if the shard is absent, remove residual-p from the executable fallback chain under a revised protocol and fall through to exact"
     },
     "reuse": {
       "inputs": [
@@ -88,6 +111,17 @@
     },
     "selective_contiguous": {
       "adaptation_boundary": "DroidSpeak profiles contiguous recomputation groups with task quality and transition E-cache; this HSTU adaptation replaces task labels with the common label-free semantic contract",
+      "candidate_inputs": {
+        "start_layer_positive": [
+          "old_kv_fp16",
+          "transition_hidden_fp16",
+          "raw_history"
+        ],
+        "start_layer_zero": [
+          "old_kv_fp16",
+          "raw_history"
+        ]
+      },
       "candidate_intervals_by_m": {
         "12": [
           [
@@ -322,11 +356,6 @@
           "full-depth interval matches exact current K/V"
         ]
       },
-      "inputs": [
-        "old_kv_fp16",
-        "transition_hidden_fp16",
-        "raw_history"
-      ],
       "m_values": [
         2,
         4,
@@ -338,6 +367,23 @@
       "role": "DroidSpeak-adapted external baseline",
       "selection_rule": "on program-selection users, choose the interval for each m with the best worst-view label-free recovery; break ties by lower measured GPU cost then earlier start",
       "semantics": "recompute one contiguous current-model interval and reuse old K/V outside it",
+      "stage1_observation": {
+        "all_source_pairs_certificate_passed": false,
+        "claim_boundary": "the Stage-4 selective_contiguous row must retain certificate_passed=false and cannot be called a certified or publishable synchronized target",
+        "profiled_system_action": {
+          "end_layer": 11,
+          "m": 12,
+          "start_layer": 0
+        },
+        "profiled_system_action_inputs": [
+          "old_kv_fp16",
+          "raw_history"
+        ],
+        "profiled_system_action_role": "frozen_diagnostic_external_baseline",
+        "publishable_fallback": "exact",
+        "summary_protocol": "cohortkv_single_config_stage1_frozen_v1",
+        "transition_hidden_bytes": 0
+      },
       "terminal_semantics": "execute full current blocks before the terminal layer; at the terminal layer execute only current Norm and K/V projection because no later current hidden state is used"
     }
   },
@@ -542,14 +588,34 @@
           "gpu_count": 4,
           "method": "exact"
         }
-      ]
+      ],
+      "selective_contiguous_semantics": {
+        "action": {
+          "end_layer": 11,
+          "m": 12,
+          "start_layer": 0
+        },
+        "certificate_passed": false,
+        "publishable_sync_action": false,
+        "system_role": "frozen_diagnostic_external_baseline"
+      }
+    },
+    "stage4_observation": {
+      "all_capacity_preflights_passed": true,
+      "all_manifests_complete_and_duplicate_free": true,
+      "automatic_guard_and_fallback_open": true,
+      "control_points": 12,
+      "full_points": 30,
+      "normal_path_complete": true,
+      "primary_points": 18,
+      "summary_protocol": "cohortkv_single_config_stage4_frozen_v1"
     }
   },
   "economics_contract": {
     "auxiliary_state_reporting": {
-      "current_verified_p8_fallback_fp16": 6255345664,
+      "current_verified_p8_fallback_bf16": 6255345664,
       "excluded_from_default_capsule_ratio": true,
-      "residual_hidden_suffix_fp16_by_p": {
+      "residual_hidden_suffix_bf16_by_p": {
         "4": 13366702080,
         "8": 8911134720
       },
@@ -630,7 +696,7 @@
     "resume_claim": "optional until an extent journal proves at-most-one-wave redo; absence of resume does not block atomic abort"
   },
   "frontier_contract": {
-    "certification_scope": "one frozen selective candidate per m and source-target pair may proceed from program selection to certificate; final users evaluate only the certified action or exact fallback",
+    "certification_scope": "one frozen selective candidate per m and source-target pair may proceed from program selection to certificate; the completed certificate publishes exact, while the strongest profiled selective action proceeds only to label-free diagnostic system timing",
     "families_per_pair": {
       "cheap_projection": 1,
       "compiled": 1,
@@ -686,9 +752,9 @@
       }
     ],
     "freeze_script": {
-      "bytes": 103076,
+      "bytes": 121021,
       "path": "scripts/freeze_cohortkv_single_config_v1.py",
-      "sha256": "c1bf2279b3abd4bce726c928a6cd0f9ae8fddeedcf03b832280151bac44cf8c6"
+      "sha256": "fc00521260150d1474d60555f2c353937357751b02dc5c2cfaabf1cb501caac2"
     },
     "prepared_data": {
       "bytes": 23605339,
@@ -696,8 +762,38 @@
       "sha256": "e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8"
     },
     "result_schema": {
-      "file_sha256": "6f7fe182b9de6def6858c2951d13d52d997478e53aabcdb55f3dce73a1553716",
+      "file_sha256": "833927ddcae44e675d6e4a5a4a0c09f3bc8648b50420a7513a592799c69a3298",
       "path": "configs/cohortkv_single_config_v1/result.schema.json"
+    },
+    "stage1_frontier_summary": {
+      "bytes": 4492,
+      "path": "configs/cohortkv_single_config_v1/stage1_frontier_summary.json",
+      "sha256": "6b57700a7b526097504368065e0eb88523044444e7baf95a6abe943e801fc806"
+    },
+    "stage2_compiler_summary": {
+      "bytes": 20597,
+      "path": "configs/cohortkv_single_config_v1/stage2_compiler_summary.json",
+      "sha256": "09461c81ad7d9a061a6aae2358e478c151befa07614f73afff972bd4b90a8126"
+    },
+    "stage3_operator_summary": {
+      "bytes": 14721,
+      "path": "configs/cohortkv_single_config_v1/stage3_operator_summary.json",
+      "sha256": "b0a46aeff7f346b6a85cbcd9ebc0773d74fe51dd77a35cb1777cd4d238c75a79"
+    },
+    "stage4_5_source_plan_summary": {
+      "bytes": 31994,
+      "path": "configs/cohortkv_single_config_v1/stage4_5_source_plan_summary.json",
+      "sha256": "31cb442563152a250705d8ad3405461238810c5a5e81cac09c2ab20ae294e2f8"
+    },
+    "stage4_source_manifest": {
+      "bytes": 612928,
+      "path": "checkpoints/kuairand_long_context_4plus12_exploration/seed0/single_config_v1/source_shards/source_manifest.json",
+      "sha256": "ad1abb3317335f4e3b0eca84961fc8fa02b5a7e8f3d6fcf7003b81be7e212c7a"
+    },
+    "stage4_system_summary": {
+      "bytes": 330018,
+      "path": "configs/cohortkv_single_config_v1/stage4_system_summary.json",
+      "sha256": "2c891e2fb085708bdb83c6c39410f9f7509f25697ff0e8b0a4085906ef7219b6"
     },
     "training_result": {
       "bytes": 12289,
@@ -768,8 +864,8 @@
       }
     ],
     "workload_manifest": {
-      "content_sha256": "e7f2bc0567e779e5096bf7436c3484949f277b6d92189b9c28d31a8cc4450cb0",
-      "file_sha256": "6dd01569db95067a12d06b11587d98d3a9882db0b0d8892443e753397b047ba4",
+      "content_sha256": "41b7ad10a8dc3a05ce99342a0d73a09e09847ddf42b9111d318b3ddd3c62a910",
+      "file_sha256": "1784f000feda423825c67de2385c0990a455ede4101d156bc61faf12b56f86d4",
       "path": "configs/cohortkv_single_config_v1/workload_manifest.json"
     }
   },
@@ -788,7 +884,15 @@
     "selection_rule": "choose the lowest normal-job overhead mechanism that detects the frozen perturbation and preserves unperturbed cohort certificates; if no runtime sentinel qualifies, use an executable semantic preflight and narrow the manuscript claim"
   },
   "numeric_contract": {
-    "deployment_recertification": "apply the frozen certificate again on serialized FP16 source shards, prepared runtime programs, and published FP16 K/V before final-test or complete-job execution",
+    "deployment_recertification": {
+      "final_test_evaluated": false,
+      "output_dtype": "float16",
+      "primary_capsule_dtype": "float16",
+      "program_dtype": "float16",
+      "residual_hidden_suffix_dtype": "bfloat16",
+      "status": "complete",
+      "summary_protocol": "cohortkv_single_config_stage2_frozen_v1"
+    },
     "existing_verified_result_boundary": "the frozen verified compiler evaluated in-memory FP32 layerwise state; it is algorithm evidence, not a certificate for the deployed FP16 source representation",
     "method_specific_guards": {
       "exact_bfloat16": "selection users must compare BF16-compute published FP16 K/V with FP32-compute published FP16 K/V",
@@ -921,14 +1025,37 @@
     "role": "program_selection",
     "search_procedure": "open and read the method's complete selection source once to establish the warm page-cache condition, screen every legal candidate once after correctness in seed-73421 order, then rerun the fastest three with one warmup and three measured repetitions; publish the winner before any 682-record run",
     "separate_per_method_destination_and_gpu_count": true,
+    "stage3_observation": {
+      "common_output_layout": "separate contiguous unpadded FP16 [L,T,Dkv] K/V plus lengths and offsets",
+      "default_batch_size": 4,
+      "default_bucket_width": 32,
+      "default_operator": "fused_fp16",
+      "final_test_evaluated": false,
+      "fused_speedup_over_fastest_packed_resident": 1.9945290706657817,
+      "labels_used": false,
+      "selection_role": "program_selection",
+      "stage4_retunes_every_endpoint": true,
+      "summary_protocol": "cohortkv_single_config_stage3_frozen_v1"
+    },
     "warmup_runs": 1
   },
   "schema_version": 1,
   "scope": {
+    "completed_amendments": [
+      "stage4_5_source_plan"
+    ],
+    "completed_stages": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
     "confirmation_unit": "future independent training seed",
-    "creates_performance_evidence": false,
+    "creates_performance_evidence": true,
     "implementation_rule": "preserve each module's logical contract, but pause and replace a mechanism when measurements falsify it",
-    "objective": "close one complete compiler-to-manifest vertical slice before new seeds, datasets, or model capacities"
+    "objective": "close one complete compiler-to-manifest vertical slice before new seeds, datasets, or model capacities",
+    "performance_evidence_boundary": "Stages 1-4 contribute adaptive seed-0 resident frontier, deployed-representation compiler, common-layout resident operator evidence, and complete 682-record HBM/DRAM normal-path results; Stage 4.5 freezes the direct existing-old-K/V HBM source plan at 1/2/4 GPUs with zero extra per-record source state; automatic guard/fallback and failure recovery remain open"
   },
   "source_contract": {
     "common_physical_tier": {
@@ -961,7 +1088,7 @@
         ],
         "physical_bytes_must_be_measured": true
       },
-      "residual_hidden_suffix_fp16": {
+      "residual_hidden_suffix_bf16": {
         "current_verified_p8_fallback_bytes": 6255345664,
         "current_verified_p8_fallback_scope": [
           "theta0",
@@ -988,7 +1115,29 @@
       "temporary_and_final_bytes_must_fit_preflight": true
     }
   },
-  "status": "stage0_frozen",
+  "source_plan_contract": {
+    "additional_normx_bytes": 0,
+    "declared_operating_regime": {
+      "cache_state": "complete source-version old K/V already in HBM",
+      "cohort": "frozen 682-record controlled theta0/theta4/theta10 mix",
+      "exact_control": "complete raw history already in HBM",
+      "excluded_claims": [
+        "cold filesystem or durable SSD speedup",
+        "automatic online cache-tier selection",
+        "organic mixed-version scheduling",
+        "failure-safe automatic fallback execution",
+        "new-seed or cross-dataset replication"
+      ],
+      "hardware": "1, 2, or 4 NVIDIA A40 GPUs",
+      "target": "theta11 FP16 K/V in HBM"
+    },
+    "fallback_action": "exact",
+    "normal_action": "compiled_old_kv",
+    "protocol": "cohortkv_single_config_stage4_5_frozen_v1",
+    "source_representation": "existing_old_kv_fp16",
+    "stage5_admitted": true
+  },
+  "status": "stage4_core_frozen",
   "study_stage": "adaptive_seed0_development",
   "timing_contract": {
     "compiler_accounting": "fit and certificate wall time are reported separately and also amortized over the 682-record job",
@@ -1020,7 +1169,7 @@
   },
   "workload_contract": {
     "logical_capsule_bytes_fp16": 17822269440,
-    "logical_residual_hidden_suffix_bytes_fp16": {
+    "logical_residual_hidden_suffix_bytes_bf16": {
       "4": 13366702080,
       "8": 8911134720
     },

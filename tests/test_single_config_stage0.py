@@ -85,13 +85,17 @@ def test_integrated_result_schema_freezes_primary_matrix() -> None:
             "properties"
         ]["source_representations"]["const"]
         for clause in runs["items"]["allOf"]
-        if "method" in clause["if"]["properties"]
+        if "source_representations" in clause["then"]["properties"]
     }
     assert source_requirements["compiled"] == ["normalized_capsule_fp16"]
+    assert source_requirements["selective_contiguous"] == [
+        "old_kv_fp16",
+        "raw_history",
+    ]
     assert source_requirements["exact"] == ["raw_history"]
     assert source_requirements["residual_p"] == [
         "raw_history",
-        "residual_hidden_suffix_fp16",
+        "residual_hidden_suffix_bf16",
     ]
     gpu_requirements = {
         clause["if"]["properties"]["gpu_count"]["const"]: clause["then"][
@@ -108,6 +112,15 @@ def test_integrated_result_schema_freezes_primary_matrix() -> None:
         for clause in failures["allOf"]
     } == set(FAILURE_INJECTIONS)
     assert failures["items"]["properties"]["detected"]["const"] is True
+    deployed = schema["properties"]["rq2_compiler"]["properties"][
+        "cohorts"
+    ]["items"]["properties"]["deployed_representation_certificate"]
+    assert deployed["properties"]["source_dtype"]["const"] == "float16"
+    assert deployed["properties"]["program_dtype"]["const"] == "float16"
+    assert deployed["properties"]["output_dtype"]["const"] == "float16"
+    assert deployed["properties"]["residual_hidden_suffix_dtype"]["const"] == (
+        "bfloat16"
+    )
     semantic_condition = next(
         condition
         for condition in failures["items"]["allOf"]
@@ -137,6 +150,16 @@ def test_integrated_result_schema_freezes_primary_matrix() -> None:
         ]["const"]
         == MODULE.EXPECTED_SELECTIVE_INTERVALS
         == 53
+    )
+    profiled = rq3["profiled_selective_actions"]
+    assert profiled["minItems"] == profiled["maxItems"] == 3
+    assert (
+        profiled["items"]["properties"]["action"]["const"]
+        == MODULE.STAGE1_PROFILED_SELECTIVE_ACTION
+    )
+    assert (
+        profiled["items"]["properties"]["certificate_passed"]["const"]
+        is False
     )
     rq5 = schema["properties"]["rq5_economics"]["properties"]
     assert (
@@ -188,10 +211,10 @@ def test_residual_action_declares_full_hidden_suffix_state() -> None:
     residual = blueprint["action_contracts"]["residual_p"]
     assert residual["inputs"] == [
         "raw_history",
-        "residual_hidden_suffix_fp16",
+        "residual_hidden_suffix_bf16",
     ]
     representation = blueprint["source_contract"]["representations"][
-        "residual_hidden_suffix_fp16"
+        "residual_hidden_suffix_bf16"
     ]
     assert representation["not_part_of_default_normalized_capsule"] is True
     selective = blueprint["action_contracts"]["selective_contiguous"]
@@ -201,3 +224,14 @@ def test_residual_action_declares_full_hidden_suffix_state() -> None:
         ]
         is False
     )
+    observation = selective["stage1_observation"]
+    assert observation["profiled_system_action"] == {
+        "m": 12,
+        "start_layer": 0,
+        "end_layer": 11,
+    }
+    assert observation["profiled_system_action_inputs"] == [
+        "old_kv_fp16",
+        "raw_history",
+    ]
+    assert observation["transition_hidden_bytes"] == 0

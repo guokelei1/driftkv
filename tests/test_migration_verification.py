@@ -149,3 +149,13 @@ def test_verified_plan_requires_complete_probe_and_exact_action():
             contract=make_contract(),
             seed=3,
         )
+
+
+def test_selective_contiguous_is_a_supported_certificate_action():
+    action = MigrationActionSpec(
+        name="selective_m4_s3_e6",
+        kind="selective_contiguous",
+        required_state="old_kv_transition_hidden_and_raw_history",
+    )
+
+    assert action.kind == "selective_contiguous"

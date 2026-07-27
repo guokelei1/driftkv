@@ -264,6 +264,7 @@ class KVPublicationTransaction:
         self._staged_records: set[int] = set()
         self._extents: list[PublishedKVExtent] = []
         self._closed = False
+        self._lock = threading.Lock()
 
     @property
     def staged_extent_count(self) -> int:
@@ -278,54 +279,57 @@ class KVPublicationTransaction:
         extent_id: str,
         batch: JaggedMigratedKVBatch,
     ) -> PublishedKVExtent:
-        if self._closed:
-            raise RuntimeError("publication transaction is closed")
-        _validate_identifier(extent_id, "extent_id")
-        if any(extent.extent_id == extent_id for extent in self._extents):
-            raise ValueError("extent_id is already staged")
-        if batch.served_kv_target != self.target_version:
-            raise ValueError("batch target differs from publication target")
-        records = set(batch.record_ids)
-        if not records.issubset(self._expected):
-            raise ValueError("batch contains records outside the publication job")
-        if records.intersection(self._staged_records):
-            raise ValueError("record is already staged in this publication")
-        extent = self.destination._stage(
-            transaction_id=self.transaction_id,
-            job_id=self.job_id,
-            target_version=self.target_version,
-            extent_id=extent_id,
-            batch=batch,
-        )
-        self._staged_records.update(records)
-        self._extents.append(extent)
-        return extent
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("publication transaction is closed")
+            _validate_identifier(extent_id, "extent_id")
+            if any(extent.extent_id == extent_id for extent in self._extents):
+                raise ValueError("extent_id is already staged")
+            if batch.served_kv_target != self.target_version:
+                raise ValueError("batch target differs from publication target")
+            records = set(batch.record_ids)
+            if not records.issubset(self._expected):
+                raise ValueError("batch contains records outside the publication job")
+            if records.intersection(self._staged_records):
+                raise ValueError("record is already staged in this publication")
+            extent = self.destination._stage(
+                transaction_id=self.transaction_id,
+                job_id=self.job_id,
+                target_version=self.target_version,
+                extent_id=extent_id,
+                batch=batch,
+            )
+            self._staged_records.update(records)
+            self._extents.append(extent)
+            return extent
 
     def commit(self) -> KVVersionManifest:
-        if self._closed:
-            raise RuntimeError("publication transaction is closed")
-        if self._staged_records != self._expected:
-            missing = sorted(self._expected - self._staged_records)
-            raise ValueError(f"publication is missing {len(missing)} records")
-        manifest = KVVersionManifest(
-            job_id=self.job_id,
-            target_version=self.target_version,
-            destination_id=self.destination.destination_id,
-            destination_kind=self.destination.capabilities.kind,
-            publication_mode=self.destination.capabilities.publication_mode,
-            extents=tuple(self._extents),
-            record_count=len(self._staged_records),
-            token_count=sum(extent.token_count for extent in self._extents),
-            payload_bytes=sum(extent.payload_bytes for extent in self._extents),
-        )
-        self.destination._commit(self.transaction_id, manifest)
-        self._closed = True
-        return manifest
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("publication transaction is closed")
+            if self._staged_records != self._expected:
+                missing = sorted(self._expected - self._staged_records)
+                raise ValueError(f"publication is missing {len(missing)} records")
+            manifest = KVVersionManifest(
+                job_id=self.job_id,
+                target_version=self.target_version,
+                destination_id=self.destination.destination_id,
+                destination_kind=self.destination.capabilities.kind,
+                publication_mode=self.destination.capabilities.publication_mode,
+                extents=tuple(self._extents),
+                record_count=len(self._staged_records),
+                token_count=sum(extent.token_count for extent in self._extents),
+                payload_bytes=sum(extent.payload_bytes for extent in self._extents),
+            )
+            self.destination._commit(self.transaction_id, manifest)
+            self._closed = True
+            return manifest
 
     def abort(self) -> None:
-        if not self._closed:
-            self.destination._abort(self.transaction_id)
-            self._closed = True
+        with self._lock:
+            if not self._closed:
+                self.destination._abort(self.transaction_id)
+                self._closed = True
 
     def __enter__(self) -> KVPublicationTransaction:
         return self
@@ -407,7 +411,11 @@ class KVUpdateDestination(ABC):
 
 
 class DRAMKVUpdateDestination(KVUpdateDestination):
-    def __init__(self, destination_id: str = "dram") -> None:
+    def __init__(
+        self,
+        destination_id: str = "dram",
+        require_pinned: bool = False,
+    ) -> None:
         super().__init__(
             destination_id,
             DestinationCapabilities(
@@ -422,6 +430,7 @@ class DRAMKVUpdateDestination(KVUpdateDestination):
         self._staging: dict[str, dict[str, JaggedMigratedKVBatch]] = {}
         self._committed: dict[str, dict[str, JaggedMigratedKVBatch]] = {}
         self._manifests: dict[str, KVVersionManifest] = {}
+        self.require_pinned = require_pinned
 
     def _begin(
         self,
@@ -444,6 +453,11 @@ class DRAMKVUpdateDestination(KVUpdateDestination):
     ) -> PublishedKVExtent:
         if batch.k.device.type != "cpu":
             raise ValueError("DRAM publication requires CPU-resident K/V")
+        if self.require_pinned and not all(
+            value.is_pinned()
+            for value in (batch.k, batch.v, batch.lengths, batch.offsets)
+        ):
+            raise ValueError("DRAM publication requires pinned retained tensors")
         with self._lock:
             staged = self._staging[transaction_id]
             if extent_id in staged:

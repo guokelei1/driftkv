@@ -54,6 +54,7 @@ class MigrationActionSpec:
         if self.kind not in {
             "projection",
             "compiled",
+            "selective_contiguous",
             "structural_replay",
             "exact",
         }:

@@ -9,7 +9,11 @@ Current status:
 
 - the simple compiled-projection family has 27 validation runs;
 - the attention-weighted full-affine compiler, its semantic contract, and its action selection are
-  adaptive seed-0.
+  adaptive seed-0;
+- Stage 2 has frozen the seed-0 executable artifact path: all three serialized deployed
+  certificates pass, runtime programs and fallback plans are hash-checked, and recovery targets
+  50%–80% select compiled while 90% selects exact;
+- this closes the implementation path but does not turn seed 0 into confirmatory evidence.
 
 Required experiment:
 
@@ -27,48 +31,60 @@ Admission criterion:
 - the compiler claim may become confirmatory only after the program is frozen before those model
   replications are inspected.
 
-## Gate 2: complete-cohort identical-boundary destination benchmark
+## Gate 2: repair the complete-cohort source-state Pareto failure — closed for hot HBM
 
 Current status:
 
-- v2 measures 64 real histories with an assigned 13/19/32 version mix at matched host residency
-  and target publication;
-- v4 has a destination contract but no complete-cohort performance result;
-- Stage 0 has frozen the exact 682-record workload, 136/205/341 controlled source counts, common
-  buffered-POSIX source tier, HBM/DRAM boundaries, timing fields, failure points, and aggregate
-  result schema under `cohortkv_single_config_full_chain_development_v1`;
-- verified plans record residual/structural/exact fallbacks, but the destination engine currently
-  accepts compiled affine programs and does not automatically execute that escalation chain;
-- residual-p additionally needs an old hidden suffix, not the normalized capsule plus one
-  transition activation. The current theta0/theta10 p8 fallback scope adds 5.83 GiB FP16 and is
-  executable only if that auxiliary shard is retained;
-- the existing certificate used in-memory FP32 layerwise state and must be reapplied unchanged to
-  serialized FP16 sources/programs/output before the full-chain plan is executable.
+- Stage 4 completes the frozen 682-record, 1,087,785-token normal-path matrix for compiled,
+  certificate-failed selective, exact, residual-p, and no-transform at HBM/DRAM over 1/2/4 GPUs;
+- all 30 independently tuned points pass complete coverage, 17.822B-element transport
+  correctness, five capacity preflights, and atomic manifest publication;
+- compiled is 2.70–3.49× faster than selective at all six matched endpoints but loses to exact at
+  all six;
+- the physical FP16 capsule is 17.82 GB versus 89.1 MB of physical raw history, and source
+  read/decode/pinning consumes 91.35%–96.91% of compiled completion;
+- Stage 4.5 preserves that negative result and freezes a separate direct-old-K/V hot-HBM source
+  plan. It composes the certified affine through the source K/V projection, adds zero per-record
+  state, and reclaims old extents after replacement staging;
+- all three source pairs certify, complete real fused transport covers 17.822B valid elements
+  with zero tolerance mismatches, and full-cohort 1/2/4-GPU medians are
+  0.930/0.494/0.255 seconds versus paired raw-history-HBM exact at
+  18.695/9.729/4.766 seconds;
+- every compiled repetition is below every paired exact repetition, all capacity preflights pass,
+  and final old-K/V occupancy is zero;
+- the result is admitted only for complete existing old K/V already resident in HBM. Cold
+  filesystem, SSD, automatic tier selection, and missing/unverified state fall through to exact;
+- the frozen aggregate is
+  `configs/cohortkv_single_config_v1/stage4_5_source_plan_summary.json`.
 
-Required experiment:
+Gate 3 now closes recursive migration of approximate outputs. Remaining work moves to Gate 4:
+automatic exact dispatch, semantic degradation detection, transactional rework, and failure
+visibility are not implemented.
 
-- use every eligible fixed KuaiRand 4+12 update record;
-- add a source manifest/reader that lazily scans capsule shards;
-- wire the published selected action and fallback order into the destination coordinator, and
-  force at least one cohort through an automatic stronger-action escalation;
-- make compiled migration and exact recomputation publish through the same transaction;
-- compare separately at fixed HBM and pinned-DRAM destinations;
-- run retained-target HBM capacity preflight before timing, and revise the protocol rather than
-  silently deleting a matrix point if the frozen grid cannot fit it;
-- independently tune both methods under the same source tier/residency, target dtype/layout,
-  destination, and publication semantics, while reporting capsule and raw-history source bytes
-  separately;
-- report 1/2/4-GPU completion time, tokens/s, physical/logical bytes, program amortization,
-  assigned bytes, peak HBM, peak host staging, source residency, target residency, queue wait,
-  commit latency, and numerical error.
+## Gate 3: repeated-update migrate-or-exact lifecycle
 
-Admission criterion:
+Status: **closed and frozen**.
 
-- only this result can support “full-cohort destination update” and v4 end-to-end speedup claims;
-- automatic fallback execution may be claimed only after the coordinator, destination transaction,
-  and failure tests cover that path.
+- The fixed KuaiRand seed-0, 16L/H512, one-A40 chain executes all 11 adjacent updates from exact
+  theta0 K/V and consumes each previous actual output.
+- The first per-cache norm-sketch threshold beats matched random but is rejected because its
+  diagnostic complete chain refreshes 0.15%–65.1% per step.
+- The frozen replacement maps label-free fit edge severity to 15%–25% exact budgets, refreshes
+  depth-four and then older caches first, and uses stable hash tie-breaking.
+- The independent certificate costs 0.2142× cumulatively, stays below 0.2814× per step, and has
+  minimum cache/score/top-100 values 0.9613/0.999759/0.9898.
+- The complete 682-record chain costs 0.2134×, stays below 0.2543× per step, refreshes
+  14.956%–25.073% after rounding, and has minimum 0.9632/0.999950/0.9918.
+- All 7,502 complete-chain lineage rows rebuild from the frozen policy; exact resets state and
+  migration depth never exceeds four.
+- Recommendation labels do not tune or route the policy.
+- Frozen evidence is in
+  `configs/cohortkv_single_config_v1/stage4_6_lifecycle_summary.json`.
 
-## Gate 3: failure and publication tests at realistic scale
+This is one controlled development chain and a bounded heuristic, not global selector optimality,
+organic traffic, or cross-seed/cross-dataset lifecycle validation.
+
+## Gate 4: failure and publication tests at realistic scale
 
 Required experiment:
 
@@ -86,7 +102,7 @@ Boundary:
 - this does not establish distributed transactions or coordinator crash recovery unless those
   mechanisms are implemented.
 
-## Gate 4: physical storage backend
+## Gate 5: physical storage backend
 
 Current status:
 
@@ -107,17 +123,27 @@ Admission criterion:
 
 - until then, use “POSIX interface” and “remote-object protocol,” never SSD/network performance.
 
-## Gate 5: capsule capacity trade-off
+## Gate 6: capsule capacity trade-off
 
 Current status:
 
 - unpadded FP16 `Norm(x)` capsule is 50% of logical FP16 K/V size;
 - v2 stores padded capsules totaling 1.507 GiB versus 2.998 GiB logical old K/V for its trace.
+- Stage 4 materializes 16.60 GiB logical/17.82 GB physical FP16 capsule state versus 33.20 GiB
+  logical old or target K/V for the complete cohort;
+- that capsule source path loses to exact at all six endpoints, so a favorable time break-even is
+  not established for the Stage-4 path;
+- the Stage-4.5 winner retains no capsule and adds zero per-record state. Its three direct programs
+  total 100.78 MB per worker;
+- the pinned-DRAM normalized-capsule backup retains about 17.86 GB host state, preloads in
+  39.5/24.7 seconds on 1/4 GPUs, and has three/six-update time break-even.
 
 Required experiment:
 
-- compare FP16 with the frozen symmetric signed INT8 layout using one FP32 absmax scale per record
-  and layer, including scale/offset metadata and timed staging dequantization;
+- verify that the frozen direct-old-K/V winner needs no independent capture/encode and report its
+  once-per-version-pair compile/publication cost against FP16 capsule and exact raw history;
+- if compression remains on the frontier, compare FP16 with symmetric signed INT8 and any smaller
+  selected candidate, including scale/offset metadata and timed staging dequantization;
 - separately time fresh-K/V only, plus device capture, and plus D2H/encode/POSIX persistence on
   the 60 program-selection histories;
 - report total extra capacity, creation cost, read bandwidth, compression error, and the measured
@@ -128,10 +154,13 @@ Required experiment:
 
 Admission criterion:
 
-- the paper can currently state this as a space-for-update-time trade-off, not a universally
-  favorable capacity result.
+- the paper can state that the primary hot-HBM route adds zero per-record source state; it cannot
+  generalize this to cold storage or claim that normalized-capsule storage is universally
+  favorable;
+- INT8 and capture measurements are comparison economics, not an admission gate for the already
+  frozen direct-old-K/V route.
 
-## Gate 6: external-validity expansion
+## Gate 7: external-validity expansion
 
 Required experiment:
 
@@ -142,33 +171,35 @@ Required experiment:
   semantics gate;
 - document ZhihuRec as a maintenance boundary rather than silently dropping it.
 
-## Gate 7: closest cross-model baseline
+## Gate 8: closest cross-model baseline
 
 Current status:
 
-- structural p4/p8 and residual-\(p\) are internal recomputation controls;
-- Stage 0 has frozen a 53-point DroidSpeak-adapted contiguous-interval grid over
-  `m in {2,4,6,8,12}`, including transition-state and old-K/V source accounting;
-- the current evaluation does not implement DroidSpeak's selective-layer sharing and pipelined
-  cache-loading system on a compatible model.
+- the HSTU-compatible old-K/V-reuse reference is implemented and tested independently of the
+  incompatible current-projection helper;
+- the complete seed-0 resident grid contains 53 intervals per source pair and 177 total points on
+  the frozen 60-user selection role, followed by the disjoint 60-user certificate role;
+- compiled repair strictly dominates all 53 selective points for theta0/theta4/theta10;
+- no selective interval passes the 70% cache/score/top-100 contract. Exact is therefore the
+  publishable fallback, while `m12/layers0-11` is frozen only as a certificate-failed diagnostic
+  external baseline;
+- the common Stage-4 full-cohort destination pipeline is complete and independently runtime-tuned
+  at all six HBM/DRAM × 1/2/4-GPU points;
+- the diagnostic remains certificate-failed but compiled is 2.70–3.49× faster end to end.
 
-Required experiment:
+Remaining experiment:
 
-- implement the closest compatible selective-layer recomputation baseline without borrowing
-  recommendation labels;
-- use a new old-K/V-reuse reference; the repository's existing contiguous helper applies current
-  projections outside the interval and is therefore a different internal method;
-- tune it independently under the same source-residency, semantic-certificate, and
-  target-publication boundaries;
-- report both semantic recovery and complete-job cost rather than comparing only recomputed layer
-  counts.
+- replicate the frontier only after the primary source-state design is frozen, on predeclared new
+  seeds/configurations rather than another adaptive search on this seed;
+- retain `certificate_passed=false` in every current Stage-4 diagnostic artifact.
 
 Boundary:
 
 - HCache remains a same-model restoration system and is not a semantic substitute for this
   baseline;
-- until this gate is complete, the paper may distinguish workloads and mechanisms but must not
-  claim that cross-model K/V migration itself is novel.
+- the single-configuration algorithmic frontier and end-to-end system comparison are complete;
+- the seed-0 dominance result cannot be generalized across datasets, model sizes, or training
+  seeds until replication.
 
 ## Results-to-paper update protocol
 

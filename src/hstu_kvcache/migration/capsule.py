@@ -27,6 +27,19 @@ class KVOutputExtent(Protocol):
     def lengths(self) -> torch.Tensor: ...
 
 
+class ContiguousKVOutputExtent(Protocol):
+    record_ids: tuple[int, ...]
+    migration_anchor_version: str
+    served_kv_target: str
+    k: torch.Tensor
+    v: torch.Tensor
+    lengths: torch.Tensor
+    offsets: torch.Tensor
+
+    @property
+    def token_count(self) -> int: ...
+
+
 @dataclass(frozen=True)
 class MigrationCapsuleBatch:
     record_ids: tuple[int, ...]

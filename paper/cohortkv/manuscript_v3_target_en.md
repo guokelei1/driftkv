@@ -3,15 +3,21 @@
 **Anonymous Authors**
 
 > **[内部说明 — 投稿前删除]** 本文件是"目标版"手稿（target manuscript）。
-> 写作假设：Gate 1（冻结编译器多 seed 复现）、Gate 2（full-cohort 同边界 destination
-> benchmark，含自动升级与失效注入）、Gate 4（具名 SSD）、Gate 5（capsule 经济学）、
-> Gate 7（selective-layer baseline）均已完成。
+> 当前事实：Gate 2 的 Stage-4 normal-path full-cohort HBM/DRAM benchmark 已完成，原始
+> FP16 normalized-capsule source path 在 0/6 个 matched endpoint 上快于 exact；随后
+> Stage 4.5 冻结了 direct-old-K/V hot-HBM source plan，在 1/2/4 卡 full cohort 上均通过
+> paired exact 门槛且不再保存额外 `Norm(x)`。Stage 4.6 已把 migrated output 连续作为
+> 下一轮真实输入，从 theta0 递归执行到 theta11，并冻结 15%–25% 均衡 exact refresh、
+> 最大迁移深度 4 的 lifecycle；原逐 cache threshold 因 refresh wave 保留为负结果。
+> 自动升级、失效注入、具名 durable SSD、capsule 对照 economics 和冻结编译器新 seed
+> 复现仍未完成。
 > 所有**尚未测得**的数值以 `⟨TBD⟩` 标注；趋势性结论按预期方向先行写出，若实测方向相反，
 > 必须回改正文而不是只改数字。已有真实数字（27-chain、长上下文证书、operator 微基准、
-> 两 GPU 11.22×）原样保留。数据图 Figure 2、5–8 为规划中资产，尚无 SVG。
+> 两 GPU 11.22×）原样保留。Figure 6 已由 Stage-1 实测结果替换；Figure 7 已由 Stage-4
+> normal-path 结果更新，Stage-4.5 hot-HBM 结果进入 Table 8b；Figure 5、8 仍是规划骨架。
 > 结构采用经典 systems 骨架：Intro → Background & Motivation → Overview →
 > Design ×3（§4 compiler / §5 operator / §6 engine）→ Implementation → Evaluation
-> （Discussion 并入 §8.8）→ Related → Conclusion。
+> （Discussion 并入 §8.9）→ Related → Conclusion。
 >
 > **v3.1 收敛记录（对照 goodpaper/1–5 与 guide/14 后裁剪）：**
 > 已删除：(a) 第二 GPU 架构上的 operator 微基准复测（硬件不确定、顶会常例单架构即可）；
@@ -20,12 +26,13 @@
 > INT8 存储层 + staging 时反量化的纯测量。
 > 保留为负结果/边界：jagged 布局、per-user drift 信号、remote-object 后端（interface only）。
 > 保留为未来工作（不升级为贡献）：程序组合 Φ∘Φ、LLM checkpoint 探针、serving 共置。
-> 核心不变：27-chain、冻结契约复现、selective-layer 前沿、full-cohort 同事务 1/2/4 GPU
-> + HBM/DRAM/SSD、升级与失效注入、capsule 经济学（创建开销 + INT8 存储 + break-even）。
+> 核心不变：27-chain、冻结契约复现、selective-layer 前沿、连续更新中的逐 cache
+> migrate-or-exact refresh、full-cohort 同事务 1/2/4 GPU + HBM/DRAM/SSD、升级与失效注入、
+> capsule 经济学（创建开销 + INT8 存储 + break-even）。
 > **Serving 边界（2026-07-26 决定）**：数据集不含请求 trace，论文不做任何基于 serving
 > workload 的测量或声明。评测语义统一称 stale-inference（离线协议、自训 checkpoint）；
 > manifest 可见性语义用 "readers" 表述；break-even 为 workload-free 的纯测量交叉点；
-> serving 共置/请求到达/SLO 一律列为 scope 之外（Table 3 / Fig.1 / §8.8 Limitations）。
+> serving 共置/请求到达/SLO 一律列为 scope 之外（Table 3 / Fig.1 / §8.9 Limitations）。
 > **Design/Implementation 分工（v3.2）**：Design 章节只保留本场景下的新机制与 key insight；
 > 标准技术全部下沉 §7 —— reference/packed 基线算子、Triton 调参、round-robin/贪心放置、
 > POSIX tmp+rename 与 manifest-last 对象写、artifact 序列化与校验、数值验证。
@@ -37,13 +44,14 @@
 > RQ3 前沿网格 = KuaiRand-long（主）+ KuaiRand-medium（容量轴）+ QB-large（数据集轴），
 > 全部复用 §8.3 已训链，不新训模型；RQ2 统计主张由 27-chain 承担；RQ4 系统基准只跑
 > KuaiRand 长上下文（吞吐由字节量/长度分布决定，跨数据集主张由 RQ3 承担）；
-> RQ4 Table 8 增加 selective-layer 端到端行（同事务、certified m）。
+> RQ4 Table 8 增加 selective-layer 端到端行（同事务、selection 冻结的 profiled m；
+> certificate 失败必须保留，不能写成 certified action）。
 
 ## Abstract
 
-Streaming generative recommenders continuously update their model while retaining long user histories as persisted key/value (K/V) caches. Every model update therefore leaves cached prefixes version-stale: reusing them is cheap but no longer matches the current model, whereas recomputing each history restores current-model semantics at the cost of a full forward pass. We present **CohortKV**, a system that migrates stale HSTU K/V toward a declared current-model target at a small fraction of the recomputation cost. CohortKV treats each source/target model-version pair as a compilation unit rather than as a prediction that reuse is safe. For each pair, its compiler fits the shared residual between fresh K/V and a cheap reprojection of the cached layer-normalized states, then folds this repair into a single affine projection, so the per-record path remains one matrix operation. Because observed task quality does not reliably track state staleness, the compiler certifies current-model semantic fidelity without recommendation labels; at run time, a lightweight sentinel samples each wave and automatically escalates failing cohorts through a published fallback chain that ends in exact recomputation. A fused operator executes compiled programs with length masking and direct K/V writes, and a destination-oriented engine transforms a complete update cohort and atomically publishes one target-version manifest to GPU, host, or SSD destinations.
+Streaming generative recommenders continuously update their model while retaining long user histories as persisted key/value (K/V) caches. Every model update therefore leaves cached prefixes version-stale: reusing them is cheap but no longer matches the current model, whereas recomputing each history restores current-model semantics at the cost of a full forward pass. We present **CohortKV**, a system that studies whether stale HSTU K/V can be migrated toward a declared current-model target more cheaply than replaying each history. CohortKV treats each source/target model-version pair as a compilation unit rather than as a prediction that reuse is safe. For each pair, its compiler fits the shared residual between fresh K/V and a cheap reprojection of old layer-normalized states, then folds this repair into a single affine projection. For the hot-cache execution path, it further composes that projection through the source model's K/V map, so the resident per-record input is the already existing old K/V and no extra normalized state is retained. Because observed task quality does not reliably track state staleness, the compiler certifies current-model semantic fidelity without recommendation labels and publishes an exact-terminated fallback chain. A fused operator executes compiled programs with length masking and direct K/V writes, and a destination-oriented engine transforms a complete update cohort and atomically publishes one target-version manifest. A bounded lifecycle planner spreads exact refresh across updates according to label-free model-edge severity and cache age, preventing unlimited recursive migration. Automatic runtime escalation and failure recovery remain open.
 
-Across 27 independently trained model-version chains, compiled repair costs only 0.121× exact recomputation and recovers a majority (0.587) of the stale-to-fresh K/V gap. A frozen label-free certificate replicated over ⟨TBD⟩ training seeds selects full-affine programs that cost about ⟨TBD⟩× exact while recovering ⟨TBD⟩ of the gap, and dominates a selective layer-recomputation baseline across the entire cost–fidelity frontier. On the complete ⟨TBD⟩-record KuaiRand update cohort, the engine sustains ⟨TBD⟩ records/s on four GPUs, is ⟨TBD⟩× faster than tuned exact recomputation under an identical destination transaction, and survives injected failures without exposing a partial version. These results establish version-stale HSTU K/V as a first-class migratable object: a correction compiled once per version pair moves an entire cohort to the current model far more cheaply than history replay.
+Across 27 independently trained model-version chains, compiled repair costs 0.121× resident exact recomputation and recovers a majority (0.587) of the stale-to-fresh K/V gap. In the deployed seed-0 certificate, serialized FP16 programs recover 0.881–0.936 of the K/V gap, and compiled repair strictly dominates every selective layer-recomputation point. The complete 682-record normal-path benchmark first exposes a systems failure: tuned exact is 1.20–2.87× faster than the normalized-capsule path because reading, decoding, and pinning 17.82 GB consumes 91.35%–96.91% of compiled completion. Direct old-K/V reparameterization removes that additional state while preserving the certificate and all 17.82 billion transported elements. In the declared existing-old-K/V hot-HBM regime, complete 1/2/4-GPU updates take 0.930/0.494/0.255 seconds versus paired raw-history-resident exact at 18.695/9.729/4.766 seconds, with extent-wise old-cache reclamation and no extra per-record state. On one controlled recursive theta0-to-theta11 chain, the frozen balanced lifecycle costs 0.213× cumulative all-exact GPU time, keeps every step below 0.255×, limits exact refresh to approximately 15%–25%, and preserves minimum cache/score/top-100 fidelity of 0.963/0.99995/0.992.
 
 ## 1. Introduction
 
@@ -57,21 +65,21 @@ This gap matters because the alternative, choosing a universal cache lifetime, d
 
 To address this problem, we present **CohortKV**, a system that asks a narrower question: given a fixed set of old states, how can the system move them toward a declared current-model K/V target more cheaply than exact replay? Our key insight is that the cross-version error is structured at the version-pair level rather than at the record level, and that HSTU's data path exposes exactly the state needed to exploit this structure. Each layer produces K/V by applying the layer's K/V projections to a normalized hidden state. If the old normalized state is retained, applying the current projections gives a cheap approximation. CohortKV measures the shared residual from this approximation to fresh K/V on a small version-pair sample, fits that residual as an affine function of the old normalized state, and folds the result into one prepacked projection. The per-record path therefore remains one matrix operation rather than a learned correction executed after the projection.
 
-Turning this algebra into a system requires three further mechanisms. First, because certification is statistical, execution needs a runtime guard: a per-wave sentinel samples migrated records, re-evaluates the cheap certificate view, and automatically escalates a failing cohort through its published fallback chain. Second, the operator must fuse the affine epilogue, respect valid sequence lengths, and write destination-ready K/V; otherwise small kernel savings disappear in packing and padding. Third, a complete update must move an entire cohort through HBM, host, and storage boundaries, partition work across GPUs, and make no partial target version visible. CohortKV therefore comprises three connected design components (§4–§6):
+Turning this algebra into a system requires three further mechanisms. First, the operator must fuse the affine epilogue, respect valid sequence lengths, and write destination-ready K/V; otherwise small kernel savings disappear in packing and padding. Second, a complete update must move an entire cohort through explicit HBM or host-memory boundaries, partition work across GPUs, and make no partial target version visible. Third, because certification is statistical, a complete deployment needs both a cache-lifecycle policy that periodically resets accumulated migration error through exact refresh and an execution-time guard that escalates a failing cohort through its published fallback chain. The current artifact closes the operator, normal transaction, and one controlled repeated-input lifecycle; automatic guard dispatch and failure recovery remain open. CohortKV therefore comprises three connected design components (§4–§6):
 
 1. a **version-cohort migration compiler** that fits and certifies a shared source-to-target program without recommendation labels;
-2. a **capsule-to-K/V operator** that executes the program in one fused, length-aware pass; and
-3. a **destination-oriented update engine** that transforms a complete record set under a runtime sentinel and atomically publishes one target-version manifest to GPU, host, or SSD destinations.
+2. a **source-to-K/V operator** that executes the capsule or direct-old-K/V program in one fused, length-aware pass; and
+3. a **destination-oriented update engine** that transforms a complete record set and atomically publishes one target-version manifest to GPU or host memory, with automatic guard dispatch and durable storage as explicit remaining gates.
 
-The version cohort connects the three components: it keys compilation, homogeneous batching, program residency, extent placement, sentinel accounting, and metadata. It never predicts that stale reuse is harmless. Every stale cohort receives compiled synchronization, with escalation and exact recomputation available under the published semantic contract.
+The version cohort connects the three components: it keys compilation, homogeneous batching, program residency, extent placement, and metadata. It never predicts that stale reuse is harmless. Every stale cohort receives compiled synchronization in the current normal-path experiment; the published plan contains residual and exact fallbacks, but the engine does not yet dispatch them automatically.
 
-We evaluate CohortKV with independently trained streaming checkpoints on KuaiRand and Tenrec. Across 27 model-version chains spanning three data tables and three capacities, compiled repair costs only 0.121× exact recomputation and recovers a majority of the stale-to-fresh K/V gap. A frozen certificate replicated on ⟨TBD⟩ further seeds selects full-affine programs costing about ⟨TBD⟩× exact at ⟨TBD⟩ recovery, and dominates a selective layer-recomputation baseline over the full cost–fidelity frontier. On the complete ⟨TBD⟩-record update cohort, the engine reaches ⟨TBD⟩ records/s on four GPUs and is ⟨TBD⟩× faster than tuned exact recomputation through an identical destination transaction, on both DRAM and a named NVMe SSD endpoint.
+We evaluate CohortKV with independently trained streaming checkpoints on KuaiRand and Tenrec. Across 27 model-version chains spanning three data tables and three capacities, compiled repair costs 0.121× resident exact recomputation and recovers a majority of the stale-to-fresh K/V gap. In the deployed seed-0 certificate, serialized programs recover 0.881–0.936 of that gap and dominate the selective layer-recomputation frontier. The complete 682-record benchmark then exposes and resolves a systems condition. The original normalized-capsule path loses to exact at every HBM/DRAM endpoint because source processing consumes 91.35%–96.91% of completion. Reparameterizing the same certified affine over the already resident old K/V eliminates the additional capsule, and complete 1/2/4-GPU hot-HBM updates are 20.11×/19.71×/18.72× faster than paired raw-history-resident exact. A separate fixed-history recursive chain advances the actual theta0 output through 11 updates at 0.213× cumulative all-exact cost with no cache migrating more than four times consecutively. This is a scoped hot-cache, single-seed result, not a cold-storage, automatic-tiering, or organic-traffic claim.
 
 Figure 1 shows the job boundary. Training publishes checkpoints but is not part of the job; request arrivals, hotness, routing, and training/serving co-location are outside the present scope. Our contributions are as follows:
 
-- We formulate model-version K/V migration as version-cohort compilation and develop a shared affine repair with a frozen, label-free semantic certificate, a runtime escalation sentinel, and an exact terminal fallback. The compiled operator is replicated across 27 trained chains, and the frozen full-affine compiler is replicated across ⟨TBD⟩ additional seeds.
-- We implement a Triton capsule-to-K/V operator and a mixed-cohort multi-GPU pipeline whose advantage survives pinned-host input, complete K/V publication, and scaling to four GPUs.
-- We design and measure a common HBM, DRAM, and SSD destination transaction that publishes a target version only after complete coverage, and we show that the compiled path retains a ⟨TBD⟩× advantage over tuned exact recomputation when both publish the complete cohort through the same transaction, including under injected failures.
+- We formulate model-version K/V migration as version-cohort compilation and develop a shared affine repair with a label-free semantic certificate and an exact-terminated fallback plan. The repair mechanism is replicated across 27 independently trained chains; the deployed serialized compiler contract is validated in the controlled seed-0 configuration.
+- We implement a common-layout fused source-to-K/V operator and a bounded mixed-cohort multi-GPU engine that publishes complete target manifests at HBM and pinned-DRAM endpoints.
+- We measure the full source-to-publication path, retain the normalized-capsule path's six-endpoint loss as a negative boundary, and develop a direct old-K/V reparameterization that removes all additional per-record source state. In its declared hot-HBM regime it preserves the certificate and full transport while beating paired exact at complete 1/2/4-GPU cohort points.
 
 ![A model update changes the meaning of persistent HSTU state. CohortKV occupies the middle ground between stale reuse and exact current-model recomputation, and publishes a fixed cohort at one explicit destination.](figures/01_problem_and_scope.svg)
 
@@ -156,7 +164,7 @@ Table 2 summarizes how each observation of this section maps to a mechanism and 
 | Observation | Resulting mechanism | Evaluation question |
 |---|---|---|
 | Reuse leaves a maintenance gap. | Unconditional compiled synchronization plus exact endpoint. | Does the opportunity persist across tables and capacities? (§8.2) |
-| Age and task quality are not calibrated. | Version-pair execution key, label-free contract, runtime sentinel. | Does fidelity/cost replicate under a frozen contract? (§8.3) |
+| Age and task quality are not calibrated. | Version-pair execution key, label-free contract, exact-terminated fallback plan. | Does fidelity/cost replicate under a frozen contract? (§8.3) |
 | HSTU exposes old normalized states and current projections. | Shared residual folded into one affine program. | How much K/V gap closes at measured GPU cost, versus the strongest cross-model baseline? (§8.3, §8.4) |
 | Movement can erase kernel savings. | Fused direct-write operator and destination job. | Does the gain survive the identical full-cohort transaction? (§8.5, §8.6) |
 
@@ -172,7 +180,7 @@ This section introduces the three abstractions that the whole system is built on
 Z_v(x)=\{z^1_v(x),\ldots,z^L_v(x)\}
 \]
 
-with the record ID, valid length, and **migration anchor version** \(v\). The anchor is not changed when target K/V is produced: a capsule can remain anchored at \(v\) while its output declares a **served K/V target** \(t\). The separation of these two version fields prevents a migrated approximation from masquerading as a freshly captured current capsule. For equal precision and hidden/K/V widths, one FP16 normalized state per layer is half the size of both K and V. Section 8.7 quantifies this trade-off directly: capsule capture cost during the forward pass that materializes fresh K/V, an INT8 storage layout that reduces the footprint to ⟨TBD⟩% of logical K/V at ⟨TBD⟩ recovery loss, and the update-frequency break-even point beyond which retaining capsules is cheaper than replaying histories.
+with the record ID, valid length, and **migration anchor version** \(v\). The anchor is not changed when target K/V is produced: a capsule can remain anchored at \(v\) while its output declares a **served K/V target** \(t\). The separation of these two version fields prevents a migrated approximation from masquerading as a freshly captured current capsule. For equal precision and hidden/K/V widths, one FP16 normalized state per layer is half the size of both K and V. Capsules remain the fitting and semantic-reference representation, but the frozen hot-HBM execution path does not retain them per record: §4.5 reparameterizes the certified affine over the old K/V that the serving cache already contains. Section 8.7 reports both the normalized capsule's failed time economics and the zero-extra-state direct route.
 
 **Version cohort.** A **version cohort** is the pair
 
@@ -180,11 +188,11 @@ with the record ID, valid length, and **migration anchor version** \(v\). The an
 \gamma=(v,t)
 \]
 
-shared by records whose capsules are anchored at \(v\) and whose K/V must target \(t\). The cohort is the unit that every component keys on: the compiler fits and publishes one program per \(\gamma\) (§4), the operator batches homogeneously within \(\gamma\) (§5), and the engine keeps the relevant programs resident on every worker, accounts sentinel statistics per \(\gamma\), and retains \(\gamma\) in each output extent (§6). Several source versions may share one target job, but their programs remain distinct. The current implementation requires the programs in one job to share layer count, hidden width, K/V width, and target version. The cohort organizes execution; it never predicts that reuse is safe.
+shared by records whose capsules are anchored at \(v\) and whose K/V must target \(t\). The cohort is the unit that every component keys on: the compiler fits and publishes one program per \(\gamma\) (§4), the operator batches homogeneously within \(\gamma\) (§5), and the engine keeps the relevant programs resident on every worker and retains \(\gamma\) in each output extent (§6). A future guard would also account its statistics per \(\gamma\). Several source versions may share one target job, but their programs remain distinct. The current implementation requires the programs in one job to share layer count, hidden width, K/V width, and target version. The cohort organizes execution; it never predicts that reuse is safe.
 
 **Fixed destination-update job.** The system contract is:
 
-> Given materialized old capsules, published source-to-target programs, a fixed complete record set, execution GPUs, and an explicit destination, produce target-version K/V for every record and make one complete manifest visible.
+> Given an admitted source representation, published source-to-target programs, a fixed complete record set, execution GPUs, and an explicit destination, produce target-version K/V for every record and make one complete manifest visible.
 
 Table 3 delimits this contract.
 
@@ -195,34 +203,34 @@ Table 3 delimits this contract.
 | Source/target program selection from published artifacts | Streaming training and checkpoint production |
 | Cohort grouping, length bucketing, and GPU placement | Online request arrivals and per-user hotness |
 | H2D, migration compute, D2H when required | Foreground inference interference and SLO scheduling |
-| HBM, DRAM, and SSD publication contract | Automatic destination or cache-tier selection |
-| Complete coverage, sentinel escalation, commit, abort | Cross-destination distributed transactions |
+| HBM and DRAM publication contract; POSIX interface | Automatic destination or cache-tier selection |
+| Complete normal-path coverage and commit | Automatic escalation, failure recovery, and cross-destination transactions |
 
-The destination is an input rather than a policy decision. HBM, DRAM, and an SSD-backed filesystem answer different endpoint questions and are not compared as if their completion times were interchangeable. During an update, any reader of the destination continues to see the last committed manifest; the new manifest becomes readable only at commit, so no reader ever observes a partially migrated version (§6.4).
+The destination is an input rather than a policy decision. HBM, DRAM, and a filesystem answer different endpoint questions and must not be compared as if their completion times were interchangeable. The present performance result covers HBM and pinned DRAM; the POSIX backend remains a functional interface rather than a durable SSD benchmark. During a successful update, the new manifest becomes readable only after complete coverage (§6.4). Failure visibility and recovery require the separate Stage-5 protocol.
 
 ### 3.2 Architecture
 
-Figure 3 shows the architecture. CohortKV separates the update problem into three design components with one clean division of labor: the compiler decides **what** transformation is semantically admissible for a cohort, the operator decides **how** one capsule batch becomes destination-layout K/V, and the engine decides **where and when** complete extents become visible. An update coordinator resolves job specifications, invokes the three components, and drives sentinel escalation; it does not compile programs, infer reuse safety, choose a destination, or schedule online requests.
+Figure 3 shows the architecture. CohortKV separates the update problem into three design components with one clean division of labor: the compiler decides **what** transformation is semantically admissible for a cohort and prepares its admitted source representation, the operator decides **how** one homogeneous source batch becomes destination-layout K/V, and the engine decides **where and when** complete extents become visible. The current update coordinator resolves job specifications and invokes these components on the normal path; it does not compile programs, infer reuse safety, choose a destination, or schedule online requests. The source-state gate passes for the declared direct-old-K/V hot-HBM regime. A thin lifecycle planner now divides each controlled update into lightweight migrations and charged exact refreshes using a frozen age/deadline and edge-severity schedule; automatic semantic guard and fallback dispatch remain the next implementation gate.
 
 ![CohortKV has three connected design components. The source/target version pair is carried by the compiled program, capsule, output extent, and target manifest.](figures/02_architecture.svg)
 
 **Figure 3: CohortKV architecture.** Version cohorts organize execution across the compiler, operator, and engine; they do not predict safe reuse.
 
-**Migration compiler (§4).** Input: a version pair \((v,t)\), calibration records with old capsules and exact current K/V, and a frozen label-free contract. Output: an immutable program artifact — one folded affine projection per layer plus a verified plan recording certificates, the selected action, and an ordered fallback chain ending in exact recomputation. Compilation runs once per version pair and is amortized over the whole cohort; no recommendation label enters it.
+**Migration compiler (§4).** Input: a version pair \((v,t)\), calibration records with old capsules and exact current K/V, and a frozen label-free contract. Output: an immutable program artifact — one folded affine projection per layer plus a verified plan recording certificates, the selected action, and an ordered fallback chain ending in exact recomputation. For the hot-HBM route, the compiler also composes that affine into a direct old-K/V program without changing its certified target semantics. Compilation runs once per version pair and is amortized over the whole cohort; no recommendation label enters it.
 
-**Capsule-to-K/V operator (§5).** Input: a resident program and one length-bucketed capsule batch from a single cohort. Output: contiguous, destination-layout K and V tensors with padding masked. The operator is a single fused Triton kernel; its design goal is that the per-record path stays one matrix operation with no packing, splitting, or copying epilogue, so the compiler's amortization is not eroded at execution time.
+**Source-to-K/V operator (§5).** Input: a resident program and one length-bucketed normalized-capsule or old-K/V batch from a single cohort. Output: contiguous, destination-layout K and V tensors with padding masked. The operator is a single fused Triton kernel; its design goal is that the per-record path stays one matrix operation with no packing, splitting, or copying epilogue, so the compiler's amortization is not eroded at execution time.
 
-**Destination-oriented update engine (§6).** Input: the fixed record set, the published programs, execution GPUs, and one explicit destination. Output: exactly one committed target-version manifest, or a clean abort. The engine owns everything between the operator and visibility: program residency and multi-GPU placement, the bounded host-staged pipeline, the per-wave runtime sentinel with automatic escalation, the destination transaction, and the failure boundary.
+**Destination-oriented update engine (§6).** Input: the fixed record set, the published programs, execution GPUs, and one explicit destination. Normal-path output is exactly one complete target-version manifest. The implemented engine owns program residency and multi-GPU placement, the bounded host-staged pipeline, target allocation, and successful commit. Automatic escalation, abort visibility, and recovery are the next semantic layer, not evidence from the normal-path benchmark.
 
 The interfaces between the components are narrow by construction. The compiler communicates with the engine only through the immutable program artifact and its fallback chain; the engine communicates with the operator only through resident programs and homogeneous batches; and the only globally visible side effect of the entire system is the committed manifest.
 
 ### 3.3 Life of an update job
 
-A concrete walkthrough ties the components together. Streaming training publishes checkpoint \(\theta_t\). For each source version \(v\) with resident capsules, the coordinator forms cohort \((v,t)\) and invokes the compiler: calibration records are sampled, candidate actions are fit, GPU cost is measured, and the label-free certificate views are evaluated on disjoint users. The compiler publishes the least-cost certified action — in the common case a single folded affine program — together with its fallback chain (§4.2–§4.3). Cohorts smaller than the amortization floor skip compilation and go directly to exact replay.
+A concrete walkthrough ties the components together. Streaming training publishes checkpoint \(\theta_t\). For each source version \(v\), the coordinator forms cohort \((v,t)\) and invokes the compiler: calibration records are sampled, candidate actions are fit, GPU cost is measured, and the label-free certificate views are evaluated on disjoint users. The compiler publishes the least-cost certified action — in the current controlled configuration a single folded affine program — together with its fallback chain (§4.2–§4.3). If the serving old K/V is resident and the capacity and program checks pass, §4.5 derives and selects the direct old-K/V runtime form; otherwise the source policy selects exact. A cohort-size amortization rule remains to be measured.
 
-The coordinator then plans the job: records are grouped by cohort, sorted into length buckets, packed into extents, and assigned to GPUs by byte-weighted longest-processing-time-first placement (§6.1). Execution proceeds in bounded waves: a lazy shard reader streams capsules from the source tier in extent order, pinned H2D copies overlap fused-operator compute and D2H publication on separate streams, and a bounded queue applies backpressure (§6.3). Within each wave, the sentinel samples migrated records per cohort and re-evaluates the cheap certificate view; a violated bound escalates that cohort to the next action in its published chain and re-enqueues its records, monotonically, without operator or compiler involvement (§6.2).
+The coordinator then plans the job: records are grouped by cohort, sorted into length buckets, packed into extents, and assigned to GPUs by byte-weighted longest-processing-time-first placement (§6.1). The cold and host-staged paths use the lazy shard reader and bounded copy/compute/publication waves (§6.3). The primary hot path reads old K/V directly on its assigned GPU, writes replacement extents, and retires each old extent after replacement staging. The frozen plans already expose an ordered fallback chain, but the current full-cohort engine executes one preselected action per measured point. Section 6.2 specifies the remaining guard contract without treating it as implemented evidence.
 
-When every record of every cohort is covered exactly once, the engine commits: extents and metadata are sealed, the manifest is written last, and the destination atomically exposes the new target version (§6.4). Readers switch from the previous committed manifest to the new one at that instant. Any failure before commit aborts to the previous version with staging reclaimed, and a per-extent completion journal lets an interrupted job resume by re-migrating at most one wave (§6.5).
+When every record of every cohort is covered exactly once, the normal-path engine commits: extents and metadata are sealed and the complete manifest becomes the target-version result (§6.4). Stages 4 and 4.5 verify successful cold/host and hot/reclaiming paths. Visibility during failures and bounded resumption remain the open contract of §6.5 rather than measured behavior.
 
 ## 4. Design 1: Version-cohort migration compiler
 
@@ -272,9 +280,9 @@ Here \(s_a\) and \(s_t\) are full-catalog score vectors under action \(a\) and e
 
 The frozen contract requires, for all three views: a recovery target of at least 70%; a one-sided 90% bootstrap lower bound on ratio-of-means recovery of at least 70%; at least 80% per-user coverage after a one-sided 90% Wilson lower bound; and a measured GPU cost no greater than 30% of exact for the primary action. Section 8.3 reports a sensitivity sweep of the recovery target over {50, 60, 70, 80, 90}% and shows that action selection is stable in the ⟨TBD⟩–⟨TBD⟩% band, so the published thresholds are an interior operating point rather than a tuned edge.
 
-The compiler chooses the least-cost action that passes fidelity and budget. If no action passes the budget, it may publish the least-cost fidelity-certified overflow action. If no approximate action passes, exact recomputation is forced. The artifact also contains the ordered fallback chain consumed by the runtime sentinel (§6.2). Recommendation labels are withheld until final task evaluation.
+The compiler chooses the least-cost action that passes fidelity and budget. If no action passes the budget, it may publish the least-cost fidelity-certified overflow action. If no approximate action passes, exact recomputation is forced. The artifact also contains the ordered fallback chain intended for the open guard (§6.2). Recommendation labels are withheld until final task evaluation.
 
-"Label-free" does not mean "cost-free." Certification recomputes exact current K/V for its probe users and compares full-catalog score vectors. This cost is paid once per version pair and amortizes across the cohort: on the complete ⟨TBD⟩-record job, compile plus certificate time is ⟨TBD⟩ s, or ⟨TBD⟩ ms per migrated record — ⟨TBD⟩% of the per-record migration cost itself (§8.5). Cohorts smaller than ⟨TBD⟩ records do not amortize the certificate and should fall back to exact replay; the coordinator applies this size floor.
+"Label-free" does not mean "cost-free." Certification recomputes exact current K/V for its probe users and compares full-catalog score vectors. That cost is paid once per version pair, but Stage 4 does not include it in the per-job timing and therefore makes no amortization-floor claim. A later economics protocol must measure compile-plus-certificate time and define when a small cohort should go directly to exact replay.
 
 This contract verifies a synchronization implementation, not the proposition that the current model will improve a ranking metric. An action can pass semantic fidelity even when exact current K/V is worse than stale reuse on a particular task slice.
 
@@ -299,39 +307,80 @@ requires the old pre-block hidden suffix
 \(\{h_\ell^v\}_{\ell=p}^{L-1}\), which CohortKV treats as an optional, separately accounted source
 representation. A plan may publish this tier only when that suffix is retained; otherwise its
 fallback chain proceeds directly to exact recomputation. Section 8.7 reports these auxiliary bytes
-separately rather than hiding them in the default capsule footprint.
+separately rather than hiding them in the default capsule footprint. Real certificate-shard
+materialization rejects FP16 for this unnormalized state because its magnitude exceeds the finite
+range; the suffix therefore uses BF16 at the same two bytes per element. The normalized capsule,
+compiled program, and published K/V remain FP16.
 
 The tiers are selected per operating point rather than fixed globally. In the primary 50% replicated operating point, all 27 held-out chains select compiled projection; at the 75% discovery point, three large cells select residual depths 5, 6, and 7. The same library also positions the strongest external alternative: a DroidSpeak-adapted contiguous layer group [4], which starts from one stored old-version transition activation, recomputes that interval with the current model, and reuses old K/V elsewhere. Section 8.4 independently profiles this baseline under the identical label-free certificate and publication boundary.
 
 ### 4.4 Published program and fallback interface
 
-Compilation ends in an immutable program artifact: one folded affine projection per layer, together with a verified plan recording the certificates, the selected action, and the ordered fallback chain that the runtime sentinel consumes (§6.2). This artifact is the only channel between the compiler and the engine, which is what makes escalation possible without re-entering the compiler at run time. Serialization, metadata layout, and strict version/shape validation follow standard practice and are described in §7.
+Compilation ends in an immutable program artifact: one folded affine projection per layer, together with a verified plan recording the certificates, the selected action, and the ordered fallback chain intended for engine dispatch (§6.2). This artifact is the only channel between the compiler and the engine, which makes escalation possible without re-entering the compiler at run time; automatic engine dispatch remains an open implementation gate. Serialization, metadata layout, and strict version/shape validation follow standard practice and are described in §7.
 
 The certificate is applied to the deployed numeric representation, not only to the FP32 fitting
 path. Before publication, CohortKV reloads the serialized FP16 capsules and prepared runtime
 program, emits FP16 K/V, and repeats the frozen label-free views without changing thresholds or
 candidate selection.
 
-## 5. Design 2: Capsule-to-K/V operator
+In the adaptive seed-0 deployment recertification, all three source pairs pass on the disjoint
+60-user certificate role. Compiled full affine costs 0.01651–0.01657× the resident
+FP32-compute exact path with FP16 output, with cache recovery 0.8810/0.8897/0.9365 and worst recovery lower bounds
+0.8514/0.8391/0.9231 for theta0/theta4/theta10. These are certificate-role resident components,
+not final-user quality or complete-job costs.
 
-The key insight behind the operator is that in this workload the epilogue, not the GEMM, is where a compiled program loses its advantage. The compiled projection is a single matrix operation, so any per-batch masking, K/V splitting, or contiguous-copy pass executed after it costs a comparable order of work — and the destination transaction (§6.4) requires contiguous, destination-layout K and V, which framework primitives do not produce directly. The operator is therefore designed backward from the destination: one fused pass that consumes a cohort-homogeneous capsule batch and writes final-layout K/V with padding resolved in-kernel. An FP32 reference and a packed FP16 `baddbmm` path serve as the numerical oracle and the strong framework baseline; they involve no new design and are described in §7.
+### 4.5 Runtime reparameterization over existing old K/V
+
+The normalized capsule makes the repair easy to fit, but it is not the only sufficient runtime
+input. Let the source model's stacked K/V projection at layer \(\ell\) be
+\(P_v^\ell\in\mathbb{R}^{H\times 2D}\), with bias \(d_v^\ell\), so the already cached old state is
+
+\[
+o_v^\ell=[K_v^\ell,V_v^\ell]=z_v^\ell P_v^\ell+d_v^\ell.
+\]
+
+The deployed compiled program is \(z_v^\ell A_{v,t}^\ell+b_{v,t}^\ell\). In the evaluated HSTU,
+every \(P_v^\ell\) has full row rank. Its minimum-norm right inverse \(R_v^\ell\) therefore
+satisfies \(P_v^\ell R_v^\ell=I_H\), yielding the composed runtime form
+
+\[
+\hat{o}_t^\ell
+=o_v^\ell(R_v^\ell A_{v,t}^\ell)
++b_{v,t}^\ell-d_v^\ell R_v^\ell A_{v,t}^\ell.
+\]
+
+This is a compiler reparameterization, not a new fitted method: it preserves the certified
+capsule affine up to deployed FP16 transport error. The measured projection condition numbers are
+5.97–10.74. The three direct FP16 programs total 100.78 MB, while per-record normalized-state
+storage falls from 17.82 GB to zero. A direct program is admitted only when its provenance and
+integrity verify, the old K/V is present, and a capacity preflight passes; otherwise the policy
+selects exact. Section 8.5 independently checks both the real-value transport equivalence and the
+complete hot-HBM job.
+
+## 5. Design 2: Source-to-K/V operator
+
+The key insight behind the operator is that in this workload the epilogue, not the GEMM, is where a compiled program loses its advantage. Either compiled projection is a single matrix operation, so any per-batch masking, K/V splitting, or contiguous-copy pass executed after it costs a comparable order of work — and the destination transaction (§6.4) requires contiguous, destination-layout K and V, which framework primitives do not produce directly. The operator is therefore designed backward from the destination: one fused pass consumes a cohort-homogeneous normalized-state or old-K/V batch and writes final-layout K/V with padding resolved in-kernel. An FP32-arithmetic transport reference and packed FP16 paths serve as numerical oracles and strong framework baselines; they involve no new design and are described in §7.
 
 ### 5.1 Fused direct-write kernel
 
-The Triton operator consumes:
+The normalized-source Triton operator consumes:
 
 - a contiguous FP16 capsule \([L,B,S,H]\);
 - contiguous FP16 weights \([L,H,2D_{kv}]\);
 - biases \([L,2D_{kv}]\); and
 - one valid length per record.
 
-Its grid spans layers, row tiles over \(B\times S\), and output-width tiles. Each program accumulates the \(H\)-dimension in FP32, adds the layer bias, derives record and token positions from the flattened row, and replaces padded positions with zero. Output offsets below \(D_{kv}\) write directly to the contiguous K tensor; the remaining offsets write directly to V. The operator thus avoids a separate mask, split, and contiguous-copy epilogue.
+The direct-old-K/V variant preserves the same extent API but consumes the existing
+\([L,T,D_{kv}]\) K and V tensors and a composed \([L,2D_{kv},2D_{kv}]\) program. Both variants
+write the same separate, unpadded target K/V layout.
+
+Its grid spans layers, row tiles over \(B\times S\), and output-width tiles. Each program accumulates the \(H\)-dimension in FP32, adds the layer bias, derives record and token positions from the flattened row, and maps valid rows through the extent offsets; padded rows do not publish output elements. Output offsets below \(D_{kv}\) write directly to the contiguous unpadded K tensor; the remaining offsets write directly to V. The operator thus avoids a separate mask, split, compaction, and contiguous-copy epilogue.
 
 The output retains record IDs, the capsule's migration anchor, the program's served K/V target, and valid lengths. Numerical validation against the reference paths is part of the implementation test suite (§7).
 
 ### 5.2 Variable-length organization
 
-Padding is a systems cost even though it is semantically masked. The host runtime sorts records into length buckets and constructs small homogeneous batches within each source cohort. In the controlled layout search, removing length bucketing reduces migration throughput from 863.2 to 643.1 records/s; the selected 32-token bucket also outperforms adjacent 16- and 64-token buckets. On the complete cohort, whose length distribution is more dispersed than the 64-record trace, the bucket sweep is repeated and the selected width remains ⟨TBD⟩ tokens (§8.5).
+Padding is a systems cost even though it is semantically masked. The host runtime sorts records into length buckets and constructs small homogeneous batches within each source cohort. In the controlled layout search, removing length bucketing reduces migration throughput from 863.2 to 643.1 records/s. The current 60-record development distribution also selects a 32-token bucket with batch four at the resident boundary after comparing widths 16/32/64 and batches 1/2/4. This is only the operator default: on the complete cohort, every destination/GPU point repeats the frozen bucket and batch sweep independently (§8.5).
 
 We separately implemented a jagged capsule layout with per-record offsets and compact outputs that match the dense fused values. It is useful when many short fragments can be coalesced, but it is not a positive result on the current long-context trace. CohortKV therefore treats jagged/page compaction as a conditional layout mechanism, not as a defining contribution.
 
@@ -341,15 +390,17 @@ We separately implemented a jagged capsule layout with per-record offsets and co
 
 A job may contain several source versions but exactly one target. The key insight organizing residency is an asymmetry: programs are small and cohort state is large, so the engine replicates every source version's prepared program on every worker and partitions the record extents, and each worker selects its program from the capsule anchor. Placement uses byte-weighted longest-processing-time-first (LPT): an extent's work is estimated from its capsule and output bytes, and the next largest extent goes to the least-loaded worker. Simpler round-robin and input-order policies remain available as implementation options (§7).
 
-The program table is small relative to long-context state. In the two-GPU configuration, three FP16 programs replicated across both GPUs occupy 96.2 MiB; the target K/V is partitioned and needs no peer transfer. At four GPUs the replicated table grows to ⟨TBD⟩ MiB and remains below ⟨TBD⟩% of per-GPU HBM.
+The program table is small relative to long-context state. The three direct FP16 programs occupy
+96.11 MiB per worker, or 192.22/384.44 MiB across two/four GPUs; each replica is 0.211% of an
+A40's physical HBM. The target K/V is partitioned and needs no peer transfer.
 
-### 6.2 Runtime sentinel and automatic escalation
+### 6.2 Open guard and automatic-escalation contract
 
-Certification is statistical, so execution carries a guard. For each wave, the sentinel samples \(k\) migrated records per cohort, recomputes the cache-error certificate view against a cached exact probe, and maintains a running one-sided bound. If the bound violates the published contract, the coordinator re-enqueues the cohort's remaining records under the next action in the fallback chain and marks already-published extents of that cohort for re-migration before commit. Escalation is per-cohort and monotone; it never de-escalates within a job. The sentinel adds ⟨TBD⟩% overhead at \(k=\)⟨TBD⟩ on the complete cohort (§8.5), and §8.6 demonstrates a forced escalation end-to-end: a deliberately corrupted program triggers the sentinel, the cohort completes under residual-\(p\), and the committed manifest records the final action per cohort.
+Certification is statistical, so a complete deployment needs a guard between plan selection and commit. The intended contract samples migrated records per cohort, checks a label-free semantic view, and moves monotonically through the published fallback chain when a bound fails; exact recomputation terminates every chain. The current engine does not implement or evaluate that dispatch. The source-state path is now end-to-end competitive in its declared hot-HBM regime, so guard observability, probe cost, re-migration semantics, and false-escalation behavior are the next separate protocol. Until then, the frozen chain is executable plan metadata rather than a runtime-safety claim.
 
 ### 6.3 Host-staged pipeline
 
-Figure 4 shows one host-staged wave. CPU capsules are pinned, copied asynchronously to the assigned GPU, transformed by the resident program, and copied into persistent pinned target extents. Separate H2D, compute, and D2H streams allow adjacent batches to overlap. A single publication worker stages completed extents, while a bounded queue applies backpressure. Wave size bounds transformed output residency after source capsules have been materialized. For the complete cohort, a lazy shard reader streams capsules from their source tier in extent order, so peak host residency is bounded by the wave and queue depths rather than by the cohort size; measured peak source residency is ⟨TBD⟩ GiB against a logical cohort of ⟨TBD⟩ GiB (§8.5).
+Figure 4 shows one host-staged wave. CPU capsules are pinned, copied asynchronously to the assigned GPU, transformed by the resident program, and copied into persistent pinned target extents. Separate H2D, compute, and D2H streams allow adjacent batches to overlap. A single publication worker stages completed extents, while a bounded queue applies backpressure. Wave size bounds transformed output residency after source capsules have been materialized. For the complete cohort, a lazy shard reader streams shards in extent order, so transient source residency is bounded by the wave rather than by the cohort: the maximum observed source wave is 3.50 GiB and the maximum staging wave is 3.00 GiB, versus 16.60 GiB of logical FP16 capsules and 33.20 GiB of logical target K/V (§8.5).
 
 ![The host-staged engine overlaps capsule movement, fused transformation, target movement, and destination publication.](figures/04_execution_pipeline.svg)
 
@@ -378,26 +429,26 @@ The three measured backends are listed in Table 4.
 |---|---|---|
 | HBM | Compute on destination GPU; manifest points to resident device extents | Full-cohort benchmark (§8.5) |
 | DRAM | Pinned H2D -> transform -> D2H; in-memory manifest retains CPU extents | Full-cohort benchmark (§8.5) |
-| SSD (POSIX) | Host path; immutable serialized extents on a named NVMe device; same-filesystem rename publishes manifest and objects | Full-cohort benchmark (§8.6) |
+| SSD (POSIX) | Host path; immutable serialized extents; same-filesystem rename publishes manifest and objects | Functional interface; durable benchmark open (§8.6) |
 | Remote object | Host path; immutable object uploads; manifest object written last | Client protocol and in-memory reference store; interface only |
 
 How each backend realizes atomicity is standard storage practice — temporary-file writes with same-filesystem renames for POSIX, manifest-last object puts for the remote protocol — and is described in §7. These semantics do not constitute a distributed transaction across destinations.
 
 ### 6.5 Failure boundary
 
-An exception before commit aborts the transaction. DRAM and HBM drop private staging maps; POSIX removes the private staging directory; the remote adapter deletes unreferenced objects recorded by the transaction. Section 8.6 injects failures at four points — before the first extent, mid-wave, during publication, and immediately before commit — at full-cohort scale and verifies that no partial version becomes visible and that abort cleanup completes in ⟨TBD⟩ s. The coordinator additionally journals per-extent completion to the destination's staging area, so an interrupted job resumes idempotently from the last completed wave; resumption re-migrates at most one wave of records (⟨TBD⟩ records measured, §8.6). Cross-process crash recovery beyond this journal remains outside the claim.
+The transaction contract requires an exception before commit to leave the previous version visible and reclaim private staging state. The current Stage-4 result verifies only successful, complete, duplicate-free commits. Section 8.6 records the still-open failure protocol: inject faults before the first extent, mid-wave, during publication, and immediately before commit; verify visibility and cleanup; and determine whether extent journaling supports bounded idempotent resumption. None of those behaviors is part of the current performance claim.
 
 ## 7. Implementation
 
 CohortKV is implemented in roughly 9.5K lines of Python 3 and PyTorch for the core library, with a further 26K lines of tests, benchmarks, and experiment drivers. The simplified HSTU exposes per-layer normalized states and first-class K/V. This section collects the engineering the designs rely on but that follows standard practice.
 
-**Operator paths.** Three operators implement Equation (5). An FP32 reference materializes the concatenated projection before splitting K/V and serves as the numerical oracle. A packed FP16 path uses batched `baddbmm` over flattened record-token rows, expands the bias, applies a valid-length mask, and returns K/V views; it is the strong framework baseline of §8.5. The fused Triton kernel exposes tunable \(M,N,K\) tiles, warp count, and pipeline stages. Numerical validation compares both FP16 paths against the reference, including padding zeros and finite-value checks.
+**Operator paths.** Three normalized-source operators implement Equation (5) behind one `execute_into` interface whose endpoint is separate contiguous, unpadded K/V extents with lengths and offsets. The transport reference widens the same serialized FP16 capsule and runtime program for FP32 arithmetic, materializes the concatenated projection, and compacts FP16 K/V into the common extent. It is not the original FP32 fitted program or exact current-model K/V. A packed FP16 path uses batched `baddbmm` over flattened record-token rows, expands the bias, applies a valid-length mask, and copies valid K/V into the same extent; it is the strong framework baseline of §8.5. The fused Triton kernel exposes tunable \(M,N,K\) tiles, warp count, and pipeline stages and writes that extent directly. The direct-old-K/V path adds a second fused kernel with the same output ABI and a dense FP32-arithmetic oracle over concatenated old K/V. Numerical validation compares all valid elements, verifies dense padding zeros and finite values, and requires the dense and extent forms of each path to be element-identical.
 
 **Executors.** The CUDA streaming executor maintains separate copy and compute streams, optionally pins capsule inputs, and may write into persistent pinned output pools. The multi-GPU executor creates one single-device worker per GPU and combines per-device timing, bytes, record count, token count, program replicas, and assigned-work imbalance; round-robin and input-order placement remain available alongside LPT (§6.1).
 
-**Program artifact.** A migration program serializes source and target versions, layer count, input/K/V widths, compiled weights and biases, and fitting metadata; the verified plan serializes the contract, each action's cost and certificates, the selected action, selection reason, and fallback order. At load time, a source, shape, or device mismatch is an error rather than an implicit conversion.
+**Program artifact.** A migration program serializes source and target versions, layer count, input/K/V widths, compiled weights and biases, and fitting metadata; the verified plan serializes the contract, each action's cost and certificates, the selected action, selection reason, and fallback order. A direct-old-K/V program additionally binds the source checkpoint hash, parent runtime-program hash, parent verified-plan hash, source representation, and workload hash. At load time, a source, shape, provenance, or device mismatch is an error rather than an implicit conversion.
 
-**Destination mechanics.** For POSIX, each extent and the manifest are written through a temporary file and atomically replaced, and the staged directory is renamed into the target-version namespace at commit; the remote adapter assumes atomic individual object puts with a manifest-last commit marker. The per-extent completion journal lives in the destination's staging area. The engine additionally implements the lazy shard reader, the bounded publication queue, sentinel sampling hooks, direct-HBM dispatch, and job-level commit timing.
+**Destination mechanics.** For POSIX, each extent and the manifest are written through a temporary file and atomically replaced, and the staged directory is renamed into the target-version namespace at commit; the remote adapter assumes atomic individual object puts with a manifest-last commit marker. The normal-path engine implements the lazy shard reader, bounded publication queue, direct-HBM dispatch, coverage validation, and job-level commit timing. The hot-HBM engine additionally accounts complete old-cache occupancy and retires each old extent after its replacement is accepted. It does not yet implement automatic guard dispatch or the full failure-recovery protocol.
 
 ## 8. Evaluation
 
@@ -408,12 +459,12 @@ We organize the evaluation around five questions:
 - **RQ1:** Is cross-version K/V maintenance a meaningful opportunity across data tables and model capacities?
 - **RQ2:** Does the frozen compiler replicate in measured GPU cost and current-model semantic fidelity across training seeds, including when task quality is an unreliable gate?
 - **RQ3:** Does compiled affine repair dominate the strongest cross-model alternative, selective layer recomputation, on the cost–fidelity frontier?
-- **RQ4:** Does the advantage survive the complete update cohort through an identical destination transaction, at 1/2/4 GPUs and on HBM, DRAM, and SSD endpoints, including under injected failures?
+- **RQ4:** What happens to the resident-operator advantage on the complete update cohort through matched HBM/DRAM transactions at 1/2/4 GPUs, and where does end-to-end time go?
 - **RQ5:** What does the capsule cost in space and creation time, and when does it break even?
 
 **Datasets and task protocol.** The primary datasets are the standard KuaiRand-1K logs [6] and the QB/QK ordered-exposure tables from Tenrec [7]. The random-exposure KuaiRand log is excluded from training. The item vocabulary is fit only on the base period. Training uses only targets from the current stream date/window, evaluation positives are engaged items, and the model predicts item \(t+1\) from hidden state \(t\). Ranking uses the full base-fitted catalog. BestRank is the minimum catalog rank among a user's engaged positives, so lower is better; a reported BestRank gain is positive when ranking improves.
 
-**Semantics and measurement.** All comparisons use the stale-inference semantics from §2.1. GPU cost is measured rather than replaced by a hand-written constant. For replicated claims, the training seed is the statistical unit; users within one trained model are diagnostics. Timings are medians of three complete runs after one warmup. The testbed is ⟨TBD: 4× NVIDIA A40, host DRAM size, NVMe model, filesystem⟩.
+**Semantics and measurement.** All comparisons use the stale-inference semantics from §2.1. GPU cost is measured rather than replaced by a hand-written constant. For replicated claims, the training seed is the statistical unit; users within one trained model are diagnostics. Full-cohort timings are medians of three complete runs after correctness and warmup passes, with every method/destination/GPU point tuned independently. The testbed has four 46-GB NVIDIA A40 GPUs, two Intel Xeon Gold 5420+ sockets, and 1.0 TiB host DRAM. Source shards reside on `/dev/nvme2n1p1`, an Intel SSDPF2KX038XZ formatted as ext4 and mounted at `/data`. The benchmark reopens and decodes shards but does not evict the OS page cache, so it is a warm filesystem/page-cache measurement rather than a cold SSD result.
 
 **Baselines and ablations.** No existing system executes cross-version K/V migration for streaming HSTU end-to-end, so the comparison set is constructed at three levels, each tuned independently. (i) *End-point anchors*: stale reuse, which costs nothing and fails the certificate, and exact recomputation, which is the semantic reference at cost 1×. (ii) *Strongest adapted external method*: selective layer recomputation in the style of DroidSpeak [4], re-implemented for HSTU (§8.4). (iii) *Internal ablations that attribute our gains*: cheap projection without the fitted residual, residual-\(p\) replay, the no-transform placement bound, packed versus fused operators, and length bucketing on/off. Same-model restoration systems (HCache [3], CachedAttention [9]) are semantically inapplicable to the version-mismatch event and are positioned in §9 rather than measured.
 
@@ -453,6 +504,13 @@ The cells that miss the strict task gate are informative rather than disqualifyi
 | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ |
 | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ | ⟨TBD⟩ |
 
+The separate seed-0 deployed-representation certificate reloads serialized FP16
+capsules/programs, emits FP16 K/V, and leaves the 522 final users untouched. All three pairs select
+compiled full affine under the primary 70% contract. The selection remains compiled at targets
+50%–80% and becomes exact for all three pairs at 90%. The 0.01651–0.01657× resident packed-FP16
+component is not directly substituted for Table 6's final-user cost boundary and cannot be used as
+the full-cohort speedup.
+
 Across seeds, the certificate selects the full-affine program in ⟨TBD⟩ of ⟨TBD⟩ cohorts and escalates the remainder through the published chain; no cohort is published without passing its contract. Threshold sensitivity (Figure 5) shows the selection is stable for recovery targets between ⟨TBD⟩% and ⟨TBD⟩%, so the contract is an interior operating point.
 
 ![Certificate threshold sweep and per-seed recovery distribution.](figures/06_frozen_contract.svg)
@@ -467,84 +525,164 @@ At the harmful age-11 endpoint of the development seed, the selected action reco
 
 The strongest external alternative treats cross-version reuse as a layer-group recomputation problem. DroidSpeak profiles contiguous groups because each transition from reused state to receiver-model recomputation needs a sender activation (`E` cache), and scattered groups add both state and propagated mismatch [4]. We adapt that semantic path to HSTU: for each \(m\in\{2,4,6,8,12\}\), the development split profiles every legal contiguous \(m\)-layer interval; execution starts from the old pre-block hidden state, recomputes that interval with the current model, and reuses old K/V outside it. The profiler uses the same label-free cache/score/top-100 views as CohortKV rather than recommendation labels, and its old K/V, transition-state, and raw-history bytes are counted at the common source tier. The interval and \(m\) are frozen before the certificate and final users. This is a compatible DroidSpeak-adapted algorithmic baseline, not a reproduction of its distributed LLM serving runtime. The frontier is first measured on the primary 16-layer KuaiRand long-context chain; cross-capacity and cross-dataset cells are deferred until the single-configuration implementation is frozen. Figure 6 reports the primary chain.
 
-Figure 6 plots the cost–fidelity frontier. Selective recomputation improves smoothly with \(m\) but pays per-record forward cost for every recomputed layer: at the \(m\) needed to reach the 70% cache-recovery contract, its cost is ⟨TBD⟩× exact, compared with ⟨TBD⟩× for the compiled full-affine program at equal or higher recovery. The compiled program dominates the frontier at every certified operating point because its adaptation is amortized per version pair rather than executed per record. Internal structural controls (p4/p8 prefix replay, residual-\(p\)) fall between the two, consistent with the §4.3 tiering.
+Figure 6 plots the completed primary-chain development frontier: 53 selective intervals plus compiled, cheap, p4, p8, reuse, and exact for each of theta0/theta4/theta10→theta11, or 177 points total. Compiled repair costs 0.0656–0.0664× exact and reaches 0.8755–0.9258 worst-view recovery. The strongest selective point is \(m=12\), layers 0–11 for all three pairs; it costs 0.6973–0.6976× exact but reaches only 0.4495–0.4850 worst-view recovery. Thus compiled has both lower resident cost and higher worst-view recovery than every evaluated selective interval in this adaptive seed-0 cell. No selective candidate passes the frozen 70% three-view contract; exact is its publishable fallback. Cross-seed, cross-capacity, and cross-dataset replication remain ⟨TBD⟩ and must not be inferred from this result. Internal p4/p8 controls are also shown to delimit the frontier.
 
 ![Cost/exact versus semantic recovery for compiled affine, selective contiguous recomputation at m∈{2,4,6,8,12}, structural replay, and residual-p.](figures/07_pareto_frontier.svg)
 
-**Figure 6: Compiled affine repair dominates the certified cost–fidelity frontier.** Per-version-pair amortization beats per-record layer recomputation at every contract level.
+**Figure 6: Compiled affine repair dominates the seed-0 single-configuration selective frontier.** All selective certificates fail; the profiled \(m=12\) point is retained as a diagnostic baseline, not a publishable action.
 
-Two boundary cases are reported for completeness. A no-transform placement baseline (moving old K/V without any repair) bounds pure data-movement cost at ⟨TBD⟩× exact but fails the certificate at all ages, quantifying how much of migration cost is transformation versus movement. A same-model HCache-style restoration [3] is semantically inapplicable — it restores the wrong version by construction — and is included only to delimit the problem.
+Two boundary cases are reported for completeness. A no-transform placement baseline (moving old K/V without any repair) costs 2.82–6.57× exact on the complete-cohort HBM/DRAM grid and fails the certificate at all ages, exposing source movement rather than transformation as the dominant systems boundary. A same-model HCache-style restoration [3] is semantically inapplicable — it restores the wrong version by construction — and is included only to delimit the problem.
 
-**Answer to RQ3.** ⟨TBD after measurement; expected: compiled repair reaches contract-level fidelity at ⟨TBD⟩–⟨TBD⟩× lower cost than the best selective-layer configuration, the ordering is consistent across both datasets and both capacities, and the advantage widens with model depth.⟩
+**Answer to RQ3.** In the primary adaptive seed-0 cell, compiled repair strictly dominates all 53 selective intervals for every evaluated source age: it is about 10.5× cheaper than the highest-fidelity selective point while reaching substantially higher worst-view recovery. The selective baseline does not certify. Whether this ordering persists across training seeds, capacities, and datasets remains ⟨TBD after replication⟩.
 
 ### 8.5 RQ4: Complete cohort through an identical destination transaction
 
-**Workload.** The full update job migrates every eligible KuaiRand long-context record: 682 records and 1.087785 M logical prefix tokens across a predeclared controlled source mix (theta0/theta4/theta10 counts 136/205/341 → theta11), totaling 16.60 GiB of logical FP16 capsule bytes. The records are real, but the source versions are label-free controlled assignments rather than an organic cache-refresh trace. Capsules stream from buffered POSIX shards on the `/data` ext4 tier through the lazy shard reader. Exact recomputation reads raw histories from the same tier; the selective-contiguous baseline reads raw histories, old K/V, and its selected transition hidden state there. Any residual-\(p\) control also reads its explicitly retained old hidden suffix. The paths share a physical tier rather than identical source bytes, so logical and physical input traffic is reported separately. All three primary pipelines are independently tuned per destination and GPU count and publish complete FP16 K/V through the same destination transaction; source read, target allocation, and manifest commit are included in completion time.
+**Workload.** The full update job migrates every eligible KuaiRand long-context record: 682 records and 1.087785 M logical prefix tokens across a predeclared controlled source mix (theta0/theta4/theta10 counts 136/205/341 → theta11), totaling 16.60 GiB of logical FP16 capsule bytes. The records are real, but the source versions are label-free controlled assignments rather than an organic cache-refresh trace. Capsules stream from buffered POSIX shards on the `/data` ext4 tier through the lazy shard reader. Exact recomputation reads raw histories from the same tier. The frozen selective diagnostic is \(m=12\), layers 0–11, so it reads raw histories and old K/V but no transition hidden state; it remains explicitly certificate-failed. Any residual-\(p\) control also reads its explicitly retained BF16 old hidden suffix. The paths share a physical tier rather than identical source bytes, so logical and physical input traffic is reported separately. All three primary pipelines are independently tuned per destination and GPU count and publish complete FP16 K/V through the same destination transaction; source read, target allocation, and manifest commit are included in completion time.
 
-**Operator microbenchmark.** Table 7 retains the resident-batch comparison (one record, sequence width 2047): the fused Triton path is 1.19× faster than packed FP16 `baddbmm` and 4.42× faster than the FP32 reference, and it is the only path that writes contiguous destination-layout K/V.
+**Operator microbenchmark.** Table 7 uses a real four-record, sequence-width-2,047 batch and includes the complete write to the same preallocated unpadded K/V extent for every path. Fused is 1.97× faster than packed and uses no global temporary beyond the target, whereas packed's concatenated projection and compact-copy epilogue peak at 402.6 MB. Across the full 60-record development length distribution, the frozen fused configuration is 1.995× faster than the fastest packed control, and every fused sample is below every packed sample. This establishes the operator choice, not a stable ordering among the close fused batch/bucket finalists. All nine layouts pass the transport tolerance on all 1.443 billion valid FP16 K/V elements per layout, with zero dense padding values. The reference widens the same serialized FP16 inputs for FP32 arithmetic; thus the error column isolates execution/layout error and is separate from semantic error against current-model exact K/V.
 
 **Table 7: Operator tiers on a representative resident batch.**
 
-| Operator | Median time | Speedup from previous row | Relative K/V error from FP32 | Contiguous K/V |
-|---|---:|---:|---:|---|
-| FP32 reference | 3.119 ms | - | 0 | no |
-| Packed FP16 `baddbmm` | 0.838 ms | 3.72× | 3.66e−4 | no |
-| Fused FP16 Triton | 0.706 ms | 1.19× | 3.66e−4 | yes |
+| Operator | Median time | Speedup from previous row | Full-distribution relative K/V error from transport reference | Peak operator temporary |
+|---|---:|---:|---:|---:|
+| FP32-arithmetic transport reference → common extent | 14.610 ms | - | 0 | 1,073.8 MB |
+| Packed FP16 `baddbmm` → common extent | 5.378 ms | 2.72× | 2.27e−5 | 402.6 MB |
+| Fused FP16 Triton → common extent | 2.729 ms | 1.97× | 2.50e−5 | 0 |
+
+The time and temporary-memory columns use the representative batch; the error column is computed independently over the complete 60-record `b4/w32` development distribution.
 
 **Full-cohort results.** Table 8 reports completion time and throughput for the complete job.
 
 **Table 8: Complete-cohort migration versus tuned exact recomputation through the identical destination transaction.**
 
-| Configuration | Destination | Completion | Throughput | Speedup vs exact |
-|---|---|---:|---:|---:|
-| Compiled, 1 GPU | DRAM | ⟨TBD⟩ | ⟨TBD⟩ rec/s | ⟨TBD⟩× |
-| Compiled, 2 GPUs | DRAM | ⟨TBD⟩ | ⟨TBD⟩ rec/s | ⟨TBD⟩× |
-| Compiled, 4 GPUs | DRAM | ⟨TBD⟩ | ⟨TBD⟩ rec/s | ⟨TBD⟩× |
-| Compiled, 4 GPUs | HBM | ⟨TBD⟩ | ⟨TBD⟩ rec/s | ⟨TBD⟩× |
-| Selective-layer (certified \(m\)), 4 GPUs | DRAM | ⟨TBD⟩ | ⟨TBD⟩ rec/s | ⟨TBD⟩× |
-| Exact BF16, 4 GPUs | DRAM | ⟨TBD⟩ | ⟨TBD⟩ rec/s | 1× |
+| Destination | GPUs | Compiled | Compiled throughput | Exact | Exact throughput | Compiled speedup (exact / compiled) |
+|---|---:|---:|---:|---:|---:|---:|
+| HBM | 1 | 27.083 s | 25.18 rec/s | 18.881 s | 36.12 rec/s | 0.697× |
+| HBM | 2 | 18.943 s | 36.00 rec/s | 9.644 s | 70.72 rec/s | 0.509× |
+| HBM | 4 | 13.707 s | 49.76 rec/s | 5.742 s | 118.77 rec/s | 0.419× |
+| DRAM | 1 | 22.567 s | 30.22 rec/s | 18.886 s | 36.11 rec/s | 0.837× |
+| DRAM | 2 | 12.231 s | 55.76 rec/s | 9.391 s | 72.62 rec/s | 0.768× |
+| DRAM | 4 | 15.662 s | 43.54 rec/s | 5.448 s | 125.18 rec/s | 0.348× |
 
-⟨TBD after measurement; expected findings, each of which must be revised if contradicted:⟩
+The full matrix reverses the resident-operator expectation:
 
-- Scaling from one to four GPUs is near-linear (⟨TBD⟩% efficiency at 4 GPUs) because extents are independent and programs are replicated; LPT keeps assigned-work imbalance below ⟨TBD⟩%.
-- The end-to-end selective-layer pipeline at its certified \(m\) is ⟨TBD⟩× slower than the compiled path through the identical transaction, consistent with the §8.4 frontier: its per-record layer recomputation cost does not amortize.
-- The full-cohort speedup over tuned exact recomputation is ⟨TBD⟩× on DRAM — lower than the 11.22× measured on the 64-record controlled trace [supplanted; retained in Appendix ⟨TBD⟩] because sequential capsule reads make the compiled path partially I/O-bound, whereas exact remains compute-bound. We report the compute-bound and I/O-bound regimes separately (Figure 7).
-- Peak host residency is bounded at ⟨TBD⟩ GiB by the wave and queue depths, independent of cohort size; peak HBM is ⟨TBD⟩ GiB per GPU.
-- Compile-plus-certificate time amortizes to ⟨TBD⟩% of job time; the sentinel at \(k=\)⟨TBD⟩ adds ⟨TBD⟩% overhead; manifest commit takes ⟨TBD⟩% of completion.
+- Compiled remains 2.70–3.49× faster than the frozen selective diagnostic through the same destination, even though that diagnostic is not publishable because its certificate fails.
+- Exact is 1.20–2.87× faster than compiled in all six matched endpoint comparisons. Compiled scales by 1.98× on HBM and 1.44× on DRAM from one to four GPUs, while exact scales by 3.29× and 3.47×.
+- Source read, decode, and pinning account for 91.35%–96.91% of compiled wall time. The serialized FP16 capsule occupies 17.82 GB physically, about 200× the 89.1-MB raw-history source used by exact. Compiled resident compute takes only 0.118–0.954 s; exact spends 5.03–18.08 s in compute.
+- All 30 method/destination/GPU points pass preflight, full-source correctness, finite/allclose checks over 17.82 billion valid elements, and complete duplicate-free manifest validation. Maximum observed transient source and staging waves are 3.50 and 3.00 GiB; publication-queue residency is zero in the selected schedules.
 
-![Completion-time breakdown (read, H2D, compute, D2H, publish, commit) for compiled and exact paths at 1/2/4 GPUs.](figures/08_full_cohort_breakdown.svg)
+![Completion time and source-read share for compiled and exact paths at 1/2/4 GPUs.](figures/08_full_cohort_breakdown.svg)
 
-**Figure 7: Where full-cohort time goes.** The compiled path shifts the bottleneck from GPU compute to source bandwidth; the identical transaction keeps the comparison honest.
+**Figure 7: Where full-cohort time goes.** Source supply dominates compiled wall time, whereas exact remains compute-bound. Phase timers can overlap, so the figure decomposes wall time only into source-read time and the remaining wall time.
 
-**Answer to RQ4 (throughput).** ⟨TBD; expected: the compiled advantage survives the complete cohort and the identical transaction at every GPU count, with the margin governed by source bandwidth rather than kernel speed.⟩
+This 30-point sweep is the one-time closure matrix used to establish that the bottleneck and ordering persist across methods, destinations, and GPU counts. Source-state candidates do not repeat it during iteration: resident ceilings and candidates use the 60-record program-selection role, after which only the predeclared 1/4-GPU full-cohort representative points run against paired exact.
 
-### 8.6 RQ4 continued: SSD endpoint, escalation, and failure injection
+The winning source plan is the direct reparameterization of §4.5. It reads the serving old K/V
+already in HBM, adds no per-record source state, and reclaims each old extent after its
+replacement is accepted. Exact receives its complete raw history already in HBM. Table 8b adds
+the predeclared representatives and the subsequent two-GPU expansion; each row has one
+correctness run, one warmup, and five measured complete jobs.
 
-**SSD.** On a named NVMe device (⟨TBD: model, filesystem, fsync policy⟩), the compiled path publishes the complete cohort in ⟨TBD⟩ s at ⟨TBD⟩ GiB/s serialized bandwidth, versus ⟨TBD⟩ s for exact recomputation through the same POSIX transaction. Because both paths serialize identical target bytes, the destination write cost is common, and the end-to-end gap narrows to ⟨TBD⟩× — the SSD figure that a deployment should expect, as distinct from the compute-boundary figure in Table 8.
+**Table 8b: Complete-cohort direct-old-K/V hot-HBM source plan.**
 
-**Forced escalation.** With a deliberately corrupted theta4 program, the sentinel detects contract violation within ⟨TBD⟩ waves, the coordinator escalates the cohort to residual-\(p\), already-staged extents are re-migrated before commit, and the manifest records per-cohort final actions. Job completion degrades by ⟨TBD⟩×, bounded by the escalated cohort's share.
+| GPUs | Direct compiled | Paired exact | Speedup | Peak old + new K/V |
+|---:|---:|---:|---:|---:|
+| 1 | 0.9299 s | 18.6949 s | 20.11× | 35.91 GB |
+| 2 | 0.4936 s | 9.7291 s | 19.71× | 36.18 GB |
+| 4 | 0.2546 s | 4.7655 s | 18.72× | 37.79 GB |
 
-**Failure injection.** Failures injected before the first extent, mid-wave, during publication, and immediately before commit all abort cleanly: no partial version is ever visible to a reader polling the destination, staging areas are reclaimed in ⟨TBD⟩ s, and the completion journal resumes an interrupted job re-migrating at most one wave (⟨TBD⟩ records).
+Every compiled repetition is below every paired exact repetition, all capacity preflights and
+complete manifests pass, and final old-K/V occupancy is zero. A separate real-value fused
+transport covers all 682 records and 17,822,269,440 valid elements with zero mismatches at
+`atol=0.02, rtol=0.02` and maximum absolute error 0.01172 against the deployed
+normalized-capsule output. The timed repetitions use shape-, dtype-, layout-, and
+occupancy-equivalent old-K/V values; therefore the real transport and the system timings are
+separate necessary evidence. This result is limited to the existing-old-K/V hot-HBM regime.
+
+**Answer to RQ4 (throughput).** The normal full-cohort engine and matched transactions work. The
+normalized-capsule file path fails because source movement, not the kernel, is limiting; composing
+the same certified transform over already resident old K/V removes that source state and creates
+a stable complete-job Pareto point in the declared hot-HBM regime.
+
+### 8.6 RQ4 continued: Repeated-update lifecycle
+
+The one-hop source-plan certificate does not bound a later affine applied to its approximate
+output. We therefore run one fixed KuaiRand seed-0, 16L/H512, one-A40 chain from exact theta0 K/V
+through all 11 adjacent checkpoints to theta11. Every update chooses either direct migration or
+charged exact replay, and every migrated cache is the next update's actual input.
+
+The first per-cache norm-sketch threshold reaches acceptable cumulative fidelity and beats a
+matched-random diagnostic, but it refreshes between 0.15% and 65.1% of the cohort per update. We
+reject this synchronized maintenance wave. The frozen replacement ranks each model edge by median
+fit one-hop cache error, maps the edge to a 15%–25% exact budget, and refreshes greater migration
+age first; depth four is mandatory exact and a stable hash breaks ties. This is a bounded
+development heuristic rather than an optimal per-user risk predictor.
+
+**Table 8c: Controlled theta0-to-theta11 lifecycle.**
+
+| Role | Records | Cumulative GPU cost / all-exact | Maximum step cost / all-exact | Exact fraction | Minimum cache fidelity | Minimum score cosine | Minimum top-100 overlap |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Independent certificate | 60 | 0.2142× | 0.2814× | 15.0%–25.0% | 0.9613 | 0.999759 | 0.9898 |
+| Complete chain | 682 | 0.2134× | 0.2543× | 14.956%–25.073% | 0.9632 | 0.999950 | 0.9918 |
+
+The complete-chain range includes nearest-record rounding. Mechanical freeze checks rebuild all
+7,502 record/update lineage rows, verify exact reset and maximum depth four, and confirm that every
+edge consumes the previous actual output under the correct adjacent program hash. Across 522
+final-test records, maximum absolute per-step mixed-minus-exact gaps are 4.171 MeanRank,
+8.35e−5 Catalog AUC, 3.49e−4 NDCG@100, and 0.00384 Hit@100. Labels do not select or route the
+policy.
+
+**Answer to RQ4 (lifecycle).** In this controlled fixed-history chain, balanced exact refresh
+bounds recursive approximate migration while retaining about one-fifth of all-exact GPU cost.
+This does not establish selector optimality, new-seed replication, or behavior under organic
+request arrivals.
+
+### 8.7 RQ4 continued: SSD endpoint, escalation, and failure injection
+
+This subsection is an open evaluation contract, not evidence from Stage 4.
+
+- **SSD:** run a separately named durable POSIX protocol that records the device, filesystem, page-cache state, write path, and `fsync` policy. The current `/data` measurement reads warm source shards from an NVMe-backed ext4 filesystem but publishes to HBM or DRAM; it is not an SSD destination result.
+- **Forced escalation:** corrupt a program under a protocol-valid guard, verify monotone transition through the published fallback chain, and measure re-migration before commit.
+- **Failure injection:** inject failures before the first extent, mid-wave, during publication, and immediately before commit; then verify visibility, cleanup, and any claimed restart bound.
 
 **Layout boundary.** The jagged experiment compacts valid tokens and matches dense fused K/V element-for-element, but end-to-end compaction yields only 1.019× on the host path and 0.984× at the direct-HBM boundary. We retain its machinery without claiming a positive layout result.
 
-**Answer to RQ4 (semantics).** The destination transaction holds at full-cohort scale under escalation and injected failures; the remote-object backend remains interface-validated and carries no performance claim.
+**Answer to RQ4 (semantics).** Successful HBM/DRAM commits have complete, duplicate-free manifests. Automatic escalation, injected-failure visibility, durable SSD publication, and the remote-object backend carry no full-cohort performance or recovery claim.
 
-### 8.7 RQ5: Capsule economics
+### 8.8 RQ5: Capsule economics
 
-The capsule is the system's principal standing cost. Unpadded FP16 `Norm(x)` is 50% of logical FP16 K/V at equal widths. Three measurements bound this cost. First, capsule capture adds ⟨TBD⟩% to the forward pass that materializes fresh K/V, because the normalized states are already computed and only need a strided copy; this is the same capture point for initial ingestion and for exact recomputation. Second, a symmetric signed INT8 storage layout with one FP32 absmax scale per record and layer reduces the capsule data footprint to 25% of logical FP16 K/V before scale and offset metadata; capsules are dequantized to FP16 during host staging, so the fused operator and the compiled program are unchanged, and final K/V recovery drops by only ⟨TBD⟩ points. Third, the break-even analysis (Figure 8) is deliberately workload-free: it expresses total maintenance cost as a function of the number of migrations a record undergoes between capsule creations, using only quantities measured in this paper (capsule capture overhead, complete compiled-migration cost, compiler/certificate amortization, and complete exact-replay cost). Retaining capsules is cheaper than history replay once a record is migrated more than ⟨TBD⟩ times; a nonpositive measured denominator is instead reported as no time break-even. Deployment-specific parameters such as re-access frequency and monetary byte cost are outside the datasets we use, so we report the measured time crossover and byte ratios, not a workload or cost claim. Optional transition activations and residual hidden suffixes are reported in a separate auxiliary-state row; they are never folded into the headline 16.60-GiB capsule number.
+The normalized capsule is the original path's principal standing cost. Unpadded FP16 `Norm(x)` is
+50% of logical FP16 K/V at equal widths: the measured cohort contains 17.82 GB of serialized
+capsules for 35.64 GB of logical target K/V. Stage 4 establishes no time break-even for repeatedly
+reading that representation because compiled completion exceeds exact at every measured endpoint.
+A pinned-DRAM full-cohort candidate makes the capsule path fast after setup
+(1.529/0.252 seconds on 1/4 GPUs), but retains about 17.86 GB of host state and requires
+39.5/24.7 seconds to preload, for three/six-update time break-even against its paired exact.
+
+The selected direct-old-K/V route removes the capsule from runtime instead of compressing it. The
+old K/V is the serving state already present before migration; the source plan adds zero
+per-record bytes, needs no independent capture or preload, and adds only 100.78 MB of programs per
+worker. Extent reclamation bounds old/new coexistence. Program compilation and publication remain
+once-per-version-pair costs; their broader cohort-size amortization and normalized-capsule
+capture/INT8 controls are still ⟨TBD⟩. A symmetric signed INT8 capsule would reduce capsule data to
+roughly 25% of FP16 K/V before metadata, but it is now a representation ablation rather than a
+prerequisite for the primary route. Deployment-specific re-access frequency and monetary byte
+cost remain outside the available traces.
 
 ![Capsule storage/precision frontier and update-frequency break-even.](figures/09_capsule_economics.svg)
 
 **Figure 8: The capsule is a measured space-for-update-time trade, not free metadata.**
 
-**Answer to RQ5.** ⟨TBD; expected: INT8 capsules at ~25% of K/V bytes make the trade favorable for any cohort updated at streaming frequency; the FP16 capsule remains the conservative default.⟩
+**Answer to RQ5.** The FP16 normalized capsule is semantically effective but economically
+inadmissible as the primary full-cohort source. Direct old-K/V reparameterization preserves its
+semantic target with zero additional per-record state; INT8 remains a secondary space/economics
+control.
 
-### 8.8 Discussion and limitations
+### 8.9 Discussion and limitations
 
-**What the results mean.** Stale reuse forfeits a measurable, reproducible fraction of streaming value (RQ1), but neither cache age nor realized task gain is a calibrated predictor of which cohort needs repair (RQ2). The compiled affine repair fills this gap at roughly an order of magnitude lower GPU cost than exact replay, dominates per-record layer recomputation because its adaptation is amortized per version pair (RQ3), and the advantage survives the complete cohort, an identical destination transaction, escalation, and injected failures (RQ4), at a standing capsule cost that measurement bounds rather than assumes (RQ5). These findings follow the observation-to-design discipline of recent serving systems: as DistServe maps prefill-decoding interference to disaggregation [11] and Orca derives iteration-level scheduling from autoregressive semantics [10], CohortKV maps version invalidation to version-cohort compilation. The practical consequence is that streaming recommenders need not choose between indefinite stale reuse and full recomputation: a complete update cohort can be moved toward the current model at measured cost and published as one atomic version.
+**What the results mean.** Stale reuse forfeits a measurable, reproducible fraction of streaming value (RQ1), but neither cache age nor realized task gain is a calibrated predictor of which cohort needs repair (RQ2). Compiled affine repair is a strong semantic mechanism at the resident boundary and dominates per-record selective layer recomputation in the controlled frontier (RQ3). The first complete-cohort result rejects the normalized-state supply path rather than the algebra: moving a 17.82-GB FP16 capsule overwhelms sub-second resident compute. Reparameterizing the certified affine over the old K/V already present in the hot cache eliminates that additional state and establishes a scoped end-to-end advantage over same-tier exact (RQ4–RQ5). A controlled repeated-update chain further shows that age/deadline-balanced exact refresh can bound recursive migration at about one-fifth of all-exact GPU cost. Its rejected threshold predecessor is equally important: acceptable cumulative fidelity does not prevent harmful per-update maintenance waves. Automatic guard, fallback, and failures remain after this policy gate.
 
-**Limitations.** Several boundaries condition these claims, and each points to a concrete next step. The model is a modular, simplified HSTU of up to about 0.18 B parameters rather than the production-scale system in the original HSTU work [1], so evidence at larger capacity remains open; KuaiRand is the only long-context chain with the complete current design, and QB and QK broaden ordered-exposure evidence but are related Tenrec tables without a shared calendar. The mechanism depends on the per-layer `Norm(x) -> P` data path, which standard pre-LN Transformers share, so a natural probe is cross-version affine repair on a continually pretrained LLM checkpoint pair. Programs are compiled per source/target pair: when a record misses several updates, the system currently compiles each (v, t) edge independently, and whether programs compose along the version chain — `Φ(v→t2) ≈ Φ(t1→t2) ∘ Φ(v→t1)`, which stays affine and would reduce the program set from quadratic to linear in the version count — is the most promising structural extension, together with warm-started incremental fitting from the previous pair. Finally, the remote-object backend remains interface-validated, the completion journal does not cover coordinator crash recovery beyond one wave, and online serving — request arrivals, per-user hotness, and migration sharing GPUs with foreground inference — is entirely outside the evaluated boundary (§3.1): the datasets carry no request traces, so any serving-workload claim would rest on constructed load, and we do not make one.
+**Limitations.** Several boundaries condition these claims, and each points to a concrete next step. The model is a modular, simplified HSTU of up to about 0.18 B parameters rather than the production-scale system in the original HSTU work [1], so evidence at larger capacity remains open; KuaiRand is the only long-context chain with the complete current design, and QB and QK broaden ordered-exposure evidence but are related Tenrec tables without a shared calendar. Fitting depends on the per-layer `Norm(x) -> P` data path, while the zero-extra-state runtime form additionally depends on the stacked source K/V projection having stable full row rank; both conditions require explicit checks before transfer to another architecture. The repeated-input result is one fixed-history, one-seed chain. Its edge severity is calibrated from fit-record exact references, and its age/deadline quota is a deterministic heuristic rather than a proof of optimal per-cache refresh; cross-seed, cross-dataset, and organic mixed-version behavior remain open. Programs are compiled per source/target pair: when a record misses several updates, the system currently compiles each (v, t) edge independently, and whether programs compose along the version chain — `Φ(v→t2) ≈ Φ(t1→t2) ∘ Φ(v→t1)`, which stays affine and would reduce the program set from quadratic to linear in the version count — is a structural extension, together with warm-started incremental fitting from the previous pair. Finally, automatic guard dispatch, failure recovery, durable SSD publication, and the remote-object backend do not have full-cohort evidence. The measured speedup is limited to complete old K/V already resident in HBM; cold storage and automatic cache-tier selection are not implied. Online serving — request arrivals, per-user hotness, and migration sharing GPUs with foreground inference — is also outside the evaluated boundary (§3.1): the datasets carry no request traces, so any serving-workload claim would rest on constructed load, and we do not make one.
 
 ## 9. Related work
 
@@ -554,7 +692,7 @@ The capsule is the system's principal standing cost. Unpadded FP16 `Norm(x)` is 
 
 **Cross-model K/V.** DroidSpeak is the closest cross-model system: same-architecture fine-tuned LLM variants share K/V by selectively recomputing some layers and reusing the rest [4]. Consequently, "cross-model K/V reuse" alone is not a CohortKV contribution, and §8.4 compares against a selective-layer baseline directly rather than by classification. The distinction the measurement supports is amortization structure: selective recomputation pays per record and per layer, whereas the compiled program pays once per version pair and executes as one projection. CohortKV additionally certifies label-free semantic views and publishes fixed cohorts as atomic target versions, which the request-serving setting of DroidSpeak does not require.
 
-**Execution units and observation-driven systems.** Orca derives iteration-level scheduling and selective batching from autoregressive model semantics, making the iteration a shared unit across scheduler and engine [10]. CohortKV similarly uses the source/target version cohort across compiler, batcher, placement, sentinel, and manifest, but not as an online scheduling or safety prediction. DistServe maps prefill/decode interference to disaggregation and placement [11]. CohortKV follows the same observation-to-design discipline. Table 9 positions CohortKV against the closest K/V systems.
+**Execution units and observation-driven systems.** Orca derives iteration-level scheduling and selective batching from autoregressive model semantics, making the iteration a shared unit across scheduler and engine [10]. CohortKV similarly uses the source/target version cohort across compiler, batcher, placement, fallback metadata, and manifest, but not as an online scheduling or safety prediction. DistServe maps prefill/decode interference to disaggregation and placement [11]. CohortKV follows the same observation-to-design discipline. Table 9 positions CohortKV against the closest K/V systems.
 
 **Table 9: Closest K/V systems and the CohortKV boundary.**
 
@@ -563,11 +701,11 @@ The capsule is the system's principal standing cost. Unpadded FP16 `Norm(x)` is 
 | HCache [3] | same model | intermediate activation | restore after eviction | request/chunk K/V |
 | DroidSpeak [4] | fine-tuned LLM variants, same architecture | another variant's K/V | selective layer recomputation + reuse | request prefill |
 | MTServe [5] | no source->target version transform | persisted per-user K/V | place/load/evict | serving-time page/chunk cache |
-| CohortKV | successive streaming HSTU versions | old per-layer `Norm(x)` capsule | compiled affine repair + certified, sentinel-guarded fallback | fixed version cohort -> target manifest |
+| CohortKV | successive streaming HSTU versions | existing old K/V in primary hot path; `Norm(x)` for fit/reference | compiled affine repair reparameterized over old K/V + certified fallback plan; automatic guard open | fixed version cohort -> target manifest |
 
 ## 10. Conclusion
 
-Persistent recommender K/V is not only a capacity object; under streaming training it is model-versioned derived state that can be migrated. CohortKV organizes its update around a source/target version cohort, compiles shared repair into one affine HSTU projection, executes it with a fused direct-write operator under a runtime sentinel, and publishes a complete target version through an explicit destination transaction. Across 27 replicated model chains and ⟨TBD⟩ frozen-contract seeds, compiled repair is roughly an order of magnitude cheaper than exact K/V recomputation while closing a majority of the state gap; it dominates selective layer recomputation on the certified cost–fidelity frontier; and the complete ⟨TBD⟩-record cohort publishes atomically at ⟨TBD⟩× the tuned exact cost on measured HBM, DRAM, and SSD endpoints, surviving forced escalation and injected failures. Version-stale K/V can therefore be treated as a first-class migratable object. Future work should test program composition along version chains, extend the transaction to remote stores, and probe the same compiled repair on continually pretrained Transformer checkpoints.
+Persistent recommender K/V is model-versioned derived state. CohortKV organizes its update around a source/target version cohort, compiles shared repair into one affine HSTU projection, and executes it with a fused direct-write operator. Across 27 replicated model chains the mechanism costs 0.121× resident exact recomputation while closing a majority of the state gap; in the controlled seed-0 cell its deployed programs recover 0.881–0.936 and dominate every measured selective-layer action. The 682-record normal-path engine publishes complete HBM/DRAM manifests and exposes a decisive representation boundary: the 17.82-GB normalized-capsule file path loses to exact everywhere. Composing the same certified affine over the serving old K/V eliminates that additional state; complete hot-HBM updates are 18.72–20.11× faster than paired same-tier exact at 1/2/4 GPUs while reclaiming every old extent. A controlled 11-update chain then bounds recursive approximate migration with balanced exact refresh at 0.213× cumulative all-exact GPU cost. Automatic fallback, failure recovery, durable storage, and broader lifecycle replication remain open.
 
 ## References
 
@@ -602,9 +740,13 @@ Persistent recommender K/V is not only a capacity object; under streaming traini
 | 3×3 capacity and age screen | capacity v2 | `results/motivation_scale/capacity_v2_summary.json` |
 | 27-chain compiled repair | cohort-tiered migration v1 | `results/motivation_scale/cohort_tiered_migration_v1_summary.json` |
 | Frozen compiler replication | ⟨TBD: verified compiler v2, multi-seed⟩ | ⟨TBD⟩ |
-| Selective-layer baseline frontier (3 chains: KuaiRand-long, KuaiRand-medium, QB-large) | ⟨TBD: cross-model baseline v1⟩ | ⟨TBD⟩ |
-| Selective-layer end-to-end full-cohort row | ⟨TBD: destination out-of-core v5, baseline pipeline⟩ | ⟨TBD⟩ |
-| Full-cohort destination benchmark | ⟨TBD: destination out-of-core v5⟩ | ⟨TBD⟩ |
+| Deployed compiler artifact/certificate, seed-0 development | CohortKV Stage 2 compiler v1 | `configs/cohortkv_single_config_v1/stage2_compiler_summary.json` |
+| Selective-layer baseline frontier (primary KuaiRand-long development cell) | CohortKV Stage 1 frontier v1 | `configs/cohortkv_single_config_v1/stage1_frontier_summary.json` |
+| Selective-layer frontier replication (KuaiRand-medium, QB-large, new seeds) | ⟨TBD: cross-model baseline replication v1⟩ | ⟨TBD⟩ |
+| Selective-layer end-to-end full-cohort row | CohortKV Stage 4 system v1 | `configs/cohortkv_single_config_v1/stage4_system_summary.json` |
+| Full-cohort HBM/DRAM benchmark and source bottleneck | CohortKV Stage 4 system v1 | `configs/cohortkv_single_config_v1/stage4_system_summary.json` |
+| Direct-old-K/V hot-HBM source plan, certificate, transport, and 1/2/4-GPU jobs | CohortKV Stage 4.5 frozen v1 | `configs/cohortkv_single_config_v1/stage4_5_source_plan_summary.json` |
+| Repeated-update per-cache migrate-or-exact lifecycle | CohortKV Stage 4.6 lifecycle v1 | `configs/cohortkv_single_config_v1/stage4_6_lifecycle_summary.json` |
 | SSD endpoint | ⟨TBD: physical POSIX v1⟩ | ⟨TBD⟩ |
 | Capsule economics | ⟨TBD: capsule economics v1⟩ | ⟨TBD⟩ |
 | Escalation and failure injection | ⟨TBD: destination out-of-core v5 failure suite⟩ | ⟨TBD⟩ |
