@@ -1,0 +1,65 @@
+{
+  "protocol": "cohortkv_single_config_stage5_formal_canary_v1",
+  "status": "frozen_before_formal_stage5_run",
+  "frozen_date": "2026-07-28",
+  "source_version": "theta0",
+  "target_version": "theta1",
+  "selection_role": "program_selection",
+  "labels_used": false,
+  "metric": "kv_relative_l2",
+  "record_selection": {
+    "rule": "four smallest program-selection migrant record IDs on the deterministic more-populated two-GPU placement shard",
+    "candidate_record_ids": {
+      "staggered_renewal_h12": [
+        6,
+        54,
+        55,
+        78
+      ],
+      "token_debt_total10": [
+        6,
+        54,
+        55,
+        78
+      ]
+    },
+    "record_ids_sha256": "9f8ec8710f54abd4f5050c7d718308edad367238b0d89662cb38386c87a1e77d"
+  },
+  "threshold": {
+    "maximum_relative_l2": 0.2,
+    "rule": "smallest one-decimal ceiling strictly above three times the preregistration smoke normal observation",
+    "calibration_observation": 0.057170357555150986,
+    "calibration_multiple": 3.0,
+    "recommendation_labels_used": false
+  },
+  "calibration_artifacts": {
+    "config": {
+      "path": "configs/cohortkv_single_config_v1/stage5_real_edge_smoke_canary.json",
+      "sha256": "c4b514497aa1a77408eba73d21da1d4f21a26235169f193339dd73cf26a997ef"
+    },
+    "result": {
+      "path": "results/system/cohortkv_single_config_full_chain_v1/stage5_real_edge_gpu_smoke_seed0.json",
+      "sha256": "ce52b8bb0ac32d78add9043b2f5d9bef7514fc027000c9e30a52ab562aad4a7e",
+      "scientific_result": false,
+      "use": "threshold calibration only"
+    }
+  },
+  "canonical_artifacts": {
+    "prepared_data_sha256": "e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8",
+    "training_result_sha256": "1c3786bc38a670419cb80bcc3b9ee9edbd8be8979a78914e37ed70025b328cd0",
+    "compiler_sha256": "9988f8e5986678c5a2695366ed6ec320b03f8da647a243b29dec967dcd66a357",
+    "source_checkpoint_sha256": "80dc39061c19f0739182144c04d4a7478f730dcfbfaa901d5e562fd7d5eee971",
+    "target_checkpoint_sha256": "fb0703481a46006038d342a11b4416bf8e810ef2616477de5eff1c07ff4794a5",
+    "program_file_sha256": "660582836187fd46d2868dc0190f7e751ac80b824264075ce206c87565bb7a60",
+    "program_memory_sha256": "181d6691fa5b8b36ab5d0febafc629f28f56132377643421e103d68e3934299b"
+  },
+  "semantic_injection": {
+    "rule": "clone the canonical theta0-to-theta1 FP16 direct-old-KV program and add 1024 to every finite bias element",
+    "shape_preserved": true,
+    "dtype_preserved": true,
+    "finite_required": true,
+    "perturbed_program_memory_sha256": "305e7e61c2a9030b6f8f82d56d6796838a877d30a97b9bffe25b05b9a2e95c47",
+    "job_expected_hash_is_perturbed_hash": true,
+    "execution_point": "job-level semantic canary before retained producer"
+  }
+}

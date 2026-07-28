@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-27. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-28. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -39,21 +39,76 @@ capsule-to-K/V operator, and a destination-oriented execution engine. A thin upd
 may parse a job specification and invoke these interfaces, but it is control-plane glue rather
 than a fourth research contribution, a reuse-safety predictor, or an online scheduler.
 
-The immediate implementation phase is a complete single-configuration vertical slice on the
-KuaiRand 4+12, 16L/H512, seed-0 chain. Stages 0–4 have closed experiment design, the closest
-baselines, compiler/operator artifacts, and the normal full-cohort HBM/DRAM engine. Stage 4.5 has
-now replaced the failed FP16 normalized-capsule supply path with a frozen direct old-K/V source
-plan: it composes the compiled affine through the source model's stacked K/V projection, reads the
-already resident serving K/V, and needs no extra per-record `Norm(x)` state. Stage 4.6 has now
-closed the repeated-update gap on one A40: exact theta0 K/V is recursively advanced through all
-11 edges to theta11 under a frozen balanced age/deadline policy. Program-level fit severity maps
-each edge to a 15%–25% exact budget, older caches receive priority, and no cache migrates more than
-four consecutive times. The complete 682-record chain costs `0.2134×` all-exact GPU time, keeps
-per-step cost below `0.2543×`, and has minimum cache/score/top-100 fidelity
-`0.9632/0.999950/0.9918`. The former per-cache norm-sketch threshold is retained as a negative
-diagnostic because it created 0.15%–65.1% refresh waves. Stage 5 guard, fallback, transactional
-rework, and failure visibility are now the active task. This remains single-seed development
-evidence. Its active sequence and same-interface fallback rules are in
+The single-configuration vertical slice on the KuaiRand 4+12, 16L/H512, seed-0 chain is now
+complete through Stage 6. Stages 0–4 closed experiment design, the closest
+baselines, compiler/operator artifacts, and the normal full-cohort HBM/DRAM engine. Stage 4.5
+replaced the failed FP16 normalized-capsule supply path with a direct old-K/V source plan that
+reads already resident serving K/V and needs no extra per-record `Norm(x)` state. Stage 4.6
+closed the controlled fixed-history repeated-update gap with a balanced age/deadline policy.
+
+Stage 4.7 closed the implementation and measurement path for one real growing-history
+canonical-date chain. Exact theta0 K/V is recursively advanced over all 11 adjacent versions while
+each target date is evaluated before admission to the next history. The router is not random:
+depth-four caches are mandatory exact, then an approximately 20% reusable-prefix budget is filled
+by migration age and current-edge label-free K/V norm shift. The complete chain costs `0.2703×`
+all-exact update-only GPU time, with a `0.2892×` maximum step; symmetric and common-inclusive
+lifecycle ratios are `0.5069×` and `0.5372×`. Record-weighted mixed/all-exact catalog
+AUC/NDCG@100/Hit@100 ratios are `0.999987/0.994590/0.997180`.
+
+This is a measured control rather than the final scheduler. Its minimum q90 cache fidelity is
+`0.8744`, and current norm shift has only `0.0341` mean per-edge Spearman against realized
+candidate error. Stage 4.8 therefore does not use either quantity as an admission oracle or claim
+that either must correlate with recommendation quality. All sixteen preregistered Stage-4.8
+label-free scheduler points are complete. Under their frozen v1 accounting, update-only cost spans
+`0.110699×–0.181674×` exact and every point beats the Stage-4.7 foreground-inclusive incumbents.
+`token_debt/total10` is the minimum-cost point; `staggered_renewal/H=12` is the retained
+bounded-renewal quality candidate. The four-card screen remains parameter/device-confounded,
+single-seed development work.
+
+The Stage-4.8 analysis also exposed two independent protocol questions that must not be conflated.
+First, computation for a newly admitted behavior window is foreground inference and does not enter
+either side of the migration timer. Second, the primary growing-history order should migrate the
+retained old prefix first and then append that window with the target model; the completed v1 path
+instead appended it with the source model before migration. Stage 4.9 freezes this correction
+without changing the migration operator or scheduler: compare matched retained-prefix
+`U/E`, stop both timers, then perform the identical target-model append on both branches. Existing
+Stage-4.7/4.8 artifacts keep their old semantics and are not formal evidence for the corrected
+boundary. The formal Stage-4.9 same-device run now recursively evaluates both retained candidates
+over all 11 edges. `token_debt_total10` is the cost endpoint at `0.071319×` paired exact, while
+the preregistered bounded-renewal policy `staggered_renewal_h12` is the deployed candidate at
+`0.100017×`; its record-weighted AUC/NDCG@100/Hit@100 ratios are
+`1.000039/0.997463/1.000000`. Recommendation labels do not route caches. The result uses a
+groupwise CPU-hosted recursive store and reports 662.87 GB of H2D/D2H logical movement separately,
+so it is neither a full-cohort HBM-resident lifecycle claim nor an end-to-end movement claim.
+The 11-edge trace also does not complete the policy's 12-edge renewal horizon.
+
+Stage 4.10 is an active post-freeze amendment to the program lifecycle. Instead of loading an
+adjacent program fitted on 40 separate users, H12 first freezes its action partition, then reuses
+the scheduled-exact cohort's aligned previous-actual K/V and current-model exact K/V to fit the
+shared program for that edge. The scheduled exact result also refreshes those same records, so
+program construction adds zero fit-only exact users. Runtime remains a direct old-K/V affine;
+approximate `Norm(x)` recovery is only one fit-time candidate. A real
+`theta0 -> theta1 -> theta2` smoke now passes for both inverse-Norm ridge and direct-K/V residual
+ridge. Program fit/compile/prepare is included in `U`; the two-edge smoke ratios are `0.127694×`
+and `0.128764×`, respectively, with per-edge program construction around 75–124 ms. The smoke
+uses one timing repetition on different GPUs, has no task-quality evaluation, is marked
+`scientific_result=false`, and selects neither variant. It loads no serialized 40-user program,
+adds no exact fit records, and uses no semantic admission gate. The complete protocol and
+limitations are in
+`experiments/system/COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md`.
+
+Stage 5 is complete as the merged minimal implementation closure. A two-A40 copy-on-write
+`theta0 -> theta1` job bound to `staggered_renewal_h12` commits all 682 records; a
+shape-preserving program perturbation is caught by the fixed canary and commits through exact,
+while mid-job and pre-commit injections expose no partial target and preserve readback-valid old
+state. Stage 6 then performs a CPU-only, hash-checked assembly over the frozen Stage-1 through
+Stage-5 artifacts, validates the amended schema and whole-aggregate semantics, and publishes
+`final_summary_seed0.json` plus correctness, timing/memory, table, figure, claim-map,
+negative-result, TBD-disposition, and code-snapshot sidecars. No prior GPU matrix was rerun. These
+remain the frozen v1 package, but Stage 4.10 is not retroactively included in that package or its
+manuscript hash. Before new-seed replication and predeclared dataset/model-capacity expansion,
+the renewal-calibrated route needs a new formal quality-and-cost closure. The current result
+remains adaptive single-seed development evidence. The detailed sequence is in
 `docs/09_single_configuration_full_chain_plan.md`.
 
 The Stage-0 re-audit exposed two implementation-critical boundaries. Manifest `user_id` is the
@@ -125,8 +180,9 @@ the lifecycle gate, not the full failure-safe engine. The direct transform is ma
 equivalent to the deployed capsule program only when its input is exact source-version K/V. After
 one approximate migration, applying the next adjacent program may propagate prior error and is not
 covered by that one-hop certificate. This boundary motivated Stage 4.6's real sequential chain and
-exact-reset lifecycle. Automatic guard dispatch, transactional rework, and failure recovery
-remain Stage-5 work.
+exact-reset lifecycle. A fixed preflight, executable exact fallback, and copy-on-write abort
+visibility remain the minimal Stage-5 closure; runtime sentinel search and online rework are
+post-v1 extensions.
 
 Stage 4.6 is complete and frozen. The first correction- and norm-sketch threshold route had
 acceptable cumulative cost/fidelity and beat matched-random p95, but its missing peak objective
@@ -146,10 +202,38 @@ edge consumes the previous actual output, exact actions reset state, depth never
 all adjacent program hashes match. Final-test recommendation labels did not route or tune the
 policy; maximum per-step mixed-minus-exact absolute gaps are 4.171 MeanRank, 8.35e-5 AUC,
 3.49e-4 NDCG@100, and 0.00384 Hit@100. Stage 5 is therefore admitted, without turning this
-single-seed result into a replicated or organic-traffic claim.
+single-seed result into a replicated or organic-traffic claim. That admission is scoped to the
+fixed-history protocol.
+
+Stage 4.7 is complete as a separate organic-history execution and mixed result. It reconstructs
+12 causally ordered canonical-date endpoints for 682 base-only users, predicts each next unseen
+date before admitting it, and recursively consumes the previous actual mixed cache through all
+11 updates. Among 6,711 reusable prefix actions, the algorithm selects 1,344 exact
+(`20.0268%`) and migrates 5,367. A further 771 no-reuse prefixes are naturally exact and three
+length-one records use only the common latest path, so total exact work is about 28.3% of resident
+actions rather than 20%.
+
+Of the scheduled exact actions, 476 are depth-four deadlines and 868 are filled by age and
+current-edge norm shift; no SHA tie-break was exercised. The chain passes every lineage,
+causality, program-hash, label-isolation, cost, score-cosine, and top-100 gate. Cumulative
+update-only cost is `0.2703×`, the maximum step is `0.2892×`, and minimum score/top-100 values are
+`0.999876/0.97357`. Across 4,368 final-role positives, weighted mixed/all-exact
+AUC/NDCG@100/Hit@100 ratios are `0.999987/0.994590/0.997180`.
+
+The minimum q90 cache fidelity is only `0.8744`, so the Stage-4.7 predeclared `0.90` gate fails.
+Norm shift
+also has weak selection evidence: mean per-edge Spearman against realized candidate error is
+`0.0341`, and its mean top-error-oracle overlap is `23.46%` against a 20% random expectation.
+This does not make the router random: the deadline and age rules are deterministic and enforce
+bounded recurrence. It does prevent a strong per-cache error-prediction claim. The raw data also
+supports canonical-date causality only: 3,521/11,797,055 history tokens cross the next
+partition's raw-time minimum. Strict raw-event/request-time semantics require a new prepared-data
+protocol and retraining. Stage 4.8 retains this run as its cost incumbent and removes fidelity and
+norm shift from scientific admission; it does not retroactively relabel the Stage-4.7 gate as
+passed.
 
 The planned mechanism is never protected from falsification. If a stage shows that full affine,
-the fused operator, a runtime sentinel, a layout, or a backend is unsound or unhelpful, stop that
+the fused operator, a semantic preflight, a layout, or a backend is unsound or unhelpful, stop that
 branch, retain the negative result, and replace it with a simpler mechanism that preserves the
 module's logical contract. A material semantic change requires a new protocol and rerunning every
 affected downstream result.
@@ -872,13 +956,34 @@ Proceed in this order:
    the primary route.
 3. Preserve the frozen Stage-4.6 balanced lifecycle. Its per-cache threshold predecessor remains a
    refresh-wave negative result; do not recover an adaptive-risk or global-optimality claim.
-4. Implement Stage 5: connect mixed migrate/exact dispatch to semantic
-   guard, invalidation/rework, and atomic failure visibility.
-5. Treat a named SSD and capsule quantization as measured state/economics questions, not new
-   contributions or assumed wins.
-6. Freeze the resulting v1 and replicate it first on new training seeds of the same primary
-   configuration, then on predeclared dataset/model-capacity cells.
-7. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
+4. Preserve the Stage-4.7 canonical-date growing-history result as mixed evidence. Its bounded
+   age/deadline execution and task-output result pass, while q90 cache fidelity and a strong
+   norm-shift selector claim do not.
+5. Preserve all sixteen Stage-4.8 scheduler points as the completed old-order development screen.
+   Do not reinterpret their foreground-inclusive ratios as migration speedup.
+6. Preserve the frozen Stage-4.9 same-device confirmation. Use `staggered_renewal_h12` as the
+   bounded-renewal deployment candidate and `token_debt_total10` only as the cost endpoint; keep
+   target append and host-device state movement outside `U/E` but report them separately.
+7. Treat Stage 4.10 as the active program-lifecycle amendment. Scheduled exact must supply the
+   only calibration pairs and its result must also refresh those records; program build is part of
+   `U`, no fixed fit cohort or semantic admission gate may reroute H12, and the old serialized
+   program must not remain a hidden dependency. Preserve both two-edge smokes as non-scientific
+   implementation evidence until a new full-chain task-quality result selects a fit form.
+8. Preserve the completed Stage-5 closure as frozen v1 evidence: one fixed job-level semantic preflight, safe exact
+   fallback for program/shape/old-cache/canary failures before extent execution, fatal
+   pre-transaction rejection for artifact/version or capacity failure, complete lineage, and
+   copy-on-write commit/abort evidence. Its canary is not inherited by Stage 4.10; the new route
+   retains only integrity/capacity/transaction checks unless later evidence justifies another
+   protocol.
+9. Preserve the Stage-6 final aggregate and its eight sidecars. Regenerate them only through the
+   deterministic assembler and require all source hashes, schema checks, cross-field checks, and
+   artifact-to-claim bindings to pass.
+10. Keep INT8/FP8 capsules, capture/persistence matrices, named SSD performance, resume, and runtime
+   sentinel research as optional post-v1 extensions; they do not block the core paper.
+11. Before Stage 7, run a new Stage-4.10 formal comparison with recommendation quality and complete
+    accounting on the recursive chain; select a calibration form without using smoke timing as a
+    quality proxy. Then begin new training seeds and predeclared dataset/model-capacity cells.
+12. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
    result-driven per-dataset tuning, creates a reason to revisit it.
 
 ### Gate F: turn kernel savings into a system result — normalized source fails, direct old K/V passes
@@ -994,8 +1099,11 @@ without extra per-record source state. Stage 4.6 now bounds repeated migration o
 theta0-to-theta11 chain with a 15%–25% balanced exact-refresh schedule and maximum depth four.
 This is not permission to recover a global speedup, selector-optimality, or organic-traffic
 narrative. Cold filesystem, durable SSD, automatic tier selection, capacity-infeasible cohorts,
-and missing/unverified programs still route to exact; Stage 5 must make the selected refresh
-policy and fallback executable and failure-safe before the full-chain claim closes.
+remain outside the active route. Artifact/version mismatch and copy-on-write capacity failure are
+fatal admission errors; program identity/shape, old-cache presence, or semantic-canary failure
+routes the affected migration cohort to exact. Stage 5 only needs to make that selected refresh
+policy, fixed preflight, safe exact fallback, and representative copy-on-write abort path
+executable before the full-chain claim closes.
 
 ## 8. Recommended execution order
 
@@ -1079,12 +1187,48 @@ policy and fallback executable and failure-safe before the full-chain claim clos
     The frozen balanced age/deadline and edge-severity policy completes all 11 recursive updates
     at `0.2134×` cumulative all-exact cost, with 15%–25% refresh, maximum depth four, and full
     lineage verification.
-31. [ ] Evaluate a concrete runtime guard, connect the frozen per-cache lifecycle policy and
-    published fallback chain, and run forced degradation plus failure-injection/visibility tests.
-    Replace the sentinel with preflight or canary verification if its reference or overhead is
-    unsound.
-32. [ ] Measure capsule capture and FP16/INT8 economics. Add a named physical SSD result only if
-    the target manuscript retains it; remote remains interface-only.
-33. [ ] Freeze and run the complete single-configuration matrix once, update every claim from
-    measured artifacts, and then begin same-configuration new-seed replication.
-34. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+31. [x] Implement and run the single Stage-4.7 canonical-date growing-history chain. The
+    age/deadline plus current-norm-shift policy selects `20.0268%` of reusable prefixes for exact
+    refresh and completes all 11 recursive updates at `0.2703×` update-only cost. Task-output,
+    score, top-100, lineage, and causality gates pass, but minimum q90 cache fidelity is `0.8744`
+    against the predeclared `0.90` gate; preserve this as completed mixed evidence.
+32. [x] Establish Stage 4.8 as a new scheduler-development protocol. Freeze the Stage-4.7 exact
+    task outputs and GPU denominator, make final recommendation quality plus lifecycle cost the
+    only Pareto axes, implement four deterministic label-free scheduler families with four
+    preregistered operating points each, add a fail-fast sequential four-family wrapper, and
+    verify all four launchers with static and real one-edge runtime smoke.
+33. [x] Run and retain all 16 Stage-4.8 points. All complete and pass the frozen v1 cost gates;
+    update-only cost spans `0.110699×–0.181674×`. Retain `token_debt/total10` as the cost endpoint
+    and `staggered_renewal/H=12` as the bounded-renewal quality candidate, while preserving all
+    other points and the four-GPU development-screen limitation.
+34. [x] Implement the minimum Stage-4.9 rollout-boundary ABI and smoke-only runner. Unit/static
+    checks and one real `theta0 -> theta1` GPU smoke cover migrate, scheduled exact, natural exact,
+    missing-cache exact fallback, matched FP16 retained endpoints, target-model post-migration
+    append, exact one-shot parity, and the separated cost ledger. A synthetic test covers the
+    latest-only path. The smoke writes no formal result and makes no performance claim.
+35. [x] Implement and smoke the merged minimal Stage 5 against the Stage-4.9 ABI: fixed job-level
+    semantic preflight, safe exact fallback for program/shape/old-cache/canary failures,
+    pre-transaction rejection for artifact/version or capacity failure, complete lineage, and
+    copy-on-write atomic publication. Keep retained prefixes private and commit only
+    `post_append_full_cache`; do not add runtime sentinel, online rework, or resume. Unit/static
+    and real-edge smoke are complete; formal 682-record COW artifacts remain item 37.
+36. [x] Run the full Stage-4.9 same-device paired confirmation over all 11 recursive edges.
+    `token_debt_total10` reaches `0.071319×`; the frozen bounded-renewal candidate
+    `staggered_renewal_h12` reaches `0.100017×` with record-weighted
+    AUC/NDCG@100/Hit@100 ratios `1.000039/0.997463/1.000000`. Both use the corrected
+    post-migration target append and a new paired exact denominator.
+37. [x] Freeze Stage 5 with one normal 682-record integrated `theta0 -> theta1` copy-on-write job,
+    one shape-preserving perturbation routed to exact, and mid-job/pre-commit abort readback.
+    Capacity, normal commit, fallback, abort visibility, schema, and cross-field checks all pass;
+    INT8/capture/SSD work remains explicitly deferred.
+38. [x] Freeze the Stage-6 complete single-configuration aggregate without rerunning earlier GPU
+    matrices. The deterministic CPU assembler verifies 18 source artifacts, publishes eight
+    sidecars followed by `final_summary_seed0.json`, and passes schema, whole-aggregate,
+    Stage-5-semantic, claim-binding, source-hash, and TBD-disposition checks.
+39. [x] Implement the Stage-4.10 renewal-calibrated H12 successor with no serialized 40-user
+    program dependency. Both inverse-Norm and direct-K/V residual ridge reuse only scheduled-exact
+    actual/fresh pairs, count program construction in `U`, and pass real
+    `theta0 -> theta1 -> theta2` recursive smoke with zero extra fit exact and no semantic gate.
+40. [ ] Run a new full-chain paired task-quality and complete-cost confirmation for Stage 4.10.
+    The two-edge one-repeat smoke must not select the calibration form or enter paper tables.
+41. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.

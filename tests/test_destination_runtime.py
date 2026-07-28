@@ -220,6 +220,15 @@ def test_remote_manifest_is_the_commit_marker():
         destination.manifest("theta-1")
 
 
+def test_invalid_transaction_input_does_not_create_staging():
+    destination = DRAMKVUpdateDestination()
+
+    with pytest.raises(ValueError, match="job_id"):
+        destination.begin("", "theta-1", (200,))
+
+    assert destination._staging == {}
+
+
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
 def test_out_of_core_engine_directly_publishes_hbm_extents():
     program, batches = make_destination_inputs(torch.float16)

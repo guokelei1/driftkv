@@ -52,6 +52,12 @@ STAGE4_SOURCE_MANIFEST_PATH = (
     / "source_shards"
     / "source_manifest.json"
 )
+STAGE5_FORMAL_CANARY_PATH = (
+    OUTPUT_DIR / "stage5_formal_canary.json"
+)
+STAGE49_SELECTED_CANDIDATE = "staggered_renewal_h12"
+STAGE49_COST_ENDPOINT = "token_debt_total10"
+STAGE6_PROTOCOL = "cohortkv_single_config_stage6_freeze_v1"
 SOURCE_VERSIONS = (0, 4, 10)
 SOURCE_WEIGHTS = (0.2, 0.3, 0.5)
 TARGET_VERSION = 11
@@ -108,18 +114,38 @@ EXPECTED_FRONTIER_POINTS = len(SOURCE_VERSIONS) * (
     EXPECTED_SELECTIVE_INTERVALS + len(RESIDUAL_DEPTHS) + 4
 )
 FAILURE_INJECTIONS = (
-    "artifact_hash_mismatch_before_begin",
-    "semantic_theta4_program_perturbation",
-    "before_first_extent",
-    "mid_wave",
-    "during_publication",
-    "pre_commit_after_complete_coverage",
+    "semantic_theta0_theta1_program_perturbation",
+    "mid_job",
+    "pre_commit",
 )
 EXPECTED_GPU_NAME = "NVIDIA A40"
 EXPECTED_GPU_MEMORY_BYTES = 47_699_722_240
 MINIMUM_SOURCE_FREE_BYTES = 128 * 1024**3
 TRANSPORT_ATOL = 2e-2
 TRANSPORT_RTOL = 2e-2
+STAGE5_ACCOUNTING_FROZEN_INPUTS = {
+    "stage2": {
+        "protocol": "cohortkv_single_config_stage2_frozen_v1",
+        "status": "stage2_frozen",
+        "sha256": (
+            "09461c81ad7d9a061a6aae2358e478c151befa07614f73afff972bd4b90a8126"
+        ),
+    },
+    "stage4": {
+        "protocol": "cohortkv_single_config_stage4_frozen_v1",
+        "status": "stage4_frozen",
+        "sha256": (
+            "2c891e2fb085708bdb83c6c39410f9f7509f25697ff0e8b0a4085906ef7219b6"
+        ),
+    },
+    "stage4_5": {
+        "protocol": "cohortkv_single_config_stage4_5_frozen_v1",
+        "status": "stage4_5_source_plan_frozen",
+        "sha256": (
+            "31cb442563152a250705d8ad3405461238810c5a5e81cac09c2ab20ae294e2f8"
+        ),
+    },
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -531,9 +557,88 @@ def validate_verified_result(
         raise ValueError("verified compiler does not cover every frozen source version")
 
 
+def load_stage5_formal_canary_contract(
+    repo_root: Path | None = None,
+) -> dict[str, Any]:
+    root = (
+        Path(__file__).resolve().parents[1]
+        if repo_root is None
+        else repo_root
+    )
+    source = root / STAGE5_FORMAL_CANARY_PATH
+    value = json.loads(source.read_text())
+    threshold = value["threshold"]
+    canonical = value["canonical_artifacts"]
+    injection = value["semantic_injection"]
+    canonical_program = canonical["program_memory_sha256"]
+    perturbed_program = injection["perturbed_program_memory_sha256"]
+    hashes = (
+        canonical_program,
+        perturbed_program,
+        sha256_file(source),
+    )
+    edge_artifact = sha256_bytes(
+        json.dumps(
+            {
+                "source_checkpoint_sha256": canonical[
+                    "source_checkpoint_sha256"
+                ],
+                "target_checkpoint_sha256": canonical[
+                    "target_checkpoint_sha256"
+                ],
+                "compiler_sha256": canonical["compiler_sha256"],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    )
+    if (
+        value.get("protocol")
+        != "cohortkv_single_config_stage5_formal_canary_v1"
+        or value.get("status")
+        != "frozen_before_formal_stage5_run"
+        or value.get("source_version") != "theta0"
+        or value.get("target_version") != "theta1"
+        or value.get("selection_role") != "program_selection"
+        or value.get("labels_used") is not False
+        or value.get("metric") != "kv_relative_l2"
+        or threshold.get("recommendation_labels_used") is not False
+        or float(threshold["maximum_relative_l2"]) < 0.0
+        or injection.get("shape_preserved") is not True
+        or injection.get("dtype_preserved") is not True
+        or injection.get("finite_required") is not True
+        or injection.get("job_expected_hash_is_perturbed_hash")
+        is not True
+        or canonical_program == perturbed_program
+        or any(
+            len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+            for digest in hashes
+        )
+    ):
+        raise ValueError("Stage 5 formal canary artifact is invalid")
+    return {
+        "path": str(STAGE5_FORMAL_CANARY_PATH),
+        "sha256": hashes[2],
+        "protocol": value["protocol"],
+        "source_version": value["source_version"],
+        "target_version": value["target_version"],
+        "selection_role": value["selection_role"],
+        "labels_used": value["labels_used"],
+        "metric": value["metric"],
+        "maximum_relative_l2": float(
+            threshold["maximum_relative_l2"]
+        ),
+        "canonical_program_sha256": canonical_program,
+        "perturbed_program_sha256": perturbed_program,
+        "edge_artifact_sha256": edge_artifact,
+    }
+
+
 def build_result_schema(
     workload_content_sha256: str | None = None,
 ) -> dict[str, Any]:
+    formal_canary = load_stage5_formal_canary_contract()
     nonnegative = {"type": "number", "minimum": 0}
     positive_integer = {"type": "integer", "minimum": 1}
     workload_hash = (
@@ -587,20 +692,6 @@ def build_result_schema(
                 },
                 "additionalProperties": True,
             },
-        },
-    }
-    fidelity = {
-        "type": "object",
-        "additionalProperties": True,
-        "required": [
-            "cache_recovery",
-            "score_cosine",
-            "top100_overlap",
-        ],
-        "properties": {
-            "cache_recovery": {"type": "number"},
-            "score_cosine": {"type": "number"},
-            "top100_overlap": {"type": "number"},
         },
     }
     source_representations_by_method = {
@@ -930,6 +1021,1541 @@ def build_result_schema(
         }
         for recovery_target in (0.5, 0.6, 0.7, 0.8, 0.9)
     ]
+    abort_coverage = [
+        {
+            "contains": {
+                "type": "object",
+                "required": ["fault"],
+                "properties": {"fault": {"const": name}},
+            },
+            "minContains": 1,
+            "maxContains": 1,
+        }
+        for name in ("mid_job", "pre_commit")
+    ]
+    direct_point_coverage = [
+        {
+            "contains": {
+                "type": "object",
+                "required": ["gpu_count"],
+                "properties": {"gpu_count": {"const": gpu_count}},
+            },
+            "minContains": 1,
+            "maxContains": 1,
+        }
+        for gpu_count in GPU_COUNTS
+    ]
+    capsule_point_coverage = [
+        {
+            "contains": {
+                "type": "object",
+                "required": ["destination", "gpu_count"],
+                "properties": {
+                    "destination": {"const": destination},
+                    "gpu_count": {"const": gpu_count},
+                },
+            },
+            "minContains": 1,
+            "maxContains": 1,
+        }
+        for destination in DESTINATIONS
+        for gpu_count in GPU_COUNTS
+    ]
+    stage5_capacity = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "device",
+            "model_and_program_bytes",
+            "old_kv_bytes",
+            "complete_new_kv_bytes",
+            "transient_bytes",
+            "allocator_margin_bytes",
+            "capacity_bytes",
+            "required_bytes",
+            "passed",
+        ],
+        "properties": {
+            "device": {"type": "string", "minLength": 1},
+            "model_and_program_bytes": positive_integer,
+            "old_kv_bytes": positive_integer,
+            "complete_new_kv_bytes": positive_integer,
+            "transient_bytes": positive_integer,
+            "allocator_margin_bytes": positive_integer,
+            "capacity_bytes": positive_integer,
+            "required_bytes": positive_integer,
+            "passed": {"const": True},
+        },
+    }
+    stage5_observed_free_capacity = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "measurement_boundary",
+            "all_devices_passed",
+            "devices",
+        ],
+        "properties": {
+            "measurement_boundary": {
+                "const": (
+                    "target models and direct programs resident; before "
+                    "per-case old-cache publication"
+                )
+            },
+            "all_devices_passed": {"const": True},
+            "devices": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": [
+                        "device",
+                        "free_bytes",
+                        "required_free_bytes",
+                        "passed",
+                    ],
+                    "properties": {
+                        "device": {"type": "string", "minLength": 1},
+                        "free_bytes": {
+                            "type": "integer",
+                            "minimum": 0,
+                        },
+                        "required_free_bytes": positive_integer,
+                        "passed": {"const": True},
+                    },
+                },
+            },
+        },
+    }
+    stage5_checks = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "artifact_identity",
+            "program_identity",
+            "program_shape",
+            "old_kv_presence",
+            "capacity",
+            "semantic_canary",
+        ],
+        "properties": {
+            name: {"type": "boolean"}
+            for name in (
+                "artifact_identity",
+                "program_identity",
+                "program_shape",
+                "old_kv_presence",
+                "capacity",
+                "semantic_canary",
+            )
+        },
+    }
+    stage5_decision = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "record_id",
+            "cohort_id",
+            "requested_action",
+            "requested_reason",
+            "final_action",
+            "fallback_reason",
+            "source_version",
+            "target_version",
+            "last_exact_version_before",
+            "last_exact_version_after",
+            "migration_depth_before",
+            "migration_depth_after",
+            "state_kind_after",
+            "retained_tokens",
+            "final_tokens",
+        ],
+        "properties": {
+            "record_id": {"type": "integer", "minimum": 0},
+            "cohort_id": {"type": "string", "minLength": 1},
+            "requested_action": {"enum": ["migrate", "exact"]},
+            "requested_reason": {"type": "string", "minLength": 1},
+            "final_action": {"enum": ["migrate", "exact"]},
+            "fallback_reason": {
+                "type": ["string", "null"],
+            },
+            "source_version": {
+                "const": formal_canary["source_version"]
+            },
+            "target_version": {
+                "const": formal_canary["target_version"]
+            },
+            "last_exact_version_before": {
+                "type": ["string", "null"],
+            },
+            "last_exact_version_after": {
+                "type": "string",
+                "minLength": 1,
+            },
+            "migration_depth_before": {
+                "type": "integer",
+                "minimum": 0,
+            },
+            "migration_depth_after": {
+                "type": "integer",
+                "minimum": 0,
+            },
+            "state_kind_after": {"enum": ["migrated", "exact"]},
+            "retained_tokens": {
+                "type": "integer",
+                "minimum": 0,
+            },
+            "final_tokens": positive_integer,
+        },
+        "allOf": [
+            {
+                "if": {
+                    "properties": {"final_action": {"const": "exact"}},
+                    "required": ["final_action"],
+                },
+                "then": {
+                    "properties": {
+                        "migration_depth_after": {"const": 0},
+                        "state_kind_after": {"const": "exact"},
+                    }
+                },
+            },
+            {
+                "if": {
+                    "properties": {"final_action": {"const": "migrate"}},
+                    "required": ["final_action"],
+                },
+                "then": {
+                    "properties": {
+                        "migration_depth_after": {"minimum": 1},
+                        "state_kind_after": {"const": "migrated"},
+                    }
+                },
+            },
+        ],
+    }
+    stage5_canary = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "cohort_id",
+            "record_ids",
+            "source_version",
+            "target_version",
+            "program_sha256",
+            "metric",
+            "observed_relative_l2",
+            "maximum_relative_l2",
+            "candidate_sha256",
+            "reference_sha256",
+            "threshold_artifact_sha256",
+            "threshold_source",
+            "labels_used",
+            "passed",
+        ],
+        "properties": {
+            "cohort_id": {"type": "string", "minLength": 1},
+            "record_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": True,
+                "items": {"type": "integer", "minimum": 0},
+            },
+            "source_version": {
+                "const": formal_canary["source_version"]
+            },
+            "target_version": {
+                "const": formal_canary["target_version"]
+            },
+            "program_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+            "metric": {"const": "kv_relative_l2"},
+            "observed_relative_l2": nonnegative,
+            "maximum_relative_l2": {
+                "const": formal_canary["maximum_relative_l2"]
+            },
+            "candidate_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+            "reference_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+            "threshold_artifact_sha256": {
+                "const": formal_canary["sha256"]
+            },
+            "threshold_source": {"const": "program_selection"},
+            "labels_used": {"const": False},
+            "passed": {"type": "boolean"},
+        },
+    }
+    stage5_canary_artifact = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "path",
+            "sha256",
+            "protocol",
+            "source_version",
+            "target_version",
+            "selection_role",
+            "labels_used",
+            "metric",
+            "maximum_relative_l2",
+        ],
+        "properties": {
+            "path": {"const": formal_canary["path"]},
+            "sha256": {
+                "const": formal_canary["sha256"],
+            },
+            "protocol": {
+                "const": formal_canary["protocol"]
+            },
+            "source_version": {
+                "const": formal_canary["source_version"]
+            },
+            "target_version": {
+                "const": formal_canary["target_version"]
+            },
+            "selection_role": {
+                "const": formal_canary["selection_role"]
+            },
+            "labels_used": {"const": formal_canary["labels_used"]},
+            "metric": {"const": formal_canary["metric"]},
+            "maximum_relative_l2": {
+                "const": formal_canary["maximum_relative_l2"]
+            },
+        },
+    }
+    stage5_preflight = {
+        "type": "object",
+        "additionalProperties": True,
+        "required": [
+            "protocol",
+            "selection_role",
+            "labels_used",
+            "guard_hook",
+            "elapsed_seconds",
+            "input_measurement_seconds",
+            "runtime_validation_seconds",
+            "decision_seconds",
+            "all_cohorts_passed",
+            "cohorts",
+            "decisions",
+        ],
+        "properties": {
+            "protocol": {"const": "cohortkv_stage5_fixed_preflight_v1"},
+            "selection_role": {"const": "program_selection"},
+            "labels_used": {"const": False},
+            "guard_hook": {
+                "const": "post_retained_prefix_pre_append"
+            },
+            "elapsed_seconds": nonnegative,
+            "input_measurement_seconds": nonnegative,
+            "runtime_validation_seconds": nonnegative,
+            "decision_seconds": nonnegative,
+            "all_cohorts_passed": {"type": "boolean"},
+            "cohorts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": True,
+                    "required": [
+                        "cohort_id",
+                        "source_version",
+                        "target_version",
+                        "checks",
+                        "passed",
+                        "fallback_reason",
+                        "migration_required",
+                        "expected_artifact_sha256",
+                        "observed_artifact_sha256",
+                        "expected_program_sha256",
+                        "observed_program_sha256",
+                        "expected_program_shape",
+                        "observed_program_shape",
+                        "expected_threshold_artifact_sha256",
+                        "expected_old_record_ids",
+                        "present_old_record_ids",
+                        "expected_old_records_source",
+                        "present_old_records_source",
+                        "canary",
+                        "device_capacity",
+                        "measurement",
+                    ],
+                    "properties": {
+                        "cohort_id": {"type": "string", "minLength": 1},
+                        "source_version": {
+                            "const": formal_canary["source_version"],
+                        },
+                        "target_version": {
+                            "const": formal_canary["target_version"],
+                        },
+                        "checks": stage5_checks,
+                        "passed": {"type": "boolean"},
+                        "fallback_reason": {
+                            "type": ["string", "null"],
+                        },
+                        "migration_required": {"type": "boolean"},
+                        "expected_artifact_sha256": {
+                            "const": formal_canary[
+                                "edge_artifact_sha256"
+                            ],
+                        },
+                        "observed_artifact_sha256": {
+                            "const": formal_canary[
+                                "edge_artifact_sha256"
+                            ],
+                        },
+                        "expected_program_sha256": {
+                            "type": ["string", "null"],
+                            "pattern": "^[0-9a-f]{64}$",
+                        },
+                        "observed_program_sha256": {
+                            "type": ["string", "null"],
+                            "pattern": "^[0-9a-f]{64}$",
+                        },
+                        "expected_program_shape": {
+                            "type": "array",
+                            "items": positive_integer,
+                        },
+                        "observed_program_shape": {
+                            "type": "array",
+                            "items": positive_integer,
+                        },
+                        "expected_threshold_artifact_sha256": {
+                            "type": ["string", "null"],
+                            "pattern": "^[0-9a-f]{64}$",
+                        },
+                        "expected_old_record_ids": {
+                            "type": "array",
+                            "uniqueItems": True,
+                            "items": {
+                                "type": "integer",
+                                "minimum": 0,
+                            },
+                        },
+                        "present_old_record_ids": {
+                            "type": "array",
+                            "uniqueItems": True,
+                            "items": {
+                                "type": "integer",
+                                "minimum": 0,
+                            },
+                        },
+                        "expected_old_records_source": {
+                            "const": "prior_committed_manifest"
+                        },
+                        "present_old_records_source": {
+                            "const": "destination_readback"
+                        },
+                        "canary": {
+                            "anyOf": [stage5_canary, {"type": "null"}]
+                        },
+                        "device_capacity": {
+                            "type": "array",
+                            "items": stage5_capacity,
+                        },
+                        "measurement": {
+                            "type": "object",
+                            "additionalProperties": True,
+                            "required": [
+                                "artifact_seconds",
+                                "old_kv_presence_seconds",
+                                "capacity_seconds",
+                                "semantic_canary_seconds",
+                                "total_seconds",
+                            ],
+                            "properties": {
+                                name: nonnegative
+                                for name in (
+                                    "artifact_seconds",
+                                    "old_kv_presence_seconds",
+                                    "capacity_seconds",
+                                    "semantic_canary_seconds",
+                                    "total_seconds",
+                                )
+                            },
+                        },
+                    },
+                    "allOf": [
+                        {
+                            "if": {
+                                "properties": {
+                                    "migration_required": {
+                                        "const": True
+                                    }
+                                },
+                                "required": ["migration_required"],
+                            },
+                            "then": {
+                                "properties": {
+                                    "expected_program_sha256": {
+                                        "type": "string"
+                                    },
+                                    "observed_program_sha256": {
+                                        "type": "string"
+                                    },
+                                    "expected_program_shape": {
+                                        "minItems": 1
+                                    },
+                                    "observed_program_shape": {
+                                        "minItems": 1
+                                    },
+                                    "expected_threshold_artifact_sha256": {
+                                        "const": formal_canary["sha256"]
+                                    },
+                                    "expected_old_record_ids": {
+                                        "minItems": 1
+                                    },
+                                    "canary": stage5_canary,
+                                }
+                            },
+                            "else": {
+                                "properties": {
+                                    "expected_program_sha256": {
+                                        "type": "null"
+                                    },
+                                    "observed_program_sha256": {
+                                        "type": "null"
+                                    },
+                                    "expected_program_shape": {
+                                        "maxItems": 0
+                                    },
+                                    "observed_program_shape": {
+                                        "maxItems": 0
+                                    },
+                                    "expected_threshold_artifact_sha256": {
+                                        "type": "null"
+                                    },
+                                    "expected_old_record_ids": {
+                                        "maxItems": 0
+                                    },
+                                    "present_old_record_ids": {
+                                        "maxItems": 0
+                                    },
+                                    "canary": {"type": "null"},
+                                }
+                            },
+                        }
+                    ],
+                },
+            },
+            "decisions": {
+                "type": "array",
+                "minItems": EXPECTED_RECORDS,
+                "maxItems": EXPECTED_RECORDS,
+                "items": stage5_decision,
+            },
+        },
+    }
+    stage5_extent = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "extent_id",
+            "record_ids",
+            "migration_anchor_version",
+            "served_kv_target",
+            "num_layers",
+            "token_count",
+            "kv_width",
+            "dtype",
+            "payload_bytes",
+            "location",
+            "device",
+            "checksum_sha256",
+        ],
+        "properties": {
+            "extent_id": {"type": "string", "minLength": 1},
+            "record_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": True,
+                "items": {"type": "integer", "minimum": 0},
+            },
+            "migration_anchor_version": {
+                "const": formal_canary["target_version"]
+            },
+            "served_kv_target": {
+                "const": formal_canary["target_version"]
+            },
+            "num_layers": {
+                "const": EXPECTED_MODEL["num_layers"]
+            },
+            "token_count": positive_integer,
+            "kv_width": {
+                "const": (
+                    EXPECTED_MODEL["num_heads"]
+                    * EXPECTED_MODEL["head_dim"]
+                )
+            },
+            "dtype": {"const": "float16"},
+            "payload_bytes": positive_integer,
+            "location": {
+                "type": "string",
+                "pattern": "^hbm://",
+            },
+            "device": {"type": "string", "minLength": 1},
+            "checksum_sha256": {"type": "null"},
+        },
+    }
+    stage5_committed_manifest = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "protocol",
+            "commit_hook",
+            "lineage_sha256",
+            "destination_manifest",
+            "lineage",
+        ],
+        "properties": {
+            "protocol": {
+                "const": "cohortkv_single_config_stage5_minimal_closure_v1"
+            },
+            "commit_hook": {"const": "post_append_full_cache"},
+            "lineage_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+            "destination_manifest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": [
+                    "protocol",
+                    "job_id",
+                    "target_version",
+                    "destination_id",
+                    "destination_kind",
+                    "publication_mode",
+                    "extents",
+                    "record_count",
+                    "token_count",
+                    "payload_bytes",
+                    "metadata_sha256",
+                    "metadata",
+                ],
+                "properties": {
+                    "protocol": {
+                        "const": "streamkv_destination_manifest_v1"
+                    },
+                    "job_id": {"type": "string", "minLength": 1},
+                    "target_version": {
+                        "const": formal_canary["target_version"],
+                    },
+                    "destination_id": {
+                        "type": "string",
+                        "minLength": 1,
+                    },
+                    "destination_kind": {"const": "hbm"},
+                    "publication_mode": {"const": "direct_device"},
+                    "record_count": {"const": EXPECTED_RECORDS},
+                    "token_count": positive_integer,
+                    "payload_bytes": positive_integer,
+                    "extents": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": stage5_extent,
+                    },
+                    "metadata_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$",
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": [
+                            "protocol",
+                            "commit_hook",
+                            "lineage",
+                        ],
+                        "properties": {
+                            "protocol": {
+                                "const": (
+                                    "cohortkv_single_config_"
+                                    "stage5_minimal_closure_v1"
+                                )
+                            },
+                            "commit_hook": {
+                                "const": "post_append_full_cache"
+                            },
+                            "lineage": {
+                                "type": "array",
+                                "minItems": EXPECTED_RECORDS,
+                                "maxItems": EXPECTED_RECORDS,
+                                "items": stage5_decision,
+                            },
+                        },
+                    },
+                },
+            },
+            "lineage": {
+                "type": "array",
+                "minItems": EXPECTED_RECORDS,
+                "maxItems": EXPECTED_RECORDS,
+                "items": stage5_decision,
+            },
+        },
+    }
+    stage5_readback = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "protocol",
+            "target_version",
+            "expected_records",
+            "read_records",
+            "manifest_equal",
+            "all_metadata_equal",
+            "all_finite",
+            "all_checksums_equal",
+            "passed",
+            "elapsed_seconds",
+        ],
+        "properties": {
+            "protocol": {
+                "const": "cohortkv_stage5_manifest_readback_v1"
+            },
+            "target_version": {
+                "type": "string",
+                "minLength": 1,
+            },
+            "expected_records": {"const": EXPECTED_RECORDS},
+            "read_records": {"const": EXPECTED_RECORDS},
+            "manifest_equal": {"const": True},
+            "all_metadata_equal": {"const": True},
+            "all_finite": {"const": True},
+            "all_checksums_equal": {"const": True},
+            "passed": {"const": True},
+            "elapsed_seconds": nonnegative,
+        },
+    }
+    stage5_job = {
+        "type": "object",
+        "additionalProperties": True,
+        "required": [
+            "protocol",
+            "job_id",
+            "target_version",
+            "outcome",
+            "fault",
+            "target_manifest",
+            "target_visible",
+            "partial_target_visible",
+            "staging_reclaimed",
+            "old_readback",
+            "target_readback",
+            "guard_invocations",
+            "staged_extents",
+            "elapsed_seconds",
+            "preflight",
+        ],
+        "properties": {
+            "protocol": {
+                "const": "cohortkv_single_config_stage5_minimal_closure_v1"
+            },
+            "job_id": {"type": "string", "minLength": 1},
+            "target_version": {"type": "string", "minLength": 1},
+            "outcome": {"enum": ["committed", "aborted"]},
+            "fault": {
+                "type": ["string", "null"],
+            },
+            "target_manifest": {
+                "anyOf": [
+                    stage5_committed_manifest,
+                    {"type": "null"},
+                ]
+            },
+            "target_visible": {"type": "boolean"},
+            "partial_target_visible": {"const": False},
+            "staging_reclaimed": {"const": True},
+            "old_readback": {
+                "anyOf": [stage5_readback, {"type": "null"}]
+            },
+            "target_readback": {
+                "anyOf": [stage5_readback, {"type": "null"}]
+            },
+            "guard_invocations": positive_integer,
+            "staged_extents": positive_integer,
+            "elapsed_seconds": nonnegative,
+            "preflight": stage5_preflight,
+        },
+    }
+    stage5_closure_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "protocol",
+            "canary_artifact",
+            "copy_on_write_gpu_count",
+            "copy_on_write_capacity",
+            "normal_job",
+            "semantic_fallback_job",
+            "abort_jobs",
+        ],
+        "properties": {
+            "protocol": {
+                "const": "cohortkv_single_config_stage5_minimal_closure_v1"
+            },
+            "canary_artifact": stage5_canary_artifact,
+            "copy_on_write_gpu_count": {"enum": [2, 4]},
+            "copy_on_write_capacity": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "mode",
+                    "old_extents_retained_until_commit",
+                    "all_devices_passed",
+                    "devices",
+                    "observed_free_capacity",
+                ],
+                "properties": {
+                    "mode": {"const": "copy_on_write"},
+                    "old_extents_retained_until_commit": {"const": True},
+                    "all_devices_passed": {"const": True},
+                    "devices": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 4,
+                        "items": stage5_capacity,
+                    },
+                    "observed_free_capacity": (
+                        stage5_observed_free_capacity
+                    ),
+                },
+            },
+            "normal_job": {
+                **stage5_job,
+                "allOf": [
+                    {
+                        "properties": {
+                            "outcome": {"const": "committed"},
+                            "fault": {"type": "null"},
+                            "target_visible": {"const": True},
+                            "target_manifest": stage5_committed_manifest,
+                            "old_readback": {"type": "null"},
+                            "target_readback": stage5_readback,
+                            "preflight": {
+                                "properties": {
+                                    "all_cohorts_passed": {"const": True}
+                                }
+                            },
+                        }
+                    }
+                ],
+            },
+            "semantic_fallback_job": {
+                **stage5_job,
+                "required": [
+                    *stage5_job["required"],
+                    "semantic_perturbation_detected",
+                    "affected_cohort_final_action",
+                ],
+                "allOf": [
+                    {
+                        "properties": {
+                            "outcome": {"const": "committed"},
+                            "fault": {"type": "null"},
+                            "target_visible": {"const": True},
+                            "target_manifest": stage5_committed_manifest,
+                            "old_readback": {"type": "null"},
+                            "target_readback": stage5_readback,
+                            "semantic_perturbation_detected": {
+                                "const": True
+                            },
+                            "affected_cohort_final_action": {
+                                "const": "exact"
+                            },
+                            "preflight": {
+                                "properties": {
+                                    "all_cohorts_passed": {"const": False},
+                                    "decisions": {
+                                        "contains": {
+                                            "type": "object",
+                                            "required": [
+                                                "requested_action",
+                                                "final_action",
+                                                "fallback_reason",
+                                            ],
+                                            "properties": {
+                                                "requested_action": {
+                                                    "const": "migrate"
+                                                },
+                                                "final_action": {
+                                                    "const": "exact"
+                                                },
+                                                "fallback_reason": {
+                                                    "type": "string",
+                                                    "pattern": (
+                                                        "(^|\\+)"
+                                                        "semantic_canary"
+                                                        "($|\\+)"
+                                                    ),
+                                                },
+                                            },
+                                        },
+                                        "minContains": 1,
+                                    },
+                                }
+                            },
+                        }
+                    }
+                ],
+            },
+            "abort_jobs": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "allOf": abort_coverage,
+                "items": {
+                    **stage5_job,
+                    "required": stage5_job["required"],
+                    "properties": {
+                        **stage5_job["properties"],
+                        "fault": {"enum": ["mid_job", "pre_commit"]},
+                        "outcome": {"const": "aborted"},
+                        "target_visible": {"const": False},
+                        "target_manifest": {"type": "null"},
+                        "old_readback": stage5_readback,
+                        "target_readback": {"type": "null"},
+                    },
+                },
+            },
+        },
+        "allOf": [
+            {
+                "if": {
+                    "properties": {
+                        "copy_on_write_gpu_count": {"const": gpu_count}
+                    },
+                    "required": ["copy_on_write_gpu_count"],
+                },
+                "then": {
+                    "properties": {
+                        "copy_on_write_capacity": {
+                            "properties": {
+                                "devices": {
+                                    "minItems": gpu_count,
+                                    "maxItems": gpu_count,
+                                },
+                                "observed_free_capacity": {
+                                    "properties": {
+                                        "devices": {
+                                            "minItems": gpu_count,
+                                            "maxItems": gpu_count,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            }
+            for gpu_count in (2, 4)
+        ],
+    }
+    accounting_input_properties = {
+        name: {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["path", "protocol", "sha256", "status"],
+            "properties": {
+                "path": {"type": "string", "minLength": 1},
+                "protocol": {"const": contract["protocol"]},
+                "sha256": {"const": contract["sha256"]},
+                "status": {"const": contract["status"]},
+            },
+        }
+        for name, contract in STAGE5_ACCOUNTING_FROZEN_INPUTS.items()
+    }
+    source_state_accounting_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "protocol",
+            "status",
+            "scientific_result",
+            "inputs",
+            "workload",
+            "active_direct_oldkv",
+            "offline_setup",
+            "rejected_fp16_normalized_capsule",
+            "dram_resident_backup",
+            "claim_boundary",
+        ],
+        "properties": {
+            "protocol": {
+                "const": "cohortkv_stage5_source_state_accounting_v1"
+            },
+            "status": {"const": "artifact_derived"},
+            "scientific_result": {"const": True},
+            "inputs": {
+                "type": "object",
+                "required": ["stage2", "stage4", "stage4_5"],
+                "additionalProperties": False,
+                "properties": accounting_input_properties,
+            },
+            "workload": {
+                "type": "object",
+                "required": ["content_sha256", "records", "prefix_tokens"],
+                "properties": {
+                    "content_sha256": workload_hash,
+                    "records": {"const": EXPECTED_RECORDS},
+                    "prefix_tokens": {"const": EXPECTED_PREFIX_TOKENS},
+                },
+                "additionalProperties": True,
+            },
+            "active_direct_oldkv": {
+                "type": "object",
+                "required": [
+                    "representation",
+                    "placement",
+                    "additional_per_record_source_state_bytes",
+                    "independent_capture_required",
+                    "independent_encode_required",
+                    "independent_preload_required",
+                    "existing_old_kv_logical_bytes",
+                    "program_set",
+                    "normal_path_points",
+                    "copy_on_write_abort_safe_peak_measured",
+                ],
+                "properties": {
+                    "representation": {
+                        "const": "existing_old_kv_fp16"
+                    },
+                    "placement": {
+                        "const": "existing serving cache in HBM"
+                    },
+                    "additional_per_record_source_state_bytes": {
+                        "const": 0
+                    },
+                    "independent_capture_required": {"const": False},
+                    "independent_encode_required": {"const": False},
+                    "independent_preload_required": {"const": False},
+                    "existing_old_kv_logical_bytes": {
+                        "const": EXPECTED_LOGICAL_TARGET_BYTES_FP16
+                    },
+                    "program_set": {
+                        "type": "object",
+                        "required": [
+                            "serialized_file_bytes",
+                            "resident_tensor_bytes_per_worker",
+                            "composition_seconds",
+                            "serialization_timing_available",
+                            "programs",
+                        ],
+                        "properties": {
+                            "serialized_file_bytes": positive_integer,
+                            "resident_tensor_bytes_per_worker": (
+                                positive_integer
+                            ),
+                            "composition_seconds": nonnegative,
+                            "serialization_timing_available": {
+                                "const": False
+                            },
+                            "programs": {
+                                "type": "array",
+                                "minItems": 3,
+                                "maxItems": 3,
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": [
+                                        "source_version",
+                                        "target_version",
+                                        "serialized_file_bytes",
+                                        "composition_seconds",
+                                        "sha256",
+                                    ],
+                                    "properties": {
+                                        "source_version": {
+                                            "enum": [
+                                                "theta0",
+                                                "theta4",
+                                                "theta10",
+                                            ]
+                                        },
+                                        "target_version": {
+                                            "const": "theta11"
+                                        },
+                                        "serialized_file_bytes": (
+                                            positive_integer
+                                        ),
+                                        "composition_seconds": nonnegative,
+                                        "sha256": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{64}$",
+                                        },
+                                    },
+                                },
+                                "allOf": source_version_coverage,
+                            },
+                        },
+                        "additionalProperties": True,
+                    },
+                    "normal_path_points": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "allOf": direct_point_coverage,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": [
+                                "gpu_count",
+                                "initial_old_kv_bytes_all_devices",
+                                "peak_old_plus_new_kv_bytes_all_devices",
+                                "maximum_peak_hbm_bytes_single_device",
+                                "median_seconds",
+                                "measurement_mode",
+                                "abort_safe",
+                            ],
+                            "properties": {
+                                "gpu_count": {"enum": [1, 2, 4]},
+                                "initial_old_kv_bytes_all_devices": (
+                                    positive_integer
+                                ),
+                                "peak_old_plus_new_kv_bytes_all_devices": (
+                                    positive_integer
+                                ),
+                                "maximum_peak_hbm_bytes_single_device": (
+                                    positive_integer
+                                ),
+                                "median_seconds": nonnegative,
+                                "measurement_mode": {
+                                    "const": "extent_reclaim_normal_path"
+                                },
+                                "abort_safe": {"const": False},
+                            },
+                        },
+                    },
+                    "copy_on_write_abort_safe_peak_measured": {
+                        "const": False
+                    },
+                },
+                "additionalProperties": True,
+            },
+            "offline_setup": {
+                "type": "object",
+                "required": [
+                    "historical_fit_seconds",
+                    "runtime_prepare_seconds",
+                    "certificate_seconds",
+                    "stage2_one_time_seconds",
+                    "direct_program_composition_seconds",
+                    "seconds_per_record_at_682_stage2_floor",
+                    "stage2_amortization_curve",
+                ],
+                "properties": {
+                    "historical_fit_seconds": nonnegative,
+                    "runtime_prepare_seconds": nonnegative,
+                    "certificate_seconds": nonnegative,
+                    "stage2_one_time_seconds": nonnegative,
+                    "direct_program_composition_seconds": nonnegative,
+                    "seconds_per_record_at_682_stage2_floor": nonnegative,
+                    "stage2_amortization_curve": {
+                        "type": "array",
+                        "minItems": 1,
+                    },
+                },
+                "additionalProperties": True,
+            },
+            "rejected_fp16_normalized_capsule": {
+                "type": "object",
+                "required": [
+                    "logical_bytes",
+                    "physical_bytes",
+                    "matched_points",
+                    "beats_paired_exact_points",
+                    "source_read_fraction_min",
+                    "source_read_fraction_max",
+                    "points",
+                ],
+                "properties": {
+                    "logical_bytes": {
+                        "const": EXPECTED_LOGICAL_CAPSULE_BYTES_FP16
+                    },
+                    "physical_bytes": positive_integer,
+                    "matched_points": {"const": 6},
+                    "beats_paired_exact_points": {"const": 0},
+                    "source_read_fraction_min": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                    },
+                    "source_read_fraction_max": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                    },
+                    "points": {
+                        "type": "array",
+                        "minItems": 6,
+                        "maxItems": 6,
+                        "allOf": capsule_point_coverage,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": [
+                                "destination",
+                                "gpu_count",
+                                "compiled_median_seconds",
+                                "source_read_seconds",
+                                "source_read_fraction",
+                                "paired_exact_median_seconds",
+                                "beats_paired_exact",
+                            ],
+                            "properties": {
+                                "destination": {
+                                    "enum": ["hbm", "dram"]
+                                },
+                                "gpu_count": {"enum": [1, 2, 4]},
+                                "compiled_median_seconds": nonnegative,
+                                "source_read_seconds": nonnegative,
+                                "source_read_fraction": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1,
+                                },
+                                "paired_exact_median_seconds": nonnegative,
+                                "beats_paired_exact": {"const": False},
+                            },
+                        },
+                    },
+                },
+                "additionalProperties": True,
+            },
+            "dram_resident_backup": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["active_route", "status", "points"],
+                "properties": {
+                    "active_route": {"const": False},
+                    "status": {"type": "string", "minLength": 1},
+                    "points": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "allOf": [
+                            {
+                                "contains": {
+                                    "type": "object",
+                                    "required": ["gpu_count"],
+                                    "properties": {
+                                        "gpu_count": {"const": gpu_count}
+                                    },
+                                },
+                                "minContains": 1,
+                                "maxContains": 1,
+                            }
+                            for gpu_count in (1, 4)
+                        ],
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": [
+                                "gpu_count",
+                                "preload_seconds",
+                                "standing_host_source_bytes",
+                                "compiled_median_seconds",
+                                "paired_exact_median_seconds",
+                                "beats_paired_exact_after_preload",
+                            ],
+                            "properties": {
+                                "gpu_count": {"enum": [1, 4]},
+                                "preload_seconds": nonnegative,
+                                "standing_host_source_bytes": (
+                                    positive_integer
+                                ),
+                                "compiled_median_seconds": nonnegative,
+                                "paired_exact_median_seconds": nonnegative,
+                                "beats_paired_exact_after_preload": {
+                                    "const": True
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            "claim_boundary": {
+                "type": "object",
+                "required": [
+                    "primary_claim",
+                    "physical_ssd_performance_claim",
+                    "cold_filesystem_speedup_claim",
+                    "capsule_capture_claim",
+                    "int8_claim",
+                    "time_break_even_claim",
+                ],
+                "properties": {
+                    "primary_claim": {
+                        "const": "prepublished-program hot-HBM data-plane"
+                    },
+                    "physical_ssd_performance_claim": {"const": False},
+                    "cold_filesystem_speedup_claim": {"const": False},
+                    "capsule_capture_claim": {"const": False},
+                    "int8_claim": {"const": False},
+                    "time_break_even_claim": {"const": False},
+                },
+                "additionalProperties": True,
+            },
+        },
+    }
+    artifact_descriptor = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["path", "bytes", "sha256", "protocol", "status"],
+        "properties": {
+            "path": {"type": "string", "minLength": 1},
+            "bytes": positive_integer,
+            "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+            "protocol": {"type": "string", "minLength": 1},
+            "status": {"type": "string", "minLength": 1},
+        },
+    }
+    report_descriptor = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["path", "bytes", "sha256"],
+        "properties": {
+            "path": {"type": "string", "minLength": 1},
+            "bytes": positive_integer,
+            "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+        },
+    }
+    task_metrics = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["catalog_auc", "ndcg_at_100", "hit_at_100"],
+        "properties": {
+            "catalog_auc": {"type": "number"},
+            "ndcg_at_100": {"type": "number"},
+            "hit_at_100": {"type": "number"},
+        },
+    }
+    lifecycle_candidate = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "candidate_name",
+            "artifact",
+            "primary_sum_u_over_sum_e",
+            "record_weighted_task_ratio",
+            "scheduled_exact_records",
+            "reusable_records",
+            "maximum_observed_migration_depth",
+            "checks_passed",
+        ],
+        "properties": {
+            "candidate_name": {
+                "enum": [
+                    STAGE49_COST_ENDPOINT,
+                    STAGE49_SELECTED_CANDIDATE,
+                ]
+            },
+            "artifact": artifact_descriptor,
+            "primary_sum_u_over_sum_e": nonnegative,
+            "record_weighted_task_ratio": task_metrics,
+            "scheduled_exact_records": {
+                "type": "integer",
+                "minimum": 0,
+            },
+            "reusable_records": positive_integer,
+            "maximum_observed_migration_depth": {
+                "type": "integer",
+                "minimum": 0,
+            },
+            "checks_passed": {"const": True},
+        },
+    }
+    lifecycle_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "fixed_history",
+            "corrected_growing_history",
+        ],
+        "properties": {
+            "fixed_history": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "summary_artifact",
+                    "policy_artifact",
+                    "updates",
+                    "records",
+                    "maximum_migration_depth",
+                    "cumulative_gpu_cost_ratio",
+                    "certificate_passed",
+                    "scope",
+                ],
+                "properties": {
+                    "summary_artifact": artifact_descriptor,
+                    "policy_artifact": artifact_descriptor,
+                    "updates": {"const": 11},
+                    "records": {"const": EXPECTED_RECORDS},
+                    "maximum_migration_depth": {"const": 4},
+                    "cumulative_gpu_cost_ratio": nonnegative,
+                    "certificate_passed": {"const": True},
+                    "scope": {
+                        "const": (
+                            "fixed_history_hot_hbm_single_seed_development"
+                        )
+                    },
+                },
+            },
+            "corrected_growing_history": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "summary_artifact",
+                    "selected_candidate",
+                    "cost_endpoint",
+                    "selection_basis",
+                    "candidates",
+                    "target_append_excluded",
+                    "groupwise_host_staging",
+                    "state_movement_reported_separately",
+                    "full_cohort_hbm_claim",
+                    "end_to_end_state_movement_claim",
+                    "checks_passed",
+                ],
+                "properties": {
+                    "summary_artifact": artifact_descriptor,
+                    "selected_candidate": {
+                        "const": STAGE49_SELECTED_CANDIDATE
+                    },
+                    "cost_endpoint": {
+                        "const": STAGE49_COST_ENDPOINT
+                    },
+                    "selection_basis": {
+                        "const": (
+                            "freeze the preregistered bounded-renewal "
+                            "candidate without using recommendation labels; "
+                            "retain token debt only as the cost endpoint"
+                        )
+                    },
+                    "candidates": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": lifecycle_candidate,
+                        "allOf": [
+                            {
+                                "contains": {
+                                    "type": "object",
+                                    "required": ["candidate_name"],
+                                    "properties": {
+                                        "candidate_name": {
+                                            "const": candidate
+                                        }
+                                    },
+                                },
+                                "minContains": 1,
+                                "maxContains": 1,
+                            }
+                            for candidate in (
+                                STAGE49_COST_ENDPOINT,
+                                STAGE49_SELECTED_CANDIDATE,
+                            )
+                        ],
+                    },
+                    "target_append_excluded": {"const": True},
+                    "groupwise_host_staging": {"const": True},
+                    "state_movement_reported_separately": {
+                        "const": True
+                    },
+                    "full_cohort_hbm_claim": {"const": False},
+                    "end_to_end_state_movement_claim": {
+                        "const": False
+                    },
+                    "checks_passed": {"const": True},
+                },
+            },
+        },
+    }
+    stage6_output_names = (
+        "correctness_report",
+        "timing_memory_report",
+        "paper_tables",
+        "paper_figures",
+        "artifact_to_claim",
+        "negative_results_log",
+        "tbd_disposition",
+        "code_snapshot_manifest",
+    )
+    stage6_closure_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "protocol",
+            "status",
+            "selected_candidate",
+            "old_gpu_matrix_rerun",
+            "source_artifacts",
+            "outputs",
+            "checks",
+        ],
+        "properties": {
+            "protocol": {"const": STAGE6_PROTOCOL},
+            "status": {"const": "single_configuration_v1_frozen"},
+            "selected_candidate": {
+                "const": STAGE49_SELECTED_CANDIDATE
+            },
+            "old_gpu_matrix_rerun": {"const": False},
+            "source_artifacts": {
+                "type": "array",
+                "minItems": 12,
+                "items": artifact_descriptor,
+            },
+            "outputs": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": list(stage6_output_names),
+                "properties": {
+                    name: report_descriptor
+                    for name in stage6_output_names
+                },
+            },
+            "checks": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": [
+                    "all_source_hashes",
+                    "whole_aggregate_semantics",
+                    "jsonschema",
+                    "stage5_semantics",
+                    "candidate_binding",
+                    "all_tbd_markers_disposed",
+                    "all_claims_bound",
+                    "all_passed",
+                ],
+                "properties": {
+                    "all_source_hashes": {"const": True},
+                    "whole_aggregate_semantics": {"const": True},
+                    "jsonschema": {"const": True},
+                    "stage5_semantics": {"const": True},
+                    "candidate_binding": {"const": True},
+                    "all_tbd_markers_disposed": {"const": True},
+                    "all_claims_bound": {"const": True},
+                    "all_passed": {"const": True},
+                },
+            },
+        },
+    }
     failure_coverage = [
         {
             "contains": {
@@ -942,80 +2568,20 @@ def build_result_schema(
         }
         for name in FAILURE_INJECTIONS
     ]
-    aborted_failure_names = [
-        name
-        for name in FAILURE_INJECTIONS
-        if name != "semantic_theta4_program_perturbation"
-    ]
-    failure_outcome_conditions = [
-        {
-            "if": {
-                "required": ["name"],
-                "properties": {"name": {"enum": aborted_failure_names}},
-            },
-            "then": {
-                "properties": {
-                    "job_outcome": {"const": "aborted"},
-                    "previous_current_pointer_preserved": {"const": True},
-                    "complete_target_visible": {"const": False},
-                    "final_manifest_complete": {"const": False},
-                }
-            },
+    fidelity = {
+        "type": "object",
+        "additionalProperties": True,
+        "required": [
+            "cache_recovery",
+            "score_cosine",
+            "top100_overlap",
+        ],
+        "properties": {
+            "cache_recovery": {"type": "number"},
+            "score_cosine": {"type": "number"},
+            "top100_overlap": {"type": "number"},
         },
-        {
-            "if": {
-                "required": ["name"],
-                "properties": {
-                    "name": {
-                        "const": "semantic_theta4_program_perturbation"
-                    }
-                },
-            },
-            "then": {
-                "required": [
-                    "detection_phase",
-                    "integrity_preflight_passed",
-                    "perturbed_program_committed",
-                    "theta4_final_action",
-                ],
-                "properties": {
-                    "job_outcome": {
-                        "const": "committed_after_escalation"
-                    },
-                    "detection_phase": {
-                        "enum": ["semantic_preflight", "runtime_guard"]
-                    },
-                    "integrity_preflight_passed": {"const": True},
-                    "perturbed_program_committed": {"const": False},
-                    "theta4_final_action": {"const": "recompute"},
-                    "previous_current_pointer_preserved": {
-                        "const": False
-                    },
-                    "complete_target_visible": {"const": True},
-                    "final_manifest_complete": {"const": True},
-                },
-                "allOf": [
-                    {
-                        "if": {
-                            "properties": {
-                                "detection_phase": {
-                                    "const": "runtime_guard"
-                                }
-                            }
-                        },
-                        "then": {
-                            "properties": {
-                                "reworked_records": {
-                                    "type": "integer",
-                                    "minimum": 1,
-                                }
-                            }
-                        },
-                    }
-                ],
-            },
-        },
-    ]
+    }
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": (
@@ -1036,8 +2602,10 @@ def build_result_schema(
             "rq2_compiler",
             "rq3_frontier",
             "rq4_system",
-            "rq4_failures",
-            "rq5_economics",
+            "lifecycle",
+            "stage5_closure",
+            "source_state_accounting",
+            "stage6_closure",
             "negative_results",
         ],
         "properties": {
@@ -1429,7 +2997,11 @@ def build_result_schema(
                     }
                 },
             },
-            "rq4_failures": {
+            "lifecycle": lifecycle_schema,
+            "stage5_closure": stage5_closure_schema,
+            "source_state_accounting": source_state_accounting_schema,
+            "stage6_closure": stage6_closure_schema,
+            "legacy_rq4_failures": {
                 "type": "object",
                 "additionalProperties": True,
                 "required": ["guard_design", "injections"],
@@ -1473,7 +3045,6 @@ def build_result_schema(
                         "allOf": failure_coverage,
                         "items": {
                             "type": "object",
-                            "allOf": failure_outcome_conditions,
                             "required": [
                                 "name",
                                 "detected",
@@ -1519,7 +3090,7 @@ def build_result_schema(
                     }
                 },
             },
-            "rq5_economics": {
+            "legacy_rq5_economics": {
                 "type": "object",
                 "additionalProperties": True,
                 "required": [
@@ -1742,6 +3313,604 @@ def build_result_schema(
             },
         },
     }
+
+
+def validate_stage5_closure_semantics(value: dict[str, Any]) -> None:
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+            raise ValueError(message)
+
+    formal_canary = load_stage5_formal_canary_contract()
+    canary_artifact = value["canary_artifact"]
+    expected_canary_artifact = {
+        name: formal_canary[name]
+        for name in (
+            "path",
+            "sha256",
+            "protocol",
+            "source_version",
+            "target_version",
+            "selection_role",
+            "labels_used",
+            "metric",
+            "maximum_relative_l2",
+        )
+    }
+    require(
+        canary_artifact == expected_canary_artifact,
+        "Stage 5 canary artifact contract differs",
+    )
+    capacity = value["copy_on_write_capacity"]
+    devices = capacity["devices"]
+    require(
+        len(devices) == int(value["copy_on_write_gpu_count"]),
+        "Stage 5 COW device count differs",
+    )
+    require(
+        len({device["device"] for device in devices}) == len(devices),
+        "Stage 5 COW devices repeat",
+    )
+    for device in devices:
+        required = sum(
+            int(device[name])
+            for name in (
+                "model_and_program_bytes",
+                "old_kv_bytes",
+                "complete_new_kv_bytes",
+                "transient_bytes",
+                "allocator_margin_bytes",
+            )
+        )
+        require(
+            int(device["model_and_program_bytes"]) > 0
+            and required == int(device["required_bytes"])
+            and required <= int(device["capacity_bytes"])
+            and device["passed"] is True,
+            "Stage 5 COW capacity arithmetic differs",
+        )
+    capacity_by_device = {
+        str(device["device"]): device for device in devices
+    }
+    observed_free = capacity["observed_free_capacity"]
+    observed_devices = observed_free["devices"]
+    observed_by_device = {
+        str(device["device"]): device for device in observed_devices
+    }
+    require(
+        observed_free["all_devices_passed"] is True
+        and len(observed_by_device) == len(observed_devices)
+        and set(observed_by_device) == set(capacity_by_device),
+        "Stage 5 observed free-capacity coverage differs",
+    )
+    for device_name, observation in observed_by_device.items():
+        declared = capacity_by_device[device_name]
+        required_free = sum(
+            int(declared[name])
+            for name in (
+                "old_kv_bytes",
+                "complete_new_kv_bytes",
+                "transient_bytes",
+                "allocator_margin_bytes",
+            )
+        )
+        require(
+            int(observation["required_free_bytes"]) == required_free
+            and int(observation["free_bytes"]) >= required_free
+            and observation["passed"] is True,
+            "Stage 5 observed free-capacity arithmetic differs",
+        )
+
+    def validate_job(job: dict[str, Any], committed: bool) -> None:
+        preflight = job["preflight"]
+        decisions = preflight["decisions"]
+        cohort_ids = {
+            str(cohort["cohort_id"]) for cohort in preflight["cohorts"]
+        }
+        require(
+            len(decisions) == EXPECTED_RECORDS
+            and len({int(item["record_id"]) for item in decisions})
+            == EXPECTED_RECORDS,
+            "Stage 5 preflight decision coverage differs",
+        )
+        require(
+            {str(item["cohort_id"]) for item in decisions} == cohort_ids,
+            "Stage 5 preflight cohort coverage differs",
+        )
+        for item in decisions:
+            exact = item["final_action"] == "exact"
+            migrated = item["final_action"] == "migrate"
+            fallback = item["fallback_reason"]
+            require(
+                0 <= int(item["retained_tokens"])
+                < int(item["final_tokens"])
+                and item["target_version"] == job["target_version"]
+                and (
+                    (
+                        exact
+                        and item["last_exact_version_after"]
+                        == item["target_version"]
+                        and int(item["migration_depth_after"]) == 0
+                        and item["state_kind_after"] == "exact"
+                    )
+                    or (
+                        migrated
+                        and item["last_exact_version_before"] is not None
+                        and item["last_exact_version_after"]
+                        == item["last_exact_version_before"]
+                        and int(item["migration_depth_after"])
+                        == int(item["migration_depth_before"]) + 1
+                        and item["state_kind_after"] == "migrated"
+                    )
+                )
+                and (
+                    (
+                        item["requested_action"] == "migrate"
+                        and exact
+                        and isinstance(fallback, str)
+                        and bool(fallback)
+                    )
+                    or (
+                        item["requested_action"] == item["final_action"]
+                        and fallback is None
+                    )
+                ),
+                "Stage 5 decision lineage differs",
+            )
+        require(
+            abs(
+                float(preflight["elapsed_seconds"])
+                - (
+                    float(preflight["input_measurement_seconds"])
+                    + float(preflight["runtime_validation_seconds"])
+                    + float(preflight["decision_seconds"])
+                )
+            )
+            <= 1e-9,
+            "Stage 5 preflight timing arithmetic differs",
+        )
+        require(
+            bool(preflight["all_cohorts_passed"])
+            == all(bool(item["passed"]) for item in preflight["cohorts"]),
+            "Stage 5 preflight cohort aggregate differs",
+        )
+        capacity_cohorts = 0
+        for cohort in preflight["cohorts"]:
+            checks = cohort["checks"]
+            cohort_id = str(cohort["cohort_id"])
+            cohort_decisions = [
+                item
+                for item in decisions
+                if str(item["cohort_id"]) == cohort_id
+            ]
+            requested_migrant_ids = {
+                int(item["record_id"])
+                for item in cohort_decisions
+                if item["requested_action"] == "migrate"
+            }
+            migration_required = bool(cohort["migration_required"])
+            expected_old_ids = {
+                int(record_id)
+                for record_id in cohort["expected_old_record_ids"]
+            }
+            present_old_ids = {
+                int(record_id)
+                for record_id in cohort["present_old_record_ids"]
+            }
+            canary = cohort["canary"]
+            declared_capacity = cohort["device_capacity"]
+            expected_checks = {
+                "artifact_identity": (
+                    cohort["expected_artifact_sha256"]
+                    == cohort["observed_artifact_sha256"]
+                ),
+                "program_identity": (
+                    not migration_required
+                    or cohort["expected_program_sha256"]
+                    == cohort["observed_program_sha256"]
+                ),
+                "program_shape": (
+                    not migration_required
+                    or cohort["expected_program_shape"]
+                    == cohort["observed_program_shape"]
+                ),
+                "old_kv_presence": (
+                    not migration_required
+                    or expected_old_ids.issubset(present_old_ids)
+                ),
+                "capacity": all(
+                    bool(device["passed"]) for device in declared_capacity
+                ),
+                "semantic_canary": (
+                    not migration_required
+                    or (
+                        canary is not None
+                        and bool(canary["passed"])
+                    )
+                ),
+            }
+            require(
+                checks == expected_checks,
+                "Stage 5 raw preflight evidence differs from checks",
+            )
+            require(
+                cohort["expected_artifact_sha256"]
+                == formal_canary["edge_artifact_sha256"],
+                "Stage 5 frozen edge artifact differs",
+            )
+            failed = {
+                name
+                for name, passed in expected_checks.items()
+                if not bool(passed)
+            }
+            require(
+                bool(cohort["passed"]) == (not failed)
+                and bool(checks["artifact_identity"])
+                and bool(checks["capacity"])
+                and (
+                    (
+                        not failed
+                        and cohort["fallback_reason"] is None
+                    )
+                    or (
+                        failed
+                        and set(str(cohort["fallback_reason"]).split("+"))
+                        == failed
+                    )
+                ),
+                "Stage 5 cohort preflight aggregate differs",
+            )
+            for item in cohort_decisions:
+                if item["requested_action"] == "exact":
+                    action_bound = (
+                        item["final_action"] == "exact"
+                        and item["fallback_reason"] is None
+                    )
+                elif cohort["passed"]:
+                    action_bound = (
+                        item["final_action"] == "migrate"
+                        and item["fallback_reason"] is None
+                    )
+                else:
+                    action_bound = (
+                        item["final_action"] == "exact"
+                        and item["fallback_reason"]
+                        == cohort["fallback_reason"]
+                    )
+                require(
+                    action_bound,
+                    "Stage 5 final action differs from cohort preflight",
+                )
+            measurement = cohort["measurement"]
+            measurement_sum = sum(
+                float(measurement[name])
+                for name in (
+                    "artifact_seconds",
+                    "old_kv_presence_seconds",
+                    "capacity_seconds",
+                    "semantic_canary_seconds",
+                )
+            )
+            require(
+                abs(
+                    measurement_sum
+                    - float(measurement["total_seconds"])
+                )
+                <= 1e-9,
+                "Stage 5 cohort measurement arithmetic differs",
+            )
+            require(
+                migration_required == bool(requested_migrant_ids)
+                and expected_old_ids == requested_migrant_ids,
+                "Stage 5 migration cohort population differs",
+            )
+            require(
+                all(
+                    item["source_version"] == cohort["source_version"]
+                    and item["target_version"] == cohort["target_version"]
+                    for item in cohort_decisions
+                ),
+                "Stage 5 cohort and decision versions differ",
+            )
+            if migration_required:
+                require(
+                    present_old_ids.issubset(expected_old_ids)
+                    and cohort["expected_old_records_source"]
+                    == "prior_committed_manifest"
+                    and cohort["present_old_records_source"]
+                    == "destination_readback"
+                    and cohort["expected_program_sha256"] is not None
+                    and cohort["observed_program_sha256"] is not None
+                    and bool(cohort["expected_program_shape"])
+                    and bool(cohort["observed_program_shape"])
+                    and cohort["expected_threshold_artifact_sha256"]
+                    == canary_artifact["sha256"]
+                    and canary is not None
+                    and canary["cohort_id"] == cohort_id
+                    and set(int(item) for item in canary["record_ids"])
+                    .issubset(expected_old_ids)
+                    and canary["source_version"]
+                    == cohort["source_version"]
+                    and canary["target_version"]
+                    == cohort["target_version"]
+                    and canary["program_sha256"]
+                    == cohort["observed_program_sha256"]
+                    and canary["metric"] == canary_artifact["metric"]
+                    and canary["threshold_artifact_sha256"]
+                    == canary_artifact["sha256"]
+                    and canary["threshold_source"]
+                    == canary_artifact["selection_role"]
+                    and canary["labels_used"]
+                    == canary_artifact["labels_used"]
+                    and float(canary["maximum_relative_l2"])
+                    == float(
+                        canary_artifact["maximum_relative_l2"]
+                    )
+                    and bool(canary["passed"])
+                    == (
+                        float(canary["observed_relative_l2"])
+                        <= float(canary["maximum_relative_l2"])
+                    )
+                    and cohort["source_version"]
+                    == canary_artifact["source_version"]
+                    and cohort["target_version"]
+                    == canary_artifact["target_version"],
+                    "Stage 5 migration canary provenance differs",
+                )
+            else:
+                require(
+                    cohort["expected_program_sha256"] is None
+                    and cohort["observed_program_sha256"] is None
+                    and not cohort["expected_program_shape"]
+                    and not cohort["observed_program_shape"]
+                    and cohort["expected_threshold_artifact_sha256"]
+                    is None
+                    and not expected_old_ids
+                    and not present_old_ids
+                    and canary is None,
+                    "Stage 5 exact cohort carries migration evidence",
+                )
+            if declared_capacity:
+                capacity_cohorts += 1
+                require(
+                    {
+                        str(device["device"]): device
+                        for device in declared_capacity
+                    }
+                    == capacity_by_device,
+                    "Stage 5 job and COW capacity evidence differ",
+                )
+        require(
+            abs(
+                float(preflight["input_measurement_seconds"])
+                - sum(
+                    float(cohort["measurement"]["total_seconds"])
+                    for cohort in preflight["cohorts"]
+                )
+            )
+            <= 1e-9,
+            "Stage 5 preflight input measurement differs",
+        )
+        require(
+            capacity_cohorts >= 1,
+            "Stage 5 job has no COW capacity evidence",
+        )
+        require(
+            int(job["guard_invocations"]) == int(job["staged_extents"]),
+            "Stage 5 guarded extent count differs",
+        )
+        if not committed:
+            require(
+                job["target_manifest"] is None
+                and job["target_visible"] is False,
+                "Stage 5 aborted target visibility differs",
+            )
+            require(
+                job["target_readback"] is None,
+                "Stage 5 aborted target readback differs",
+            )
+            readback = job["old_readback"]
+            require(
+                int(readback["expected_records"]) == EXPECTED_RECORDS
+                and int(readback["read_records"]) == EXPECTED_RECORDS
+                and readback["passed"] is True,
+                "Stage 5 abort readback coverage differs",
+            )
+            require(
+                readback["target_version"]
+                in {item["source_version"] for item in decisions},
+                "Stage 5 abort source version differs",
+            )
+            return
+        target = job["target_manifest"]
+        lineage = target["lineage"]
+        destination = target["destination_manifest"]
+        metadata = destination["metadata"]
+        target_readback = job["target_readback"]
+        require(
+            len(lineage) == EXPECTED_RECORDS
+            and len({int(item["record_id"]) for item in lineage})
+            == EXPECTED_RECORDS,
+            "Stage 5 committed lineage coverage differs",
+        )
+        require(
+            destination["job_id"] == job["job_id"]
+            and destination["target_version"] == job["target_version"]
+            and int(destination["record_count"]) == EXPECTED_RECORDS
+            and all(
+                extent["migration_anchor_version"]
+                == job["target_version"]
+                and extent["served_kv_target"]
+                == job["target_version"]
+                for extent in destination["extents"]
+            ),
+            "Stage 5 committed target version differs",
+        )
+        require(
+            job["old_readback"] is None
+            and int(target_readback["expected_records"])
+            == EXPECTED_RECORDS
+            and int(target_readback["read_records"]) == EXPECTED_RECORDS
+            and target_readback["target_version"] == job["target_version"]
+            and target_readback["manifest_equal"] is True
+            and target_readback["all_metadata_equal"] is True
+            and target_readback["all_finite"] is True
+            and target_readback["all_checksums_equal"] is True
+            and target_readback["passed"] is True,
+            "Stage 5 committed target readback differs",
+        )
+        decision_by_id = {
+            int(item["record_id"]): item for item in decisions
+        }
+        extents = destination["extents"]
+        require(
+            int(job["guard_invocations"])
+            == int(job["staged_extents"])
+            == len(extents)
+            and len(
+                {str(extent["extent_id"]) for extent in extents}
+            )
+            == len(extents),
+            "Stage 5 committed guarded extent count differs",
+        )
+        expected_kv_width = (
+            EXPECTED_MODEL["num_heads"] * EXPECTED_MODEL["head_dim"]
+        )
+        extent_token_total = 0
+        extent_payload_total = 0
+        payload_by_device = {
+            device_name: 0 for device_name in capacity_by_device
+        }
+        for extent in extents:
+            extent_record_ids = [
+                int(record_id) for record_id in extent["record_ids"]
+            ]
+            require(
+                set(extent_record_ids).issubset(decision_by_id),
+                "Stage 5 committed extent record IDs differ",
+            )
+            expected_tokens = sum(
+                int(decision_by_id[record_id]["final_tokens"])
+                for record_id in extent_record_ids
+            )
+            expected_payload = (
+                2
+                * EXPECTED_MODEL["num_layers"]
+                * expected_tokens
+                * expected_kv_width
+                * 2
+                + len(extent_record_ids) * 8
+                + (len(extent_record_ids) + 1) * 8
+            )
+            require(
+                int(extent["num_layers"])
+                == EXPECTED_MODEL["num_layers"]
+                and int(extent["kv_width"]) == expected_kv_width
+                and extent["dtype"] == "float16"
+                and int(extent["token_count"]) == expected_tokens
+                and int(extent["payload_bytes"]) == expected_payload
+                and extent["migration_anchor_version"]
+                == job["target_version"]
+                and extent["served_kv_target"]
+                == job["target_version"]
+                and extent["device"] in capacity_by_device
+                and str(extent["location"]).startswith(
+                    f"hbm://{destination['destination_id']}/"
+                    f"{extent['device']}/"
+                ),
+                "Stage 5 committed extent ABI differs",
+            )
+            extent_token_total += expected_tokens
+            extent_payload_total += expected_payload
+            payload_by_device[str(extent["device"])] += expected_payload
+        require(
+            destination["destination_kind"] == "hbm"
+            and destination["publication_mode"] == "direct_device"
+            and int(destination["token_count"]) == extent_token_total
+            and int(destination["payload_bytes"])
+            == extent_payload_total,
+            "Stage 5 committed manifest totals differ",
+        )
+        require(
+            payload_by_device
+            == {
+                device_name: int(device["complete_new_kv_bytes"])
+                for device_name, device in capacity_by_device.items()
+            },
+            "Stage 5 committed bytes differ from COW capacity evidence",
+        )
+        require(
+            metadata["lineage"] == lineage
+            and decision_by_id
+            == {int(item["record_id"]): item for item in lineage},
+            "Stage 5 atomic lineage payload differs",
+        )
+        metadata_json = json.dumps(
+            metadata,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        lineage_sha256 = hashlib.sha256(metadata_json.encode()).hexdigest()
+        require(
+            target["lineage_sha256"] == lineage_sha256
+            and destination["metadata_sha256"] == lineage_sha256,
+            "Stage 5 lineage SHA-256 differs",
+        )
+        manifest_record_ids = [
+            int(record_id)
+            for extent in destination["extents"]
+            for record_id in extent["record_ids"]
+        ]
+        require(
+            len(manifest_record_ids) == EXPECTED_RECORDS
+            and len(set(manifest_record_ids)) == EXPECTED_RECORDS
+            and manifest_record_ids
+            == [int(item["record_id"]) for item in lineage],
+            "Stage 5 manifest and lineage record order differs",
+        )
+
+    validate_job(value["normal_job"], True)
+    semantic = value["semantic_fallback_job"]
+    validate_job(semantic, True)
+    require(
+        semantic["semantic_perturbation_detected"] is True
+        and semantic["affected_cohort_final_action"] == "exact"
+        and any(
+            item["requested_action"] == "migrate"
+            and item["final_action"] == "exact"
+            and "semantic_canary" in str(item["fallback_reason"])
+            for item in semantic["preflight"]["decisions"]
+        ),
+        "Stage 5 semantic fallback evidence differs",
+    )
+    normal_programs = {
+        cohort["observed_program_sha256"]
+        for cohort in value["normal_job"]["preflight"]["cohorts"]
+        if cohort["migration_required"]
+    }
+    perturbed_programs = {
+        cohort["observed_program_sha256"]
+        for cohort in semantic["preflight"]["cohorts"]
+        if cohort["migration_required"]
+        and not cohort["checks"]["semantic_canary"]
+    }
+    require(
+        normal_programs
+        == {formal_canary["canonical_program_sha256"]}
+        and perturbed_programs
+        == {formal_canary["perturbed_program_sha256"]},
+        "Stage 5 semantic case did not execute a distinct program",
+    )
+    for abort in value["abort_jobs"]:
+        validate_job(abort, False)
+        require(
+            {
+                cohort["observed_program_sha256"]
+                for cohort in abort["preflight"]["cohorts"]
+                if cohort["migration_required"]
+            }
+            == {formal_canary["canonical_program_sha256"]},
+            "Stage 5 abort job program identity differs",
+        )
 
 
 def build_blueprint(
@@ -2542,155 +4711,184 @@ def build_blueprint(
                 "training replication in this development protocol"
             ),
         },
-        "economics_contract": {
-            "capture": {
-                "role": "program_selection",
-                "records": 60,
-                "model_version": f"theta{TARGET_VERSION}",
-                "gpu_count": 1,
-                "shared_input": "the same frozen prefix histories",
-                "paths": [
-                    "forward materializing fresh K/V only",
-                    "same forward plus FP16 normalized-state device capture",
-                    "same forward plus device capture, D2H, encode, and "
-                    "buffered-POSIX shard persistence",
-                ],
-                "warmup_runs": 1,
-                "measured_repetitions": 3,
+        "source_state_accounting_contract": {
+            "protocol": "cohortkv_stage5_source_state_accounting_v1",
+            "inputs": {
+                name: {
+                    **contract,
+                    "path": str(
+                        {
+                            "stage2": STAGE2_SUMMARY_PATH,
+                            "stage4": STAGE4_SUMMARY_PATH,
+                            "stage4_5": STAGE45_SUMMARY_PATH,
+                        }[name]
+                    ),
+                }
+                for name, contract in (
+                    STAGE5_ACCOUNTING_FROZEN_INPUTS.items()
+                )
             },
-            "fp16": {
-                "logical_bytes": logical["logical_capsule_bytes_fp16"],
-                "logical_ratio_to_fp16_kv": 0.5,
-                "physical_bytes_required": True,
+            "validation": [
+                "every input protocol, frozen status, and file SHA-256",
+                "Stage-4 to Stage-2 and Stage-4.5 to Stage-4 upstream hashes",
+                "shared workload and source-manifest hashes",
+                "existing-old-K/V representation, HBM placement, and zero added state",
+                "all three direct endpoints passed capacity and correctness",
+                "all six capsule/exact endpoints passed correctness before timing comparison",
+            ],
+            "active_route": {
+                "representation": "existing_old_kv_fp16",
+                "placement": "existing serving cache in HBM",
+                "additional_per_record_source_state_bytes": 0,
+                "capture_required": False,
+                "encode_required": False,
+                "preload_required": False,
             },
-            "int8": {
-                "layout": (
-                    "symmetric signed int8 per record and layer with "
-                    "float32 absmax scale"
-                ),
-                "equation": (
-                    "scale=max(abs(z))/127; q=round(clamp(z/scale,-127,127)); "
-                    "all-zero tensors use scale 1"
-                ),
-                "logical_data_bytes": (
-                    EXPECTED_LOGICAL_CAPSULE_DATA_BYTES_INT8
-                ),
-                "logical_data_ratio_to_fp16_kv": 0.25,
-                "dequantization": (
-                    "dequantize to FP16 during timed host staging without "
-                    "changing the prepared compiled program"
-                ),
-                "semantic_evaluation": (
-                    "apply the frozen certificate on certificate users and "
-                    "report the frozen representation on final-test users"
-                ),
-                "complete_job_endpoint": {
-                    "destination": "hbm",
-                    "gpu_count": 1,
-                    "records": EXPECTED_RECORDS,
-                },
-            },
-            "auxiliary_state_reporting": {
-                "transition_hidden_fp16": logical[
-                    "logical_transition_hidden_bytes_fp16"
-                ],
-                "residual_hidden_suffix_bf16_by_p": logical[
-                    "logical_residual_hidden_suffix_bytes_bf16"
-                ],
-                "current_verified_p8_fallback_bf16": (
-                    current_p8_fallback_bytes
-                ),
-                "excluded_from_default_capsule_ratio": True,
-            },
-            "break_even": {
-                "formula": (
-                    "ceil(capture_overhead / (exact - compiled - "
-                    "compiler_amortized))"
-                ),
-                "unit": "seconds per record",
-                "if_denominator_nonpositive": "no_time_break_even",
-                "report_fp16_and_int8_separately": True,
-                "forbidden": (
-                    "convert bytes or update frequency to money or workload "
-                    "frequency without an external declared parameter"
-                ),
-            },
+            "required_existing_evidence": [
+                "direct-program file bytes and composition seconds",
+                "resident program tensor bytes per worker",
+                "one/two/four-GPU normal-path old/new peak bytes",
+                "Stage-2 fit, runtime-prepare, certificate, and amortization",
+                "rejected FP16 normalized-capsule endpoint source-read cost",
+                "retired DRAM-resident capsule preload and standing bytes",
+            ],
+            "unmeasured_claims_forbidden": [
+                "independent program serialization time",
+                "capsule-only attribution of joint source materialization",
+                "INT8 or FP8 capsule results",
+                "physical SSD performance",
+                "capture or persistence overhead",
+                "time break-even including unmeasured capture",
+            ],
         },
         "guard_selection_contract": {
             "role": "program_selection",
             "labels_used": False,
             "logical_requirement": (
-                "detect the frozen integrity-valid theta4 semantic "
-                "perturbation before commit while reporting false escalation "
-                "on all unperturbed source cohorts"
+                "one fixed label-free semantic preflight detects the frozen "
+                "integrity-valid theta0-to-theta1 program perturbation before "
+                "any target extent"
             ),
             "reference_accounting": [
-                "reference source representation and bytes",
-                "reference compute seconds",
-                "normal no-fault job overhead seconds",
-                "perturbed detection phase",
-                "false-escalated cohort count",
+                "artifact and program identity",
+                "program shape and version",
+                "old K/V presence read from the committed source manifest",
+                "per-device copy-on-write capacity",
+                "semantic-canary GPU time",
+                "complete preflight overhead",
             ],
             "selection_rule": (
-                "choose the lowest normal-job overhead mechanism that detects "
-                "the frozen perturbation and preserves unperturbed cohort "
-                "certificates; if no runtime sentinel qualifies, use an "
-                "executable semantic preflight and narrow the manuscript claim"
+                "freeze one threshold on program-selection records; "
+                "program, shape, old-cache, or semantic failure routes the "
+                "affected migration cohort to exact before target execution, "
+                "while artifact/version or capacity failure aborts admission"
             ),
             "freeze_boundary": (
-                "freeze the mechanism and parameters before the six complete "
-                "failure jobs; final-test recommendation labels are forbidden"
+                "freeze the canary and threshold before one normal job, one "
+                "semantic-fallback job, and two abort jobs"
             ),
+            "runtime_sentinel_search_required": False,
+            "online_rework_required": False,
+            "required_result_evidence": [
+                "all per-cohort check outcomes",
+                "all 682 final per-record decisions",
+                "input, runtime-validation, and decision timing",
+                "complete committed target manifest and atomic lineage payload",
+            ],
         },
         "failure_contract": {
+            "mode": "copy_on_write",
+            "representative_gpu_count": [2, 4],
+            "capacity_evidence": {
+                "required": True,
+                "per_device_components": [
+                    "model_and_program_bytes",
+                    "old_kv_bytes",
+                    "complete_new_kv_bytes",
+                    "transient_bytes",
+                    "allocator_margin_bytes",
+                    "capacity_bytes",
+                ],
+                "arithmetic": (
+                    "required_bytes equals the sum of all five required "
+                    "components and does not exceed capacity_bytes"
+                ),
+                "device_count_matches_representative_gpu_count": True,
+                "zero_model_or_program_bytes_forbidden": True,
+            },
             "reader_state": {
                 "before_commit": (
                     "the logical current pointer remains on the previously "
-                    "committed version; theta11 is not visible"
+                    "committed version; the private target is not visible"
                 ),
                 "after_commit": (
-                    "one atomic pointer/manifest transition exposes theta11"
+                    "one atomic manifest transition exposes the complete "
+                    "post-append target and its lineage hash"
                 ),
                 "after_abort": (
-                    "the previous version remains visible and theta11 "
-                    "staging is unreachable"
+                    "every old expected record remains readback-valid and "
+                    "private target staging is reclaimed"
                 ),
             },
-            "injections": [
+            "cases": [
                 {
-                    "name": "artifact_hash_mismatch_before_begin",
-                    "expected": "abort before the first extent",
-                },
-                {
-                    "name": "semantic_theta4_program_perturbation",
+                    "name": "semantic_theta0_theta1_program_perturbation",
                     "expected": (
-                        "the perturbation remains structurally valid and "
-                        "passes integrity checks, then semantic preflight or "
-                        "the runtime guard detects it; theta4 escalates to its "
-                        "published exact recompute fallback and any earlier "
-                        "theta4 extents are replaced before a complete commit"
+                        "fixed preflight selects exact before execution and "
+                        "one complete corrected target commits"
                     ),
                 },
                 {
-                    "name": "before_first_extent",
-                    "expected": "abort with no theta11 visibility",
+                    "name": "mid_job",
+                    "expected": (
+                        "abort, reclaim staging, hide target, and read back "
+                        "every old record with matching metadata and SHA-256"
+                    ),
                 },
                 {
-                    "name": "mid_wave",
-                    "expected": "abort with no theta11 visibility",
-                },
-                {
-                    "name": "during_publication",
-                    "expected": "abort and reclaim private staging",
-                },
-                {
-                    "name": "pre_commit_after_complete_coverage",
-                    "expected": "abort with the previous version still visible",
+                    "name": "pre_commit",
+                    "expected": (
+                        "abort after complete private coverage with the same "
+                        "full old-manifest readback contract"
+                    ),
                 },
             ],
-            "resume_claim": (
-                "optional until an extent journal proves at-most-one-wave "
-                "redo; absence of resume does not block atomic abort"
+            "artifact_mismatch_scope": "unit and smoke",
+            "runtime_rework_required": False,
+            "journal_or_resume_required": False,
+        },
+        "stage6_freeze_contract": {
+            "protocol": STAGE6_PROTOCOL,
+            "selected_candidate": STAGE49_SELECTED_CANDIDATE,
+            "cost_endpoint": STAGE49_COST_ENDPOINT,
+            "selection_basis": (
+                "freeze the preregistered bounded-renewal candidate "
+                "without using recommendation labels; retain token debt "
+                "only as the cost endpoint"
+            ),
+            "old_gpu_matrix_rerun": False,
+            "required_lifecycle_evidence": [
+                "Stage-4.6 fixed-history depth-four policy and chain",
+                "Stage-4.9 corrected growing-history same-device candidates",
+                "separately reported Stage-4.9 evaluator state movement",
+                "no Stage-4.9 full-cohort HBM or end-to-end movement claim",
+            ],
+            "required_outputs": [
+                "final aggregate",
+                "correctness report",
+                "timing and memory report",
+                "paper table data",
+                "paper figure data",
+                "artifact-to-claim map",
+                "negative-results log",
+                "target-manuscript TBD disposition",
+                "code-snapshot manifest",
+            ],
+            "validation": (
+                "atomic CPU-only assembly validates every upstream path, "
+                "protocol, status, and SHA-256; binds the Stage-5 candidate "
+                "to Stage 4.9; applies JSON Schema, Stage-5 cross-field "
+                "validation, and whole-aggregate semantic checks"
             ),
         },
         "result_contract": {
@@ -2704,15 +4902,23 @@ def build_blueprint(
                 "aggregate JSON",
                 "correctness report",
                 "timing and memory breakdown",
+                "paper table and figure data",
+                "artifact-to-claim map",
+                "target-manuscript TBD disposition",
                 "committed destination manifests",
                 "negative-results log",
                 "repository commit and code-snapshot hash",
             ],
             "semantic_validation": (
                 "JSON Schema enforces one run for every primary "
-                "method/destination/GPU point and one record for every "
-                "failure injection; the aggregator additionally verifies "
-                "component-byte sums and source/action compatibility"
+                "method/destination/GPU point, fixed and corrected lifecycle "
+                "evidence, the minimal Stage-5 closure, Stage-6 output "
+                "descriptors, and artifact-derived source-state accounting; "
+                "the aggregator additionally verifies every source SHA-256, "
+                "candidate binding, COW component-byte sums, exact 682-record "
+                "abort readback, manifest/lineage identity, unique record IDs, "
+                "source/action compatibility, claim coverage, and TBD "
+                "disposition"
             ),
         },
         "paper_contract": {

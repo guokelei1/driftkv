@@ -2,14 +2,25 @@
 
 ## Status
 
-`cohortkv_single_config_full_chain_development_v1` completed and froze Stages 0–4 plus the
-Stage-4.5 source-plan and Stage-4.6 lifecycle amendments on 2026-07-27. The workload contract, baseline frontier, deployed
+`cohortkv_single_config_full_chain_development_v1` completed and froze the Stage 0–6
+single-configuration vertical slice on 2026-07-28. The workload contract, baseline frontier, deployed
 compiler artifacts, common-layout resident operator, normal-path full-cohort HBM/DRAM engine, and
 direct-old-K/V hot-HBM source plan are closed. Stage 4.6 now covers recursive migration of actual
 approximate outputs through the fixed one-A40 `theta0 -> theta11` chain. Its frozen lifecycle uses
 balanced age/deadline scheduling, 15%–25% edge-severity exact budgets, and maximum depth four.
-Stage 5 is the next open stage for executable fallback, guard, transactional rework, and failure
-visibility. These are adaptive seed-0 development results, not replicated generality evidence.
+Stage 4.9 completes the corrected 11-edge growing-history same-device confirmation and freezes
+`staggered_renewal_h12` at `0.100017×` paired exact. Stage 5 completes fixed preflight,
+executable exact fallback, representative copy-on-write abort visibility, lineage, and the
+artifact-derived source-state audit on a formal 682-record two-A40 job. Stage 6 validates and
+assembles all frozen inputs into `final_summary_seed0.json` and eight sidecars without rerunning
+the old GPU matrix. Runtime sentinel research, online rework/resume, INT8/capture matrices, and
+SSD performance are post-v1 extensions. These are adaptive seed-0 development results, not
+replicated generality evidence.
+
+Post-freeze Stage 4.10 is tracked separately in
+`COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md`. It explores replacing the separately fitted
+adjacent program with one calibrated from the H12 scheduled-exact cohort and includes build cost
+in `U`. Its two-edge artifacts are smoke-only and are not members of this frozen aggregate.
 
 The frozen artifacts are:
 
@@ -23,7 +34,11 @@ The frozen artifacts are:
 - `configs/cohortkv_single_config_v1/stage4_5_source_plan_summary.json`;
 - `configs/cohortkv_single_config_v1/stage4_6_lifecycle_policy.json`;
 - `configs/cohortkv_single_config_v1/stage4_6_lifecycle_summary.json`;
+- `results/system/cohortkv_single_config_full_chain_v1/stage4_9_same_device_confirmation_seed0.json`;
+- `results/system/cohortkv_single_config_full_chain_v1/stage5_full_cow_theta0_theta1_seed0.json`;
+- `results/system/cohortkv_single_config_full_chain_v1/final_summary_seed0.json`;
 - `scripts/freeze_cohortkv_stage4_6.py`;
+- `scripts/freeze_cohortkv_stage6.py`;
 - `scripts/freeze_cohortkv_single_config_v1.py`.
 
 Regenerate the files from the current source artifacts with:
@@ -235,8 +250,8 @@ checks that device totals exactly match the complete run.
 | RQ2 | Existing theta0/4/10 verified programs, primary 70/80/90/30 contract, recovery targets 50/60/70/80/90% | Fit, selection, certificate roles only | Compiler/certificate cost, action/fallback, fidelity, threshold and amortization |
 | RQ3 | Compiled, 53 selective-contiguous candidates, residual-p, cheap, reuse, exact | Selective interval on selection; certificate determines publishability | Cost-fidelity frontier, certificate outcome, frozen profiled action |
 | RQ4 | Compiled/profiled-selective-diagnostic/exact on HBM and DRAM at 1/2/4 GPUs; residual and no-transform controls | Runtime grid tuned independently per method/destination/GPU count on selection users | Completion, throughput, bytes, peak memory, breakdown, manifest |
-| RQ4 failure | Hash mismatch, semantic theta4 perturbation, four transaction failures | No final-record tuning | Detection/escalation, rework, visibility, cleanup |
-| RQ5 | Capture, FP16, staged INT8 dequantization, workload-free break-even | Layout fixed before final report | Bytes, capture/dequant cost, fidelity, crossover |
+| RQ4 implementation closure | Fixed preflight, semantic theta0-to-theta1 program perturbation, mid-job and pre-commit abort | One frozen canary on program-selection role | Preflight overhead, exact fallback, old-manifest readback, no partial target |
+| Secondary accounting audit | Frozen Stage-2/4/4.5 artifacts | No new representation selection | Extra state, program/setup bytes and time, rejected-capsule boundary |
 
 RQ3 records 59 selection points for each of theta0/theta4/theta10: all 53 selective intervals,
 residual p4/p8, compiled, cheap, reuse, and exact, for at least 177 points. The aggregate audits the
@@ -251,59 +266,49 @@ condition; after correctness, every legal candidate receives one screen pass in 
 The fastest three receive one warmup and three measured passes, and every candidate result is
 retained. That point-specific winner is frozen before any 682-record job.
 
-RQ5 uses the 60 program-selection histories and theta11 on one GPU to time three matched paths:
-fresh-K/V forward only; the same forward plus FP16 normalized-state device capture; and that
-capture plus D2H, encoding, and buffered-POSIX persistence. Each receives one warmup and three
-measured repetitions. INT8 is frozen as symmetric signed quantization with one FP32 absmax scale
-per record and layer (`scale=max(abs(z))/127`, all-zero scale 1), then timed FP16 dequantization
-during host staging. Its semantic certificate is reapplied on certificate users and final behavior
-is reported without retuning; its complete-job endpoint is one-GPU HBM over all 682 records.
-
-The time crossover is reported separately for FP16 and INT8 as
-`ceil(capture_overhead / (exact - compiled - compiler_amortized))`, in seconds per record. A
-nonpositive denominator is reported as no time break-even. Bytes, auxiliary fallback state, or
-unknown update frequency are not converted into deployment cost without an external parameter.
+The source-state audit runs no new representation experiment. It extracts direct-old-K/V
+additional per-record bytes, shared-program bytes and composition time, old/new peak overlap,
+Stage-2 offline fit/runtime-prepare/certificate accounting, and the rejected normalized-capsule
+bytes/preload/source outcome from frozen artifacts. The active route has no independent capsule
+capture, encode, or preload step. INT8/FP8, capture/D2H/POSIX-persistence timing, quantized
+full-cohort execution, break-even curves, and physical SSD performance are optional post-v1 work.
 
 ## Failure and reader-visible state
 
-The logical reader begins on the previously committed version. Before the theta11 commit it must
-remain there; after a successful commit it switches once; after abort theta11 remains invisible.
-Guard design uses only program-selection records and no recommendation labels. It selects the
-lowest-overhead executable mechanism that detects the frozen integrity-valid theta4 perturbation
-and preserves all unperturbed cohort certificates. The artifact records reference bytes/time,
-normal no-fault overhead, false escalations, and detection phase. If no runtime sentinel qualifies,
-an executable semantic preflight is allowed and the paper must drop the runtime-sentinel claim.
-The mechanism is frozen before the six complete failure jobs.
+The logical reader begins on the previously committed version. Before the target commit it must
+remain there; after a successful commit it switches once; after abort the target remains invisible.
+Stage 5 uses one fixed job-level label-free semantic preflight frozen on program-selection records.
+It runs before any target extent. A failing cohort routes directly to exact, so v1 needs neither a
+runtime sentinel nor invalidation of already generated extents.
 
-With the Stage-4.6 per-cache lifecycle policy frozen, Stage 5 must test:
+Failure-safe evidence uses copy-on-write on one capacity-feasible representative GPU
+configuration. Old extents remain retained until the new manifest commits. Stage 5 tests:
 
 | Injection | Required outcome |
 |---|---|
-| Artifact hash mismatch before begin | Abort before first extent |
-| Structurally valid, integrity-accepted semantic perturbation of theta4 program | Semantic preflight or runtime guard detection, exact fallback, complete corrected commit; runtime detection reports replaced records |
-| Before first extent | No theta11 visibility |
-| Mid-wave | Abort, previous version remains visible |
-| During publication | Private staging reclaimed; no partial target |
-| After coverage, immediately before commit | Abort, previous version remains visible |
+| Structurally valid, integrity-accepted semantic perturbation of the theta0-to-theta1 direct-old-K/V program | Preflight exact fallback and one complete corrected commit |
+| Mid-job execution exception | Abort, private staging reclaimed, every old expected record readback-valid |
+| After coverage, immediately before commit | Abort, private target invisible, every old expected record readback-valid |
 
-Resume is optional until an extent journal proves at-most-one-wave redo. Atomic abort and
-visibility are mandatory even if resume is omitted.
-Every failure result records detection phase, abort versus corrected commit, old/current pointer
-state, complete/partial target visibility, staging reclamation, cleanup time, and reworked record
-count. A boolean “detected” without these state transitions does not complete the gate.
+Readback validates version, shape, finite values, and checksum or old-K/V equivalence for every
+expected record; pointer equality alone does not pass. Artifact hash/version/shape rejection stays
+in unit and smoke tests. The one-GPU extent-reclaiming normal path is not called abort-safe.
+Runtime rework, larger fault matrices, journals, and resume are deferred.
 
 ## Result schema and paper map
 
 The final aggregate must validate against
 `configs/cohortkv_single_config_v1/result.schema.json`. Raw stage files remain local under
 `results/system/cohortkv_single_config_full_chain_v1/`; the aggregate path is
-`final_summary_seed0.json`. The schema requires environment/source-cache state, compiler
-accounting, the cost-fidelity frontier, exactly one aggregate run for every primary
-method/endpoint/GPU combination, all six failure outcomes, capsule economics, and explicit negative
-results. It also freezes the workload hash, record/token counts, component input bytes, capacity
-preflight, and unpadded lengths/offset correctness, so controls cannot stand in for a missing
-primary point. Environment metadata includes all four A40 capacities, source mount/device, software
-versions, repository commit, and a hash of the actual code snapshot used by the run.
+`final_summary_seed0.json`. The amended schema binds environment/source-cache state,
+compiler accounting, the cost-fidelity frontier, and exactly one aggregate run for every completed
+primary method/endpoint/GPU combination. It replaces the old six-failure and capsule-economics
+fields with the Stage-5 normal job, three fallback/fault cases, artifact-derived accounting
+ledger, lifecycle records, and Stage-6 closure. It also freezes the workload hash, record/token counts,
+component input bytes, capacity preflight, and unpadded lengths/offset correctness, so controls
+cannot stand in for a missing primary point. Environment metadata includes all four A40 capacities,
+source mount/device, software versions, repository commit, and a hash of the actual code snapshot
+used by the run.
 
 | Target manuscript slot | Required artifact | Current status |
 |---|---|---|
@@ -312,8 +317,10 @@ versions, repository commit, and a hash of the actual code snapshot used by the 
 | Table 7, operator paths | Correctness and resident operator report | Stage-3 full development distribution complete |
 | Table 8 / Figure 7, complete job | RQ4 system runs and breakdown | Stage-4 normalized source loses; Stage-4.5 direct old K/V wins in scoped 1/2/4-GPU hot-HBM regime |
 | Repeated-update lifecycle | Stage-4.6 chained migrate-or-exact policy | Balanced policy, independent certificate, and 682-record chain frozen |
-| §8.6 escalation/failures | RQ4 failure records and manifests | Faults/visibility frozen; implementation open |
-| Figure 8, capsule economics | RQ5 economics section | Fields frozen; implementation open |
+| Corrected repeated-update lifecycle | Stage-4.9 same-device candidate artifacts | H12 frozen at 0.100017×; host-staging and incomplete H=12-cycle limits explicit |
+| §8.6 implementation closure | Fixed preflight plus three transaction records | Formal 682-record two-A40 COW closure complete |
+| Source-state accounting | Stage-2/4/4.5 artifact ledger | Existing measurements and aggregation complete |
+| Stage-6 paper package | Final aggregate plus eight sidecars | Hash-, schema-, cross-field-, claim-, and TBD-checked seed-0 package complete |
 
 No `TBD`, expected ordering, or desired speedup is filled from this document. A slot is updated
 only after its result artifact exists; contradicted expectations are deleted or downgraded.
@@ -454,7 +461,8 @@ Stage 0 is complete because:
 - RQ grids, tuning/final roles, failure points, output paths, and aggregate schema are fixed;
 - the paper slots map to artifacts without creating a result claim.
 
-Stages 1–4.6 have implemented and frozen the resident frontier, deployed compiler path, common
+Stages 1–6 have implemented and frozen the resident frontier, deployed compiler path, common
 capsule/operator extent interface, full-cohort normal-path engine, and scoped direct-old-K/V
-source plan plus continuous migrate-or-exact lifecycle. Guard/fallback and failure semantics are
+source plan plus continuous migrate-or-exact lifecycle, corrected growing-history confirmation,
+minimal guard/fallback transaction, and final seed-0 artifact package. New-seed replication is
 the next open stage.

@@ -14,28 +14,37 @@ When documents disagree, use this order:
    valid artifact boundary.
 3. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
    active implementation sequence for the KuaiRand long-context vertical slice.
-4. [CohortKV target manuscript](../paper/cohortkv/manuscript_v3_target_en.md) — the paper shape to
-   test, not a source for unmeasured facts or implementation semantics.
-5. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
+4. [10_target_manuscript_stage0_6_correspondence.md](10_target_manuscript_stage0_6_correspondence.md)
+   — correspondence between the pre-rewrite target manuscript and the frozen Stage 0–6 evidence,
+   including the resulting paper reframing and remaining gaps.
+5. [Current CohortKV manuscript](../paper/cohortkv/manuscript_v3_target_en.md) — the
+   evidence-bound English draft rewritten from the completed Stage 0–6 vertical slice.
+6. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
    ordered-exposure settings, and negative boundaries.
 
-The target manuscript may describe expected findings using `TBD`. Those statements remain
-hypotheses until a protocol and result artifact listed by `eval_protocol.md` support them.
+The current manuscript contains no `TBD` placeholders. Open replications and implementation gaps
+are stated as limitations rather than filled with seed-0 numbers. It remains subordinate to the
+roadmap and evaluation protocol when experimental semantics conflict.
 
-## Active execution phase
+## Current execution phase
 
-The current phase is **single-configuration full-chain development**:
+The **single-configuration full-chain development** phase is complete. Its frozen configuration
+was:
 
 - KuaiRand 4+12 long-context data;
 - the 16-layer, hidden/K/V-width-512 seed-0 model chain;
 - theta0/theta4/theta10 to theta11 cohorts at the theta11/D16 endpoint;
-- compiler, closest baselines, capsule/operator, full-cohort engine, guard/fallback, failure
-  semantics, and capsule economics;
-- HBM and DRAM as the primary destinations; a named SSD only as a later backend measurement.
+- compiler, closest baselines, operator, full-cohort engine, migrate/exact lifecycle, and a
+  minimal preflight/fallback/atomic-publication closure;
+- HBM and DRAM as the primary destinations, plus an artifact-derived source-state accounting
+  table. INT8/capture/SSD work is optional post-v1.
 
-This phase is development evidence. After one complete frozen run, the order is new seeds on the
-same configuration, then cross-dataset/model-capacity expansion. The detailed stages and
-same-interface fallback rules are in the active plan. Stage 0 is complete: the machine-readable
+This package remains development evidence. A post-freeze Stage-4.10 amendment is now active before
+Stage 7: H12 scheduled-exact records also calibrate the per-edge shared direct program, with build
+cost included in `U` and no separate fit-only exact cohort or semantic admission gate. Its
+two-edge smoke is complete, but full-chain task quality is not; new-seed and cross-capacity
+replication waits for that formal closure. The completed stages and same-interface fallback rules
+are in the active plan. Stage 0 is complete: the machine-readable
 blueprint, 682-record workload manifest, and result schema are under
 `configs/cohortkv_single_config_v1/`. Its re-audit separates internal/raw user identity, makes
 residual hidden-suffix storage explicit, enforces all 18 primary system points, and requires HBM
@@ -63,8 +72,24 @@ limited to the declared existing-old-K/V hot-HBM regime. Stage 4.6 is now frozen
 KuaiRand/seed-0/one-A40 `theta0 -> theta11` chain uses a balanced 15%–25% exact-refresh schedule,
 maximum migration depth four, and the actual previous output at every update. It costs 0.2134×
 all-exact GPU time on the complete 682-record chain. The rejected per-cache threshold remains a
-refresh-wave negative result. Stage 5 is the active next stage: connect the frozen policy to
-automatic fallback, semantic guard, transactional rework, and failure visibility.
+refresh-wave negative result. Stage 4.7 completed the canonical-date growing-history chain, and
+Stage 4.8 completed all sixteen label-free scheduler development points. Stage 4.9 then completed
+the corrected 11-edge same-device retained-prefix confirmation: `token_debt_total10` is the
+`0.071319×` cost endpoint, and `staggered_renewal_h12` is the frozen bounded-renewal candidate at
+`0.100017×`, with record-weighted AUC/NDCG@100/Hit@100 recovery
+`1.000039/0.997463/1.000000`. Target-model append remains outside both timers. Its groupwise
+host-staged evaluator reports state movement separately and does not support a full-cohort
+HBM-resident or end-to-end movement claim.
+
+The merged minimal Stage 5 formal two-A40 copy-on-write integration also passes: normal and
+semantic-fallback jobs commit all 682 records, while mid-job and pre-commit faults expose no
+partial target and preserve readback-valid old state. Stage 6 completes the single-configuration
+package with a deterministic CPU-only assembly over frozen Stage-1 through Stage-5 artifacts,
+publishing `final_summary_seed0.json` and eight checked sidecars without rerunning the old GPU
+matrix. Runtime sentinel, online rework/resume, INT8/capture, and SSD benchmarks remain optional.
+Stage 4.10 then adds non-scientific inverse-Norm and direct-K/V renewal-calibrated smokes over
+`theta0 -> theta1 -> theta2`; neither is yet selected. The next experimental work is its
+same-device full-chain quality/cost confirmation, followed by Stage 7.
 
 ## Key experiment records
 
@@ -101,6 +126,12 @@ System:
 - [Stage 4.5 direct old-K/V source plan](../experiments/system/COHORTKV_STAGE4_5_SOURCE_PLAN_V1.md)
 - [Stage 3 capsule/operator](../experiments/system/COHORTKV_STAGE3_OPERATOR_V1.md)
 - [Stage 4 full-cohort system](../experiments/system/COHORTKV_STAGE4_SYSTEM_V1.md)
+- [Stage 4.7 growing-history lifecycle](../experiments/system/COHORTKV_STAGE4_7_ORGANIC_LIFECYCLE_V1.md)
+- [Stage 4.8 scheduler sweeps](../experiments/system/COHORTKV_STAGE4_8_SCHEDULER_SWEEPS_V1.md)
+- [Stage 4.9 rollout boundary](../experiments/system/COHORTKV_STAGE4_9_ROLLOUT_BOUNDARY_V1.md)
+- [Stage 4.10 renewal-calibrated program](../experiments/system/COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md)
+- [Stage 5 minimal implementation closure](../experiments/system/COHORTKV_STAGE5_MINIMAL_CLOSURE_V1.md)
+- [Stage 6 single-configuration freeze](../experiments/system/COHORTKV_STAGE6_SINGLE_CONFIG_FREEZE_V1.md)
 - [Two-GPU controlled migration](../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md)
 - [Cohort-jagged negative result](../experiments/system/COHORT_JAGGED_SYSTEM_V3.md)
 - [Four-GPU controlled scaling](../experiments/system/FOUR_GPU_SCALING_V1.md)
@@ -125,7 +156,7 @@ inventory here.
 The former project-wide review snapshot and the large system-candidate exploration were removed
 from the active directory. They mixed current tasks with speculative serving, second-hardware,
 larger-model, compression, and alternate-paper directions that are outside the present scope.
-Their useful current content is now represented by the authoritative roadmap, target manuscript,
+Their useful current content is now represented by the authoritative roadmap, current manuscript,
 and single-configuration plan.
 
 The old background PNG was also removed after the paper-native problem-and-scope figure superseded

@@ -611,89 +611,48 @@
       "summary_protocol": "cohortkv_single_config_stage4_frozen_v1"
     }
   },
-  "economics_contract": {
-    "auxiliary_state_reporting": {
-      "current_verified_p8_fallback_bf16": 6255345664,
-      "excluded_from_default_capsule_ratio": true,
-      "residual_hidden_suffix_bf16_by_p": {
-        "4": 13366702080,
-        "8": 8911134720
-      },
-      "transition_hidden_fp16": 1113891840
-    },
-    "break_even": {
-      "forbidden": "convert bytes or update frequency to money or workload frequency without an external declared parameter",
-      "formula": "ceil(capture_overhead / (exact - compiled - compiler_amortized))",
-      "if_denominator_nonpositive": "no_time_break_even",
-      "report_fp16_and_int8_separately": true,
-      "unit": "seconds per record"
-    },
-    "capture": {
-      "gpu_count": 1,
-      "measured_repetitions": 3,
-      "model_version": "theta11",
-      "paths": [
-        "forward materializing fresh K/V only",
-        "same forward plus FP16 normalized-state device capture",
-        "same forward plus device capture, D2H, encode, and buffered-POSIX shard persistence"
-      ],
-      "records": 60,
-      "role": "program_selection",
-      "shared_input": "the same frozen prefix histories",
-      "warmup_runs": 1
-    },
-    "fp16": {
-      "logical_bytes": 17822269440,
-      "logical_ratio_to_fp16_kv": 0.5,
-      "physical_bytes_required": true
-    },
-    "int8": {
-      "complete_job_endpoint": {
-        "destination": "hbm",
-        "gpu_count": 1,
-        "records": 682
-      },
-      "dequantization": "dequantize to FP16 during timed host staging without changing the prepared compiled program",
-      "equation": "scale=max(abs(z))/127; q=round(clamp(z/scale,-127,127)); all-zero tensors use scale 1",
-      "layout": "symmetric signed int8 per record and layer with float32 absmax scale",
-      "logical_data_bytes": 8911134720,
-      "logical_data_ratio_to_fp16_kv": 0.25,
-      "semantic_evaluation": "apply the frozen certificate on certificate users and report the frozen representation on final-test users"
-    }
-  },
   "failure_contract": {
-    "injections": [
+    "artifact_mismatch_scope": "unit and smoke",
+    "capacity_evidence": {
+      "arithmetic": "required_bytes equals the sum of all five required components and does not exceed capacity_bytes",
+      "device_count_matches_representative_gpu_count": true,
+      "per_device_components": [
+        "model_and_program_bytes",
+        "old_kv_bytes",
+        "complete_new_kv_bytes",
+        "transient_bytes",
+        "allocator_margin_bytes",
+        "capacity_bytes"
+      ],
+      "required": true,
+      "zero_model_or_program_bytes_forbidden": true
+    },
+    "cases": [
       {
-        "expected": "abort before the first extent",
-        "name": "artifact_hash_mismatch_before_begin"
+        "expected": "fixed preflight selects exact before execution and one complete corrected target commits",
+        "name": "semantic_theta0_theta1_program_perturbation"
       },
       {
-        "expected": "the perturbation remains structurally valid and passes integrity checks, then semantic preflight or the runtime guard detects it; theta4 escalates to its published exact recompute fallback and any earlier theta4 extents are replaced before a complete commit",
-        "name": "semantic_theta4_program_perturbation"
+        "expected": "abort, reclaim staging, hide target, and read back every old record with matching metadata and SHA-256",
+        "name": "mid_job"
       },
       {
-        "expected": "abort with no theta11 visibility",
-        "name": "before_first_extent"
-      },
-      {
-        "expected": "abort with no theta11 visibility",
-        "name": "mid_wave"
-      },
-      {
-        "expected": "abort and reclaim private staging",
-        "name": "during_publication"
-      },
-      {
-        "expected": "abort with the previous version still visible",
-        "name": "pre_commit_after_complete_coverage"
+        "expected": "abort after complete private coverage with the same full old-manifest readback contract",
+        "name": "pre_commit"
       }
     ],
+    "journal_or_resume_required": false,
+    "mode": "copy_on_write",
     "reader_state": {
-      "after_abort": "the previous version remains visible and theta11 staging is unreachable",
-      "after_commit": "one atomic pointer/manifest transition exposes theta11",
-      "before_commit": "the logical current pointer remains on the previously committed version; theta11 is not visible"
+      "after_abort": "every old expected record remains readback-valid and private target staging is reclaimed",
+      "after_commit": "one atomic manifest transition exposes the complete post-append target and its lineage hash",
+      "before_commit": "the logical current pointer remains on the previously committed version; the private target is not visible"
     },
-    "resume_claim": "optional until an extent journal proves at-most-one-wave redo; absence of resume does not block atomic abort"
+    "representative_gpu_count": [
+      2,
+      4
+    ],
+    "runtime_rework_required": false
   },
   "frontier_contract": {
     "certification_scope": "one frozen selective candidate per m and source-target pair may proceed from program selection to certificate; the completed certificate publishes exact, while the strongest profiled selective action proceeds only to label-free diagnostic system timing",
@@ -752,9 +711,9 @@
       }
     ],
     "freeze_script": {
-      "bytes": 121021,
+      "bytes": 208336,
       "path": "scripts/freeze_cohortkv_single_config_v1.py",
-      "sha256": "fc00521260150d1474d60555f2c353937357751b02dc5c2cfaabf1cb501caac2"
+      "sha256": "d068cf3de0c9f072381d68d7bff561a96a1cd020b7d61a4c5ee9afd242ebf3e1"
     },
     "prepared_data": {
       "bytes": 23605339,
@@ -762,7 +721,7 @@
       "sha256": "e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8"
     },
     "result_schema": {
-      "file_sha256": "833927ddcae44e675d6e4a5a4a0c09f3bc8648b50420a7513a592799c69a3298",
+      "file_sha256": "174d22c6e922137738b04b63e4a84b39d228a073cd2424eef9febd89663e4598",
       "path": "configs/cohortkv_single_config_v1/result.schema.json"
     },
     "stage1_frontier_summary": {
@@ -870,18 +829,27 @@
     }
   },
   "guard_selection_contract": {
-    "freeze_boundary": "freeze the mechanism and parameters before the six complete failure jobs; final-test recommendation labels are forbidden",
+    "freeze_boundary": "freeze the canary and threshold before one normal job, one semantic-fallback job, and two abort jobs",
     "labels_used": false,
-    "logical_requirement": "detect the frozen integrity-valid theta4 semantic perturbation before commit while reporting false escalation on all unperturbed source cohorts",
+    "logical_requirement": "one fixed label-free semantic preflight detects the frozen integrity-valid theta0-to-theta1 program perturbation before any target extent",
+    "online_rework_required": false,
     "reference_accounting": [
-      "reference source representation and bytes",
-      "reference compute seconds",
-      "normal no-fault job overhead seconds",
-      "perturbed detection phase",
-      "false-escalated cohort count"
+      "artifact and program identity",
+      "program shape and version",
+      "old K/V presence read from the committed source manifest",
+      "per-device copy-on-write capacity",
+      "semantic-canary GPU time",
+      "complete preflight overhead"
+    ],
+    "required_result_evidence": [
+      "all per-cohort check outcomes",
+      "all 682 final per-record decisions",
+      "input, runtime-validation, and decision timing",
+      "complete committed target manifest and atomic lineage payload"
     ],
     "role": "program_selection",
-    "selection_rule": "choose the lowest normal-job overhead mechanism that detects the frozen perturbation and preserves unperturbed cohort certificates; if no runtime sentinel qualifies, use an executable semantic preflight and narrow the manuscript claim"
+    "runtime_sentinel_search_required": false,
+    "selection_rule": "freeze one threshold on program-selection records; program, shape, old-cache, or semantic failure routes the affected migration cohort to exact before target execution, while artifact/version or capacity failure aborts admission"
   },
   "numeric_contract": {
     "deployment_recertification": {
@@ -933,12 +901,15 @@
       "aggregate JSON",
       "correctness report",
       "timing and memory breakdown",
+      "paper table and figure data",
+      "artifact-to-claim map",
+      "target-manuscript TBD disposition",
       "committed destination manifests",
       "negative-results log",
       "repository commit and code-snapshot hash"
     ],
     "schema": "configs/cohortkv_single_config_v1/result.schema.json",
-    "semantic_validation": "JSON Schema enforces one run for every primary method/destination/GPU point and one record for every failure injection; the aggregator additionally verifies component-byte sums and source/action compatibility"
+    "semantic_validation": "JSON Schema enforces one run for every primary method/destination/GPU point, fixed and corrected lifecycle evidence, the minimal Stage-5 closure, Stage-6 output descriptors, and artifact-derived source-state accounting; the aggregator additionally verifies every source SHA-256, candidate binding, COW component-byte sums, exact 682-record abort readback, manifest/lineage identity, unique record IDs, source/action compatibility, claim coverage, and TBD disposition"
   },
   "role_contract": {
     "certificate": {
@@ -1136,6 +1107,86 @@
     "protocol": "cohortkv_single_config_stage4_5_frozen_v1",
     "source_representation": "existing_old_kv_fp16",
     "stage5_admitted": true
+  },
+  "source_state_accounting_contract": {
+    "active_route": {
+      "additional_per_record_source_state_bytes": 0,
+      "capture_required": false,
+      "encode_required": false,
+      "placement": "existing serving cache in HBM",
+      "preload_required": false,
+      "representation": "existing_old_kv_fp16"
+    },
+    "inputs": {
+      "stage2": {
+        "path": "configs/cohortkv_single_config_v1/stage2_compiler_summary.json",
+        "protocol": "cohortkv_single_config_stage2_frozen_v1",
+        "sha256": "09461c81ad7d9a061a6aae2358e478c151befa07614f73afff972bd4b90a8126",
+        "status": "stage2_frozen"
+      },
+      "stage4": {
+        "path": "configs/cohortkv_single_config_v1/stage4_system_summary.json",
+        "protocol": "cohortkv_single_config_stage4_frozen_v1",
+        "sha256": "2c891e2fb085708bdb83c6c39410f9f7509f25697ff0e8b0a4085906ef7219b6",
+        "status": "stage4_frozen"
+      },
+      "stage4_5": {
+        "path": "configs/cohortkv_single_config_v1/stage4_5_source_plan_summary.json",
+        "protocol": "cohortkv_single_config_stage4_5_frozen_v1",
+        "sha256": "31cb442563152a250705d8ad3405461238810c5a5e81cac09c2ab20ae294e2f8",
+        "status": "stage4_5_source_plan_frozen"
+      }
+    },
+    "protocol": "cohortkv_stage5_source_state_accounting_v1",
+    "required_existing_evidence": [
+      "direct-program file bytes and composition seconds",
+      "resident program tensor bytes per worker",
+      "one/two/four-GPU normal-path old/new peak bytes",
+      "Stage-2 fit, runtime-prepare, certificate, and amortization",
+      "rejected FP16 normalized-capsule endpoint source-read cost",
+      "retired DRAM-resident capsule preload and standing bytes"
+    ],
+    "unmeasured_claims_forbidden": [
+      "independent program serialization time",
+      "capsule-only attribution of joint source materialization",
+      "INT8 or FP8 capsule results",
+      "physical SSD performance",
+      "capture or persistence overhead",
+      "time break-even including unmeasured capture"
+    ],
+    "validation": [
+      "every input protocol, frozen status, and file SHA-256",
+      "Stage-4 to Stage-2 and Stage-4.5 to Stage-4 upstream hashes",
+      "shared workload and source-manifest hashes",
+      "existing-old-K/V representation, HBM placement, and zero added state",
+      "all three direct endpoints passed capacity and correctness",
+      "all six capsule/exact endpoints passed correctness before timing comparison"
+    ]
+  },
+  "stage6_freeze_contract": {
+    "cost_endpoint": "token_debt_total10",
+    "old_gpu_matrix_rerun": false,
+    "protocol": "cohortkv_single_config_stage6_freeze_v1",
+    "required_lifecycle_evidence": [
+      "Stage-4.6 fixed-history depth-four policy and chain",
+      "Stage-4.9 corrected growing-history same-device candidates",
+      "separately reported Stage-4.9 evaluator state movement",
+      "no Stage-4.9 full-cohort HBM or end-to-end movement claim"
+    ],
+    "required_outputs": [
+      "final aggregate",
+      "correctness report",
+      "timing and memory report",
+      "paper table data",
+      "paper figure data",
+      "artifact-to-claim map",
+      "negative-results log",
+      "target-manuscript TBD disposition",
+      "code-snapshot manifest"
+    ],
+    "selected_candidate": "staggered_renewal_h12",
+    "selection_basis": "freeze the preregistered bounded-renewal candidate without using recommendation labels; retain token debt only as the cost endpoint",
+    "validation": "atomic CPU-only assembly validates every upstream path, protocol, status, and SHA-256; binds the Stage-5 candidate to Stage 4.9; applies JSON Schema, Stage-5 cross-field validation, and whole-aggregate semantic checks"
   },
   "status": "stage4_core_frozen",
   "study_stage": "adaptive_seed0_development",

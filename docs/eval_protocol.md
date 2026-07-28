@@ -73,6 +73,57 @@ select an action. The nine motivation-selected checkpoint files use
 `cohort_tiered_migration_discovery_v1`; only the other 27 files use
 `cohort_tiered_migration_v1` with `study_stage=frozen_rule_replication`.
 
+### `cohortkv_single_config_organic_lifecycle_v1`
+
+This is the one-seed, one-model, one-GPU growing-history lifecycle protocol for the KuaiRand 4+12
+chain. It begins with exact theta0 K/V and recursively consumes the previous mixed cache over all
+11 adjacent model updates. At endpoint `v`, theta-v history includes only the base and previously
+completed canonical date partitions, and both mixed and all-exact predict the next unseen date
+partition. The final policy refreshes approximately 20% of reusable continued prefixes using a
+depth-four deadline followed by migration age and current-edge label-free K/V norm shift; cold,
+re-entered, and zero-overlap prefixes are separate natural exact work.
+
+The sole frozen output is
+`results/system/cohortkv_single_config_full_chain_v1/stage4_7_organic_full_chain_seed0.json`.
+`configs/cohortkv_single_config_v1/stage4_7_organic_summary.json` binds that ignored local result,
+the compiler result, and the exact uncommitted implementation content hashes.
+Its implementation and execution checks pass, but minimum q90 cache fidelity is `0.8744` against
+the predeclared `0.90` gate. This family is completed mixed development evidence, not a passing
+certificate, a strict raw-event/request-time trace, a selector-optimality result, or a replicated
+claim. Exact settings, results, and the raw timestamp boundary are in
+`experiments/system/COHORTKV_STAGE4_7_ORGANIC_LIFECYCLE_V1.md`.
+
+### `cohortkv_single_config_stage4_9_rollout_boundary_v1`
+
+This is the completed correction for the growing-history model-rollout boundary. It freezes two
+independent rules: newly admitted behavior is appended
+after prefix migration with the target model, while the GPU cost of that append is foreground
+inference and is excluded from both the migration numerator and its paired exact denominator. The
+primary cost is matched retained-prefix `migration-or-refresh / exact`, not a
+foreground-inclusive lifecycle ratio. Stage-4.7/4.8 artifacts keep their recorded pre-migration
+old-model append semantics and cannot be relabeled as this protocol. The formal v2 confirmation
+runs the two frozen candidates sequentially on one A40 over all 11 recursive edges. It freezes
+`staggered_renewal_h12` as the bounded-renewal deployment candidate and retains
+`token_debt_total10` as the cost endpoint. Exact order, accounting, results, and scope boundaries
+are in
+`experiments/system/COHORTKV_STAGE4_9_ROLLOUT_BOUNDARY_V1.md`.
+
+### `cohortkv_stage4_10_renewal_calibrated_h12_smoke_v1`
+
+This is a non-scientific implementation successor to the frozen Stage-4.9 program lifecycle. H12
+fixes the edge action partition first. The scheduled-exact cohort then supplies aligned
+previous-actual K/V and current-model exact K/V pairs for one shared adjacent program, and the
+same exact outputs refresh those records. No separate fit user is recomputed, no old serialized
+program is loaded, and no semantic or task-quality gate changes the action partition. Program
+fit, compile, FP16 cast, and prepare enter `U`; state movement and target-model append remain
+separate ledgers.
+
+The real smoke covers `theta0 -> theta1 -> theta2` for inverse-Norm ridge and direct-K/V residual
+ridge with one repetition and no warmup. Both artifacts are `scientific_result=false`; neither
+their timing nor the absence of nonfinite outputs selects a fit form or supports a task-quality
+claim. The exact contract, artifacts, and open formal gate are in
+`experiments/system/COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md`.
+
 ### `kuairand_long_context_8plus8_*`
 
 This new, separate bring-up family has five protocol records:
@@ -1267,23 +1318,232 @@ cost, `0.2814×` maximum step cost, and minimum cache/score/top-100 values
 `0.9613/0.999759/0.9898`. The complete 682-record chain records `0.2134×` cumulative cost,
 `0.2543×` maximum step cost, `14.956%–25.073%` exact fractions after record rounding, and minimum
 `0.9632/0.999950/0.9918`. All 7,502 lineage rows rebuild from the frozen policy, consume the
-previous actual output, reset exact states, and stay at depth four or below. Stage 5 is admitted.
+previous actual output, reset exact states, and stay at depth four or below. This fixed-history
+protocol admits Stage 5 within its declared scope; the organic-history correction below is
+classified separately.
 
-Guard selection uses only program-selection records and no recommendation labels. It chooses the
-lowest normal-job overhead mechanism that detects the frozen theta4 perturbation while preserving
-unperturbed cohort certificates, and records reference bytes/time, no-fault overhead, false
-escalations, and detection phase. If no runtime sentinel qualifies, an executable semantic
-preflight is permitted and the claim is renamed before the mechanism is frozen.
+`cohortkv_single_config_organic_lifecycle_v1` is a separate Stage-4.7 correction to the
+fixed-history boundary above. It uses the same KuaiRand seed-0, 16L/H512, maximum-2,048, one-A40
+configuration and the same deterministic 40/60/60/522 roles, but every endpoint has a
+date-progressive history. Theta0 uses history through D4 to predict D5; after D5 is evaluated it
+is admitted, theta1 uses history through D5 to predict D6, and this continues through theta11
+predicting D16. Mixed and all-exact use the same current checkpoint, latest token, candidate
+catalog, and engaged next-window positives. Previous actual mixed K/V must be consumed
+recursively; current or future canonical date partitions cannot enter history early.
 
-Failure experiments predeclare artifact-hash mismatch, a structurally valid and
-integrity-accepted semantic theta4-program perturbation, failure before the first extent, mid-wave,
-during publication, and immediately before commit after complete coverage. The semantic
-perturbation must be caught by semantic preflight or the runtime guard, escalate theta4 to its
-published exact fallback, replace any already generated theta4 extents, and commit only a complete
-corrected target. The other five jobs abort with the old current pointer preserved. No failure may
-expose partial theta11. Each result records pointer/visibility state, staging reclamation, cleanup,
-detection phase, and reworked records. Resume is optional until a journal validates
-at-most-one-wave redo; atomic abort and prior-version visibility are mandatory.
+The causal authority is the prepared dataset's canonical date partition, not globally strict raw
+`time_ms`. A suffix-membership gate proves that every resident history is drawn only from the base
+and previously admitted partitions while permitting left crop and token-cap truncation. The
+frozen diagnostic still records 147/8,167 resident record-windows and
+3,521/11,797,055 history tokens at or beyond the next partition's raw-time minimum, with a maximum
+lead of 6,128.618 seconds. Therefore this protocol supports a canonical-date growing-history
+lifecycle claim, not a raw-event/request-arrival trace. Repairing timestamp order or deduplication
+requires a new prepared-data/training protocol.
+
+The router receives every reusable lightweight candidate and then applies a fixed 20% exact
+budget. Depth-four caches are mandatory exact; remaining slots prefer greater migration age and
+then greater current-edge q90 absolute log K/V norm shift. SHA256 is only an exact numeric
+tie-break, and neither next-window labels nor future-edge severity may enter. Natural exact work
+for cold, re-entered, and zero-overlap prefixes is outside that budget. Across the complete run,
+1,344/6,711 reusable prefixes are selector exact (`20.0268%`), 5,367 migrate, 771 are natural
+exact, and three are common-latest-only. Of the selector exact actions, 476 are depth deadlines
+and 868 fill the norm-shift quota.
+
+This is an algorithmic but weak secondary signal. Posthoc current-norm-shift versus candidate-error
+Spearman averages `0.0341` across edges, selected candidates have higher mean error on 8/11 edges,
+and mean top-error-oracle overlap is `23.46%` against a 20% random expectation. The protocol may
+claim deterministic bounded age/deadline scheduling with norm-shift ranking; it may not claim a
+strong adaptive failure predictor or selector optimality.
+
+The one frozen full run completes all 12 endpoints and 11 updates. Cumulative update-only GPU cost
+is `0.2703x` all-exact and maximum step cost is `0.2892x`; symmetric and common-inclusive
+lifecycle ratios are `0.5069x` and `0.5372x`. Minimum score cosine and top-100 overlap are
+`0.999876` and `0.97357`, but minimum q90 cache fidelity is `0.8744`. Thus the predeclared
+cost, score, top-100, depth, and execution gates pass while the `0.90` cache-fidelity gate fails.
+Across 4,368 final-role positive records, record-weighted mixed/all-exact ratios are
+`0.999987/0.994590/0.997180` for catalog AUC/NDCG@100/Hit@100, with worst-window ratios
+`0.999786/0.953324/0.977778`. `status=complete` means the fail-closed execution produced a
+complete valid artifact; it does not turn the failed fidelity gate into a pass. Stage 4.7 is
+completed mixed development evidence and cannot silently replace the frozen Stage-4.6 result.
+
+`cohortkv_single_config_stage4_8_scheduler_sweep_v1` is the follow-up scheduler-development
+protocol. It keeps every Stage-4.7 workload and recursive-state identity fixed, but does not use
+K/V fidelity, norm shift, score cosine, top-100 overlap, migration age, or scheduler debt as a
+scientific admission metric. The only quality-cost Pareto axes are record-weighted catalog AUC,
+NDCG@100, Hit@100, symmetric GPU lifecycle cost, and common-inclusive GPU lifecycle cost.
+
+The external exact reference is
+`configs/cohortkv_single_config_v1/stage4_8_exact_baseline.json`. Every worker verifies its source
+result, input, window, checkpoint, compiler, manifest, and program hashes. It reuses the frozen
+eleven-edge exact GPU denominator and twelve exact task endpoints and must not execute the
+independent exact reference. Natural exact and selector-scheduled exact remain real mixed-chain
+actions. Every optional action is chosen before migration, so scheduled-exact records cannot also
+pay candidate-transform cost.
+
+The preregistered families and complete grids are work-balanced staggered renewal
+`H={8,10,12,16}`, total exact-token cumulative debt
+`b={0.10,0.12,0.14,0.16}`, AoI MaxWeight reusable-token budget
+`beta={0.04,0.07,0.10,0.13}`, and label-free model-time staggered renewal
+`H={8,10,12,16}`. All sixteen results are retained. Each reports strict cost gates against the
+Stage-4.7 symmetric/common-inclusive ratios `0.5069011719265762/0.5372231748138118`; no posthoc
+task-quality threshold is permitted. Four-GPU execution is a parameter-confounded development
+screen, so any paper candidate requires later sequential same-device paired confirmation. Static
+smoke and one-edge runtime smoke validate code paths only and are not scientific results.
+
+All sixteen preregistered points completed. Under the frozen v1 accounting, update-only ratios
+range from `0.110699` to `0.181674`, symmetric ratios from `0.398841` to `0.446337`, and
+common-inclusive ratios from `0.435768` to `0.479905`; every point passes both v1 current-cost
+gates. `token_debt/total10` is the minimum-cost point, while
+`staggered_renewal/H=12` is the retained bounded-renewal quality candidate. These are development
+screens, not same-device confirmation.
+
+The completed Stage-4.8 execution first cropped the previous cache, appended the newly admitted
+window with the source model, and then migrated or refreshed the resulting target-length prefix.
+Its measured foreground append was added symmetrically to the two lifecycle diagnostics. Those
+definitions remain part of the immutable v1 result meaning, but they are not the corrected primary
+model-rollout boundary.
+
+`cohortkv_single_config_stage4_9_rollout_boundary_v1` separates accounting from execution order.
+For edge `theta_v -> theta_(v+1)`, let `R_v` be the retained suffix of the previously admitted
+history after the crop required to make room for the newly observed window `Delta_(v+1)`.
+The paired rollout comparison is:
+
+```text
+mixed: previous actual K/V(R_v) -> migrate-or-exact under theta_(v+1) -> stop timer
+exact: raw R_v -> exact under theta_(v+1) -> stop timer
+both:  append Delta_(v+1) under theta_(v+1), outside the rollout timers
+```
+
+These are two independent invariants:
+
+- **Accounting:** target-model append of `Delta_(v+1)` is foreground inference. It is measured in
+  a separate ledger but enters neither side of the primary rollout ratio, regardless of whether an
+  alternate implementation performs it before or after rollout.
+- **Ordering:** the primary growing-history path performs migration first and then appends
+  `Delta_(v+1)` with the target model. It must not precompute that window with `theta_v`.
+
+If `U_t` is measured migration plus selected exact refresh and matched output materialization for
+the reusable retained prefix, `E_t` is exact current-model recomputation to the same destination,
+and `A_t` is the common target-model append, the primary outcome is
+`sum(U_t)/sum(E_t)`. `A_t` is measured in a separate ledger. A later final-state-ready systems
+claim must separately compare measured `U_t+A_t` with the fastest measured exact path to the same
+`R_v || Delta_(v+1)` output; exact cannot be forced through a slower decomposed path. That metric
+is not migration speedup. Cold, re-entered, and zero-overlap construction is reported separately
+and cannot be charged asymmetrically. If a nonempty retained prefix lacks its expected cache,
+rebuilding it is natural exact charged to `U_t`; every aggregate reports reusable-prefix coverage.
+
+After the untimed append, the exact branch must agree with a fresh target-model forward on
+`R_v || Delta_(v+1)` within tolerance for K/V, hidden state, and task output; one-shot fresh is
+the quality authority if they disagree. The crop defining `R_v` is fixed before routing from
+causal history identity, the admitted window, and the maximum-length rule. Physically dropping old
+K/V rows does not erase their influence from migrated deep-layer state, so no exactness claim is
+made for the mixed branch. Both branches then predict the next unseen canonical window, and the
+previous actual mixed output remains the recursive input. Because the synchronized prefix and
+exact workload differ from v1, neither the frozen `346319.0015 ms` denominator nor the old
+`token_debt/total10` value `0.110699` is formal Stage-4.9 evidence. The formal confirmation reruns
+the two selected candidates and a paired exact reference sequentially on one A40 without
+reopening the sixteen-point scheduler sweep.
+
+The Stage-4.9 retained-prefix ABI and smoke-only runner have passed unit/static checks and one real
+`theta0 -> theta1` GPU smoke covering migrate, scheduled exact, and natural exact. The smoke makes
+zero source-model append calls and verifies target-model two-stage exact against one-shot exact.
+It also injects one expected-but-missing cache: target-model exact reconstruction of its retained
+prefix is charged to `U` and included in the paired exact population. Timed retained endpoints
+share device-resident FP16, while FP32 is an independent parity-only branch. The latest-only
+empty-prefix path is covered by a synthetic one-token equivalence test. It has no warmup, writes
+no formal result, and is marked `scientific_result=false`; its timings must not enter any table or
+claim.
+
+The formal `cohortkv_single_config_stage4_9_same_device_confirmation_v2` result completes all
+11 recursive edges for both candidates on the same physical A40, executes a fresh paired exact
+reference on every edge, consumes the previous actual post-append mixed state, makes zero
+source-model append calls, and passes FP32 exact-equivalence, lineage, capacity, provenance, and
+old-denominator exclusion checks. Its frozen outcomes are:
+
+- `token_debt_total10`: `sum(U)/sum(E)=0.071319`, 221 scheduled exact actions over 6,711 reusable
+  record-edges, and record-weighted AUC/NDCG@100/Hit@100 recovery
+  `1.000030/0.996890/0.999060`;
+- `staggered_renewal_h12`: `sum(U)/sum(E)=0.100017`, 462 scheduled exact actions over 6,711
+  reusable record-edges, and recovery `1.000039/0.997463/1.000000`.
+
+The policy freeze retains `staggered_renewal_h12` because it is the preregistered bounded-renewal
+candidate; `token_debt_total10` remains a cost endpoint without a per-cache deadline. This
+decision does not use recommendation labels. The evaluator uses a CPU FP16 recursive store and
+groupwise H2D/D2H staging for memory containment. H12 reports 662,869,804,944 logical movement
+bytes separately outside `U/E`; consequently the result is not a full-cohort HBM-resident
+lifecycle or end-to-end state-movement claim. Its horizon is 12 but the measured chain has only
+11 updates, so a complete renewal cycle is not observed. Maximum observed migration depth 11
+must not be confused with the fixed-history Stage-4.6 depth-four guarantee.
+
+`cohortkv_stage4_10_renewal_calibrated_h12_smoke_v1` preserves the Stage-4.9 retained-prefix,
+append, H12, and recursive-state definitions but changes the source of the per-edge direct
+program. After action selection, and before any migrant transform:
+
+1. assemble and crop the scheduled-exact records' previous actual K/V;
+2. compute their current-model exact retained K/V once;
+3. fit one shared program from those aligned pairs;
+4. reuse the exact targets as those records' refreshed caches;
+5. apply the new program only to the disjoint migrant set.
+
+Calibration IDs must exactly equal scheduled-exact IDs. Natural-exact records, migrant exact
+references generated only for evaluation, old 40-user fit records, and recommendation labels are
+forbidden fit inputs. The action partition is immutable after calibration; this protocol has no
+empirical semantic admission gate.
+
+The runtime always receives one FP16 direct-old-K/V affine. `inverse_norm_ridge` estimates
+`Norm(x)` from actual K/V with the source projection right inverse, fits the target residual, and
+composes back to direct K/V. `direct_kv_residual_ridge` fits fresh-minus-actual K/V around an
+identity prior. Both use centered ridge `0.001`, at most 8,192 deterministic paired tokens, and
+the same fused operator ABI.
+
+`U` includes scheduled source crop, scheduled exact replay, ridge/program construction, device
+program preparation, migrant crop/transform, any missing-cache exact retained rebuild, and
+retained materialization. `E` independently replays the same timed retained population.
+Calibration H2D, migrant H2D, next-state D2H, and target append are measured outside primary
+`U/E`; they may not be omitted from their separate ledgers.
+
+The two real smoke artifacts cover only edges 0→1 and 1→2, use zero warmup and one repetition, and
+run the two fit modes on different A40s. Direct K/V reports aggregate `U/E=0.128764`; inverse-Norm
+reports `0.127694`. Per-edge program construction is 75–124 ms and is included in those
+numerators. These numbers are execution diagnostics, not paper results. The smoke evaluates no
+AUC, NDCG@100, Hit@100, score fidelity, or held-out migration quality, so it cannot select a
+variant or replace the formal 11-edge Stage-4.9 result. A new protocol is required for that
+comparison.
+
+For that handoff, `post_retained_prefix_pre_append` is the guard hook and
+`post_append_full_cache` is the only transaction-commit and recursive-state boundary. A retained
+prefix is private intermediate state and must never be published as a complete user cache.
+Expected cache IDs must come from the prior committed contract, while present IDs come from actual
+store contents; deriving both from one set makes missing-cache fallback unobservable.
+
+The frozen v1 Stage-5 amendment is
+`experiments/system/COHORTKV_STAGE5_MINIMAL_CLOSURE_V1.md`. It freezes one job-level semantic
+preflight instead of searching runtime-sentinel families. Before any target extent is produced,
+the job validates artifact hash/version/shape, capacity, old-K/V presence, and program identity,
+then applies one label-free canary and threshold frozen on the program-selection role. Failure
+of program identity/shape, old-K/V presence, or the semantic canary routes the affected migration
+cohort directly to exact. Artifact/version mismatch and copy-on-write capacity failure are fatal
+admission errors before transaction creation, because exact cannot make either condition safe.
+The result records preflight overhead and the final fallback reason, but makes no runtime
+drift-detection or online-rework claim. Stage 4.10 does not inherit the semantic canary; only
+integrity, shape, finite, capacity, lineage, and transaction checks remain in its current path.
+
+Failure-safe evidence uses copy-on-write on one capacity-feasible representative GPU
+configuration: all old extents remain readable until the complete target manifest commits. It
+contains one normal integrated `theta0 -> theta1` job plus exactly three fallback/fault cases:
+
+1. an integrity-accepted, shape-preserving perturbation of the actual `theta0 -> theta1`
+   direct-old-K/V program, which the frozen canary executes and routes to exact before target
+   execution, ending in one complete corrected commit;
+2. a mid-job execution exception, which aborts and reclaims private staging;
+3. an exception immediately before commit, which leaves the complete private target invisible.
+
+For both abort cases, correctness requires reading every expected record through the old manifest
+and checking version, shape, finite values, and checksum or old-K/V equivalence. Pointer equality
+alone is insufficient because the one-GPU normal path may retire old extents. That reclaiming path
+remains performance evidence but is not abort-safe. Artifact mismatch remains a unit/smoke check;
+first-extent/publication fault grids, runtime invalidation/rework, journals, and resume are
+post-v1 extensions.
 
 The aggregate result must validate against
 `configs/cohortkv_single_config_v1/result.schema.json`. The parent blueprint retains
@@ -1292,22 +1552,49 @@ The aggregate result must validate against
 normal-path result, the negative normalized-source finding, and the scoped direct-old-K/V hot-HBM
 Pareto point, but not failure recovery, automatic fallback execution, cold/durable SSD, or
 capsule-economics claims. Even after later full-chain completion, seed 0 remains adaptive
-development evidence; timing repeats are not training replications.
-The schema requires exactly one aggregate run for each of the 18 primary
-method/destination/GPU-count combinations and one result for each predeclared failure. Controls
-cannot satisfy a missing primary point.
+development evidence; timing repeats are not training replications. The aggregate schema has been
+amended to replace the former six-failure and capsule-economics requirements with the normal job,
+three cases above, and the accounting ledger below. The 18 completed primary
+method/destination/GPU-count combinations remain frozen; controls cannot satisfy a missing
+primary point.
 
-RQ5 first verifies that the frozen direct-old-K/V path requires no independent per-record capture
-or encode beyond the serving K/V that already exists, and reports its once-per-version-pair
-program compilation/publication cost. The normalized-capsule controls use theta11, one GPU, and
-the 60 program-selection histories for matched fresh-K/V-only, plus-device-capture, and
-plus-D2H/encode/buffered-POSIX-persist paths, each with one warmup and three repetitions. INT8 is
-symmetric signed quantization with a per-record/per-layer FP32 absmax scale and timed FP16
-dequantization during staging; its frozen certificate is applied on certificate users, with a
-complete 682-record one-GPU HBM run. Time break-even is
-`ceil(capture_overhead / (exact - compiled - compiler_amortized))`; a nonpositive denominator is
-reported as no break-even. Auxiliary transition/residual state is a separate row and cannot be
-folded into the default capsule ratio.
+The source-state accounting audit performs no new representation experiment. It derives one table
+from the frozen Stage-2/4/4.5 artifacts:
+
+- direct old K/V has zero additional per-record source-state bytes and no independent capture,
+  encode, or preload path;
+- direct-program bytes, composition time, old/new peak overlap, and the prepublished-program
+  data-plane boundary are reported;
+- Stage-2 fit/runtime-prepare/certificate time and its existing resident amortization floor remain
+  separate offline setup;
+- the rejected FP16 normalized capsule retains its measured logical/physical bytes,
+  preload/source time, and completed endpoint outcome.
+
+INT8/FP8 implementation, capture/D2H/POSIX-persistence timing, quantized full-cohort execution,
+time-break-even curves, physical SSD/GDS, remote storage, and automatic tier selection are
+optional post-v1 extensions. A filesystem path remains a correctness interface and cannot be
+called an SSD result.
+
+The formal `cohortkv_single_config_stage5_full_cow_integration_v1` artifact binds the confirmed
+`staggered_renewal_h12` action partition for `theta0 -> theta1`. Two A40s pass the copy-on-write
+capacity preflight. The normal job commits and readback-validates all 682 target records; the
+shape-preserving real-program perturbation fails the frozen canary, routes the migration cohort
+to exact before target execution, and commits one complete corrected target. Mid-job and
+pre-commit injections both abort with no partial target visible, reclaim private staging, and
+readback-validate all 682 old records. Formal-candidate, input, source, capacity, normal,
+fallback, abort, JSON Schema, and cross-field checks all pass. This is implementation-correctness
+evidence, not a throughput, runtime-sentinel, online-rework, or durability claim.
+
+`cohortkv_single_config_stage6_freeze_v1` is the final seed-0 assembly protocol. It performs no
+new GPU experiment. The CPU-only deterministic assembler verifies 18 frozen Stage-1 through
+Stage-5 source artifacts by path, protocol, status, size, and SHA-256; validates the amended
+aggregate schema and whole-aggregate semantics; and atomically writes eight sidecars before
+`final_summary_seed0.json`. Sidecars cover correctness, timing/memory, paper tables, paper
+figures, artifact-to-claim binding, negative results, current-manuscript disposition, and the
+code snapshot. All source-hash, candidate-binding, Stage-5-semantic, claim-binding, schema,
+whole-aggregate, and TBD-disposition checks must pass. The result remains adaptive seed-0
+development evidence. New training seeds and predeclared dataset/model-capacity cells belong to
+Stage 7 and must not modify this frozen result family.
 
 ## 6. Metrics and statistics
 

@@ -35,6 +35,10 @@ def _dtype_name(dtype: torch.dtype) -> str:
     return str(dtype).removeprefix("torch.")
 
 
+def _canonical_metadata_json(value: dict[str, object]) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
 def _serialize_batch(batch: JaggedMigratedKVBatch) -> bytes:
     payload = {
         "k": batch.k.detach().contiguous(),
@@ -64,6 +68,28 @@ def _deserialize_batch(
         v=values["v"],
         lengths=values["lengths"],
         offsets=values["offsets"],
+    )
+
+
+def _clone_tensor(value: torch.Tensor) -> torch.Tensor:
+    if value.device.type == "cpu" and value.is_pinned():
+        output = torch.empty_like(value, pin_memory=True)
+        output.copy_(value)
+        return output
+    return value.clone()
+
+
+def _clone_batch(
+    batch: JaggedMigratedKVBatch,
+) -> JaggedMigratedKVBatch:
+    return JaggedMigratedKVBatch(
+        record_ids=batch.record_ids,
+        migration_anchor_version=batch.migration_anchor_version,
+        served_kv_target=batch.served_kv_target,
+        k=_clone_tensor(batch.k),
+        v=_clone_tensor(batch.v),
+        lengths=_clone_tensor(batch.lengths),
+        offsets=_clone_tensor(batch.offsets),
     )
 
 
@@ -163,6 +189,8 @@ class KVVersionManifest:
     record_count: int
     token_count: int
     payload_bytes: int
+    metadata_sha256: str | None = None
+    metadata_json: str | None = None
     protocol: str = DESTINATION_MANIFEST_PROTOCOL
 
     def __post_init__(self) -> None:
@@ -197,6 +225,17 @@ class KVVersionManifest:
             extent.payload_bytes for extent in self.extents
         ):
             raise ValueError("manifest payload bytes differ from its extents")
+        if (self.metadata_sha256 is None) != (self.metadata_json is None):
+            raise ValueError("manifest metadata payload and SHA-256 must coexist")
+        if self.metadata_sha256 is not None and (
+            not re.fullmatch(r"[0-9a-f]{64}", self.metadata_sha256)
+            or not isinstance(json.loads(self.metadata_json), dict)
+            or _canonical_metadata_json(json.loads(self.metadata_json))
+            != self.metadata_json
+            or hashlib.sha256(self.metadata_json.encode("utf-8")).hexdigest()
+            != self.metadata_sha256
+        ):
+            raise ValueError("manifest metadata SHA-256 is invalid")
 
     @property
     def record_ids(self) -> tuple[int, ...]:
@@ -218,6 +257,12 @@ class KVVersionManifest:
             "record_count": self.record_count,
             "token_count": self.token_count,
             "payload_bytes": self.payload_bytes,
+            "metadata_sha256": self.metadata_sha256,
+            "metadata": (
+                None
+                if self.metadata_json is None
+                else json.loads(self.metadata_json)
+            ),
         }
 
     @classmethod
@@ -236,6 +281,16 @@ class KVVersionManifest:
             record_count=int(value["record_count"]),
             token_count=int(value["token_count"]),
             payload_bytes=int(value["payload_bytes"]),
+            metadata_sha256=(
+                None
+                if value.get("metadata_sha256") is None
+                else str(value["metadata_sha256"])
+            ),
+            metadata_json=(
+                None
+                if value.get("metadata") is None
+                else _canonical_metadata_json(value["metadata"])
+            ),
         )
 
 
@@ -247,6 +302,7 @@ class KVPublicationTransaction:
         job_id: str,
         target_version: str,
         expected_record_ids: tuple[int, ...],
+        metadata: dict[str, object] | None,
     ) -> None:
         _validate_identifier(job_id, "job_id")
         if not target_version:
@@ -255,11 +311,20 @@ class KVPublicationTransaction:
             raise ValueError("expected_record_ids must be nonempty")
         if len(set(expected_record_ids)) != len(expected_record_ids):
             raise ValueError("expected_record_ids must be unique")
+        metadata_json = (
+            None if metadata is None else _canonical_metadata_json(metadata)
+        )
         self.destination = destination
         self.transaction_id = transaction_id
         self.job_id = job_id
         self.target_version = target_version
         self.expected_record_ids = expected_record_ids
+        self.metadata_json = metadata_json
+        self.metadata_sha256 = (
+            None
+            if metadata_json is None
+            else hashlib.sha256(metadata_json.encode("utf-8")).hexdigest()
+        )
         self._expected = set(expected_record_ids)
         self._staged_records: set[int] = set()
         self._extents: list[PublishedKVExtent] = []
@@ -320,6 +385,8 @@ class KVPublicationTransaction:
                 record_count=len(self._staged_records),
                 token_count=sum(extent.token_count for extent in self._extents),
                 payload_bytes=sum(extent.payload_bytes for extent in self._extents),
+                metadata_sha256=self.metadata_sha256,
+                metadata_json=self.metadata_json,
             )
             self.destination._commit(self.transaction_id, manifest)
             self._closed = True
@@ -354,16 +421,19 @@ class KVUpdateDestination(ABC):
         job_id: str,
         target_version: str,
         expected_record_ids: tuple[int, ...],
+        metadata: dict[str, object] | None = None,
     ) -> KVPublicationTransaction:
         transaction_id = uuid.uuid4().hex
-        self._begin(transaction_id, job_id, target_version)
-        return KVPublicationTransaction(
+        transaction = KVPublicationTransaction(
             destination=self,
             transaction_id=transaction_id,
             job_id=job_id,
             target_version=target_version,
             expected_record_ids=expected_record_ids,
+            metadata=metadata,
         )
+        self._begin(transaction_id, job_id, target_version)
+        return transaction
 
     @abstractmethod
     def _begin(
@@ -407,6 +477,10 @@ class KVUpdateDestination(ABC):
         target_version: str,
         extent_id: str,
     ) -> JaggedMigratedKVBatch:
+        raise NotImplementedError
+
+    @abstractmethod
+    def staging_exists(self, transaction_id: str) -> bool:
         raise NotImplementedError
 
 
@@ -462,7 +536,7 @@ class DRAMKVUpdateDestination(KVUpdateDestination):
             staged = self._staging[transaction_id]
             if extent_id in staged:
                 raise ValueError("extent is already staged")
-            staged[extent_id] = batch
+            staged[extent_id] = _clone_batch(batch)
         return PublishedKVExtent(
             extent_id=extent_id,
             record_ids=batch.record_ids,
@@ -514,9 +588,15 @@ class DRAMKVUpdateDestination(KVUpdateDestination):
     ) -> JaggedMigratedKVBatch:
         with self._lock:
             try:
-                return self._committed[target_version][extent_id]
+                return _clone_batch(
+                    self._committed[target_version][extent_id]
+                )
             except KeyError as exc:
                 raise KeyError("published DRAM extent is unavailable") from exc
+
+    def staging_exists(self, transaction_id: str) -> bool:
+        with self._lock:
+            return transaction_id in self._staging
 
 
 class HBMKVUpdateDestination(KVUpdateDestination):
@@ -586,7 +666,7 @@ class HBMKVUpdateDestination(KVUpdateDestination):
             staged = self._staging[transaction_id]
             if extent_id in staged:
                 raise ValueError("extent is already staged")
-            staged[extent_id] = batch
+            staged[extent_id] = _clone_batch(batch)
         return PublishedKVExtent(
             extent_id=extent_id,
             record_ids=batch.record_ids,
@@ -646,9 +726,15 @@ class HBMKVUpdateDestination(KVUpdateDestination):
     ) -> JaggedMigratedKVBatch:
         with self._lock:
             try:
-                return self._committed[target_version][extent_id]
+                return _clone_batch(
+                    self._committed[target_version][extent_id]
+                )
             except KeyError as exc:
                 raise KeyError("published HBM extent is unavailable") from exc
+
+    def staging_exists(self, transaction_id: str) -> bool:
+        with self._lock:
+            return transaction_id in self._staging
 
 
 def _fsync_directory(path: Path) -> None:
@@ -806,6 +892,11 @@ class FilesystemKVUpdateDestination(KVUpdateDestination):
         ):
             raise RuntimeError("filesystem extent checksum mismatch")
         return _deserialize_batch(payload, extent)
+
+    def staging_exists(self, transaction_id: str) -> bool:
+        with self._lock:
+            staging = self._staging.get(transaction_id)
+        return staging is not None and staging.exists()
 
 
 class RemoteObjectStore(Protocol):
@@ -979,3 +1070,7 @@ class RemoteKVUpdateDestination(KVUpdateDestination):
         ):
             raise RuntimeError("remote extent checksum mismatch")
         return _deserialize_batch(payload, extent)
+
+    def staging_exists(self, transaction_id: str) -> bool:
+        with self._lock:
+            return transaction_id in self._staging

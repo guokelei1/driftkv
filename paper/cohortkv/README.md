@@ -1,11 +1,12 @@
 # CohortKV paper project
 
-This directory contains the paper-only deliverables for the repository. No source code, test,
-experiment, checkpoint, or result file is modified by this project.
+This directory contains the paper deliverables for the repository. Experimental code and raw
+results remain outside it; editorial rewrites may refresh the deterministic Stage-6 manuscript
+ledger, but do not create new GPU evidence.
 
 ## Working title
 
-**CohortKV: Compiled Cross-Version K/V Migration for Streaming Generative Recommendation**
+**CohortKV: Compiled K/V Translation Across Streaming Recommender Versions**
 
 The repository implementation and protocol strings retain the existing `streamkv_*` names. The
 paper uses **CohortKV** because “StreamKV” is already the title of an unrelated 2026 paper on
@@ -14,7 +15,7 @@ is outside this writing task.
 
 ## Deliverables
 
-- `manuscript_v3_target_en.md`: the current English target manuscript.
+- `manuscript_v3_target_en.md`: the current evidence-bound English manuscript.
 - `references.bib`: bibliography source.
 - `figures/`: paper-native SVG figures.
 - `process/01_project_plan.md`: boundary-controlled, multi-round writing plan.

@@ -31,6 +31,20 @@ from .long_context import (
     training_protocol_for_base_days,
     validate_long_context_plan,
 )
+from .organic import (
+    ORGANIC_STREAM_PROTOCOL,
+    CanonicalEvents,
+    CanonicalHistory,
+    OrganicStreamRecord,
+    OrganicStreamSnapshot,
+    OrganicWindow,
+    OrganicWindowRecord,
+    build_4plus12_causal_snapshots,
+    iter_4plus12_causal_snapshots,
+    reconstruct_organic_windows,
+    stable_event_identity,
+    stable_history_hash,
+)
 from .trainer import (
     Checkpoint,
     StreamingTrainer,
@@ -76,4 +90,16 @@ __all__ = [
     "reconstruct_online_eval_samples",
     "training_protocol_for_base_days",
     "validate_long_context_plan",
+    "ORGANIC_STREAM_PROTOCOL",
+    "CanonicalEvents",
+    "CanonicalHistory",
+    "OrganicStreamRecord",
+    "OrganicStreamSnapshot",
+    "OrganicWindow",
+    "OrganicWindowRecord",
+    "build_4plus12_causal_snapshots",
+    "iter_4plus12_causal_snapshots",
+    "reconstruct_organic_windows",
+    "stable_event_identity",
+    "stable_history_hash",
 ]

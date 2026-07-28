@@ -1,17 +1,34 @@
 # CohortKV 单配置全链路开发计划
 
-> 状态：2026-07-27 起生效。本文档定义当前唯一的实施顺序。
+> 状态：2026-07-28 起生效。本文档定义当前唯一的实施顺序。
 >
 > 当前阶段只在最成熟的 KuaiRand 长上下文配置上完成一次论文级 vertical slice。它是
 > **开发与集成阶段**，不是新的多 seed 确认性证据。完成并冻结 v1 后，才进入新 seed、
 > 多数据集和多模型容量扩展。
 >
-> 当前进度：Stage 0–4.6 已完成并冻结。Stage 4 的 FP16 normalized-capsule 文件源路径在
+> 当前进度：Stage 0–6 的单配置 vertical slice 已完成并冻结。Stage 4.7 的唯一运行只部分
+> 通过预声明门槛。Stage 4 的 FP16 normalized-capsule 文件源路径在
 > 0/6 个 matched endpoint 上快于 exact；Stage 4.5 已改为直接从现有 HBM old K/V
 > 重参数化，消除了额外 `Norm(x)`，并在 full-cohort 1/2/4 卡点均通过端到端门槛。该证据
 > 原本只覆盖“exact old K/V 经过一次迁移”的固定更新；Stage 4.6 现已从 theta0 exact
-> K/V 连续执行 11 次真实递归更新，并冻结均衡的 `migrate-or-exact` 生命周期。下一步是
-> Stage 5 的 guard、自动 fallback、transactional rework 和 failure visibility。
+> K/V 连续执行 11 次固定历史递归更新，并冻结均衡的 `migrate-or-exact` 生命周期。
+> Stage 4.7 又改为真实增长的 canonical-date history，并用 depth deadline、迁移年龄和
+> 当前边 K/V norm shift 从可复用 cache 中选择约 20% exact。Stage 4.8 已建立新的调度
+> 开发协议：不再把 K/V fidelity 或 norm shift 当作 admission oracle，只比较最终
+> record-weighted AUC/NDCG@100/Hit@100 与 GPU 成本。四类策略的 16 个开发点均已跑完并
+> 保留。随后确认了两个此前混在一起的问题：新增行为的推理是否计入 migration 时间，
+> 与新增行为在 migration 前还是后计算，是两个独立决定。Stage 4.9 已冻结修正协议：
+> 先迁移 retained old prefix，再用 target model append 新增行为；append 仍在两边计时器
+> 之外。11 条边的同卡 paired confirmation 已完成：`token_debt_total10` 是
+> `0.071319×` cost endpoint，`staggered_renewal_h12` 是 `0.100017×` 的有界 renewal
+> 部署候选，后者的 record-weighted AUC/NDCG@100/Hit@100 recovery 为
+> `1.000039/0.997463/1.000000`。Stage 5 已合并为轻量
+> implementation-correctness/accounting closure：program identity/shape、old-cache 或
+> canary 失败可安全回退 exact，artifact/version 或 capacity 失败则在 transaction 前
+> fatal reject；正式两卡 copy-on-write normal/fallback/mid-job/pre-commit 四个 case
+> 已全部通过。Stage 6 的 CPU-only assembler 已复用并校验 Stage 1–5 冻结 artifact，
+> 输出最终 aggregate 和八个论文 sidecar；未重跑旧 GPU matrix。下一步是 Stage 7 的
+> 新 seed 复现，再做预声明的数据集和模型容量扩展。
 >
 > 研究事实与实验语义仍分别以
 > [08_core_insights_and_roadmap.md](08_core_insights_and_roadmap.md) 和
@@ -53,8 +70,9 @@
 
 ### 2.1 不为预写设计强行找结果
 
-目标稿中的 full affine、Triton kernel、sentinel、SSD 等是当前最合理的候选实现，不是不可
-修改的教条。任何阶段发现前提错误、机制无效或成本不成立时，应当：
+目标稿中的 full affine、Triton kernel、语义 preflight、SSD 分层等都只是候选实现，不是
+不可修改的教条；其中 SSD 分层已经降为 post-v1 可选扩展。任何阶段发现前提错误、机制无效
+或成本不成立时，应当：
 
 1. 暂停受影响的后续阶段；
 2. 保存负结果和失败原因；
@@ -175,25 +193,24 @@ HBM 与 DRAM 是主 endpoint。POSIX filesystem 是同一 transaction 的次级�
 失衡，可改 wave/buffer 策略。逻辑目标仍是 bounded full-cohort transformation，不要求保留
 某一种组织方式。
 
-### 3.4 Runtime guard 与 failure boundary
+### 3.4 最小 preflight 与 failure boundary
 
-默认候选是目标稿中的 per-wave sentinel：抽样检查当前 cohort 的 label-free semantic view，
-违反 published contract 时单调升级，并在 commit 前重迁移该 cohort 已生成的 extents。
+这部分是 Design 3 的实现闭环，不是新的核心 design。v1 不再搜索 per-wave runtime
+sentinel，也不承担运行中检测、extent rework 或 resume。每个 job 在生成任何 target extent
+之前只执行一种固定 preflight：
 
-sentinel 必须先回答三个问题：
+- 验证 artifact hash、版本、shape、capacity、old-K/V presence 和 program identity；
+- 用 program-selection role 冻结的一组 label-free canary 与一个预注册阈值检查 program；
+- program identity/shape、old-K/V presence 或 semantic canary 不通过时，在执行前把受影响
+  migration cohort 单调升级到 exact；
+- artifact/version 或 capacity 不通过时，在创建 transaction 前拒绝整个 job；exact
+  不能掩盖错误 artifact 或不可行的 copy-on-write 容量。
 
-- 它实际观察什么 reference，reference 的生成和保存成本是多少；
-- 统计规则能否在当前 wave/cohort 大小下成立；
-- 它的开销与误报/漏报是否优于只做离线 certificate。
-
-如果 runtime sentinel 在语义上不成立或成本过高，不强行实现。可以改成：
-
-- job 启动前的 exact canary/preflight verification；
-- 每 cohort 的固定 verification wave；
-- 只保护 artifact corruption 的 checksum/version validation；
-- 失败后直接使用 published fallback 重启该 cohort。
-
-论文必须按最终实际机制命名，不能把 preflight check 写成在线 sentinel。
+transaction 仍须保证 retained prefix 始终私有，只有完整 `post_append_full_cache` 可以
+commit。failure-safe 证据使用 copy-on-write：旧 extents 至少保留到新 manifest commit，
+之后才具备回收资格；v1 不声称已经提供跨 job 的 version-retirement API。只在 capacity
+preflight 可行的一个代表 GPU 配置上验证。Stage 4.5 的一卡逐 extent reclaim 继续是正常
+路径性能证据，但不声称 abort-safe。
 
 ## 4. 单配置实验设计
 
@@ -203,11 +220,12 @@ sentinel 必须先回答三个问题：
 | RQ2 compiler | 当前长上下文 cell 的 verified compiler 与阈值扫描 | reuse、cheap、compiled、residual-\(p\)、exact | certificate、cost、fidelity、task deviation、compile amortization |
 | RQ3 closest baseline | 单配置 selective-layer cost-fidelity frontier | compiled ladder、selective-layer、reuse/exact anchors | Pareto frontier、certificate 结果、独立调优结果 |
 | RQ4 system | 682-record full-cohort、1/2/4 GPU、HBM/DRAM | compiled、frozen profiled selective diagnostic、exact、no-transform | completion、throughput、bytes、峰值内存、breakdown、commit |
-| RQ4 robustness | forced degradation 与 failure injection | normal、escalated、abort、resume | detection、rework、visibility、cleanup |
-| RQ5 economics | FP16/INT8 capsule 与创建成本 | no capsule/exact、FP16、INT8 | bytes、capture/dequant cost、fidelity、break-even |
+| RQ4 implementation closure | 固定 preflight、exact fallback 与两个代表性 abort fault | normal、preflight-exact、mid-job abort、pre-commit abort | overhead、fallback、完整旧 manifest readback、无 partial target |
+| Secondary accounting audit | 复用 Stage 2/4/4.5 artifact | direct old K/V、被淘汰的 FP16 capsule | per-record extra bytes、program bytes、source/preload cost、适用边界 |
 
-RQ1 不因本计划重新训练。RQ2-RQ5 在本阶段只建立单配置完整证据模板；跨 seed 和跨数据集结论
-留给 v1 冻结后的下一阶段。
+RQ1 不因本计划重新训练。RQ2-RQ4 在本阶段建立单配置证据模板；source-state accounting
+只汇总已有实测 artifact，不再作为独立 RQ 或新算法 gate。跨 seed 和跨数据集结论留给 v1
+冻结后的下一阶段。
 
 ## 5. 分阶段实施
 
@@ -396,7 +414,8 @@ work 中说明不适用。固定周期重算只服务 RQ1 的 policy boundary，
 [`COHORTKV_STAGE4_SYSTEM_V1.md`](../experiments/system/COHORTKV_STAGE4_SYSTEM_V1.md) 与
 `configs/cohortkv_single_config_v1/stage4_system_summary.json`。
 
-先闭合正常路径，再增加 sentinel 和失败恢复。
+这一阶段只闭合正常执行路径；固定语义 preflight、exact fallback 和代表性 abort 证据统一
+留到合并后的 Stage 5。
 
 任务：
 
@@ -643,8 +662,8 @@ exact C_v(x) -> direct migration -> approximate target C_hat_t(x)
 
 `served_version=t` 只表示状态面向 `theta_t`，不等价于 exact `C_t(x)`。只有 exact refresh
 能设置 `state_kind=exact`、`last_exact_version=t` 和 `migration_depth=0`。Stage 5 的
-manifest、rework 和 fallback 必须遵守这些字段，不能把 migrated output 伪装成 fresh
-anchor。下一轮 migrated cache 使用的是 `served_version -> new_target` program；不得因为
+manifest、preflight fallback 和 commit 必须遵守这些字段，不能把 migrated output 伪装成
+fresh anchor。下一轮 migrated cache 使用的是 `served_version -> new_target` program；不得因为
 它的 `last_exact_version` 更老，就假装输入仍是那个旧版本的 exact K/V。
 
 #### 4.6.2 可部署判别量与候选 router
@@ -848,76 +867,299 @@ cache lifecycle。该 policy 属于现有 engine 的 maintenance planner，不�
   development outcomes，不是独立统计复现；
 - 调度 11 轮累计 CPU 时间约 `23.4 ms`，不计入 GPU cost ratio，且已单独披露。
 
-### Stage 5：接通 guard、escalation 与 failure semantics
+### Stage 4.7：真实增长历史的连续 mixed lifecycle
 
-状态：**下一执行阶段**。Stage 4.6 已冻结“哪些 cache migrate、哪些 exact”，本阶段
-只把该 lifecycle policy、fallback 与 transaction semantics 接入完整 engine。direct
-operator 默认保持 Stage 4.5 形式；若 Stage 4.6 已按新 protocol 修改 program 语义，则以
-其冻结 artifact 为准。
+状态：**实现与唯一单配置运行已完成，研究门槛部分通过（2026-07-28）**。协议和结果记录见
+[`COHORTKV_STAGE4_7_ORGANIC_LIFECYCLE_V1.md`](../experiments/system/COHORTKV_STAGE4_7_ORGANIC_LIFECYCLE_V1.md)。
 
-任务：
+Stage 4.6 为了隔离累计迁移误差，11 轮始终使用同一份固定 history。Stage 4.7 修正这个
+边界：theta0 使用截至 D4 的历史预测 D5；D5 被评测后才能加入历史，theta1 再用截至 D5
+的历史预测 D6；依次推进至 theta11 预测 D16。mixed 与 all-exact 在每个 endpoint 使用
+相同 checkpoint、canonical history、latest token、catalog 和 engaged positive，下一轮
+必须消费上一轮真实 mixed cache。rolling-window 左裁剪不自动触发整条重算；cold、re-entry
+和零 overlap 才直接 natural exact。
 
-- 先做 sentinel/preflight 的 reference 与成本设计实验；
-- 只用 program-selection users，记录 reference bytes/time、正常 job overhead、theta4
-  perturbation detection 和 unperturbed cohort false escalation，选定最低 overhead 的可执行
-  guard，不预设名称；
-- 让 lifecycle planner 在 job 开始前把每条记录确定为 `migrate` 或 `exact`，并让两种
-  action 进入同一 target transaction；
-- 将 verified plan 的 fallback chain 接入 engine；
-- 支持 per-record planned exact refresh，以及 program/cohort 失效时把所有受影响的
-  migrated records 单调升级到 exact；
-- 在 commit 前使旧 action 产生的 extents 失效并重迁移；
-- 在 manifest 中记录每条记录的最终 action、lineage、last exact version 和 migration
-  depth；
-- 注入 structurally valid、重新发布后能通过 integrity/hash 检查的 theta4 语义退化程序，
-  验证 semantic guard 将其升级到 published exact fallback；若运行中发现，记录并替换所有
-  已生成 theta4 extents；
-- 在 first extent、mid-wave、publication、pre-commit 注入异常；
-- 验证 reader 只看到上一个 committed manifest；
-- 测量 abort cleanup；
-- 仅在语义清楚时加入 extent journal 与最多一 wave 重做的 resume。
+选择器不是随机抽 20%。每个可复用 prefix 都先产生轻量 candidate 和当前边 q90 absolute
+log K/V norm shift，然后按以下确定性规则选择：
+
+```text
+mandatory exact: migration_depth >= 4
+remaining exact quota: older migration age first, then larger current norm shift
+final exact budget: nearest-record 20% of reusable continued prefixes
+tie only: stable SHA256
+```
+
+未来窗口标签、future-edge severity 和用户 task gain 都不可进入路由。自然 exact 不占这
+20% budget，candidate 被改判 exact 时其计算成本不能删除。
+
+唯一 682-user、11-edge 运行的结果是：
+
+- 6,711 个 reusable prefix 中 1,344 个 selector exact（20.0268%）、5,367 个 migrate；
+  另有 771 个 natural exact 和 3 个 common-latest-only，总 exact-state 约 28.3%；
+- 1,344 个 selector exact 中 476 个来自 depth-four deadline，868 个来自
+  age/norm-shift quota；11 轮都没有实际使用 SHA tie-break；
+- 累计 update-only/all-exact 为 0.2703×，最高单轮 0.2892×；加入相同 foreground 后为
+  0.5069×，再加入 common latest/publication 后为 0.5372×。这些仍是 GPU lifecycle
+  boundary，不包含 compiler、catalog scoring、CPU scheduler 和 H2D，因此不叫完整应用
+  end-to-end；
+- 4,368 个 final-positive record-endpoint 的 record-weighted mixed/all-exact
+  AUC/NDCG@100/Hit@100 比为 0.999987/0.994590/0.997180；
+- 最低 score cosine/top-100 overlap 为 0.999876/0.97357，均通过；最低 q90 cache
+  fidelity 为 0.8744，低于预声明 0.90，后六条边均失败；
+- norm shift 对实际 candidate error 的逐边平均 Spearman 只有 0.0341，top-error oracle
+  overlap 平均 23.46%（随机期望 20%）。所以可以讲 bounded age/deadline scheduler 加弱
+  label-free 次排序，不能讲强风险预测或最优选择；
+- 全部 causality/compiler/lineage/depth/cost bookkeeping checks 通过。因 KuaiRand
+  `date` 与 raw `time_ms` 边界小幅重叠，只支持 canonical-date causal lifecycle，不支持
+  strict raw-event/request-time claim。
+
+`status=complete` 只说明 fail-closed runner 完整产生了 12 endpoints 和 11 updates，不代表
+所有 research gate 通过。该结果必须保留。若下一轮改变 reset budget、递归 program 或
+selector，先建立新 protocol，不能覆盖当前负结果或根据 final labels 回调。
+
+### Stage 4.8：低成本、无任务标签的 exact 服务调度
+
+状态：**协议、代码、测试与 16 个正式开发点均已完成（2026-07-28）**。冻结协议见
+[`COHORTKV_STAGE4_8_SCHEDULER_SWEEPS_V1.md`](../experiments/system/COHORTKV_STAGE4_8_SCHEDULER_SWEEPS_V1.md)。
+
+本阶段保持 Stage 4.7 的 682 用户、12 个 canonical-date endpoint、11 次 previous-actual
+递归更新、checkpoint、compiler、catalog 和任务标签完全不变。Stage 4.7 已完成的 exact
+任务输出与 `346319.0015 ms` exact-prefix GPU 分母被绑定 SHA 后复用；sweep worker 不再
+执行独立 exact reference，但 cold/re-entry/zero-overlap 的 natural exact 和调度器选择的
+exact 仍必须真实执行并进入下一轮状态。
+
+最终 Pareto 只包含：
+
+- 4,368 个 update-endpoint final-positive records 的加权 catalog AUC、NDCG@100、Hit@100；
+- v1 的 `(foreground + update) / (foreground + frozen exact)`；
+- v1 加入 common latest/publication 后的 common-inclusive lifecycle ratio；
+- 同时记录但当时未作为主要筛选口径的 `update / frozen exact`。
+
+K/V fidelity、norm shift、migration age、scheduler debt 和 operator displacement 只允许作为
+机制诊断，不设质量门槛，也不声称与最终推荐指标必然相关。每个正式点的两种 lifecycle
+ratio 都必须明确报告是否严格低于 Stage 4.7 的 `0.506901/0.537223`；任务质量不设事后
+阈值，16 个点全部保留。
+
+四类预注册策略是：
+
+1. prefix-token LPT 错峰的 renewal，`H=8/10/12/16`；
+2. natural exact 先扣账的总 exact-token 累计债务，SLA 为 `10/12/14/16%`；
+3. 按 `a(a+1)/(2c)` 排序的 AoI MaxWeight，reusable-token budget 为
+   `4/7/10/13%`；
+4. 用当前 direct program 相对 identity 的无标签位移推进时钟的 model-time renewal，
+   `H=8/10/12/16`。
+
+所有可选 action 都在 candidate transform 前确定。被调度为 exact 的 cache 不再先执行
+migration 再丢弃，因此新策略同时删除 Stage 4.7 的 probe 和 discarded-candidate 成本。
+每类一个 launcher，一次把四档固定映射到 `cuda:0..3`；这只用于开发筛选，参数与物理 GPU
+完全混淆。进入论文结果前，保留的 Pareto 候选必须在同一张卡上顺序做 paired
+confirmation。总控入口 `scripts/run_cohortkv_stage4_8_all_sweeps.py` 严格按上述四类顺序
+阻塞执行：当前 family 的四个 worker 和 summary 全部成功后才启动下一类，任一失败即停止。
+
+16 个点全部完成并通过 v1 的两个 incumbent cost gate。update-only 范围为
+`0.110699×–0.181674×`，symmetric 范围为 `0.398841×–0.446337×`，
+common-inclusive 范围为 `0.435768×–0.479905×`。保留两个后续确认候选：
+
+- `token_debt/total10`：最低 update-only 成本 `0.110699×`；
+- `staggered_renewal/H=12`：有界 renewal 候选，AUC/NDCG@100/Hit@100 相对 exact 为
+  `1.000041/0.999231/1.001880`，update-only 成本 `0.141668×`。
+
+这些数值属于 v1 的旧执行顺序：先裁剪旧 cache，用 source model append 新窗口，再迁移
+完整 target-length prefix。foreground-inclusive 比例可以保留为“整个区间共同工作也计入”
+的诊断，但不能再叫 migration speedup。四卡筛选也仍需同卡确认。
+
+### Stage 4.9：rollout 计时边界与 post-migration append 修正
+
+状态：**11-edge 单配置同卡确认已完成并冻结（2026-07-28）**。完整定义见
+[`COHORTKV_STAGE4_9_ROLLOUT_BOUNDARY_V1.md`](../experiments/system/COHORTKV_STAGE4_9_ROLLOUT_BOUNDARY_V1.md)。
+这不是新的 migration 算法或第五类 scheduler，只修正 growing-history 的执行与计量语义。
+
+必须把下面两件事分开：
+
+1. **算不算 migration 时间。** 新增行为窗口的 target-model incremental forward 是用户
+   推理/foreground 工作。它要单独实测，但不进入 migration numerator，也不进入 paired
+   exact denominator。无论某个备选系统把它排在 rollout 前还是后，这个会计边界都不变。
+2. **在 migration 前还是后计算。** 当前主路径冻结为“之后”：先把 retained old prefix
+   从 `theta_v` 更新到 `theta_(v+1)`，两边停表，再用 `theta_(v+1)` append 新窗口。不能先
+   用 `theta_v` 生成新增窗口 K/V 再迁移。
+
+每一轮执行为：
+
+```text
+R_v = 为新增窗口腾出长度后，上一轮真实 cache 保留下来的 suffix
+
+mixed: previous actual K/V(R_v)
+       -> theta_(v+1) migrate-or-exact -> stop mixed timer
+       -> theta_(v+1) append Delta_(v+1), untimed
+
+exact: raw R_v
+       -> theta_(v+1) exact -> stop exact timer
+       -> theta_(v+1) append Delta_(v+1), untimed
+```
+
+主成本指标是 `sum(U_t) / sum(E_t)`。`U_t` 和 `E_t` 必须覆盖相同 retained prefix、相同
+destination 和相同 publication boundary；新增窗口 append 记作独立 `A_t`。如保留
+最终 cache-ready 的系统指标，必须另行比较实测 `U_t+A_t` 与到达同一个
+`R_v || Delta_(v+1)` 状态的最快 exact 实现，不能强迫 exact 走较慢的两段式路径；它也
+不能代替 migration cost。cold、re-entry 和 zero-overlap 没有可迁移旧 prefix，单独
+报告，不能只塞进某一边；应保留但 source cache 缺失的非空 prefix 重建则计入 mixed 的
+natural exact，并报告 reusable coverage。
+
+计时结束后的 exact incremental append 必须和 `theta_(v+1)` 对 `R_v || Delta_(v+1)` 的
+单次 fresh forward 在 K/V、hidden 和 task output 上于容差内一致，不一致时 one-shot
+fresh 是质量权威。`R_v` 必须在 routing 前由 causal history、待加入窗口和最大长度规则
+唯一确定。mixed 分支不声称数学 exact；裁掉旧 K/V 行也不会消除旧上下文已写入深层状态的
+影响，最终由 AUC/NDCG@100/Hit@100 检验。上一轮真实 mixed 输出继续作为下一轮输入。
+
+Stage 4.7/4.8 结果不删除、不改数值，但不能换标签冒充新协议。特别是
+`token_debt/total10` 的旧 `0.110699×` 同步了更长、已由旧模型 append 的 prefix；新协议
+的 workload 与 exact denominator 都变化，因此必须在同一物理 GPU 上顺序重跑候选和
+paired exact，不能复用 `346319.0015 ms`。本轮只确认已选候选，不重新跑 16 点搜索。
+
+当前实现已经把 `R_v`、`Delta_(v+1)` 和 latest/query 分成显式接口。真实
+`theta0 -> theta1` smoke 从正式 cohort
+选择 5 条记录，覆盖 2 条 migrate、1 条 scheduled exact、1 条 natural exact，并主动
+删除 1 条本应存在的 cache 来验证 missing-cache exact fallback。missing 的 `R_v` 重建
+进入 `U` 和相同的 paired exact population；所有计时终点统一为 device-resident FP16，
+FP32 只用于独立 parity。没有 source-model append，target-model 两段 exact 与 one-shot
+exact 的 K/V、hidden、scores 均在约 `1e-5` 内一致，Top-100 完全一致。latest-only 路径
+由单 token synthetic equivalence 覆盖，因为第一条真实边没有该类记录、后续边实际存在。
+正式递归时 expected IDs 来自上一轮 commit 合同，present IDs 来自实际 store，不能从
+同一集合推导。smoke 无 warmup、不写正式 artifact，仍不能用于报告性能或质量。
+
+正式确认随后在同一张 A40 上顺序执行两个候选和各自 paired exact，递归消费上一轮真实
+post-append mixed cache。两者都通过 11-edge、same-device、new-denominator、
+no-source-append、FP32 exact parity、lineage、capacity 和 provenance 检查：
+
+- `token_debt_total10`：`sum(U)/sum(E)=0.071319`，221/6,711 个 reusable action 为
+  scheduled exact，record-weighted AUC/NDCG@100/Hit@100 recovery 为
+  `1.000030/0.996890/0.999060`；
+- `staggered_renewal_h12`：`sum(U)/sum(E)=0.100017`，462/6,711 个 reusable action 为
+  scheduled exact，对应 recovery 为 `1.000039/0.997463/1.000000`。
+
+部署冻结后者，因为它提供预注册的 per-cache 有界 renewal 语义；前者仅保留为成本端点。
+这不是 label-driven 选择。正式 evaluator 为控制单卡容量使用 groupwise CPU host
+staging，H12 的 662.87 GB H2D/D2H logical movement 在 `U/E` 外单独报告。因此本结果不
+支持 full-cohort HBM-resident 或 end-to-end state-movement claim。测量链只有 11 条边，
+尚未覆盖完整的 H=12 renewal 周期；最大 observed migration depth 为 11，不得误写成
+Stage 4.6 的 depth-four 保证。
+
+### Stage 4.10：scheduled-exact 同时校准 shared program
+
+状态：**代码与两条真实相邻边 smoke 已完成；正式质量确认未完成（2026-07-28）**。完整
+协议见
+[`COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md`](../experiments/system/COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md)。
+
+这一步修正 Stage 4.9 尚未纳入主计时的 program 生命周期。H12 先冻结 action；本轮
+scheduled-exact cache 一次 current-model retained replay 同时承担两项工作：
+
+1. 自身 exact refresh；
+2. 以其 previous-actual K/V 和 fresh target K/V 为配对样本，拟合本 edge 的 shared
+   direct-old-K/V program。
+
+因此没有额外 fit-only exact 用户，也不再加载原先由 40 个独立 fit 用户生成的 adjacent
+serialized program。task label 和 semantic gate 都不能改变已冻结 action。运行时仍然是
+旧 K/V 直接进入 fused affine，不需要 `Norm(x)`；回推近似 `Norm(x)` 只是两种 fit 方案
+之一。
+
+当前实现保留两种同 ABI 候选：
+
+- `inverse_norm_ridge`：用 source `Wk/Wv` 右逆从 actual K/V 估计 `Norm(x)`，拟合 target
+  residual 后重新折叠为 direct program；
+- `direct_kv_residual_ridge`：直接拟合 actual K/V 到 fresh K/V 的 identity-centered
+  residual。
+
+program fit/compile/FP16/prepare、scheduled source crop、scheduled exact replay 和 migrant
+transform 全部进入 `U`；H2D/D2H 与 target append 继续单列。真实
+`theta0 -> theta1 -> theta2` smoke 使用完整 682-record H12 cohort、零 warmup、一次计时：
+
+| 方案 | 0→1 build ms / U/E | 1→2 build ms / U/E | 两边合计 U/E |
+|---|---:|---:|---:|
+| direct K/V residual ridge | 123.698 / 0.146283 | 80.004 / 0.112352 | 0.128764 |
+| inverse-Norm ridge | 111.332 / 0.144788 | 74.805 / 0.111780 | 0.127694 |
+
+两个结果均验证 edge 2 使用 edge 1 的 actual mixed output 与连续 scheduler state，且 edge
+2 的 calibration cohort 包含 edge 1 migrants。它们均为 `scientific_result=false`，
+没有 AUC/NDCG@100/Hit@100，且分属不同 GPU，不能用于选择方案或写入论文主表。
+
+下一步不是直接扩多 seed，而是建立新的 full-chain paired quality/cost protocol：在相同
+物理卡和完整递归链上比较两种 fit form，报告任务质量、build-inclusive `U/E`、movement
+ledger，并只在此后决定是否替换冻结 Stage-4.9 program 路径。旧 Stage-5 canary 不自动
+继承到这条路径；hash/version/shape/finite/capacity/transaction integrity 仍必须保留。
+
+### Stage 5：最小实现闭环与 source-state accounting
+
+状态：**实现、正式 full-population COW jobs 与验证均已完成（2026-07-28）**。完整
+amendment 见
+[`COHORTKV_STAGE5_MINIMAL_CLOSURE_V1.md`](../experiments/system/COHORTKV_STAGE5_MINIMAL_CLOSURE_V1.md)。
+它合并原 Stage 5 的可靠性工作与原 Stage 6 的 economics 工作，但不新增论文模块，也不再
+让非核心扩展阻塞 v1。
+
+Stage 5 已绑定 Stage 4.9 同卡确认后的 `staggered_renewal_h12`。direct operator 保持
+Stage 4.5 形式。固定 hook 为
+`post_retained_prefix_pre_append`；retained prefix 只是 transaction 私有中间状态，只有
+`post_append_full_cache` 可以 commit 和递归消费。
+
+必须实现：
+
+- job 开始前确定每条记录的 `migrate` 或 `exact`，并让两种 action 进入同一 target
+  transaction；
+- 固定 artifact/version/shape/capacity/old-K/V preflight，再运行一种由
+  program-selection role 冻结的 label-free semantic canary；
+- program identity/shape、old-K/V presence 或 semantic canary 失败时，在任何 target
+  extent 产生前把受影响 migration cohort 路由到 exact；artifact/version 或 capacity
+  失败则在 transaction 前拒绝 job；
+- manifest 记录 final action、fallback reason、source/target lineage、last-exact version
+  和 migration depth；
+- failure-safe 运行使用 copy-on-write，旧 extents 保留到完整 target commit，之后才具备
+  回收资格；跨 job version-retirement API 延期；
+- 除一个 normal full-682-record `theta0 -> theta1` job 外，在一个通过 capacity
+  preflight 的代表 GPU 配置上运行三个 fallback/fault case：对该真实 direct-old-K/V
+  program 做 shape-preserving perturbation 后 exact fallback 并完整 commit、mid-job
+  abort、pre-commit abort；
+- 两个 abort case 都逐条读回旧 manifest 的全部 expected records，验证版本、shape、
+  finite/checksum 或旧 K/V 等价，而不是只检查 pointer；
+- 从 Stage 2/4/4.5 现有 artifact 汇总一张 source-state accounting 表：direct-old-K/V
+  额外 per-record state 为 0、shared program bytes/compile time、old/new peak，以及被淘汰
+  FP16 normalized capsule 的 bytes、preload/source time 和 endpoint 负结果。
+- 单独汇总 Stage 2 已测 fit/runtime-prepare/certificate 与 resident amortization floor，
+  明确当前端到端加速是 prepublished-program data-plane claim，不把离线一次性成本藏入
+  migration timer，也不重新运行 compiler 实验。
+
+明确延期：
+
+- per-wave runtime sentinel 搜索、运行中 invalidation/rework、rollback journal 和 resume；
+- 新的 FP16/INT8 capture、D2H、encode、dequant、682-record quantized run 与 break-even
+  矩阵；
+- 具名 SSD、GDS、remote storage、automatic tier selection。POSIX 仅保留 correctness
+  interface。
+
+Stage 4.5 的一卡逐 extent reclaim 仍是合法 normal-path 性能点，但不能声称 abort-safe。
+如果 copy-on-write 在一卡容量不足，只在可行的 2/4 卡代表点验证 failure safety，不增加
+host spill 或 rollback 子系统来保住一卡。
 
 完成条件：
 
-- 没有失败能暴露 partial target version；
-- corrupted program 不会静默提交；
-- fallback 与 rework 开销被测量；
-- 如果最终采用 preflight 而不是 runtime sentinel，目标稿同步更名和收缩主张。
+- 固定 preflight 能检测冻结的真实 `theta0 -> theta1` direct-old-K/V program
+  shape-preserving perturbation，并在执行前走 exact；
+- mixed/exact 正常 job 完整 commit，两个 fault 均不暴露 partial target；
+- abort 后旧 manifest 的全部 expected records 真实可读且校验通过；
+- lineage 完整，preflight/fallback/abort overhead 被记录；
+- accounting 表只引用已有实测 artifact，不包含 INT8、capture 或 SSD 的未测主张。
 
-### Stage 6：补 capsule economics 和次级 storage endpoint
+正式结果 `stage5_full_cow_theta0_theta1_seed0.json` 已满足全部条件。两张 A40 均通过
+copy-on-write capacity preflight；normal job 完整 commit 并逐条读回 682 条 target
+record；shape-preserving direct-program perturbation 由固定 canary 在 target execution
+前路由到 exact 并完整 commit；mid-job 和 pre-commit 两个 fault 均 abort、无 partial
+target，并逐条验证旧 682-record manifest 可读。formal Stage-4.9 binding、输入、
+old-source、capacity、normal、semantic fallback、两个 abort、JSON Schema 和 cross-field
+validator 全部通过。该结果是实现正确性证据，不新增性能或 runtime drift-detection 主张。
 
-这一阶段不新增论文模块。Stage 4.5 已经为胜出 source plan 计量了 program standing
-bytes、零额外 per-record state、old/new overlap 和 extent reclamation；本阶段补齐被淘汰
-normalized-capsule 表示的跨表示生命周期经济学与次级 backend，而不是改变胜出主路径。
+### Stage 6：冻结并运行一次完整单配置论文矩阵
 
-任务：
-
-- 验证 direct-old-K/V 胜出路径不需要独立 capsule capture/encode，并测量三个 direct
-  program 的一次性编译与发布成本；保留 FP16 `Norm(x)`、INT8 capsule 与 exact raw
-  history 作为空间/创建经济学对照；
-- 报告各表示相对 K/V 的 logical/physical/metadata bytes；
-- 实现固定的 symmetric signed INT8 storage layout：每 record、每 layer 一个 FP32 absmax
-  scale，`scale=max(abs(z))/127`，全零 tensor 使用 scale 1；如果 Stage 4.5 已选择其他
-  表示，INT8 作为固定空间对照而不是强制替换胜出方案；
-- 测量 INT8 对 source bytes、dequant time、operator time 和 final fidelity 的影响；
-- 在 60 个 program-selection histories 上分别计时 fresh-K/V-only、加 device capture、加
-  D2H/encode/POSIX persistence；用实测 capture、migration、exact、compiler amortization
-  构造 `ceil(capture/(exact-compiled-compiler_amortized))`，分 FP16/INT8 报告，分母非正就
-  明确写无 time break-even；
-- 若目标稿仍保留 SSD 结果，在具名 NVMe、记录 mount/filesystem/cache/fsync 条件下运行
-  compiled 与 exact 的相同 POSIX transaction；
-- remote backend 保持 interface-only。
-
-完成条件：
-
-- capsule 的 standing cost 和创建成本不再是隐藏项；
-- INT8 失败也作为结果，FP16 可以继续是保守默认；
-- SSD 只是一种 destination 结果。若写入完全支配且没有新的系统结论，可以降到边界或附录，
-  不为了保留 SSD 字样继续增加 GDS、压缩或另一个存储子系统。
-
-### Stage 7：冻结并运行一次完整单配置论文矩阵
-
-Stage 0-6 完成后冻结代码、配置、programs、baseline rules 和 artifact schema。
+状态：**已完成（2026-07-28）**。Stage 6 没有重跑 Stage 1–4.9 的 GPU 实验；它是对冻结
+代码、配置、program、baseline rule、Stage-5 正式结果和修订 schema 的 CPU-only
+deterministic assembly。
 
 最终运行：
 
@@ -926,9 +1168,8 @@ Stage 0-6 完成后冻结代码、配置、programs、baseline rules 和 artifac
 - 连续 `theta0 -> theta11` lifecycle、逐 cache migrate/exact router、matched-budget
   baselines 与累计误差；
 - RQ4 1/2/4 GPU HBM/DRAM full-cohort；
-- RQ4 guard、escalation、failure 和 resume；
-- RQ5 capture、FP16/INT8 和 break-even；
-- 保留时再运行具名 SSD。
+- Stage 5 固定 preflight、exact fallback、normal commit 和两个代表性 abort fault；
+- 基于冻结 artifact 的 source-state accounting 表。
 
 输出：
 
@@ -940,10 +1181,24 @@ Stage 0-6 完成后冻结代码、配置、programs、baseline rules 和 artifac
 - paper figures/tables；
 - artifact-to-claim map；
 - negative-results log；
-- 对目标稿每个 `TBD` 的“已测、删除、降级或仍开放”状态。
+- current-manuscript disposition；当前证据稿不得保留 `TBD` 占位符，开放项必须写成
+  明确 limitation。
 
 最终 workload 不能再用于调优。若整合运行发现设计错误，回到对应 Stage，建立新 protocol，
 修改实现后只重跑受影响及其下游阶段。
+
+正式 assembler `scripts/freeze_cohortkv_stage6.py` 验证 18 个 source artifact 的 path、
+protocol、status、size 和 SHA-256，补齐 Stage-1 三个 profiled selective action，核对
+Stage-4.9 两个 raw candidate、same-device aggregate 与 Stage-5 H12 binding，并复用
+Stage-5 cross-field validator。它原子发布八个 sidecar 后最后发布
+`final_summary_seed0.json`。source hash、candidate binding、Stage-5 semantics、
+JSON Schema、whole-aggregate semantics、artifact-to-claim 和 current-manuscript
+zero-`TBD` disposition 均通过。
+
+Stage 6 冻结的是可验证的单-seed development package，不是多-seed 论文结论。重写前
+目标稿的开放 marker 已改写为当前稿中的显式限制；Stage 7 和 INT8/capture/SSD 等
+optional post-v1 工作仍未被 seed-0 数字替代。任何 Stage-7 数字都必须写入新的 raw
+result family，不能回写或调优 seed-0 frozen policy。
 
 ## 6. 同槽替换与暂停规则
 
@@ -956,10 +1211,10 @@ Stage 0-6 完成后冻结代码、配置、programs、baseline rules 和 artifac
 | source I/O 吞掉计算优势 | 保持 Stage 4.5 direct-old-K/V hot policy；范围外 exact | 用 resident 结果外推 cold/SSD |
 | 连续迁移误差无法被低比例 exact 控制 | 提高 refresh 比例、缩短最大 depth，或收缩为 one-hop | 把一跳证书当作链式证明 |
 | 自适应 risk 不优于相同预算 random/fixed-depth | 冻结更简单的 periodic policy | 用 oracle exact error 伪装在线判别 |
-| runtime sentinel reference 不成立 | 改 preflight/canary 或只保护 artifact corruption | 保留没有真实观测量的 sentinel 叙事 |
+| 固定 semantic canary 不能检测冻结 perturbation | 只保留 artifact preflight 并删除 semantic-guard 主张；该 cohort 默认 exact | 继续搜索 runtime sentinel |
+| copy-on-write 在一卡容量不足 | 在可行的 2/4 卡代表点验证 failure safety | 增加 host spill、rollback journal 来保住一卡 |
 | 4-GPU scaling 受共享 I/O 限制 | 报告 saturation point 与瓶颈 | 用 kernel scaling 代替 job scaling |
-| INT8 fidelity 明显下降 | 保留 FP16，报告空间边界 | 在量化结果上改变 certificate 定义 |
-| SSD 只得到共同写入上界 | 降为 destination boundary/附录 | 把跨 endpoint 时间称为算法收益 |
+| INT8/SSD/capture 扩展没有新增结论 | 保持 post-v1 optional 或不实现 | 让非核心扩展阻塞 v1 |
 
 暂停不是失败。发现最初设计错误并尽早停止，通常比完整实现一个错误机制更有研究价值。
 
@@ -967,25 +1222,31 @@ Stage 0-6 完成后冻结代码、配置、programs、baseline rules 和 artifac
 
 “单配置全链路开发完成”要求：
 
-1. RQ2-RQ5 的单配置实验设计全部有可运行实现；
+1. RQ2-RQ4 的单配置实验设计和 source-state accounting audit 全部有可验证 artifact；
 2. 最近邻 selective-layer baseline 和所有端点/内部消融已完成；
 3. compiler、operator、engine 三个模块通过各自正确性和接口 gate；
 4. full cohort 在至少 DRAM/HBM 上完成同 destination 的 compiled/selective/exact 比较；
 5. Stage 4.5 冻结的 source policy 在声明 operating regime 内稳定优于 same-boundary exact，
    并有完整的时间与容量计量；
-6. Stage 4.6 对 migrated-output 再迁移有真实连续链证据，并冻结逐 cache
-   `migrate-or-exact` lifecycle policy；
-7. 最终 guard 与 failure semantics 有真实 end-to-end 证据；
-8. capsule/source-state 成本被完整计量；
+6. Stage 4.9 对增长历史的递归 migrate-or-exact 有正式同卡 paired 证据并冻结 policy；
+7. 固定 preflight、exact fallback、copy-on-write commit/abort 有最小 end-to-end 证据；
+8. 主路径 source-state、共享 program 和离线 compiler/certificate 成本由现有 artifact
+   完整汇总，INT8/capture/SSD 明确为非 v1 gate；
 9. 所有论文主张都有 artifact，所有不成立的预期都已从目标稿删除或降级；
 10. 一次冻结后的完整集成运行完成，不混入此前的 adaptive 数字。
 
+以上十项对原 Stage 0–6 v1 路径现已全部完成，`final_summary_seed0.json` 仍是该冻结
+package 的入口。Stage 4.10 是冻结后的主动 amendment，不回写这份 aggregate；它把
+program build 合并进 H12 scheduled-exact 生命周期，因此当前未完成项先从 Stage-4.10
+formal quality/cost closure 开始，而不是直接进入 Stage 7。
+
 之后按以下顺序扩展：
 
-1. 在当前配置的新 training seeds 上复现冻结 v1；
-2. 扩到预先选择的数据集和模型容量；
-3. 将扩展结果划分为 discovery 与 untouched validation；
-4. 如果跨数据集暴露结构失败，设计 v2 并在未参与设计的 seed/cell 上重新验证。
+1. 在当前 seed-0 配置完成 Stage-4.10 的同卡 full-chain 质量与完整成本确认；
+2. 冻结选中的 program-calibration 形式后，在新 training seeds 上复现；
+3. 扩到预先选择的数据集和模型容量；
+4. 将扩展结果划分为 discovery 与 untouched validation；
+5. 如果跨数据集暴露结构失败，设计 v2 并在未参与设计的 seed/cell 上重新验证。
 
 多数据集结果不需要全部漂亮；它们的作用是验证适用范围和暴露边界，而不是为 v1 选择一个
 有利的测试集合。
