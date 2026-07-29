@@ -9,7 +9,7 @@ The frozen D1 Stage 0–6 evidence ledger is
 The D2 mechanism and live execution/evidence state are
 [`future_design/DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) and
 [`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
-The D3 design-ready problem and exploration contract are
+The D3 working problem and flexible exploration direction are
 [`future_design/DESIGN3_FUTURE_DIRECTION.md`](future_design/DESIGN3_FUTURE_DIRECTION.md), with the
 development execution route in
 [`future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md`](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md).
@@ -34,23 +34,25 @@ formal D2 protocol, publish a formal target epoch, close the segmented consumer/
 or include the final plan/history preparation plus publication/commit/reclaim boundary. Their
 valid use is mechanism discovery and protocol design, not Motivation-2 numbers or paper tables.
 
-Design 3 has a frozen problem/exploration contract but no executable D2 handoff, implementation,
-protocol family, or result. Its first readiness artifact must normalize, validate, serialize, and
-hash the capacity-independent D2 owner/operator/compatibility/dependency/layout constraints; the
-current single-rank wave adapter and capacity-specific W3 extents are not that artifact. A future
-D3 protocol requires an ordinary-host-DRAM source and private target, bounded pinned staging,
-per-rank usable-HBM admission, a fixed D1 ActionPlan, one common D3-facing D2 constraint hash, and
-separate ResidencyPlans. Sequential capacity groups and an action-oblivious double buffer must
-share the mixed action-required source-byte multiset; same-boundary all-exact reports its distinct
-raw-history bytes. No existing normalized-capsule HBM/DRAM, destination-v4, or hot-HBM Stage-4.5
-result may be relabeled as direct-old-K/V D3 evidence. H12 runs under an artificial per-rank HBM
-cap are development-only capacity emulation; paper-facing physical oversubscription requires a
-larger real-history workload.
+Design 3 has no frozen protocol family or result. Mechanism discovery may begin on GPU0/GPU1 with
+a minimal H12/W2 `WorkManifest`, ordinary-host-DRAM source/private target, bounded staging, and
+per-rank HBM admission; it does not wait for a normalized D2 exporter or full transaction closure.
+These runs are development-only.
+
+An isolation-track result compares sequential, double-buffer, and proposed schedulers within one
+recorded `stack_revision` and work/source snapshot. A co-design track may globally regenerate D1
+actions, D2 owners/pools/layout, and source bytes before execution, but it must record those changes
+and rerun corresponding baselines under the new revision. The final protocol will freeze whichever
+interface the selected mechanism actually needs. No existing normalized-capsule HBM/DRAM,
+destination-v4, or hot-HBM Stage-4.5 result may be relabeled as direct-old-K/V D3 evidence. H12 runs
+under an artificial HBM cap are capacity emulation; paper-facing physical oversubscription requires
+a larger real-history workload.
 
 Before any formal D2 integrated run or paper-facing D2 result is promoted, its action-plan
 identity, configuration, metrics, timing boundary, communication accounting, baselines, and
 artifact schema must be frozen here under a new D2 protocol name. A paper-facing D3 result
-similarly requires a separate D3 protocol after the common D2 constraint exporter closes.
+similarly requires a separate D3 protocol after its final stack/interface is selected; the
+development WorkManifest is not automatically that interface.
 Existing protocol strings and result families must not be silently reused. The live
 non-scientific D2 status and pending commands are recorded in
 [`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).

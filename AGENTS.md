@@ -18,8 +18,8 @@
 - `docs/eval_protocol.md` defines which experimental results are valid and comparable.
 - `docs/future_design/DESIGN2_FINAL_PLAN.md` defines the D2 mechanism and D1→D2→D3 interface.
 - `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md` is the only live D2 status ledger.
-- `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the design-ready D3 entry; it is not a
-  protocol or result.
+- `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the flexible D3 problem/direction entry; it
+  is not a frozen interface, protocol, or result.
 - `docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md` is the live two-card D3
   foundation, baseline, candidate-search, and backtracking plan; it is not a protocol or result.
 - When documents conflict, follow the roadmap and evaluation protocol. Do not recover claims from
@@ -47,15 +47,14 @@
   what is compiled or exactly recomputed and exports an immutable action plan. Active D2 determines
   how that fixed work moves and executes: `(suffix, retained)` extent compilation, owner-local
   retained repair, row-sharded exact/append, segmented suffix-only destination, merged physical
-  exact pools, collective dependencies, and atomic publication. The D2→D3 contract is a global,
-  capacity-independent WavePlan constraint view rather than a resident launch schedule; this
-  normalized, content-hashed artifact is not yet implemented. The proposed D3 is an Action-Aware
-  Out-of-Core Pipeline: after exporting that view, it preserves D1 actions and D2
-  owner/operator/compatibility/dependency/layout constraints while deriving a per-rank
-  capacity-safe ResidencyPlan over ordinary host DRAM, bounded pinned staging, and HBM. D2/D3 must
-  not reselect requested actions;
-  communication-aware semantic selection and organic mixed versions are a later feedback layer,
-  not D3.
+  exact pools, collective dependencies, and atomic publication. The current D2→D3 paper
+  decomposition suggests a global, capacity-independent WavePlan constraint view, but this
+  normalized artifact is neither implemented nor a prerequisite for the first D3 benchmark. D3
+  now starts benchmark-first on GPU0/GPU1 with a minimal H12/W2 `WorkManifest`, ordinary host
+  DRAM, bounded staging, and HBM. Isolation-track runs keep one D1/D2 snapshot fixed. Mechanism
+  discovery may also create a globally replanned D1/D2/D3 `stack_revision`; it must rerun its own
+  baselines rather than compare against an older stack. Complex organic mixed versions remain a
+  later feedback layer.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
   project crux. Its only valid role is a clearly labeled negative result in the motivation.
 - Single-configuration Stages 0–4.6 are frozen. The closest selective baseline fails its certificate;
@@ -87,19 +86,14 @@
   segmented consumer remain open. Synthetic lookup contention is supporting characterization,
   not a serving trace or D2 gate.
 - D3 currently has a paper skeleton and design hypothesis only. It has no frozen protocol or paper
-  result. Its first readiness task is to export, validate, serialize, and hash a capacity-independent
-  D2 constraint view from the immutable ActionPlan, owner map, current shape-aware ordering,
-  merged-exact membership, collective templates, segmented layout, and transaction semantics.
-  Scheduler comparisons must wait for that common hash. Its strong baselines must share the
-  action-required source-byte multiset: sequential capacity groups and an action-oblivious double
-  buffer, plus same-boundary all-exact with its actual raw-history bytes. The primary boundary is
-  ordinary host DRAM → bounded pinned staging → GPU → ordinary host DRAM private target → atomic
-  manifest. SSD/database ingress, serving traces, host-DRAM oversubscription, and online hotness are
-  out of scope. A no-I/O chunk sum is characterization only; the old normalized-capsule DRAM result
-  is not direct-old-K/V D3 evidence. The existing H12 workload is a semantic and
-  capacity-emulation canary because it fits two A40s; the preferred mechanism-selection route
-  audits a larger real-history QK workload and freezes it as F1 only if its source plus private
-  target physically exceeds GPU0/GPU1 HBM.
+  result. Its immediate task is to run a minimal two-rank ordinary-DRAM→GPU0/GPU1→ordinary-DRAM
+  benchmark: H12/W2 WorkManifest, sequential groups, then a basic double buffer. A normalized
+  exporter, atomic publication/failure closure, and 1/2/4-GPU matrix are later formalization tasks,
+  not mechanism-discovery prerequisites. Within one isolation revision, baselines share the work
+  and source-byte snapshot; co-design revisions report changed actions/owners/source bytes and
+  rerun baselines. SSD/database ingress, serving traces, host-DRAM oversubscription, and online
+  hotness are out of scope. H12 capacity caps are development emulation because H12 fits two A40s.
+  The preferred physical route audits a larger real-history QK workload.
 
 ## Code layout
 

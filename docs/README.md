@@ -19,7 +19,7 @@ When documents disagree, use this order:
 2. [eval_protocol.md](eval_protocol.md) — authoritative result-family, timer, workload, and
    comparability boundary.
 3. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
-   mechanism and immutable D1→D2→D3 interface.
+   mechanism and current D1→D2 starting interface.
 4. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
    implemented D2 state, non-scientific development evidence, pending W4/formal-evaluation work,
    and the D3 handoff.
@@ -45,16 +45,15 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | When may each legal extent reside in HBM when source plus private target exceeds capacity? | capacity-specific `ResidencyPlan` | foundation/exploration plan frozen; executable handoff, scheduler, and evidence not started |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | flexible GPU0/GPU1 benchmark plan ready; implementation and evidence not started |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
-compiled ordering, merged exact pools, segmented destinations, and atomic publication. D3 must
-preserve both upstream decisions while scheduling ordinary-DRAM→GPU→ordinary-DRAM micro-waves.
-
-Neither D2 nor D3 may reselect semantic actions. Communication-aware semantic selection, organic
-mixed-version program graphs, and cross-update renewal control are later feedback directions, not
-the current D3.
+compiled ordering, merged exact pools, segmented destinations, and atomic publication. D3 begins
+with an isolation track that preserves the current upstream snapshot while scheduling
+ordinary-DRAM→GPU→ordinary-DRAM micro-waves. Mechanism discovery may also create a new globally
+planned D1/D2/D3 `stack_revision`; it must rerun its own baselines and cannot be presented as a
+ResidencyPlan-only ablation.
 
 ## What may be used as evidence
 
@@ -83,39 +82,27 @@ The records below remain useful within their own protocols:
 Some filenames retain `CohortKV` or `StreamKV`. Those names identify frozen protocols and artifacts;
 they do not imply that the corresponding old architecture is current.
 
-## D3-ready boundary
+## D3 benchmark-first entry
 
-The next new mechanism work begins by materializing one missing handoff artifact:
+The immediate implementation uses GPU0/GPU1 only:
 
-- derive a normalized, capacity-independent D2 constraint view from the immutable action plan,
-  owner map, operator/program bindings, current shape-aware ordering, merged-exact membership,
-  collective templates, segmented layout, and transaction semantics;
-- validate its record/runtime parity, serialize it, and assign a stable content hash;
-- exclude resident `extent_size`, HBM cuts, launch order, and staging decisions.
+1. export a minimal H12/W2 `WorkManifest`;
+2. build pageable-DRAM source/target and a two-rank sequential path;
+3. add a basic double buffer and phase metrics;
+4. audit and construct the smallest real QK workload whose complete working set physically
+   exceeds the two A40s;
+5. use its profile to decide whether the best design is an isolated D3 scheduler or a cross-layer
+   revision.
 
-After that closes, D3 scheduler variants begin from:
+A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
+paper-evidence tasks, not prerequisites for the first benchmark. Within one isolation revision,
+variants still use the same `WorkManifest`; a cross-layer revision records changed actions,
+owners, pools, layout, and source bytes and reruns its own baselines.
 
-- one immutable D1 `ActionPlan`;
-- one content-hashed D2 constraint plan that freezes owner, operator, compatible pool membership,
-  collective dependencies, segmented target layout, coverage, and lineage;
-- ordinary host DRAM for both committed source and complete private target;
-- bounded pinned input/output pools;
-- a per-rank usable-HBM budget and measured fixed/transient memory ledger;
-- identical action-required source bytes for sequential, double-buffered, and proposed mixed
-  schedulers.
-
-Before the exporter closes, work is limited to the exporter/schema, source-byte ledger, and
-sequential-baseline preparation; scheduler comparisons cannot claim identical D2 work. All D3
-development artifacts remain explicitly non-scientific until a new protocol is frozen in
-`eval_protocol.md`. D3 may be explored before D2 paper evaluation is complete, but it cannot use
-W3 development timings as a formal upstream result.
-
-The concrete execution route is in
+The concrete route is
 [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md).
-It first uses the existing H12 edge as a semantic canary, then constructs a real-history QK
-candidate whose source plus complete private target must physically exceed a fixed GPU0/GPU1 A40
-pair before it is frozen as F1. Capacity caps on H12 are development emulation only and cannot
-become paper evidence.
+H12 software capacity caps are development emulation only and cannot become paper evidence. All
+D3 development artifacts remain non-scientific until a new protocol is frozen.
 
 ## Removed material
 

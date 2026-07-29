@@ -23,7 +23,7 @@ version-inconsistent, while exact replay under \(\theta_t\) repeats the complete
 computation. EvoKV asks whether HSTU structure can update this persistent derived state at lower
 cost while retaining a controlled approximation to current-model K/V.
 
-The paper has one task and three successive system layers:
+The paper currently organizes one task into three successive system layers:
 
 ```text
 D1: semantic ActionPlan
@@ -36,16 +36,19 @@ D3: capacity-bounded ResidencyPlan
     decide legal capacity cuts, packing, and ordinary-DRAM↔GPU launch order
 ```
 
-The layers are intentionally asymmetric. D1 owns semantic actions. D2 and D3 preserve them. D2
-owns distributed compatibility and dependency constraints. D3 may slice within those constraints
-but cannot reinterpret them.
+This is the current paper decomposition, not a permanent implementation firewall. For an isolated
+D3 ablation, D1 actions and D2 execution stay fixed. During mechanism discovery, capacity and
+transport measurements may motivate a new globally planned D1/D2/D3 `stack_revision`; that
+revision must rerun its own baselines instead of comparing against an older stack. Existing frozen
+D1 and D2 evidence is not retroactively changed.
 
 ### 1.1 D1 question: reuse versus recomputation
 
 > Can a version cohort share a migration program that closes a useful portion of the stale-to-fresh
 > K/V gap at materially lower GPU cost than exact history replay?
 
-D1 emits an immutable per-record `ActionPlan`. The active action library is:
+D1 emits a per-record `ActionPlan` that is immutable within one execution/revision. The active
+action library is:
 
 - **compiled repair:** fit the shared `fresh - cheap` residual for a source/target version cohort
   and compile it into one affine transform over cached source-version state; the selected hot path
@@ -76,14 +79,16 @@ The target D2 lowering is captured by global `WavePlan` constraints:
   explicit.
 
 D2 may choose owner placement, batching, physical pool construction, execution order within its
-dependency rules, and segmented layout. It may not change `compiled|progressive|exact`.
-The mechanisms are implemented in the current runtime, but their capacity-independent
-D3-facing constraint view has not yet been separately serialized and hashed.
+dependency rules, and segmented layout. The current D2 design does not change
+`compiled|progressive|exact`. A later cross-layer revision may regenerate both the D1 plan and D2
+lowering before a run; it is then a new stack rather than a D2-only ablation. The mechanisms are
+implemented in the current runtime, but their capacity-independent D3-facing constraint view has
+not yet been separately serialized and hashed.
 
 ### 1.3 D3 question: working set versus HBM capacity
 
-> When complete source plus complete private target K/V exceeds per-rank usable HBM, can the fixed
-> D1 actions and D2 constraints execute from ordinary host DRAM without losing their gains to
+> When complete source plus complete private target K/V exceeds per-rank usable HBM, can the
+> current D1/D2 work execute from ordinary host DRAM without losing its gains to
 > capacity cuts, CPU staging, PCIe movement, collective stalls, or pipeline bubbles?
 
 D3 derives a separate `ResidencyPlan`:
@@ -99,10 +104,12 @@ ordinary host DRAM committed source
   → validation and atomic target-manifest publication
 ```
 
-D3 owns per-rank admission, legal bin/pool slices, micro-wave packing, prefetch/execute/writeback
-order, pinned-buffer credits, backpressure, and NUMA/PCIe staging placement. It does not own
-semantic action selection, embedding ownership, operator identity, compatibility membership,
-collective dependencies, or output lineage.
+D3 initially owns per-rank admission, legal bin/pool slices, micro-wave packing,
+prefetch/execute/writeback order, pinned-buffer credits, backpressure, and NUMA/PCIe staging
+placement. This narrow path is the isolation track. If measurement shows that owner placement,
+action granularity, pool construction, or target layout must change to exploit out-of-core
+execution, the project may explore a global cross-layer revision and assign final ownership only
+after the mechanism is understood.
 
 ## 2. Scope
 
@@ -140,12 +147,13 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | foundation/exploration ready | question, required interfaces, source/timer/capacity contract, two-layer H12/QK benchmark plan, strong baselines, candidate ladder, go/no-go | executable D2 handoff, real QK artifacts, implementation, frozen protocol, characterization, and all results |
+| D3 | two-card benchmark plan ready | question, flexible H12/QK benchmark route, minimal two-rank adapter, baseline and co-design directions | GPU0/GPU1 M0 implementation, real QK M1, mechanism discovery, then final interfaces/protocol/evidence |
 
-D3 exporter/schema and source-byte-ledger preparation may begin from the current immutable D1 plan
-and implemented D2 runtime. Scheduler comparisons begin only after the capacity-independent D2
-constraint artifact passes parity checks and receives a stable content hash. All early outputs
-remain non-scientific until a D3 protocol is frozen. D2 paper claims remain blocked independently;
+D3 development begins from the current D1 plan and implemented D2 runtime using a minimal
+two-rank `WorkManifest`; a normalized exporter is not a prerequisite for the first benchmark.
+Within one `stack_revision`, baselines and candidates share the recorded work snapshot. Cross-layer
+revisions are allowed during discovery but must rerun their own baselines. All early outputs remain
+non-scientific until a D3 protocol is frozen. D2 paper claims remain blocked independently;
 starting D3 does not promote W3 evidence.
 
 ## 4. Supported findings
@@ -230,7 +238,7 @@ publication/commit/reclaim timer, segmented consumer, or paired 1/2/4-GPU protoc
 Synthetic lookup contention is supporting resource characterization only. It is not a production
 serving trace, Motivation-2 requirement, or substitute for same-boundary D2 results.
 
-## 5. Frozen interfaces
+## 5. Working interfaces and revision rules
 
 ### 5.1 `ActionPlan`
 
@@ -246,10 +254,12 @@ Compiled-program identity/hash is a separate D1 artifact bound by the D2 adapter
 H12 v1 action plan contains only `compiled` and `exact`; any future progressive action requires an
 explicitly versioned schema and declared auxiliary state.
 
-An `ActionPlan` is immutable downstream. A D2 or D3 experiment that changes requested actions is a
-new semantic experiment, not an execution ablation.
+An `ActionPlan` is immutable within one recorded execution revision. An isolation-track D3
+ablation keeps it unchanged. A co-design candidate may create a new plan before execution, but it
+must receive a new `stack_revision` and rerun its baselines; it is not compared as if only the
+ResidencyPlan changed.
 
-### 5.2 Required D3-facing `WavePlan` constraints
+### 5.2 Current D3-facing `WavePlan` view
 
 D2 fixes:
 
@@ -260,15 +270,15 @@ D2 fixes:
 - segmented target layout;
 - coverage, lineage, validation, and publication contract.
 
-This required object is global and capacity-independent. It does not freeze D3 micro-wave cuts or
-launch order. D3 may slice one compatible bin/pool but cannot merge incompatible memberships, move
-a record to another action, change owner/operator, or violate collective participation.
+For a formal isolation experiment, this object should be global and capacity-independent. It does
+not freeze D3 micro-wave cuts or launch order. Within that track, D3 only slices current pools and
+preserves the recorded collective participation.
 
 It is not yet a standalone repository artifact. `cohortkv_d2_wave_plan_v1` is a Stage-A single-rank
-adapter, and W3 `D2IntegratedExtent` objects are capacity-specific resident schedules. The next
-small implementation step must normalize current owner/operator/program bindings, shape-aware
-ordering, merged-exact membership, collective templates, segmented layout, and transaction
-requirements into one validated serialized view with a stable content hash.
+adapter, and W3 `D2IntegratedExtent` objects are capacity-specific resident schedules. The first
+two-card benchmark may instead export a minimal `WorkManifest` from the current runtime. A
+normalized, validated, stable-hash view is deferred until the candidate mechanism and final layer
+boundary are clear.
 
 ### 5.3 `ResidencyPlan`
 
@@ -281,9 +291,10 @@ D3 will fix:
 - input/output pinned-buffer credits;
 - backpressure and NUMA/PCIe staging placement.
 
-After the D2 exporter closes, sequential grouping, action-oblivious double buffering, and the
-proposed scheduler must consume the same `ActionPlan`, D3-facing constraint hash, and
-action-required source-byte multiset.
+Within one isolation-track `stack_revision`, sequential grouping, action-oblivious double
+buffering, and the proposed scheduler consume the same `WorkManifest`. A co-design track may
+regenerate actions, owners, pools, or layout before the run; its corresponding baselines use that
+same regenerated stack.
 
 ## 6. Evaluation rules
 
@@ -304,7 +315,8 @@ The non-negotiable invariants are:
 For D2, report record-action fraction, lookup-token fraction, physical communication, padding,
 rewrite, collective count, wall time, and transaction time separately.
 
-For D3, all mixed baselines use the same action-required source bytes:
+For an isolation-track D3 comparison, all mixed baselines use the same action-required source
+bytes:
 
 - compiled reads valid retained old K/V;
 - exact reads raw history IDs and no unused old K/V;
@@ -316,9 +328,13 @@ All-exact necessarily has a different action/source multiset. It must share reco
 ordinary-host source tier, target dtype/layout/durability, topology, per-rank HBM budget, timer, and
 manifest endpoint, while reporting its actual raw-history bytes.
 
-D3's primary timer includes CPU ordinary-DRAM↔pinned copies, H2D/D2H, plan construction, GPU
-compute, collectives, private-target writes, validation, commit, and staging reclaim. A no-I/O
-chunk sum is an optimistic characterization ceiling, not a same-endpoint baseline.
+A cross-layer candidate may also have different action/source bytes, but it must report those
+differences and rerun baselines under its new `stack_revision`.
+
+The initial M0 development timer covers ordinary-DRAM↔pinned copies, H2D/D2H, GPU compute,
+collectives, private-target writes, and coverage/checksum. Plan, commit, and reclaim are reported
+separately until the final protocol is chosen. The later paper-facing timer must explicitly close
+and include the complete selected boundary. A no-I/O chunk sum is characterization only.
 
 ## 7. Current execution order
 
@@ -337,20 +353,19 @@ chunk sum is an optimistic characterization ceiling, not a same-endpoint baselin
 
 ### D3 mechanism entry
 
-The following preparation is now authorized, but this roadmap does not claim it has been
+The following benchmark-first route is now active, but this roadmap does not claim it has been
 implemented:
 
-1. close the capacity-independent D2 constraint exporter, runtime-parity check, and content hash;
-2. freeze ordinary-host source/target extent schemas and an action-required byte ledger;
-3. implement a capacity-safe sequential baseline with full-payload readback;
-4. implement an action-oblivious double buffer under the same source/timer boundary;
-5. implement exported constraints → `ResidencyPlan` compilation and per-rank admission;
-6. use H12 only as a semantic/capacity-emulation canary, then audit and freeze a real-history,
-   one-seed, GPU0/GPU1 physical out-of-core setting, with QK as the preferred candidate, before
-   testing global-compatibility-aware cuts and resource-complementary packing;
-7. freeze a new D3 protocol only if a mechanism changes the Pareto frontier;
-8. then expand to adjacent capacity points, 1/4 GPUs, exact-budget sensitivity, and a second model
-   stream.
+1. fix GPU0/GPU1 and export a minimal H12/W2 `WorkManifest`;
+2. implement ordinary-DRAM source/target, byte-bounded groups, and a two-rank sequential path;
+3. add a basic double buffer, event-based phase timing, and bounded pinned/HBM memory;
+4. in parallel audit QK and construct the smallest real two-card physical out-of-core model edge;
+5. reproduce sequential/double-buffer/all-exact on that real workload;
+6. use the measured profile to explore both an isolated D3 scheduler and, when useful, globally
+   replanned D1/D2/D3 co-design revisions;
+7. only after a mechanism is clear, normalize interfaces, close transaction semantics, and freeze
+   a D3 protocol;
+8. defer 3/4-GPU and broader matrices until the GPU0/GPU1 result is understood.
 
 The capacity coordinate is
 
@@ -358,8 +373,8 @@ $$
 \rho=\max_r\frac{\text{work bytes}_r}{\text{usable HBM}_r},
 $$
 
-with initial characterization at \(\rho \in \{0.5,1,2,4\}\). Every admitted micro-wave must satisfy,
-per rank,
+The first real benchmark needs only the smallest useful \(\rho>1\) point. A later characterization
+may cover \(\rho \in \{0.5,1,2,4\}\). Every admitted micro-wave must satisfy, per rank,
 
 ```text
 fixed(model + embedding shard + program + context)

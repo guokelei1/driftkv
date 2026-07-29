@@ -115,6 +115,7 @@ There is no D3 experiment record. The first implementation must begin from
 [../docs/future_design/DESIGN3_FUTURE_DIRECTION.md](../docs/future_design/DESIGN3_FUTURE_DIRECTION.md)
 and its concrete
 [foundation/exploration plan](../docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) by
-exporting and hashing the capacity-independent D2 constraint view. It must create development-only
-artifacts before any protocol is frozen. H12 capacity caps are semantic/development canaries, not
-physical out-of-core evidence; mechanism selection uses a larger real-history two-A40 workload.
+building a minimal H12/W2 `WorkManifest` and GPU0/GPU1 ordinary-DRAM benchmark. A normalized
+constraint exporter is deferred until the selected mechanism clarifies the final interface. All
+initial artifacts are development-only. H12 capacity caps are emulation, not physical out-of-core
+evidence; paper-facing capacity evidence uses a larger real-history two-A40 workload.

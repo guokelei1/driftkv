@@ -2,12 +2,10 @@
 
 日期：2026-07-30
 
-状态：**问题与探索合同已冻结，机制、协议和结果尚不存在**。本文档是进入 D3 初步实现的
-上位问题合同，不包含新实验结果，也不能作为 paper claim 的证据。D1 已冻结；D2 的
-conceptual constraint contract 已足以定义 D3，但可执行、可哈希的 D2→D3 约束工件尚未
-导出。D3 可以先做 schema/exporter/source-byte ledger 等准备；不同 scheduler 的比较必须等到
-该工件冻结后。D2 仍须独立完成正式 W4、1/2/4-GPU same-boundary protocol、segmented
-consumer 和 publication/commit/reclaim closure。开始 D3 不会自动解除这些 D2 gate。
+状态：**核心问题与两卡主方向已确定，内部接口和机制保持可调整；协议和结果尚不存在**。
+本文档描述当前最可能的 D3 形态，不是阻塞机制发现的接口合同，也不能作为 paper claim 的
+证据。D1/D2 的已有证据仍按各自冻结协议解释，但新的 D3 development 可以从轻量 adapter
+开始，并允许根据 DRAM/HBM 实测形成新的跨层 `stack_revision`。
 
 具体的两卡 foundation benchmark、H12 semantic canary、真实 QK 物理 out-of-core
 workload、分阶段实现和回退条件见
@@ -15,35 +13,41 @@ workload、分阶段实现和回退条件见
 
 ## 0. 方向裁决
 
-EvoKV 的三个设计按同一迁移任务逐层展开：
+EvoKV 当前按同一迁移任务分成三个层次：
 
-1. **D1 决定算什么。** 它输出 immutable `ActionPlan`，固定每条记录的
+1. **D1 决定算什么。** 它输出当前 `ActionPlan`，记录每条记录的
    `compiled|progressive|exact` 语义动作和有效 extent。
-2. **D2 决定在哪里、以什么分布式约束执行。** 它必须导出 capacity-independent
-   `WavePlan` constraints，固定 owner、operator、physical compatibility、collective
-   dependencies 和 segmented target layout，但不冻结 capacity cuts 或 launch order。
-3. **D3 决定物理 extent 何时进入和离开 HBM。** 在约束工件冻结后，它生成
-   `ResidencyPlan`，把超显存工作集切成 capacity-safe micro-waves，并调度
-   DRAM→GPU→DRAM 流水。
+2. **D2 决定当前两卡怎样执行。** 它给出 owner、operator、physical compatibility、
+   collectives 和 target layout。
+3. **D3 研究物理 extent 何时进入和离开 HBM。** 它把超显存工作集切成 capacity-safe
+   micro-waves，并调度 DRAM→GPU→DRAM 流水。
+
+这三层是当前叙事骨架，不是永久接口。探索分成两条轨道：
+
+- **isolation track：** 在一次 revision 中保持 D1/D2 工作不变，只研究搬运和调度；
+- **co-design track：** 允许容量与通信结果反向调整 D1 action granularity、D2 owner/pool/
+  layout，再为整个新 stack 重跑 baselines。
+
+不允许的是把旧 baseline 与修改后的 candidate 直接比较；允许的是在运行前重新生成一个
+完整、可记录的新 revision。
 
 新的 D3 核心问题是：
 
-> 当完整 source 加 private target K/V 超过每卡可用 HBM 时，能否在不改变 D1 actions、
-> D2 owner/operator/compatibility/dependency/layout 的前提下，通过
-> global-compatibility-aware capacity cuts、resource-complementary packing 和
-> topology-safe overlap，保留 D1+D2 的实际系统收益？
+> 当完整 source 加 private target K/V 超过每卡可用 HBM 时，怎样在 GPU0/GPU1 上组织
+> DRAM↔HBM 与分布式计算流水，并在必要时联合调整上游执行组织，得到超过通用
+> double-buffer pipeline 的实际收益？
 
 按显存容量顺序分组只是基础 baseline，不是贡献。普通 prefetch 或 double buffering 也不是
 贡献。D3 必须证明：在相同 source-byte multiset 和 DRAM endpoint 下，它相对强
 action-oblivious double buffer 仍有可归因收益。
 
-此前的 organic mixed-version program graph、communication-aware semantic selection 和
-cross-wave bounded-renewal controller 不再叫 D3。它们被降为三个当前 design 之后的未来反馈
-层；D3 不得根据 I/O 压力重新选择 D1 action。
+当前不主动恢复 organic mixed-version program graph 或复杂 renewal controller。但若简单
+out-of-core profile 表明 action/owner/granularity 必须协同，允许先做小规模跨层候选，再根据
+最终机制重新划分论文中的 D2/D3 边界。
 
 ## 1. 系统边界
 
-主边界固定为：
+目标数据路径为：
 
 ```text
 ordinary host DRAM source manifest
@@ -73,13 +77,15 @@ ordinary host DRAM source manifest
 - durable cross-host transaction。
 
 初始设计假设 ordinary host DRAM 可同时保存 committed source 和 complete private target，直到
-commit。不得通过提前回收 source 削弱 abort 后旧 manifest 的可读性。
+commit。两卡 M0 的最小终点可以先使用 private target + coverage/checksum；atomic publication
+和 failure closure 在机制稳定后补齐。
 
-## 2. 三层不可变接口
+## 2. 当前工作快照
 
 ### 2.1 D1 `ActionPlan`
 
-D1 在 plan level 固定 source/target version、policy、provenance、counts 和 content hash。当前
+D1 在一个 `stack_revision` 内记录 source/target version、policy、provenance、counts 和
+content hash。当前
 H12 v1 在 record level 固定：
 
 - record id、`compiled|exact` action 与 reason；
@@ -90,12 +96,20 @@ H12 v1 在 record level 固定：
 Compiled program 是由 D2 adapter 绑定的独立 D1 artifact，不是 action-record field。若未来引入
 `progressive` action，必须先版本化 schema 并显式声明 auxiliary state；D3 不能自行推断。
 
-D2/D3 都不能重新选择 action。Recommendation labels、per-user drift 和预测 task gain 都不能
+Isolation track 不重新选择 action。Co-design track 可以在运行前生成新的 D1 plan，但必须为
+新 revision 重跑 baseline。Recommendation labels、per-user drift 和预测 task gain 仍不能
 作为 D3 routing signal。
 
-### 2.2 D2 所需的 D3-facing `WavePlan` constraints
+### 2.2 从最小 `WorkManifest` 到正式 constraints
 
-该容量无关工件必须固定：
+最初两卡 benchmark 只需从当前 D2 runtime 导出：
+
+- record/action/owner；
+- source/target extents 与 byte counts；
+- operator/pool key；
+- source/target locators。
+
+正式 isolation evaluation 若仍需要 capacity-independent constraints，再补充：
 
 - logical GPU owner 和 embedding routing；
 - operator；
@@ -105,16 +119,16 @@ D2/D3 都不能重新选择 action。Recommendation labels、per-user drift 和�
 - segmented target layout；
 - publication coverage/lineage contract。
 
-这个接口是 global constraint plan，不是 capacity-specific batch schedule。D3 可以在同一个
-compatible pool 内切片，但不能跨 incompatible membership、改变 owner/operator、移动 record
-到另一个 semantic action，或破坏 collective dependencies。
+正式接口可以是 global constraint plan，而不是 capacity-specific batch schedule。当前
+development 不必先证明它是最终接口；若 scheduler 需要改变 owner/operator/pool，则形成新的
+co-design revision。
 
 当前仓库尚未物化这个工件。现有 `cohortkv_d2_wave_plan_v1` 是 Stage-A 单 rank adapter；
 W3 `D2IntegratedExtent` 是先按 owner-local `(S,R,F,record_id)` 排序、再按固定
 `extent_size` 切分的 resident development schedule。它们共同提供 exporter 的输入与
 parity reference，但都不是独立序列化、容量无关且带 content hash 的 D3 contract。
 
-### 2.3 D3 `ResidencyPlan`
+### 2.3 D3 schedule
 
 D3 只决定：
 
@@ -124,12 +138,12 @@ D3 只决定：
 - prefetch/execute/writeback launch order；
 - pinned-buffer credits、backpressure 和 NUMA/PCIe staging placement。
 
-约束 exporter 冻结后，不同 D3 scheduler/baseline 必须共享 `ActionPlan` hash 和 D3-facing
-constraint hash，但生成不同 `ResidencyPlan`。
+Isolation track 的 scheduler/baseline 共享同一 `WorkManifest`。Co-design track 可以生成新的
+ActionPlan/owner/pool/layout，但必须记录新 revision 并重跑对应 baselines。
 
 ## 3. 公平的 source contract
 
-所有 mixed out-of-core baselines 必须使用相同的 action-required source-byte multiset：
+Isolation-track mixed baselines 使用相同的 action-required source-byte multiset：
 
 - compiled 只读 valid retained old K/V；
 - exact 读 raw history IDs，不读无用 old K/V；
@@ -137,8 +151,9 @@ constraint hash，但生成不同 `ResidencyPlan`。
 - progressive 若存在，显式读取并计量 BF16 hidden suffix；
 - target 按 D2 segmented layout 分配和写回。
 
-选择性读取是共同执行契约，不是 D3 相对 strong double-buffer baseline 的创新来源。可以保留
-uniform-record-image reader 作为弱诊断，但不能用它支撑主 speedup。
+选择性读取是 isolation track 的共同执行行为，不是 proposed scheduler 相对 strong
+double-buffer baseline 的创新来源。Co-design track 若改变 action/source bytes，必须报告变化
+并在新 revision 下重跑 baseline。
 
 All-exact 必然有不同的 ActionPlan、physical constraint plan 和 raw-history source bytes。它只与
 mixed 方法共享：records、target model、ordinary-host source tier、target
@@ -172,7 +187,7 @@ fixed(model + embedding shard + program + context)
 rho = max_r(work_bytes_r / usable_HBM_r)
 ```
 
-并覆盖 `rho = 0.5, 1, 2, 4`。
+第一轮只需找到最小的真实 `rho > 1` 主点；`rho = 0.5, 1, 2, 4` 留到机制稳定后的扩展。
 
 ### 4.3 Resource-complementary packing
 
@@ -207,8 +222,7 @@ participation。所有 target extents 在全局 coverage、lineage 和 checksum 
 
 ### 5.1 D3-independent characterization
 
-在 exporter parity 关闭后，冻结一个上游 `ActionPlan` 和 D3-facing constraint hash，不运行
-D3 scheduler。对 real-history working set 扫 `rho=0.5/1/2/4`，比较：
+先从 H12/W2 导出最小 `WorkManifest`，在 GPU0/GPU1 上建立 M0，比较：
 
 - no-I/O chunk characterization：每个 capacity-safe chunk 在 timer 外 preload，只提供
   optimistic ceiling，不是 same-endpoint baseline；
@@ -230,8 +244,9 @@ peak per-rank HBM 和 total completion time。旧 normalized-capsule source path
 5. `+` resource-complementary packing；
 6. `+` topology-aware full pipeline。
 
-Mixed variants 共享 source-byte multiset、ActionPlan hash 和 D3-facing constraint hash。所有
-speedup 只在 ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
+Isolation-track variants 共享 source-byte multiset 和 `WorkManifest`。Co-design variants 记录
+不同的 action/owner/source bytes，并在同一新 revision 下重跑 baselines。所有 speedup 只在
+ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
 
 ### 5.3 Metrics
 
@@ -243,13 +258,13 @@ speedup 只在 ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
 - private target、commit、abort、reclaim；
 - full-payload K/V、hidden、score、Top-k、padding、lineage、manifest correctness。
 
-## 6. Go/no-go
+## 6. 论文条件，不是开发前置 gate
 
-D3 进入论文结果必须同时满足：
+D3 最终进入论文结果时应满足：
 
 1. full-payload correctness 与 bounded-memory admission；
 2. ordinary-DRAM same-boundary sequential、double-buffer、D3 和 all-exact；
-3. paired 1/2/4-GPU evidence；
+3. 以 GPU0/GPU1 为主点，并在机制稳定后补必要的 GPU-count evidence；
 4. 相对 action-oblivious double buffer 的可归因收益；
 5. 至少一个相对 fastest same-boundary all-exact 有意义的 operating point；
 6. report positive region 和 exact-preferred crossover；
@@ -261,7 +276,7 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 
 ## 7. D3-ready 入口
 
-当前已经存在、可用于第一步 exporter/schema 工作的上游事实是：
+当前已经存在、可用于第一步两卡 adapter 的上游事实是：
 
 - immutable H12 `ActionPlan` 及其 hash；
 - deterministic owner/embedding rules；
@@ -272,7 +287,7 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 - D2 private-target、coverage、lineage、commit/abort semantics；
 - real-history source extents 和现有 D1 exact/compiled operators。
 
-进入 scheduler 对比前仍缺少：
+正式 isolation evaluation 仍可能需要：
 
 - 一个 normalized、capacity-independent 的 D3-facing constraint schema；
 - owner/operator/program/membership/collective/layout/transaction 的完整序列化；
@@ -288,23 +303,21 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 - Python plan/materialization、CPU copy、pinned staging、commit 或 reclaim 免费；
 - destination-v4 normalized capsule 能代表本 D3 source contract。
 
-因此第一轮先关闭 D2 constraint exporter，再进入 mechanism discovery。所有新 artifact 必须记录
-`scientific_result=false`、`formal_design3=false`、source/action/wave hashes、per-rank capacity
-ledger 和完整 timer components。只有 mechanism 改变 Pareto frontier 后，才在
+这些正式工件不阻塞 M0。第一轮使用最小 `WorkManifest`、private target 和
+coverage/checksum 进入 mechanism discovery。所有新 artifact 记录
+`scientific_result=false`、`formal_design3=false`、`stack_revision`、per-rank capacity ledger
+和 timer components。只有 mechanism 变得清楚后，才决定最终 exporter/interface，并在
 `docs/eval_protocol.md` 冻结正式 family。
 
 ## 8. 实施顺序
 
-1. 实现并冻结 capacity-independent D2 constraint exporter、parity checker 和 content hash；
-2. 冻结 ordinary-host source/target extent schema 和 action-required byte ledger；
-3. 实现 sequential capacity baseline 与 full-payload readback；
-4. 实现 action-oblivious double buffer；
-5. 实现 exported constraints→`ResidencyPlan` compiler 和 per-rank admission；
-6. 加 resource-complementary/topology-aware scheduling；
-7. 先用 H12 做 semantic/capacity-emulation canary，再以 QK 为首选候选，在 GPU0/GPU1 上
-   审计并冻结一个真实、单 seed、物理 out-of-core 主点；
-8. 只有 mechanism 在两卡主点相对 strong double buffer 改变 Pareto frontier 后才冻结 D3
-   protocol，再扩展到 1/4 GPU、相邻容量点和第二 model stream。
+1. 固定 GPU0/GPU1，从 H12/W2 导出最小 `WorkManifest`；
+2. 实现 ordinary-DRAM source/target、capacity groups 和 two-rank sequential path；
+3. 加 basic double buffer、event timing 与 bounded buffers；
+4. 同时审计 QK，构造最小真实两卡物理 out-of-core M1；
+5. 在 M1 上建立 S0/S1/E0，并按 profile 探索 isolated D3 与 cross-layer candidates；
+6. 机制明确后再补 normalized exporter、transaction、protocol 和扩展矩阵；
+7. 在 GPU0/GPU1 结论清楚前不跑 3/4 GPU。
 
 ## 9. 更远期反馈层
 

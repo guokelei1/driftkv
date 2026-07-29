@@ -7,8 +7,10 @@ protocol, and results remain open**. Historical code and artifact names retain `
 existing hashes and result families remain stable.
 
 This document defines D2 only. Current execution state is in
-[DESIGN2_DEVELOPMENT_STATUS.md](DESIGN2_DEVELOPMENT_STATUS.md). D3 begins from the required D2
-interface defined here after its exporter closes, and is specified by
+[DESIGN2_DEVELOPMENT_STATUS.md](DESIGN2_DEVELOPMENT_STATUS.md). The interface below remains the
+target for a formal fixed-D2 isolation experiment. D3 mechanism discovery may begin earlier from a
+minimal two-rank `WorkManifest`; a cross-layer candidate that changes D1/D2 is a new
+`stack_revision`, not a D2 physical-lowering ablation. D3 is specified by
 [DESIGN3_FUTURE_DIRECTION.md](DESIGN3_FUTURE_DIRECTION.md).
 
 ## 1. Problem
@@ -127,8 +129,8 @@ sorts owner-local compiled records by `(suffix, retained, final, record_id)` and
 fixed `extent_size`; it does not serialize explicit global-bin membership or a standalone
 collective-dependency graph.
 
-Before D3 scheduler comparisons, a small D2 exporter must derive, validate, serialize, and hash the
-required constraint view from:
+Before a formal fixed-D2 isolation comparison, a small D2 exporter should derive, validate,
+serialize, and hash the required constraint view from:
 
 - the immutable action plan and owner map;
 - operator/program and source bindings;
@@ -138,7 +140,8 @@ required constraint view from:
 
 The exported view must exclude `extent_size`, HBM capacity cuts, resident launch order, pinned
 credits, and prefetch/writeback decisions. It does not promise that one compatible pool fits in
-HBM or executes as one launch. A D3 `ResidencyPlan` may slice inside a pool but cannot:
+HBM or executes as one launch. Within the isolation track, a D3 `ResidencyPlan` may slice inside a
+pool but cannot:
 
 - move a record to a different semantic action;
 - change the logical old-K/V owner;
@@ -149,8 +152,9 @@ HBM or executes as one launch. A D3 `ResidencyPlan` may slice inside a pool but 
 - omit empty-rank collective participation;
 - change target layout, coverage, or lineage.
 
-Until exporter parity and content hashing close, D3 may prepare schemas and source-byte ledgers,
-but no scheduler comparison may claim that all variants consumed identical frozen D2 constraints.
+Before exporter parity and content hashing close, a minimal two-card benchmark may still compare
+variants generated from one recorded `WorkManifest`; these remain development-only. It cannot
+claim the formal normalized D2 constraint boundary has closed.
 
 ## 5. Mechanism
 
@@ -383,10 +387,13 @@ must not be mechanically renamed from CohortKV to EvoKV.
 
 ## 13. D3 handoff
 
-The first handoff task is to implement the capacity-independent D2 constraint exporter described
-in Section 4 and verify its record coverage, owner/operator bindings, physical membership,
-collective templates, layout/transaction contract, and content hash against the current runtime.
-After that closure, D3 may assume:
+The immediate handoff is a minimal H12/W2 `WorkManifest` containing record, action, owner, extents,
+source/target locators, bytes, and operator/pool keys. This is sufficient to build GPU0/GPU1
+sequential and double-buffer development paths.
+
+For a later formal isolation track, implement the capacity-independent exporter described in
+Section 4 and verify its record coverage, owner/operator bindings, physical membership,
+collective templates, layout/transaction contract, and content hash. That track may assume:
 
 - the D1 action hash is immutable;
 - owners, operators, compatible bins/pools, collective dependencies, segmented layout, coverage,
@@ -402,6 +409,7 @@ D3 may not assume:
 - direct-old-K/V ordinary-DRAM performance has been measured;
 - source preprocessing, pinned staging, or commit/reclaim is free.
 
-Before that closure, non-scientific D3 work is limited to the exporter/schema, ordinary-host
-source/target schema, source-byte ledger, and sequential-baseline preparation. Capacity scheduler
-comparisons begin only after all variants can bind to the same exported constraint hash.
+Cross-layer discovery may also change actions, owners, pools, or layout before execution. It must
+record a new `stack_revision` and rerun baselines, so it is not presented as a fixed-D2 ablation.
+A normalized exporter, full transaction closure, and broader GPU matrix are later formalization
+tasks rather than prerequisites for the first two-card scheduler comparison.

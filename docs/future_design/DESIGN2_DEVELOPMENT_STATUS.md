@@ -16,7 +16,7 @@ handoff documents were consolidated here and removed.
 | W3 three-rank development diagnostic | **PASS, non-scientific** | asymmetric NCCL composition and hard-failure propagation |
 | C0 integrated state machine | **PASS, non-scientific** | fixed 16-record normal/abort wiring only |
 | W3 full-cohort mechanism discovery | **PASS, non-scientific** | segmented, shape-aware, merged-exact candidate and full-payload validation |
-| D2→D3 constraint exporter | **NOT IMPLEMENTED** | no standalone capacity-independent constraint artifact or content hash yet |
+| D2→D3 constraint exporter | **NOT IMPLEMENTED, DEFERRED FOR D3 M0** | no standalone formal artifact; minimal two-rank WorkManifest is sufficient for initial development |
 | W4 four-independent-A40 gate | **BLOCKED/PENDING** | physical normal and hard-failure artifacts do not exist |
 | formal D2 protocol | **NOT FROZEN** | no D2 paper-performance family exists |
 | formal 1/2/4-GPU evaluation | **NOT STARTED** | W3 timings cannot substitute |
@@ -299,8 +299,9 @@ Unused cold rows cannot be the source of the performance claim.
 
 ## 11. D3 handoff
 
-The first D3-readiness task is a small D2 exporter. It must derive and hash a
-capacity-independent constraint view from:
+The first D3 development handoff is a minimal H12/W2 two-rank `WorkManifest`; it may bind directly
+to current runtime metadata and does not need to solve the final interface first. For a later
+formal fixed-D2 isolation track, derive and hash a capacity-independent constraint view from:
 
 - the immutable H12 action plan;
 - deterministic owner and embedding rules;
@@ -312,8 +313,9 @@ The export must not contain W3 `extent_size`, HBM cuts, resident launch order, o
 decisions. It must validate record coverage and parity with the current integrated runtime, then
 serialize a stable content hash.
 
-Before that artifact exists, non-scientific D3 work may prepare the exporter/schema,
-ordinary-host source/target schema, byte ledger, and sequential baseline, but scheduler variants
-cannot claim identical frozen D2 work. After the exporter closes, D3 may build per-rank admission,
-the strong double-buffer baseline, candidate schedulers, and a new protocol family. It must not
-treat W3 times as formal evidence or assume the resident schedule fits HBM.
+Before that formal artifact exists, non-scientific D3 work may build ordinary-host source/target,
+per-rank admission, sequential groups, a basic double buffer, and candidate schedulers on
+GPU0/GPU1, provided one isolation comparison shares the same recorded WorkManifest. Cross-layer
+candidates receive a new `stack_revision` and rerun baselines. No such development run may treat
+W3 times as formal evidence, claim the normalized D2 boundary has closed, or assume the resident
+schedule fits HBM.
