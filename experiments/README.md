@@ -113,5 +113,8 @@ frozen yet. W3 integrated timings, full-payload validation, and synthetic lookup
 
 There is no D3 experiment record. The first implementation must begin from
 [../docs/future_design/DESIGN3_FUTURE_DIRECTION.md](../docs/future_design/DESIGN3_FUTURE_DIRECTION.md)
-by exporting and hashing the capacity-independent D2 constraint view. It must create
-development-only artifacts before any protocol is frozen.
+and its concrete
+[foundation/exploration plan](../docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) by
+exporting and hashing the capacity-independent D2 constraint view. It must create development-only
+artifacts before any protocol is frozen. H12 capacity caps are semantic/development canaries, not
+physical out-of-core evidence; mechanism selection uses a larger real-history two-A40 workload.

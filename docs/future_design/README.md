@@ -1,13 +1,14 @@
 # Active design documents
 
 This directory now contains one contract and one status ledger for the implemented D2 mechanisms,
-plus the design-ready D3 plan.
+plus the D3 problem contract and its executable foundation/exploration plan.
 
 | Document | Role |
 |---|---|
 | [DESIGN2_FINAL_PLAN.md](DESIGN2_FINAL_PLAN.md) | D2 mechanism, required `ActionPlan`→D3-facing constraint interface, baselines, timer, and formal gate |
 | [DESIGN2_DEVELOPMENT_STATUS.md](DESIGN2_DEVELOPMENT_STATUS.md) | frozen inputs, implemented state, non-scientific evidence, W4/formal gaps, and D3 handoff |
 | [DESIGN3_FUTURE_DIRECTION.md](DESIGN3_FUTURE_DIRECTION.md) | D3 `WavePlan` constraints→`ResidencyPlan` problem, source/capacity contract, candidate mechanisms, baselines, and go/no-go |
+| [DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) | two-layer H12/QK foundation, two-A40 physical out-of-core benchmark, staged implementation, strong baselines, candidate ladder, and backtracking gates |
 
 The current architecture is:
 
@@ -26,6 +27,11 @@ exists. Current D2 code has a single-rank wave adapter and capacity-specific W3 
 The first D3-readiness task is to export their capacity-independent constraints, validate runtime
 parity, serialize them, and assign a stable content hash. Scheduler comparisons start only after
 that closure.
+
+The H12 workload is the first semantic canary, not physical oversubscription evidence. The preferred
+D3 mechanism-selection route audits and freezes a larger real-history QK workload whose
+owner-local source plus private target physically exceeds two A40s. It becomes F1 only after that
+capacity gate passes. A software HBM cap remains development-only capacity emulation.
 
 The former D2 four-stage controller and Stage-A/Stage-B handoff documents were consolidated into
 the D2 design/status pair. The pre-rewrite D2/D3 idea comparison was removed. Git history is not a

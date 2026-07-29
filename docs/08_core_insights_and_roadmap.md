@@ -140,7 +140,7 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | problem/design ready | question, required interfaces, source/timer/capacity contract, strong baselines, go/no-go | executable D2 handoff, implementation, frozen protocol, characterization, and all results |
+| D3 | foundation/exploration ready | question, required interfaces, source/timer/capacity contract, two-layer H12/QK benchmark plan, strong baselines, candidate ladder, go/no-go | executable D2 handoff, real QK artifacts, implementation, frozen protocol, characterization, and all results |
 
 D3 exporter/schema and source-byte-ledger preparation may begin from the current immutable D1 plan
 and implemented D2 runtime. Scheduler comparisons begin only after the capacity-independent D2
@@ -345,10 +345,12 @@ implemented:
 3. implement a capacity-safe sequential baseline with full-payload readback;
 4. implement an action-oblivious double buffer under the same source/timer boundary;
 5. implement exported constraints → `ResidencyPlan` compilation and per-rank admission;
-6. test global-compatibility-aware cuts and resource-complementary packing at one real-history,
-   one-seed, one-GPU setting;
+6. use H12 only as a semantic/capacity-emulation canary, then audit and freeze a real-history,
+   one-seed, GPU0/GPU1 physical out-of-core setting, with QK as the preferred candidate, before
+   testing global-compatibility-aware cuts and resource-complementary packing;
 7. freeze a new D3 protocol only if a mechanism changes the Pareto frontier;
-8. then expand to 2/4 GPUs and a second model stream.
+8. then expand to adjacent capacity points, 1/4 GPUs, exact-budget sensitivity, and a second model
+   stream.
 
 The capacity coordinate is
 
@@ -420,6 +422,8 @@ Do not claim that:
   [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md)
 - D3 design-ready plan:
   [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md)
+- D3 foundation benchmark and exploration plan:
+  [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
 - Frozen D1 evidence ledger:
   [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md)
 - Result-family semantics:

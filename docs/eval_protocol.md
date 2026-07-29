@@ -10,7 +10,9 @@ The D2 mechanism and live execution/evidence state are
 [`future_design/DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) and
 [`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
 The D3 design-ready problem and exploration contract are
-[`future_design/DESIGN3_FUTURE_DIRECTION.md`](future_design/DESIGN3_FUTURE_DIRECTION.md).
+[`future_design/DESIGN3_FUTURE_DIRECTION.md`](future_design/DESIGN3_FUTURE_DIRECTION.md), with the
+development execution route in
+[`future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md`](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md).
 These documents create no comparable evidence by themselves. D2 Stage A/B diagnostics and all
 initial D3 mechanism work must be labeled as development artifacts. The current D2 execution uses a
 strict double gate:
@@ -41,7 +43,9 @@ per-rank usable-HBM admission, a fixed D1 ActionPlan, one common D3-facing D2 co
 separate ResidencyPlans. Sequential capacity groups and an action-oblivious double buffer must
 share the mixed action-required source-byte multiset; same-boundary all-exact reports its distinct
 raw-history bytes. No existing normalized-capsule HBM/DRAM, destination-v4, or hot-HBM Stage-4.5
-result may be relabeled as direct-old-K/V D3 evidence.
+result may be relabeled as direct-old-K/V D3 evidence. H12 runs under an artificial per-rank HBM
+cap are development-only capacity emulation; paper-facing physical oversubscription requires a
+larger real-history workload.
 
 Before any formal D2 integrated run or paper-facing D2 result is promoted, its action-plan
 identity, configuration, metrics, timing boundary, communication accounting, baselines, and

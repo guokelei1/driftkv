@@ -20,6 +20,8 @@
 - `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md` is the only live D2 status ledger.
 - `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the design-ready D3 entry; it is not a
   protocol or result.
+- `docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md` is the live two-card D3
+  foundation, baseline, candidate-search, and backtracking plan; it is not a protocol or result.
 - When documents conflict, follow the roadmap and evaluation protocol. Do not recover claims from
   deleted early documents or old result paths.
 
@@ -94,7 +96,10 @@
   ordinary host DRAM → bounded pinned staging → GPU → ordinary host DRAM private target → atomic
   manifest. SSD/database ingress, serving traces, host-DRAM oversubscription, and online hotness are
   out of scope. A no-I/O chunk sum is characterization only; the old normalized-capsule DRAM result
-  is not direct-old-K/V D3 evidence.
+  is not direct-old-K/V D3 evidence. The existing H12 workload is a semantic and
+  capacity-emulation canary because it fits two A40s; the preferred mechanism-selection route
+  audits a larger real-history QK workload and freezes it as F1 only if its source plus private
+  target physically exceeds GPU0/GPU1 HBM.
 
 ## Code layout
 

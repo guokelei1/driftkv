@@ -3,11 +3,15 @@
 日期：2026-07-30
 
 状态：**问题与探索合同已冻结，机制、协议和结果尚不存在**。本文档是进入 D3 初步实现的
-唯一设计入口，不包含新实验结果，也不能作为 paper claim 的证据。D1 已冻结；D2 的
+上位问题合同，不包含新实验结果，也不能作为 paper claim 的证据。D1 已冻结；D2 的
 conceptual constraint contract 已足以定义 D3，但可执行、可哈希的 D2→D3 约束工件尚未
 导出。D3 可以先做 schema/exporter/source-byte ledger 等准备；不同 scheduler 的比较必须等到
 该工件冻结后。D2 仍须独立完成正式 W4、1/2/4-GPU same-boundary protocol、segmented
 consumer 和 publication/commit/reclaim closure。开始 D3 不会自动解除这些 D2 gate。
+
+具体的两卡 foundation benchmark、H12 semantic canary、真实 QK 物理 out-of-core
+workload、分阶段实现和回退条件见
+[DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)。
 
 ## 0. 方向裁决
 
@@ -297,9 +301,10 @@ ledger 和完整 timer components。只有 mechanism 改变 Pareto frontier 后�
 4. 实现 action-oblivious double buffer；
 5. 实现 exported constraints→`ResidencyPlan` compiler 和 per-rank admission；
 6. 加 resource-complementary/topology-aware scheduling；
-7. 先做一个 real-history、单 seed、1-GPU structural screen；
-8. 只有 mechanism 改变 Pareto frontier 后才冻结 D3 protocol，再扩展到 2/4 GPU 和第二
-   model stream。
+7. 先用 H12 做 semantic/capacity-emulation canary，再以 QK 为首选候选，在 GPU0/GPU1 上
+   审计并冻结一个真实、单 seed、物理 out-of-core 主点；
+8. 只有 mechanism 在两卡主点相对 strong double buffer 改变 Pareto frontier 后才冻结 D3
+   protocol，再扩展到 1/4 GPU、相邻容量点和第二 model stream。
 
 ## 9. 更远期反馈层
 

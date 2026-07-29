@@ -26,9 +26,12 @@ When documents disagree, use this order:
 5. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
    problem definition, source/capacity/timer contract, candidate mechanisms, baselines, and
    go/no-go conditions.
-6. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+6. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
+   — executable two-card foundation benchmark, staged baseline closure, candidate search, and
+   backtracking plan; it creates no protocol or evidence.
+7. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
    frozen D1 Stage 0–6 evidence ledger. It is history, not a current execution plan.
-7. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
+8. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
    semantics, usable capacity, and generality boundaries.
 
 Repository-local agent rules are in [../AGENTS.md](../AGENTS.md). Experiment records are indexed
@@ -42,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | When may each legal extent reside in HBM when source plus private target exceeds capacity? | capacity-specific `ResidencyPlan` | problem/design ready; executable handoff, scheduler, and evidence not started |
+| D3 | When may each legal extent reside in HBM when source plus private target exceeds capacity? | capacity-specific `ResidencyPlan` | foundation/exploration plan frozen; executable handoff, scheduler, and evidence not started |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -106,6 +109,13 @@ sequential-baseline preparation; scheduler comparisons cannot claim identical D2
 development artifacts remain explicitly non-scientific until a new protocol is frozen in
 `eval_protocol.md`. D3 may be explored before D2 paper evaluation is complete, but it cannot use
 W3 development timings as a formal upstream result.
+
+The concrete execution route is in
+[future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md).
+It first uses the existing H12 edge as a semantic canary, then constructs a real-history QK
+candidate whose source plus complete private target must physically exceed a fixed GPU0/GPU1 A40
+pair before it is frozen as F1. Capacity caps on H12 are development emulation only and cannot
+become paper evidence.
 
 ## Removed material
 
