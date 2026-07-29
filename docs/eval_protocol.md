@@ -4,14 +4,16 @@
 > serving semantics, model family, or timing semantics requires a new protocol name and separate
 > result files.
 
-The frozen Stage 0–6 implementation history is
+The frozen D1 Stage 0–6 evidence ledger is
 [`09_single_configuration_full_chain_plan.md`](09_single_configuration_full_chain_plan.md).
-The active Design 2 definition and staged execution control are
+The D2 mechanism and live execution/evidence state are
 [`future_design/DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) and
-[`future_design/DESIGN2_FOUR_STAGE_EXECUTION.md`](future_design/DESIGN2_FOUR_STAGE_EXECUTION.md).
-All three are plans or historical implementation records, not result protocols: they create no
-comparable evidence by themselves. D2 Stage A/B diagnostics must be labeled as development
-artifacts. The current execution uses a strict double gate:
+[`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
+The D3 design-ready problem and exploration contract are
+[`future_design/DESIGN3_FUTURE_DIRECTION.md`](future_design/DESIGN3_FUTURE_DIRECTION.md).
+These documents create no comparable evidence by themselves. D2 Stage A/B diagnostics and all
+initial D3 mechanism work must be labeled as development artifacts. The current D2 execution uses a
+strict double gate:
 `stage_c_development_entry=go` has admitted and completed sample-only C0 wiring on W1/W2/W3 normal
 plus W3 pre-commit abort with `scientific_result=false`, while
 `stage_c_evaluation_entry=blocked` forbids formal Stage-C integrated evaluation and every paper
@@ -30,31 +32,46 @@ formal D2 protocol, publish a formal target epoch, close the segmented consumer/
 or include the final plan/history preparation plus publication/commit/reclaim boundary. Their
 valid use is mechanism discovery and protocol design, not Motivation-2 numbers or paper tables.
 
-Design 3 is currently an unfrozen Action-Aware Out-of-Core Pipeline hypothesis, not an experiment
-family. It requires a new protocol with an ordinary-host-DRAM source and private target, bounded
-pinned staging, per-rank usable-HBM admission, fixed D1 ActionPlan and D2 WavePlan constraints, and
+Design 3 has a frozen problem/exploration contract but no executable D2 handoff, implementation,
+protocol family, or result. Its first readiness artifact must normalize, validate, serialize, and
+hash the capacity-independent D2 owner/operator/compatibility/dependency/layout constraints; the
+current single-rank wave adapter and capacity-specific W3 extents are not that artifact. A future
+D3 protocol requires an ordinary-host-DRAM source and private target, bounded pinned staging,
+per-rank usable-HBM admission, a fixed D1 ActionPlan, one common D3-facing D2 constraint hash, and
 separate ResidencyPlans. Sequential capacity groups and an action-oblivious double buffer must
 share the mixed action-required source-byte multiset; same-boundary all-exact reports its distinct
-raw-history bytes. No existing normalized-capsule HBM/DRAM result may be relabeled as direct-old-K/V
-D3 evidence.
+raw-history bytes. No existing normalized-capsule HBM/DRAM, destination-v4, or hot-HBM Stage-4.5
+result may be relabeled as direct-old-K/V D3 evidence.
 
-Before a formal Stage C integrated run or any Stage D result is promoted to paper evidence, its
-action-plan identity, configuration, metrics, timing boundary, communication accounting,
-baselines, and artifact schema must be frozen here under a new D2 protocol name. Existing protocol
-strings and result families must not be silently reused. The live non-scientific status and pending
-commands are recorded in
+Before any formal D2 integrated run or paper-facing D2 result is promoted, its action-plan
+identity, configuration, metrics, timing boundary, communication accounting, baselines, and
+artifact schema must be frozen here under a new D2 protocol name. A paper-facing D3 result
+similarly requires a separate D3 protocol after the common D2 constraint exporter closes.
+Existing protocol strings and result families must not be silently reused. The live
+non-scientific D2 status and pending commands are recorded in
 [`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
 
 ## 1. Protocol families
 
-### `cohortkv_design2_*_development_v*`
+### D2 development families
 
-This namespace covers D2 Stage-A/B/C0 diagnostics and W3 mechanism discovery, including
-`cohortkv_design2_integrated_w3_development_v1` through `v5`,
-`cohortkv_design2_integrated_full_payload_development_v1`, and
-`cohortkv_design2_resource_isolation_development_v1`. Every artifact must retain its exact
-protocol string and negative claim flags. Different versions record implementation discovery and
-must not be pooled into a confirmatory timing distribution.
+D2 development is not one wildcard protocol. Directory names are storage organization and must
+not be quoted as protocol strings. The current top-level artifact protocols include:
+
+- `cohortkv_d2_stage_a_frozen_v1` and its separately named Stage-A characterization inputs;
+- `cohortkv_d2_stage_b_distributed_primitives_v1`;
+- `cohortkv_d2_stage_b_hard_failure_v1`;
+- `cohortkv_d2_dev_w3_distributed_diagnostic_v1`;
+- `cohortkv_d2_dev_w3_hard_failure_v1`;
+- `cohortkv_d2_dev_c0_wave_v1` and aggregate `cohortkv_d2_dev_c0_status_v1`;
+- `cohortkv_design2_integrated_w3_development_v1` through
+  `cohortkv_design2_integrated_w3_development_v5`;
+- `cohortkv_design2_integrated_full_payload_validation_v1`;
+- `cohortkv_d2_embedding_resource_isolation_development_v1`.
+
+Every artifact must retain its exact serialized protocol string and negative claim flags.
+Different families and versions record implementation discovery and must not be pooled into a
+confirmatory timing distribution.
 
 The formal paper-facing families are not yet frozen. They will require separate names for:
 
@@ -255,10 +272,11 @@ replacement for the all-chunks primary operating point.
 
 ### `scaling_v1_fixed_optimized_suffix`
 
-Freezes the optimized deepest suffix and changes one KuaiRand axis at a time. Active sequence
-length, model depth, and controlled parameter interpolation use the same full-catalog target
-semantics as validity-v1. Depth 3/6/9 and every reported quality point use seeds 0-3. No interval
-is selected from these result cells.
+This historical structural-baseline family freezes the optimized deepest suffix and changes one
+KuaiRand axis at a time. Sequence length, model depth, and controlled parameter interpolation use
+the same full-catalog target semantics as validity-v1. Depth 3/6/9 and every reported quality point
+use seeds 0-3. No interval is selected from these result cells. The suffix is not the current D1
+method.
 
 ### `operator_cost_scaling_v1_resident_cuda_events`
 
@@ -375,13 +393,15 @@ strong all-exact
   → D2 wave-compiled segmented mixed
 ```
 
-D1 decides what is compiled or exact. D2 preserves those requested actions and decides placement,
-batching, order, stream, physical pool, segment layout, execution, and publication. Communication
-cost may affect those physical choices but not semantic action selection.
+D1 decides what is compiled or exact. D2 preserves those requested actions and fixes owners,
+operators, compatible physical pools, collective dependencies, segmented layout, and publication
+semantics. A resident D2 executor may choose a legal batch/order/stream; capacity-specific cuts,
+packing, and DRAM/HBM launch order belong to a D3 ResidencyPlan. Communication cost never changes
+semantic action selection.
 
-## 4. Current method setup
+## 4. Historical predecessor-method setup
 
-The original compact paper-facing method result uses the six-layer run:
+The original compact predecessor result uses the six-layer run:
 
 - hidden 96, six layers, four heads, head dimension 24;
 - sequence length 128, 5,000 items, 770,496 parameters;
@@ -392,16 +412,18 @@ The original configurations are `reuse`, `cheap_all`, `cheap_plus_topN_full`, an
 The optimized configurations use one-based names such as `interval_l5_l6`: full current blocks
 run through all interval layers except the terminal layer, which runs only current
 `Norm + Wk/Wv`. `[L1,L6]` must match current-model full prefix K/V recomputation. Arbitrary
-intervals are an oracle ablation; the retained method remains the deepest suffix.
+intervals are an oracle ablation. The deepest suffix was retained within this historical protocol;
+it is not the current D1 method.
 
 The three-layer `layerwise_seed*` family is a correct sanity run, not the main method table.
-The strongest current KuaiRand scale table is the separate top-50k/all-chunks six-layer protocol
-in Section 5; it does not retroactively replace the original run's protocol or artifacts.
+The strongest table within this predecessor family is the separate top-50k/all-chunks six-layer
+protocol in Section 5; it does not retroactively replace the original run's protocol or artifacts.
 
-The current cross-dataset method result is the compiled low-rank family. It retains the same old
+The compiled low-rank family is the historical cross-dataset successor. It retains the same old
 normalized-state requirement as cheap refresh, learns one shared adapter per old/current
 model-version pair, and precompiles it before cache migration. It does not execute a separate
-adapter model per user.
+adapter model per user. The current D1 route adds tiered actions, direct-old-K/V execution, renewal,
+and exact fallback; those later protocols remain separate.
 
 ## 5. Scaling-v1 setup
 
@@ -832,10 +854,10 @@ report:
 - BF16-published K/V error from FP32 and finite-value validation;
 - speedup against the faster independently tuned two-GPU exact implementation.
 
-The current formal-default run has `status=adaptive_system_complete` and
+The frozen formal-default run has `status=adaptive_system_complete` and
 `study_stage=adaptive_seed0_system_development`. Timing repetitions quantify run stability on one
 machine; they are not independent training replications. The controlled mix, layout search, and
-seed-0 programs prevent a confirmatory systems claim. Its current successor is the deterministic
+seed-0 programs prevent a confirmatory systems claim. Its historical successor was the
 destination-v4 full-cohort update protocol. Request arrival, hotness, routing, and foreground
 serving are not inferred from the available recommendation logs.
 
@@ -884,12 +906,13 @@ destination-placement cost; it may not support a positive cohort-compaction oper
 
 ### 5.13 Destination-oriented out-of-core update system
 
-`streamkv_destination_out_of_core_v4` defines the current system architecture and publication
-semantics. It is a model-update-triggered batch job, not an online request scheduler. Training,
-request arrival, user hotness, request routing, and foreground serving interference are outside
-this protocol. Inputs are a fixed set of old capsules, already published migration programs, an
-execution-device set, and one explicit destination. The output is one complete target-version K/V
-manifest.
+`streamkv_destination_out_of_core_v4` is a historical normalized-capsule destination prototype and
+publication protocol. It no longer defines the current EvoKV architecture and is not the new D3
+ordinary-DRAM direct-old-K/V protocol. It is a model-update-triggered batch job, not an online
+request scheduler. Training, request arrival, user hotness, request routing, and foreground serving
+interference are outside this protocol. Inputs are a fixed set of old capsules, already published
+migration programs, an execution-device set, and one explicit destination. The output is one
+complete target-version K/V manifest.
 
 `scripts/run_streamkv_update_coordinator.py` is a thin orchestration entry point for this
 protocol. Its default plan-only mode is not an experiment and does not define another result
@@ -995,7 +1018,7 @@ correctness only. Details and commands are in
 
 ### 5.15 CohortKV single-configuration full-chain development
 
-`cohortkv_single_config_full_chain_development_v1` is the only protocol for the current
+`cohortkv_single_config_full_chain_development_v1` is the frozen protocol for the historical D1
 single-configuration implementation round. Its Stage 0 contract is frozen in
 `configs/cohortkv_single_config_v1/` and documented by
 `experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md`. The blueprint and workload
@@ -1560,14 +1583,17 @@ lifecycle or end-to-end state-movement claim. Its horizon is 12 but the measured
 must not be confused with the fixed-history Stage-4.6 depth-four guarantee.
 
 For D2, Stage-4.9 is an immutable action-plane input rather than a reusable performance
-denominator. The exported handoff contains:
+denominator. The v1 action-plan handoff contains:
 
 ```text
-action_plan_sha256
-requested_action and requested_reason
-retained / suffix / final lengths (R/S/F)
-program identity and lineage
+plan-level source/target version, policy, provenance, counts, and content SHA-256
+per-record requested_action and requested_reason
+old / retained / delta / latest / target-prefix / final extents
+last-exact version, migration depth, cache-presence flags, and identity hashes
 ```
+
+Program, owner, old-extent, and raw-history bindings are added by the D2 adapter and must be bound
+separately; they are not v1 action-record fields.
 
 On the first H12 D2 edge, 548 records request compiled, 46 request scheduled exact, and 88 are
 natural exact. Thus `134/682 = 19.6%` is the runtime exact-route record fraction, not a policy-only
@@ -1728,7 +1754,7 @@ Action plane:
 
 - requested compiled, scheduled-exact, natural-exact, final-action, and fallback counts;
 - retained/suffix/final tokens and exact-route record fraction;
-- action-plan hash, reason counts, program identity, and lineage.
+- action-plan hash, reason counts, separate program binding/hash, and lineage/identity checks.
 
 Physical plane:
 

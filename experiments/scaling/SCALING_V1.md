@@ -1,5 +1,8 @@
 # Scaling-v1: fixed optimized suffix
 
+> Historical structural-baseline record. The fixed suffix is not the active D1 method; current
+> interpretation is maintained in `docs/08_core_insights_and_roadmap.md`.
+
 ## Scope
 
 This phase freezes the optimized deepest-suffix operator before changing scale. Every propagation
@@ -129,8 +132,8 @@ precision.
 - Do not revive arbitrary-layer or per-user selection. No new evidence supports it.
 - Do not claim cross-dataset generality. A second dataset with a longer real update sequence is a
   prerequisite for that claim.
-- Treat suffix-5 as a high-quality but modest-saving point. The next method work should be driven
-  by end-to-end profiling, not another layer search.
+- Treat suffix-5 as a high-quality but modest-saving point. The successor method work was to be
+  driven by end-to-end profiling, not another layer search.
 - At the end of this phase, mixed cache versions, end-to-end state movement, and a stronger second
   stream remained open.
 

@@ -161,14 +161,15 @@ All previously measured points were invalidated by implementation hash and rerun
 records the same implementation snapshot. This amendment changes capacity accounting only; extent
 planning, transformation, transfer, and publication semantics are unchanged.
 
-## Interpretation and next decision
+## Historical interpretation and successor decision
 
 Stage 4 closes the normal full-cohort execution path, but its end-to-end Pareto gate fails. The
 current serialized FP16 normalized capsule is 50% of logical K/V size and is 200× larger in
 physical bytes than the exact path's raw history. The resident operator and semantic-recovery
 results remain valid; the current source-state representation and movement path do not.
 
-Stage 5 guard/fallback and failure work is therefore paused. The next design step is
+At this point, Stage 5 guard/fallback and failure work was paused. The successor step, since
+completed and frozen by Stage 4.5, was
 `stage4_5_source_state_footprint_optimization`, with a deliberately narrow iteration loop:
 
 1. establish matched HBM-resident and pinned-DRAM-resident ceilings for compiled and exact;

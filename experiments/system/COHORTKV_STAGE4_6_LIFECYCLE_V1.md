@@ -1,5 +1,8 @@
 # CohortKV Stage 4.6 continuous lifecycle v1
 
+> Naming note: `continuous` is the frozen protocol name for 11 successive model-version edges. It
+> does not mean concurrent updates or a high-frequency update stream.
+
 ## Status
 
 Frozen on 2026-07-27 under

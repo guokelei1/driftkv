@@ -1,5 +1,9 @@
 # KuaiRand two-GPU cohort migration system v2
 
+> Historical disposition: adaptive two-GPU predecessor. The three layers described below are the
+> old compiler/operator/host-engine decomposition, not current EvoKV D1/D2/D3. Destination-v4 was
+> its historical successor and is not current D3 evidence.
+
 ## Status
 
 `kuairand_long_context_4plus12_two_gpu_migration_system_v2` is the first
@@ -136,18 +140,18 @@ that space-for-time cost. The model and three small program tables are replicate
 are partitioned, so this two-GPU design requires no peer cache transfer. Host NUMA placement is
 not an experimental variable because the chosen physical GPU pair shares NUMA node 0.
 
-## Decision and current successor
+## Historical decision and successor
 
-This result is sufficient to retain the three-layer system design:
+At the time, this result supported retaining the predecessor three-part implementation:
 
 - verified version-cohort compilation supplies the computation;
 - the fused direct-write operator supplies a real operator-level gain;
 - length organization, streaming movement, and two-GPU extent scheduling preserve the gain at the
   complete host boundary.
 
-It does not yet establish an OSDI/EuroSys-complete evaluation. The current successor is the
-destination-oriented out-of-core update job defined in
-`experiments/system/DESTINATION_OUT_OF_CORE_V4.md`. Its next gates are:
+It did not establish an OSDI/EuroSys-complete evaluation. Its historical successor was the
+destination-oriented update job in `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`; the gates
+recorded below belong to that old lineage:
 
 1. replace the 64-record controlled trace with the complete fixed update cohort;
 2. bound HBM and host staging with waves and publication backpressure;

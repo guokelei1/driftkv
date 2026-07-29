@@ -1,11 +1,14 @@
 # Destination-oriented out-of-core K/V update system v4
 
+> Historical disposition: superseded normalized-capsule destination prototype. It preserves useful
+> transaction and endpoint-interface evidence, but it is not the current EvoKV architecture, not
+> the new D3 direct-old-K/V ordinary-DRAM pipeline, and not a source of current next steps.
+
 ## Status
 
-`streamkv_destination_out_of_core_v4` is the current system architecture and implementation
-contract. It replaces the proposed online-lifecycle/foreground-serving scheduler as the next
-system direction. It does not replace the algorithm evidence from the verified compiler or the
-measured v2/v3 operator/runtime results.
+`streamkv_destination_out_of_core_v4` was the architecture and implementation contract for this
+historical protocol. It replaced an earlier online-lifecycle proposal at that time. It does not
+replace algorithm evidence from the verified compiler or measured v2/v3 runtime results.
 
 The implementation is an initial vertical slice, not a destination performance result. DRAM,
 filesystem, remote-object, and HBM publication semantics have executable reference paths and
@@ -114,7 +117,7 @@ allocates the complete target destination and does not use the host-staged wave 
 
 The destination is explicit job input. The system does not infer hotness or choose HBM versus SSD
 from a fabricated request trace. A future deployment-specific control plane may select a backend,
-but the current paper contract compares fixed destination jobs.
+but this historical protocol compares fixed destination jobs.
 
 ## Transaction and failure semantics
 
@@ -181,7 +184,7 @@ absolute K/V error `9.77e-4`. This is correctness evidence only. The real-capsul
 supplement in `FOUR_GPU_SCALING_V1.md` uses the frozen v3 execution boundaries and therefore does
 not close the full destination-v4 performance contract.
 
-## Evaluation contract for the next implementation round
+## Historical follow-up contract
 
 The first real-data result should use the fixed KuaiRand 4+12 checkpoints, published verified
 programs, and all eligible fixed update records. It must keep source and destination endpoints
@@ -213,9 +216,9 @@ The destination expansion order is:
 2. bounded POSIX file publication on an identified local device;
 3. a real remote/network backend only when reproducible hardware is available.
 
-## Current claim boundary
+## Protocol claim boundary
 
-Supported now:
+Supported within this protocol:
 
 - a coherent three-layer architecture with an executable destination contract;
 - exact atomic publication behavior for the reference backends;
@@ -223,7 +226,7 @@ Supported now:
 - explicit separation of destination semantics from operator speedup;
 - a thin plan/execute coordinator interface that does not alter the three contributions.
 
-Not supported now:
+Not supported within this protocol:
 
 - physical SSD throughput, GDS, RDMA, remote GPU, or cross-node speedups;
 - automatic destination selection;

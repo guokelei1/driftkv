@@ -2,9 +2,12 @@
 
 日期：2026-07-30
 
-状态：**论文骨架已确定，机制与协议尚未冻结**。本文档记录新的 D3 研究方向，不包含新实验
-结果，也不能作为 paper claim 的证据。D1 已冻结，D2 仍须先完成正式 W4、1/2/4-GPU
-same-boundary protocol、segmented consumer 和 publication/commit/reclaim closure。
+状态：**问题与探索合同已冻结，机制、协议和结果尚不存在**。本文档是进入 D3 初步实现的
+唯一设计入口，不包含新实验结果，也不能作为 paper claim 的证据。D1 已冻结；D2 的
+conceptual constraint contract 已足以定义 D3，但可执行、可哈希的 D2→D3 约束工件尚未
+导出。D3 可以先做 schema/exporter/source-byte ledger 等准备；不同 scheduler 的比较必须等到
+该工件冻结后。D2 仍须独立完成正式 W4、1/2/4-GPU same-boundary protocol、segmented
+consumer 和 publication/commit/reclaim closure。开始 D3 不会自动解除这些 D2 gate。
 
 ## 0. 方向裁决
 
@@ -12,18 +15,19 @@ EvoKV 的三个设计按同一迁移任务逐层展开：
 
 1. **D1 决定算什么。** 它输出 immutable `ActionPlan`，固定每条记录的
    `compiled|progressive|exact` 语义动作和有效 extent。
-2. **D2 决定在哪里、以什么分布式约束执行。** 它输出 global `WavePlan`，固定 owner、
-   operator、shape-bin/exact-pool membership、collective dependencies 和 segmented target
-   layout，但不冻结 capacity cuts 或 launch order。
-3. **D3 决定物理 extent 何时进入和离开 HBM。** 它在 `WavePlan` 约束内生成
+2. **D2 决定在哪里、以什么分布式约束执行。** 它必须导出 capacity-independent
+   `WavePlan` constraints，固定 owner、operator、physical compatibility、collective
+   dependencies 和 segmented target layout，但不冻结 capacity cuts 或 launch order。
+3. **D3 决定物理 extent 何时进入和离开 HBM。** 在约束工件冻结后，它生成
    `ResidencyPlan`，把超显存工作集切成 capacity-safe micro-waves，并调度
    DRAM→GPU→DRAM 流水。
 
 新的 D3 核心问题是：
 
 > 当完整 source 加 private target K/V 超过每卡可用 HBM 时，能否在不改变 D1 actions、
-> D2 owner/operator/bin/dependency/layout 的前提下，通过 global-bin-aware capacity cuts、
-> resource-complementary packing 和 topology-safe overlap，保留 D1+D2 的实际系统收益？
+> D2 owner/operator/compatibility/dependency/layout 的前提下，通过
+> global-compatibility-aware capacity cuts、resource-complementary packing 和
+> topology-safe overlap，保留 D1+D2 的实际系统收益？
 
 按显存容量顺序分组只是基础 baseline，不是贡献。普通 prefetch 或 double buffering 也不是
 贡献。D3 必须证明：在相同 source-byte multiset 和 DRAM endpoint 下，它相对强
@@ -71,19 +75,23 @@ commit。不得通过提前回收 source 削弱 abort 后旧 manifest 的可读�
 
 ### 2.1 D1 `ActionPlan`
 
-D1 固定：
+D1 在 plan level 固定 source/target version、policy、provenance、counts 和 content hash。当前
+H12 v1 在 record level 固定：
 
-- record id、source/target version 和 lineage；
-- `compiled|progressive|exact` action 与 reason；
-- retained/suffix/final extent；
-- program identity 和可选 progressive state requirement。
+- record id、`compiled|exact` action 与 reason；
+- old/retained/delta/latest/target-prefix/final extents；
+- previous-cache presence、last-exact version 和 migration depth；
+- history 与 extent-identity hashes。
+
+Compiled program 是由 D2 adapter 绑定的独立 D1 artifact，不是 action-record field。若未来引入
+`progressive` action，必须先版本化 schema 并显式声明 auxiliary state；D3 不能自行推断。
 
 D2/D3 都不能重新选择 action。Recommendation labels、per-user drift 和预测 task gain 都不能
 作为 D3 routing signal。
 
-### 2.2 D2 `WavePlan`
+### 2.2 D2 所需的 D3-facing `WavePlan` constraints
 
-D2 固定：
+该容量无关工件必须固定：
 
 - logical GPU owner 和 embedding routing；
 - operator；
@@ -93,9 +101,14 @@ D2 固定：
 - segmented target layout；
 - publication coverage/lineage contract。
 
-`WavePlan` 是 global constraint plan，不是已经冻结的 capacity-specific batch schedule。D3
-可以在同一个 bin/pool 内切片，但不能跨 incompatible bins、改变 owner/operator、移动 record
+这个接口是 global constraint plan，不是 capacity-specific batch schedule。D3 可以在同一个
+compatible pool 内切片，但不能跨 incompatible membership、改变 owner/operator、移动 record
 到另一个 semantic action，或破坏 collective dependencies。
+
+当前仓库尚未物化这个工件。现有 `cohortkv_d2_wave_plan_v1` 是 Stage-A 单 rank adapter；
+W3 `D2IntegratedExtent` 是先按 owner-local `(S,R,F,record_id)` 排序、再按固定
+`extent_size` 切分的 resident development schedule。它们共同提供 exporter 的输入与
+parity reference，但都不是独立序列化、容量无关且带 content hash 的 D3 contract。
 
 ### 2.3 D3 `ResidencyPlan`
 
@@ -107,8 +120,8 @@ D3 只决定：
 - prefetch/execute/writeback launch order；
 - pinned-buffer credits、backpressure 和 NUMA/PCIe staging placement。
 
-不同 D3 scheduler/baseline 共享 `ActionPlan` hash 和 `WavePlan` constraints，但有不同
-`ResidencyPlan`。
+约束 exporter 冻结后，不同 D3 scheduler/baseline 必须共享 `ActionPlan` hash 和 D3-facing
+constraint hash，但生成不同 `ResidencyPlan`。
 
 ## 3. 公平的 source contract
 
@@ -123,17 +136,19 @@ D3 只决定：
 选择性读取是共同执行契约，不是 D3 相对 strong double-buffer baseline 的创新来源。可以保留
 uniform-record-image reader 作为弱诊断，但不能用它支撑主 speedup。
 
-All-exact 必然有不同的 ActionPlan、WavePlan 和 raw-history source bytes。它只与 mixed 方法共享：
-records、target model、ordinary-host source tier、target dtype/layout/durability、GPU topology、
-per-rank HBM budget、timer 和 manifest endpoint。必须单独报告实际 source bytes。
+All-exact 必然有不同的 ActionPlan、physical constraint plan 和 raw-history source bytes。它只与
+mixed 方法共享：records、target model、ordinary-host source tier、target
+dtype/layout/durability、GPU topology、per-rank HBM budget、timer 和 manifest endpoint。必须
+单独报告实际 source bytes。
 
 ## 4. 候选机制
 
-### 4.1 Global bins, bounded slices
+### 4.1 Global compatibility, bounded slices
 
-先在全 cohort metadata 上建立 D2 bins/pools，再在 bin 内做 byte-bounded cuts。若一个 bin 或
-exact pool 自身超过 HBM，D3 必须切开；它只能最小化 fragmentation，不能声称保留一个物理
-global launch。
+先从已导出的 D2 compatibility membership 在全 cohort 建立逻辑 pools，再在 pool 内做
+byte-bounded cuts。若一个 pool 自身超过 HBM，D3 必须切开；它只能最小化 fragmentation，
+不能声称保留一个物理 global launch。W3 的固定 `extent_size` resident schedule 不是这里的
+输入。
 
 ### 4.2 Per-rank concurrent-buffer admission
 
@@ -188,8 +203,8 @@ participation。所有 target extents 在全局 coverage、lineage 和 checksum 
 
 ### 5.1 D3-independent characterization
 
-冻结一个上游 `ActionPlan` 和 D2 constraints，不运行 D3 scheduler。对 real-history working
-set 扫 `rho=0.5/1/2/4`，比较：
+在 exporter parity 关闭后，冻结一个上游 `ActionPlan` 和 D3-facing constraint hash，不运行
+D3 scheduler。对 real-history working set 扫 `rho=0.5/1/2/4`，比较：
 
 - no-I/O chunk characterization：每个 capacity-safe chunk 在 timer 外 preload，只提供
   optimistic ceiling，不是 same-endpoint baseline；
@@ -207,19 +222,19 @@ peak per-rank HBM 和 total completion time。旧 normalized-capsule source path
 1. same-boundary all-exact；
 2. sequential capacity groups；
 3. action-oblivious double buffer；
-4. global-bin-aware cuts；
+4. global-compatibility-aware cuts；
 5. `+` resource-complementary packing；
 6. `+` topology-aware full pipeline。
 
-Mixed variants共享 source-byte multiset、ActionPlan hash 和 WavePlan constraints。所有 speedup
-只在 ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
+Mixed variants 共享 source-byte multiset、ActionPlan hash 和 D3-facing constraint hash。所有
+speedup 只在 ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
 
 ### 5.3 Metrics
 
 - absolute wall time、records/tokens per second；
 - CPU staging/H2D/D2H bytes、bandwidth 和 exposed time；
 - GPU/collective busy、overlap 和 bubbles；
-- global-bin fragmentation、launch/collective counts；
+- compatibility fragmentation、launch/collective counts；
 - peak per-rank fixed/input/execute/output HBM；
 - private target、commit、abort、reclaim；
 - full-payload K/V、hidden、score、Top-k、padding、lineage、manifest correctness。
@@ -240,18 +255,53 @@ D3 进入论文结果必须同时满足：
 unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 scheduler 没有意义，
 应停止并重新研究 source representation，而不是无限调参。
 
-## 7. 实施顺序
+## 7. D3-ready 入口
 
-1. 冻结 ordinary-host source/target extent schema 和 action-required byte ledger；
-2. 实现 sequential capacity baseline 与 full-payload readback；
-3. 实现 action-oblivious double buffer；
-4. 实现 WavePlan→ResidencyPlan compiler 和 per-rank admission；
-5. 加 resource-complementary/topology-aware scheduling；
-6. 冻结新 D3 protocol；
+当前已经存在、可用于第一步 exporter/schema 工作的上游事实是：
+
+- immutable H12 `ActionPlan` 及其 hash；
+- deterministic owner/embedding rules；
+- Stage-A single-rank wave adapter；
+- W3 owner-local `(S,R,F,record_id)` ordering、fixed-size resident extents 和 merged-exact
+  execution membership；
+- segmented destination implementation；
+- D2 private-target、coverage、lineage、commit/abort semantics；
+- real-history source extents 和现有 D1 exact/compiled operators。
+
+进入 scheduler 对比前仍缺少：
+
+- 一个 normalized、capacity-independent 的 D3-facing constraint schema；
+- owner/operator/program/membership/collective/layout/transaction 的完整序列化；
+- 对当前 runtime 的 record-coverage/parity 检查；
+- stable content hash，供所有 D3 variants 共同绑定。
+
+此外，当前不能依赖：
+
+- W3 timing 是正式 D2 结果；
+- resident D2 schedule 能放入 HBM；
+- segmented target 已被 serving 或下一轮直接消费；
+- direct-old-K/V ordinary-DRAM source 已有性能结果；
+- Python plan/materialization、CPU copy、pinned staging、commit 或 reclaim 免费；
+- destination-v4 normalized capsule 能代表本 D3 source contract。
+
+因此第一轮先关闭 D2 constraint exporter，再进入 mechanism discovery。所有新 artifact 必须记录
+`scientific_result=false`、`formal_design3=false`、source/action/wave hashes、per-rank capacity
+ledger 和完整 timer components。只有 mechanism 改变 Pareto frontier 后，才在
+`docs/eval_protocol.md` 冻结正式 family。
+
+## 8. 实施顺序
+
+1. 实现并冻结 capacity-independent D2 constraint exporter、parity checker 和 content hash；
+2. 冻结 ordinary-host source/target extent schema 和 action-required byte ledger；
+3. 实现 sequential capacity baseline 与 full-payload readback；
+4. 实现 action-oblivious double buffer；
+5. 实现 exported constraints→`ResidencyPlan` compiler 和 per-rank admission；
+6. 加 resource-complementary/topology-aware scheduling；
 7. 先做一个 real-history、单 seed、1-GPU structural screen；
-8. 只有改变 Pareto frontier 后再做 2/4 GPU 和第二 model stream。
+8. 只有 mechanism 改变 Pareto frontier 后才冻结 D3 protocol，再扩展到 2/4 GPU 和第二
+   model stream。
 
-## 8. 更远期反馈层
+## 9. 更远期反馈层
 
 Organic mixed-version program graph、program composition、communication-aware semantic selection
 和 cross-wave bounded renewal 保留为 D1+D2+D3 之后的 future controller，不属于当前 D3。

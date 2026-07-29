@@ -16,6 +16,10 @@
 
 - `docs/08_core_insights_and_roadmap.md` is the authoritative research state and roadmap.
 - `docs/eval_protocol.md` defines which experimental results are valid and comparable.
+- `docs/future_design/DESIGN2_FINAL_PLAN.md` defines the D2 mechanism and D1→D2→D3 interface.
+- `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md` is the only live D2 status ledger.
+- `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the design-ready D3 entry; it is not a
+  protocol or result.
 - When documents conflict, follow the roadmap and evaluation protocol. Do not recover claims from
   deleted early documents or old result paths.
 
@@ -41,11 +45,13 @@
   what is compiled or exactly recomputed and exports an immutable action plan. Active D2 determines
   how that fixed work moves and executes: `(suffix, retained)` extent compilation, owner-local
   retained repair, row-sharded exact/append, segmented suffix-only destination, merged physical
-  exact pools, collective dependencies, and atomic publication. D2 outputs global WavePlan
-  constraints rather than a capacity-specific launch schedule. The proposed D3 is an
-  Action-Aware Out-of-Core Pipeline: it preserves D1 actions and D2 owner/operator/bin/dependency/
-  layout constraints while deriving a per-rank capacity-safe ResidencyPlan over ordinary host
-  DRAM, bounded pinned staging, and HBM. D2/D3 must not reselect requested actions;
+  exact pools, collective dependencies, and atomic publication. The D2→D3 contract is a global,
+  capacity-independent WavePlan constraint view rather than a resident launch schedule; this
+  normalized, content-hashed artifact is not yet implemented. The proposed D3 is an Action-Aware
+  Out-of-Core Pipeline: after exporting that view, it preserves D1 actions and D2
+  owner/operator/compatibility/dependency/layout constraints while deriving a per-rank
+  capacity-safe ResidencyPlan over ordinary host DRAM, bounded pinned staging, and HBM. D2/D3 must
+  not reselect requested actions;
   communication-aware semantic selection and organic mixed versions are a later feedback layer,
   not D3.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
@@ -79,12 +85,16 @@
   segmented consumer remain open. Synthetic lookup contention is supporting characterization,
   not a serving trace or D2 gate.
 - D3 currently has a paper skeleton and design hypothesis only. It has no frozen protocol or paper
-  result. Its strong baselines must share the action-required source-byte multiset: sequential
-  capacity groups and an action-oblivious double buffer, plus same-boundary all-exact with its
-  actual raw-history bytes. The primary boundary is ordinary host DRAM → bounded pinned staging →
-  GPU → ordinary host DRAM private target → atomic manifest. SSD/database ingress, serving traces,
-  host-DRAM oversubscription, and online hotness are out of scope. A no-I/O chunk sum is
-  characterization only; the old normalized-capsule DRAM result is not direct-old-K/V D3 evidence.
+  result. Its first readiness task is to export, validate, serialize, and hash a capacity-independent
+  D2 constraint view from the immutable ActionPlan, owner map, current shape-aware ordering,
+  merged-exact membership, collective templates, segmented layout, and transaction semantics.
+  Scheduler comparisons must wait for that common hash. Its strong baselines must share the
+  action-required source-byte multiset: sequential capacity groups and an action-oblivious double
+  buffer, plus same-boundary all-exact with its actual raw-history bytes. The primary boundary is
+  ordinary host DRAM → bounded pinned staging → GPU → ordinary host DRAM private target → atomic
+  manifest. SSD/database ingress, serving traces, host-DRAM oversubscription, and online hotness are
+  out of scope. A no-I/O chunk sum is characterization only; the old normalized-capsule DRAM result
+  is not direct-old-K/V D3 evidence.
 
 ## Code layout
 
@@ -118,6 +128,10 @@
   `scripts/validate_cohortkv_design2_integrated_full_payload.py`, and
   `scripts/benchmark_cohortkv_design2_resource_isolation.py` — active D2 development entry
   points; their current W3 artifacts are non-scientific mechanism discovery.
+- `src/hstu_kvcache/migration/destination.py` and `out_of_core.py` are historical destination-v4
+  implementation assets, not a D3 implementation or result. New D3 work must preserve the
+  D2 constraint boundary, first materialize its normalized exporter/hash, and then create an
+  explicit `ResidencyPlan` path.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

@@ -104,8 +104,8 @@ three measured endpoints: it costs about `0.549x` exact while the selected compi
 is retained only as a candidate for a stricter fidelity target not met by the compiled program;
 it is not automatically a middle tier.
 
-The next experiment is not another search on these 582 users. It is frozen replication of the
-selected operator, followed by organically mixed version cohorts and end-to-end state movement.
+The successor experiment was not another search on these 582 users. It was frozen replication of
+the selected operator, followed by mixed version cohorts and end-to-end state movement.
 
 The immediate follow-up implements the planned label-free verification stage with a new 60-user
 certificate split and a 522-user final test. It publishes per-cohort action certificates and

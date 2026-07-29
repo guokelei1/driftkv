@@ -1,5 +1,8 @@
 # Terminal projection optimization and contiguous-interval oracle
 
+> Historical structural-baseline record. Terminal projection remains a valid implementation
+> result; neither deepest suffix nor arbitrary intervals define the active D1 route.
+
 This follow-up answers two questions left open by the six-layer suffix experiment:
 
 1. Can the terminal full block be removed without changing the migrated K/V?
@@ -88,11 +91,12 @@ L1-L4 are also worse on Best Rank on every validation seed and show no stable ND
 
 ## Decision
 
-The current evidence supports retaining the **deepest optimized suffix** as the main operator.
+Within this historical protocol, the evidence supported retaining the **deepest optimized suffix**
+as the baseline operator.
 Arbitrary interval selection creates metric-specific, seed-sensitive alternatives but does not
 provide a reproducible improvement that justifies a dynamic planner. This does not prove suffix
-optimality for larger models or other datasets; it means arbitrary-layer selection has not passed
-the current gate and should not receive more engineering effort now.
+optimality for larger models or other datasets; it means arbitrary-layer selection did not pass
+that gate. The current roadmap has since replaced suffix as the active method.
 
 The corrected `frozen / full reuse / full compute` control and the subsequent KuaiRand scale gates
 have since passed. Current priorities are maintained only in

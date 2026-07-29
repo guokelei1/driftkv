@@ -1,107 +1,120 @@
-# HSTU KV Cache Version Migration
+# EvoKV
 
-本仓库研究持续训练产生的 HSTU 模型版本变化：
+EvoKV studies how to update model-version-stale HSTU prefix K/V after a generative recommender
+advances to a new model version. Exact replay restores current-model state but repeats the complete
+history computation. Reusing the old cache is cheap but version-inconsistent. EvoKV turns this
+single update job into three successive system decisions:
 
 ```text
-theta_old + old prefix cache -> theta_current + version-stale K/V
+D1 ActionPlan
+  what should be translated, progressively repaired, or exactly recomputed
+        ↓
+D2 WavePlan constraints
+  where that fixed work executes and how it becomes physical multi-GPU work
+        ↓
+D3 ResidencyPlan
+  when each legal extent enters and leaves HBM under an out-of-core capacity bound
 ```
 
-完整历史重算能够得到 current-model K/V，但成本高。当前方法利用缓存的旧
-`Norm(x)`，为同一个 source/target version cohort 编译共享迁移程序，以更低成本生成接近
-current-model 的 K/V。
+The authoritative research state is
+[docs/08_core_insights_and_roadmap.md](docs/08_core_insights_and_roadmap.md). Experimental
+comparability is defined only by [docs/eval_protocol.md](docs/eval_protocol.md). Start from
+[docs/README.md](docs/README.md) for the complete document map.
 
-权威研究状态见
-[docs/08_core_insights_and_roadmap.md](docs/08_core_insights_and_roadmap.md)，实验可比性见
-[docs/eval_protocol.md](docs/eval_protocol.md)，完整文档索引见
-[docs/README.md](docs/README.md)。
+## Current design
 
-## 当前三层设计
+### D1: version-cohort tiered migration
 
-1. **Cohort migration compiler**
-   - 以 old/current model pair 和隔离的无标签样本生成、认证并发布共享 migration program；
-   - 当前 fast path 将 `fresh - cheap` K/V residual 编译进旧 `Norm(x)` 到目标 K/V 的一个
-     affine projection；
-   - version 用于编译、认证和合批，不用于预测某个用户或版本能否安全 reuse。
-2. **Capsule-to-K/V operator**
-   - fused affine、bias、valid-length handling 和 K/V split；
-   - 支持连续或 jagged 输入以及目标 K/V direct write；
-   - cohort page compaction 在当前长序列 KuaiRand trace 上只有约 1% host-boundary 改善，
-     因此保留为条件式布局机制，不作为已成立的主要贡献。
-3. **Destination-oriented out-of-core engine**
-   - host-staged backend 以有界 transform/publication wave 执行 K/V 更新；
-   - 支持单/多 GPU、host-staged publication 和 target-GPU HBM direct publication；
-   - 通过统一 transaction 将结果发布到 HBM、DRAM、POSIX filesystem 或 remote-object
-     backend，只有完整 record coverage 后才提交 target-version manifest。
+D1 resolves the reuse–recompute trade-off and emits an immutable per-record `ActionPlan`.
 
-薄层 Update Coordinator 只负责解析 job spec，并把已发布 program、capsule shards、devices
-和 destination 交给上述三层。它是系统串联入口，不是第四项贡献，也不负责 reuse 判断、
-训练、在线请求调度或自动 destination placement。
+- The fast tier fits the shared `fresh - cheap` K/V residual over cached old `Norm(x)` for one
+  source/target version cohort; the selected data plane reparameterizes the compiled affine to run
+  directly over existing old K/V.
+- The quality tier can replay a current-model prefix and transport its boundary residual to deeper
+  current projections.
+- Exact current-model recomputation is the endpoint and the semantic reference.
 
-当前系统不依赖合成的用户请求 arrival、热度、routing 或训练/推理共置假设。训练只负责提供
-模型版本；更新引擎接收固定 cache/capsule cohort 和显式 destination。filesystem 与 remote
-目前是接口和正确性实现，不是 SSD 或网络性能结果。当前输入 capsules 仍由调用方整体准备；
-bounded waves 尚不等于 source-side 全量状态已经流式化。
+Version cohorts organize compilation and batching; they do not predict which user is safe to
+reuse. Recommendation labels, per-user drift, JVP, and Fisher signals do not route caches.
 
-## 当前证据边界
+### D2: wave-compiled segmented execution
 
-- 大规模 KuaiRand 主设置为 16 层、hidden/K/V width 512、最大长度 2,048，模型约
-  0.181B 参数。
-- 4+12 训练和 66 个 stale-cache/current-model pair 的 motivation 已完成；结果支持
-  fixed reuse window 不是稳定质量规则，但不支持“每隔固定版本必然出现 cliff”。
-- verified compiler 在独立 fit/selection/certificate/final 用户角色下发布
-  theta0/theta4/theta10 到 theta11 的 compiled full-affine programs。当前结果仍是 adaptive
-  seed-0 evidence，需要冻结后复现。
-- 两卡 real-capsule v2 在相同 pinned-host 输入/输出边界下达到 1.951x 的 1→2 GPU scaling，
-  并相对 independently pipelined BF16 full recomputation 快 11.22x。
-- v3 HBM/host endpoint 结果证明 destination 会改变数据移动边界，但不同 endpoint 的时间不能
-  被解释成算子 speedup。
-- 冻结 mixed-version trace 的四卡补测中，host-staged migration、direct-HBM migration 和
-  host-staged BF16 exact 分别达到 3.275x、3.331x 和 3.592x 的 1→4 scaling；四卡共同
-  host boundary 上 compiled migration 仍比 BF16 exact 快 10.39x。
-- destination-v4 已完成代码与事务正确性闭环，尚未完成 source-side streaming、全 cohort
-  HBM/DRAM 同 endpoint 性能结果以及物理 SSD/remote 实验。
+D2 accepts D1 actions unchanged and lowers them onto row-sharded multi-GPU execution.
 
-## 代码布局
+- compiled retained-prefix repair stays at the old-K/V owner and performs no embedding lookup;
+- exact and append obtain only unavoidable item vectors from row-sharded embeddings;
+- compiled work is ordered by `(suffix, retained, final)` shape before fixed-size resident extent
+  cuts, while physically identical exact reasons share one pool;
+- retained and suffix extents remain segmented, avoiding a full retained-prefix rewrite;
+- collective dependencies, coverage, lineage, and atomic target publication are explicit.
+
+The D2→D3 contract is a global, capacity-independent `WavePlan` constraint view rather than a
+capacity-specific launch schedule. Current code implements the constituent mechanisms and a
+resident W3 schedule, but has not yet exported that normalized view as an independently validated,
+content-hashed artifact. The three-A40 full-cohort results are development evidence only; the
+exporter, formal W4, same-boundary 1/2/4-GPU evaluation, segmented-consumer closure, and complete
+commit/reclaim timing remain open.
+
+### D3: action-aware out-of-core pipeline
+
+D3 is the next implementation target. Its first step is to freeze the D2 constraint exporter.
+Subsequent scheduler variants preserve the D1 `ActionPlan` and one common D2
+owner/operator/compatibility/dependency/layout hash, then derive a per-rank capacity-safe
+`ResidencyPlan` for:
+
+```text
+ordinary host DRAM
+  → bounded pinned staging
+  → GPU execution
+  → bounded pinned staging
+  → ordinary host DRAM private target
+  → atomic manifest publication
+```
+
+The initial comparison is against both sequential capacity groups and a strong action-oblivious
+double buffer with the same action-required source bytes. SSD/database ingress, serving traces,
+hotness, and host-DRAM oversubscription are outside the first D3 boundary. D3 has a frozen problem
+statement and exploration contract, but no executable handoff, frozen protocol, scheduler
+implementation, or result yet.
+
+## Evidence boundary
+
+- D1 has a frozen KuaiRand single-configuration vertical slice and broader motivation/method
+  replications. The normalized-capsule source path is a measured negative result; the selected
+  hot-HBM route transforms existing exact source-version old K/V directly.
+- D2 implementation and mechanism discovery are far enough to define the physical lowering, but
+  its current W3 timings are `scientific_result=false` and must not enter paper tables.
+- D3 is design-ready only. Existing destination-v4 and normalized-capsule DRAM experiments are
+  historical prototypes, not direct-old-K/V D3 evidence.
+- Historical protocol names such as `cohortkv_*` and `streamkv_*` remain unchanged because they
+  identify immutable artifacts; the current paper/system name is EvoKV.
+
+## Repository layout
 
 ```text
 src/hstu_kvcache/
-  data/          KuaiRand、MovieLens 与 ordered-exposure 数据
-  models/        模块化 HSTU 与一等 K/V 输出
-  streaming/     leak-free next-item 训练与模型版本工具
-  migration/     compiler、算子、多 GPU runtime 与 destination backends
-scripts/
-  train_kuairand_long_context.py
-  evaluate_kuairand_long_context_motivation.py
-  evaluate_kuairand_long_context_sync_design.py
-  benchmark_kuairand_two_gpu_migration_system.py
-  benchmark_kuairand_cohort_jagged_system.py
-  benchmark_kuairand_four_gpu_scaling_system.py
-  run_streamkv_update_coordinator.py
-  validate_streamkv_destination_runtime.py
-experiments/
-  motivation/
-  migration/
-  system/
+  data/          dataset loaders and temporal preparation
+  models/        modular HSTU with first-class K/V output
+  streaming/     leak-free streaming training and model-version utilities
+  migration/     D1 operators, D2 planning/runtime, transactions, and historical backends
+scripts/         experiment, validation, benchmark, and freeze entry points
+configs/         frozen plans, manifests, schemas, and checked summaries
+experiments/     protocol-scoped result records; not current design instructions
+docs/            authoritative state, protocol, design contracts, and document index
+paper/           writing references and the frozen pre-EvoKV D1 manuscript artifact
 ```
 
-## 开发与轻量验证
+Historical result notes and writing resources are indexed by
+[experiments/README.md](experiments/README.md) and [paper/README.md](paper/README.md).
+
+## Development checks
 
 ```bash
 pip install -e .
 pytest
 ruff check src tests scripts
-
-python scripts/validate_streamkv_destination_runtime.py --destination dram
-python scripts/validate_streamkv_destination_runtime.py \
-  --destination filesystem --root /path/on/a/filesystem
-python scripts/validate_streamkv_destination_runtime.py --destination remote
-CUDA_VISIBLE_DEVICES=0 python scripts/validate_streamkv_destination_runtime.py \
-  --destination hbm --devices cuda:0
-
-python scripts/run_streamkv_update_coordinator.py --print-template
 ```
 
-这些 destination validation 命令只运行小张量正确性路径，不训练模型，也不是性能实验。新
-实验必须使用独立 protocol，并保证 compiled migration 与 full recomputation 具有相同的
-source、destination、dtype、layout、durability 和 manifest timing boundary。
-Coordinator 的 `--print-template` 和默认 plan-only 输出也只是架构接口，不是实验产物。
+Do not pool results with different protocol strings. New primary KuaiRand training should use
+`training_sequences=all_chunks` and record effective target counts. GPU time must be measured; a
+hand-written cost constant is not a substitute for execution.

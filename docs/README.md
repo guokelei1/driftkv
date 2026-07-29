@@ -1,217 +1,115 @@
-# Current documentation index
+# Documentation index
 
-This directory contains only current research state, protocol, and implementation planning.
-Historical design exploration is recoverable from Git history but is not kept beside active
-instructions.
+The active documents describe one three-layer EvoKV architecture:
+
+```text
+semantic ActionPlan → distributed WavePlan constraints → capacity-bounded ResidencyPlan
+```
+
+Old design exploration is recoverable from Git history. Historical experiment records remain
+tracked under `experiments/` because their measurements and negative results are useful, but they
+do not define the current design.
 
 ## Precedence
 
 When documents disagree, use this order:
 
-1. [08_core_insights_and_roadmap.md](08_core_insights_and_roadmap.md) — authoritative research
-   state, supported claims, open gates, and stop conditions.
-2. [eval_protocol.md](eval_protocol.md) — authoritative experiment semantics, comparability, and
-   valid artifact boundary.
-3. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — active Design 2
-   problem definition, interfaces, MVP, experiments, and go/no-go gates.
-4. [future_design/DESIGN2_FOUR_STAGE_EXECUTION.md](future_design/DESIGN2_FOUR_STAGE_EXECUTION.md) —
-   active Design 2 execution control: stage inputs/outputs, risks, backtracking, and stop rules.
-5. [future_design/DESIGN2_STAGE_A_HANDOFF.md](future_design/DESIGN2_STAGE_A_HANDOFF.md) —
-   frozen non-scientific Stage A boundary, decisions, risks, unsupported claims, and Stage B entry
-   diagnostics.
-6. [future_design/DESIGN2_STAGE_B_HANDOFF.md](future_design/DESIGN2_STAGE_B_HANDOFF.md) —
-   current Stage B implementation/evidence boundary and the still-pending independent-W4 gate.
-7. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
-   current dual-gate ledger: Stage-C C0 plus W3 fixed-action physical-lowering discovery are
-   complete, while formal evaluation remains blocked on the independent-W4 Stage-B freeze.
-8. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
-   frozen historical implementation sequence for the completed KuaiRand Stage 0–6 vertical slice
-   and its post-freeze Stage-4.10 amendment.
-9. [10_target_manuscript_stage0_6_correspondence.md](10_target_manuscript_stage0_6_correspondence.md)
-   — correspondence between the pre-rewrite target manuscript and the frozen Stage 0–6 evidence,
-   including the resulting paper reframing and remaining gaps.
-10. [Frozen D1-only CohortKV manuscript](../paper/cohortkv/manuscript_v3_target_en.md) — the
-   evidence-bound English draft rewritten from the completed Stage 0–6 vertical slice. It has not
-   yet incorporated the active D2 design/results and is not the current D1/D2 source of truth.
-11. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
-   ordered-exposure settings, and negative boundaries.
+1. [08_core_insights_and_roadmap.md](08_core_insights_and_roadmap.md) — authoritative thesis,
+   supported claims, current status, open work, and stop conditions.
+2. [eval_protocol.md](eval_protocol.md) — authoritative result-family, timer, workload, and
+   comparability boundary.
+3. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
+   mechanism and immutable D1→D2→D3 interface.
+4. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
+   implemented D2 state, non-scientific development evidence, pending W4/formal-evaluation work,
+   and the D3 handoff.
+5. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
+   problem definition, source/capacity/timer contract, candidate mechanisms, baselines, and
+   go/no-go conditions.
+6. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+   frozen D1 Stage 0–6 evidence ledger. It is history, not a current execution plan.
+7. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
+   semantics, usable capacity, and generality boundaries.
 
-The frozen D1 manuscript contains no `TBD` placeholders. Open replications and implementation gaps
-are stated as limitations rather than filled with seed-0 numbers. It remains subordinate to the
-roadmap and evaluation protocol when experimental semantics conflict.
+Repository-local agent rules are in [../AGENTS.md](../AGENTS.md). Experiment records are indexed
+by [../experiments/README.md](../experiments/README.md), active design documents by
+[future_design/README.md](future_design/README.md), and paper/reference material by
+[../paper/README.md](../paper/README.md).
 
-## Current execution phase
+## Current state
 
-The canonical paper story is:
+| Layer | Question | Output | Status |
+|---|---|---|---|
+| D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
+| D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
+| D3 | When may each legal extent reside in HBM when source plus private target exceeds capacity? | capacity-specific `ResidencyPlan` | problem/design ready; executable handoff, scheduler, and evidence not started |
 
-> D1 decides what must be translated or recomputed and creates logical action sparsity. D2 keeps
-> those actions immutable and compiles their placement, shape, movement, segmented output, and
-> publication so logical sparsity becomes physical savings. Communication-aware semantic action
-> selection remains D3.
+D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
+physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
+compiled ordering, merged exact pools, segmented destinations, and atomic publication. D3 must
+preserve both upstream decisions while scheduling ordinary-DRAM→GPU→ordinary-DRAM micro-waves.
 
-**Design 2 Stage A is frozen; Stage B implementation, W1/W2 evidence, the three-rank diagnostic,
-and C0 development closure are complete, but Stage B is not frozen because the independent-W4
-gate is pending.**
-`DESIGN2_FINAL_PLAN.md` freezes what D2 means; `DESIGN2_FOUR_STAGE_EXECUTION.md` controls how it is
-implemented; the two handoffs freeze what each transition may depend on. Stage A closes the
-canonical action plan, exact/frontend equivalence, phase ledger, Stage-5 adapter, request/dedup
-ceilings, four-A40 topology microbenchmarks, and static capacity assumptions. Its artifacts are
-explicitly non-scientific. Stage B now has owner-local compiled retained, FP32 row-sharded
-exact/append, requested/local/remote ID hashes, collective tensor-payload accounting, private
-ready/abort, W1 repeat, W2 capacity projection and bounded W2 hard-failure evidence. A physical
-GPU1/GPU3 cross-island W2 diagnostic also passes. A physical GPU0/GPU1/GPU3 W3 NCCL normal and
-hard-failure diagnostic now passes as `scientific_result=false`; it exercises asymmetric
-three-rank composition and authorizes C0 development only. It cannot replace W4. The current
-double gate is `stage_c_development_entry=go` and `stage_c_evaluation_entry=blocked`. C0 now
-completes W1/W2/W3 normal plus W3 pre-commit abort on a fixed 16-record fixture; it closes only the
-development wave/state-machine interface. The artifacts have no timing, full-cohort, capacity, or
-formal epoch-publication semantics.
+Neither D2 nor D3 may reselect semantic actions. Communication-aware semantic selection, organic
+mixed-version program graphs, and cross-update renewal control are later feedback directions, not
+the current D3.
 
-Separate three-GPU W3 mechanism discovery now completes a v1→v5 chain from naive mixed to
-segmented suffix-only, `(S,R)` shape-aware extents, and merged exact pooling. The full682/B8
-development point and full-payload validation are positive, but remain
-`scientific_result=false`: final publication/commit/reclaim, segmented consumer, formal 1/2/4-GPU
-protocol, and W4 are still open. Synthetic lookup contention is supporting characterization, not a
-serving trace or required D2 claim. Formal integrated evaluation and every D2 paper-performance
-claim remain blocked. The live ledger is
-`future_design/DESIGN2_DEVELOPMENT_STATUS.md`.
+## What may be used as evidence
 
-The prior **single-configuration full-chain development** phase is complete and frozen. Its
-configuration was:
+- A checked aggregate is valid only within its recorded protocol.
+- Training seed is the replication unit. Users or samples inside one trained model are diagnostics,
+  not independent repeats.
+- Result families with different protocol strings must remain separate.
+- D2 W3 integrated timings, full-payload validation, and synthetic lookup contention are
+  `scientific_result=false` mechanism discovery.
+- D3 currently has no result family. Destination-v4 correctness, normalized-capsule DRAM results,
+  and hot-HBM D1 results cannot be renamed as D3 evidence.
+- The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
+  current EvoKV manuscript or design source of truth.
 
-- KuaiRand 4+12 long-context data;
-- the 16-layer, hidden/K/V-width-512 seed-0 model chain;
-- theta0/theta4/theta10 to theta11 cohorts at the theta11/D16 endpoint;
-- compiler, closest baselines, operator, full-cohort engine, migrate/exact lifecycle, and a
-  minimal preflight/fallback/atomic-publication closure;
-- HBM and DRAM as the primary destinations, plus an artifact-derived source-state accounting
-  table. INT8/capture/SSD work is optional post-v1.
+## Historical evidence map
 
-This package remains development evidence. A post-freeze Stage-4.10 amendment explores whether H12
-scheduled-exact records should also calibrate the per-edge shared direct program, with build cost
-included in `U` and no separate fit-only exact cohort or semantic admission gate. Its two-edge smoke
-is complete, but full-chain task quality is not. Stage 4.10 remains a separate open D1
-program-lifecycle amendment: it does not block D2 Stage A, and its outputs must not silently replace
-the frozen Stage-4.9 action/program inputs. The historical completed stages and same-interface
-fallback rules remain in the Stage 0–6 plan. Stage 0 is complete: the machine-readable
-blueprint, 682-record workload manifest, and result schema are under
-`configs/cohortkv_single_config_v1/`. Its re-audit separates internal/raw user identity, makes
-residual hidden-suffix storage explicit, enforces all 18 primary system points, and requires HBM
-capacity preflight. Stage 1 is also complete: the 177-point selective-contiguous frontier and
-certificate are frozen in `configs/cohortkv_single_config_v1/stage1_frontier_summary.json`.
-No selective interval certifies; `m12/layers0-11` is retained only as a diagnostic external
-baseline, while exact is its publishable fallback. Stage 2 is also complete: serialized deployed
-certificates, FP16 runtime programs, threshold sweeps, and executable fallback plans are frozen in
-`configs/cohortkv_single_config_v1/stage2_compiler_summary.json` and `stage2_plans/`. The measured
-residual hidden suffix uses BF16 after real FP16 overflow; the primary capsule/program/output path
-remains FP16. Stage 3 is also complete: reference, packed, and fused paths share one contiguous
-unpadded output-extent API, all nine batch/bucket layouts pass full valid-element and padding
-checks, and the resident development default is fused FP16 with batch 4 and bucket width 32. The
-frozen record is `configs/cohortkv_single_config_v1/stage3_operator_summary.json`. Stage 4 is
-also complete: all 30 full-cohort HBM/DRAM × 1/2/4-GPU method/control points pass capacity,
-transport, and manifest checks. Compiled remains 2.70–3.49× faster than the certificate-failed
-selective diagnostic but loses to exact at all six matched endpoints because the 17.82-GB FP16
-capsule source path consumes 91.35%–96.91% of completion. The frozen record is
-`configs/cohortkv_single_config_v1/stage4_system_summary.json`. Stage 4.5 is also complete and
-frozen in `stage4_5_source_plan_summary.json`: a direct affine over the already resident old K/V
-eliminates extra `Norm(x)` state, preserves the deployed certificate and full real transport, and
-beats paired HBM-resident raw-history exact at the complete 1/2/4-GPU cohort points. The result is
-limited to the declared existing-old-K/V hot-HBM regime. Stage 4.6 is now frozen in
-`stage4_6_lifecycle_policy.json` and `stage4_6_lifecycle_summary.json`: one
-KuaiRand/seed-0/one-A40 `theta0 -> theta11` chain uses a balanced 15%–25% exact-refresh schedule,
-maximum migration depth four, and the actual previous output at every update. It costs 0.2134×
-all-exact GPU time on the complete 682-record chain. The rejected per-cache threshold remains a
-refresh-wave negative result. Stage 4.7 completed the canonical-date growing-history chain, and
-Stage 4.8 completed all sixteen label-free scheduler development points. Stage 4.9 then completed
-the corrected 11-edge same-device retained-prefix confirmation: `token_debt_total10` is the
-`0.071319×` cost endpoint, and `staggered_renewal_h12` is the frozen bounded-renewal candidate at
-`0.100017×`, with record-weighted AUC/NDCG@100/Hit@100 recovery
-`1.000039/0.997463/1.000000`. Target-model append remains outside both timers. Its groupwise
-host-staged evaluator reports state movement separately and does not support a full-cohort
-HBM-resident or end-to-end movement claim.
+The records below remain useful within their own protocols:
 
-The merged minimal Stage 5 formal two-A40 copy-on-write integration also passes: normal and
-semantic-fallback jobs commit all 682 records, while mid-job and pre-commit faults expose no
-partial target and preserve readback-valid old state. Stage 6 completes the single-configuration
-package with a deterministic CPU-only assembly over frozen Stage-1 through Stage-5 artifacts,
-publishing `final_summary_seed0.json` and eight checked sidecars without rerunning the old GPU
-matrix. Runtime sentinel, online rework/resume, INT8/capture, and SSD benchmarks remain optional.
-Stage 4.10 then adds non-scientific inverse-Norm and direct-K/V renewal-calibrated smokes over
-`theta0 -> theta1 -> theta2`; neither is yet selected. Its formal same-device full-chain
-quality/cost closure is still required before that amendment can enter a final paper matrix.
-The C0 development lane is complete. Targeted W1/W2/W3 diagnostics remain allowed if they address a
-specific interface risk, but they do not advance the formal gate. When GPU2 is safely free, run the
-formal four-independent-A40 W4 normal and hard-failure cases, then the deterministic Stage B
-freeze. Formal Stage-C evaluation and Stage 7 replication remain blocked until that gate closes.
+- `experiments/validity/` — cache semantics, structural baselines, and early negative routes;
+- `experiments/scaling/` and `experiments/motivation/` — scale, capacity, and workload
+  characterization;
+- `experiments/exposure/` — ordered-exposure dataset and cache-version controls;
+- `experiments/migration/` — progressive, compiled, and cohort-tiered D1 method development;
+- `experiments/system/` — D1 runtime/evidence chain and historical destination prototypes.
 
-## Key experiment records
+Some filenames retain `CohortKV` or `StreamKV`. Those names identify frozen protocols and artifacts;
+they do not imply that the corresponding old architecture is current.
 
-These are navigation entry points, not an exhaustive artifact registry; the protocol remains the
-source of truth.
+## D3-ready boundary
 
-Motivation and scale:
+The next new mechanism work begins by materializing one missing handoff artifact:
 
-- [Validity overview](../experiments/validity/README.md)
-- [Streaming value control](../experiments/validity/STREAMING_VALUE_CONTROL.md)
-- [Interval oracle](../experiments/validity/INTERVAL_ORACLE.md)
-- [Scaling v1](../experiments/scaling/SCALING_V1.md)
-- [KuaiRand factorial](../experiments/scaling/KUAIRAND_FACTORIAL_V1.md)
-- [KuaiRand data utilization](../experiments/scaling/KUAIRAND_DATA_UTILIZATION_V1.md)
-- [Ordered-exposure reproduction](../experiments/exposure/ORDERED_EXPOSURE_V1.md)
-- [Cache-version matrix](../experiments/exposure/CACHE_VERSION_MATRIX_V1.md)
-- [Long-context opportunity boundary](../experiments/exposure/OPPORTUNITY_REGIME_V1.md)
-- [Capacity v2](../experiments/motivation/CAPACITY_V2.md)
-- [KuaiRand 4+12 split](../experiments/motivation/LONG_CONTEXT_SPLIT_EXPLORATION_V1.md)
+- derive a normalized, capacity-independent D2 constraint view from the immutable action plan,
+  owner map, operator/program bindings, current shape-aware ordering, merged-exact membership,
+  collective templates, segmented layout, and transaction semantics;
+- validate its record/runtime parity, serialize it, and assign a stable content hash;
+- exclude resident `extent_size`, HBM cuts, launch order, and staging decisions.
 
-Migration:
+After that closes, D3 scheduler variants begin from:
 
-- [Compiled low-rank v1](../experiments/migration/COMPILED_LOW_RANK_V1.md)
-- [Progressive prefix baseline](../experiments/migration/PROGRESSIVE_PREFIX_REPLAY_V1.md)
-- [Cohort-tiered migration](../experiments/migration/COHORT_TIERED_MIGRATION_V1.md)
-- [Long-context compiled search](../experiments/migration/LONG_CONTEXT_COMPILED_SEARCH_V1.md)
-- [Verified cohort compiler](../experiments/migration/VERIFIED_COHORT_COMPILER_V1.md)
+- one immutable D1 `ActionPlan`;
+- one content-hashed D2 constraint plan that freezes owner, operator, compatible pool membership,
+  collective dependencies, segmented target layout, coverage, and lineage;
+- ordinary host DRAM for both committed source and complete private target;
+- bounded pinned input/output pools;
+- a per-rank usable-HBM budget and measured fixed/transient memory ledger;
+- identical action-required source bytes for sequential, double-buffered, and proposed mixed
+  schedulers.
 
-System:
+Before the exporter closes, work is limited to the exporter/schema, source-byte ledger, and
+sequential-baseline preparation; scheduler comparisons cannot claim identical D2 work. All D3
+development artifacts remain explicitly non-scientific until a new protocol is frozen in
+`eval_protocol.md`. D3 may be explored before D2 paper evaluation is complete, but it cannot use
+W3 development timings as a formal upstream result.
 
-- [Single-configuration full-chain v1](../experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md)
-- [Stage 1 selective frontier](../experiments/system/COHORTKV_STAGE1_FRONTIER_V1.md)
-- [Stage 2 deployed compiler certificate](../experiments/system/COHORTKV_STAGE2_COMPILER_V1.md)
-- [Stage 4.5 direct old-K/V source plan](../experiments/system/COHORTKV_STAGE4_5_SOURCE_PLAN_V1.md)
-- [Stage 3 capsule/operator](../experiments/system/COHORTKV_STAGE3_OPERATOR_V1.md)
-- [Stage 4 full-cohort system](../experiments/system/COHORTKV_STAGE4_SYSTEM_V1.md)
-- [Stage 4.7 growing-history lifecycle](../experiments/system/COHORTKV_STAGE4_7_ORGANIC_LIFECYCLE_V1.md)
-- [Stage 4.8 scheduler sweeps](../experiments/system/COHORTKV_STAGE4_8_SCHEDULER_SWEEPS_V1.md)
-- [Stage 4.9 rollout boundary](../experiments/system/COHORTKV_STAGE4_9_ROLLOUT_BOUNDARY_V1.md)
-- [Stage 4.10 renewal-calibrated program](../experiments/system/COHORTKV_STAGE4_10_RENEWAL_CALIBRATED_V1.md)
-- [Stage 5 minimal implementation closure](../experiments/system/COHORTKV_STAGE5_MINIMAL_CLOSURE_V1.md)
-- [Stage 6 single-configuration freeze](../experiments/system/COHORTKV_STAGE6_SINGLE_CONFIG_FREEZE_V1.md)
-- [Two-GPU controlled migration](../experiments/system/TWO_GPU_MIGRATION_SYSTEM_V2.md)
-- [Cohort-jagged negative result](../experiments/system/COHORT_JAGGED_SYSTEM_V3.md)
-- [Four-GPU controlled scaling](../experiments/system/FOUR_GPU_SCALING_V1.md)
-- [Destination-oriented out-of-core v4](../experiments/system/DESTINATION_OUT_OF_CORE_V4.md)
+## Removed material
 
-Earlier experiment records remain valid only within their recorded protocol. They are historical
-evidence, not current implementation instructions.
-
-## Artifact boundary
-
-`eval_protocol.md` is the only maintained list of valid result families. Do not duplicate that
-inventory here.
-
-- Raw per-seed files and checkpoints may remain local and ignored.
-- Tracked aggregates must retain their protocol and evidence-level metadata.
-- Smoke, plan-only, synthetic interface, and controlled trace outputs cannot be promoted to
-  full-cohort or replicated evidence.
-- Result families with different protocol strings cannot be pooled.
-
-## Retired documentation
-
-The former project-wide review snapshot and the large system-candidate exploration were removed
-from the active directory. They mixed current tasks with speculative serving, second-hardware,
-larger-model, compression, and alternate-paper directions that are outside the present scope.
-Their useful current content is now represented by the authoritative roadmap, frozen D1-only
-manuscript, frozen single-configuration plan, and the active D2 documents.
-
-The old background PNG was also removed after the paper-native problem-and-scope figure superseded
-it. All removed tracked files remain recoverable from Git history and must not be cited as current
-state.
+Redundant D2 stage-control and handoff documents, the pre-rewrite manuscript correspondence, early
+paper drafts, and obsolete paper-process notes were removed. Their current facts were consolidated
+into the D2 design/status pair, the D1 evidence ledger, and this index. Git history remains the
+archive; deleted documents must not be cited as current state.

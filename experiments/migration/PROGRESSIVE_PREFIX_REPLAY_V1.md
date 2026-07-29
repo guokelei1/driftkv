@@ -89,7 +89,7 @@ dataset-tier cell to have mean selected cost below full and positive mean held-o
 rank-utility gain over reuse. Seed signs and intervals must still be reported; a positive mean
 does not erase an unstable cell.
 
-## Current system boundary
+## Protocol boundary
 
 The measured cost is the resident-GPU migration kernel. The protocol records extra normalized
 state, but it does not yet include cache reads/writes, probe admission, full-probe recomputation,

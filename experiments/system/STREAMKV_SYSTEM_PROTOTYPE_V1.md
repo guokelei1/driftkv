@@ -1,5 +1,9 @@
 # StreamKV system prototype v1
 
+> Historical disposition: superseded prototype record. Its compiler/capsule/executor decomposition
+> is not the current EvoKV three-layer design, and destination-v4 is no longer the active
+> successor. Preserve the measurements only within this protocol.
+
 ## Status
 
 This is a preliminary systems prototype result, not a replacement for any current algorithm
@@ -8,8 +12,8 @@ quality protocol. The algorithm section reuses the frozen
 with the large capacity-v2 model shape. The three evidence families remain explicitly separated
 inside the result artifact.
 
-`TWO_GPU_MIGRATION_SYSTEM_V2.md` is the current real-checkpoint system endpoint. This file remains
-the historical synthetic prototype and must not be mixed with v2 measurements.
+`TWO_GPU_MIGRATION_SYSTEM_V2.md` was the next real-checkpoint endpoint in this experiment lineage.
+This file remains the historical synthetic prototype and must not be mixed with v2 measurements.
 
 ## Implemented prototype
 
@@ -110,11 +114,11 @@ remained exactly zero.
 
 Four GPUs do not outperform two GPUs in this host-backed setup. Per-device execution slows as
 more GPUs issue host transfers concurrently even when estimated extent loads are balanced. This
-is an initial negative result and a concrete next design target: the runtime needs topology/NUMA
+was an initial negative result and a concrete successor target: the runtime needed topology/NUMA
 aware source placement or adaptive active-GPU selection instead of assuming all available GPUs
 should participate.
 
-## Current claim boundary
+## Historical claim boundary
 
 This prototype supports a code-level and preliminary experimental skeleton for the three-part
 paper design. It does not yet establish:
@@ -125,7 +129,6 @@ paper design. It does not yet establish:
 - SSD, GDS, RDMA, or cross-node behavior;
 - multi-seed systems performance.
 
-The real checkpoint/capsule replay and direct writer were completed by system v2/v3. The active
-successor is the destination-oriented out-of-core update contract in
-`DESTINATION_OUT_OF_CORE_V4.md`; online request/SLO evaluation is not a current gate because the
-available datasets do not provide the required arrival, routing, or co-location trace.
+The real checkpoint/capsule replay and direct writer were completed by system v2/v3. At the time,
+the successor was the destination-oriented contract in `DESTINATION_OUT_OF_CORE_V4.md`. The
+current D1/D2/D3 route is defined only by `docs/08_core_insights_and_roadmap.md`.

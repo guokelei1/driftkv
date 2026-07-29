@@ -275,6 +275,9 @@ resets due time to `tau_after + H`.
 
 The four preregistered model-time renewal horizons are:
 
+Here `D1`–`D4` are local operating-point labels frozen by this historical protocol. They do not
+refer to EvoKV Design 1–3.
+
 | Tier | Model-time horizon `H` |
 |---|---:|
 | D1 | 8 |

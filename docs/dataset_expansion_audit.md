@@ -1,8 +1,10 @@
 # Exposure-compatible dataset expansion audit
 
-> Status: data-capacity audit and frozen ordered-exposure materialization complete as of
-> 2026-07-27. Model results and the accepted expansion boundary are reported separately in
-> `experiments/exposure/ORDERED_EXPOSURE_V1.md`.
+> Status: data-capacity audit and ordered-exposure materialization frozen on 2026-07-27. Its
+> accepted/rejected data boundaries remain current, but it does not define D1, D2, D3, or the next
+> experiment. Model results are separate in
+> `experiments/exposure/ORDERED_EXPOSURE_V1.md`; current interpretation is in
+> [08_core_insights_and_roadmap.md](08_core_insights_and_roadmap.md).
 
 ## 1. Decision
 

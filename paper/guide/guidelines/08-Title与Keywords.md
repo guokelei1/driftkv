@@ -4,7 +4,7 @@
 
 The Title is the part seen, searched and scanned by the most people. It should attract the right readers and predict what they will gain or what value they will get from reading the paper, rather than recording the working title in the researcher's head. The final title should be decided after the research is complete, the results analysed and compared with the literature.
 
-**Systems-conference variant (governs this project; see guideline 14, SYS-11).** The dominant convention is `SystemName: What It Does For Whom`, e.g. "CohortKV: Compiled Cross-Version K/V Migration for Streaming Recommendation Serving". A short, memorable system name becomes the paper's handle in reviews and citations; the post-colon part carries the object, action and target workload. All rules below (noun-chain control, preposition ambiguity, promise fulfilment) apply to the post-colon part. Systems venues generally do not use keyword lists; TITLE-03 applies only to journal submissions.
+**Systems-conference variant (governs this project; see guideline 14, SYS-11).** The dominant convention is `SystemName: What It Does For Whom`, e.g. "SystemName: Mechanism for Target Workload". A short, memorable system name becomes the paper's handle in reviews and citations; the post-colon part carries the object, action and target workload. All rules below (noun-chain control, preposition ambiguity, promise fulfilment) apply to the post-colon part. Systems venues generally do not use keyword lists; TITLE-03 applies only to journal submissions.
 
 ## 2. The seven-step model
 

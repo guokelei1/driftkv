@@ -1,5 +1,8 @@
 # KuaiRand 4+12 progressive synchronization v1
 
+> Historical disposition: superseded D1/runtime record. The former destination-v4 gate is closed
+> as an experiment lineage and does not define current D2 or D3.
+
 ## Status
 
 The algorithm/operator/runtime path is implemented. Its original bounded real-checkpoint
@@ -9,9 +12,8 @@ A40 GPUs with 64 real records and 1/2/3/4-GPU points. The full-user design evalu
 completed and superseded by the verified compiler record.
 
 The four-GPU v1 result is corroborating scaling evidence for a historical single-source packed
-path, not the current primary system endpoint. The active performance gate remains the
-destination-v4 full-cohort HBM/DRAM protocol, while the frozen mixed-version fused four-GPU
-follow-up is recorded separately in `FOUR_GPU_SCALING_V1.md`.
+path, not the current primary system endpoint. Its then-active destination-v4 follow-up and the
+frozen mixed-version fused four-GPU result are separate historical protocols.
 
 The later `TWO_GPU_MIGRATION_SYSTEM_V2.md` supersedes this file's system-performance endpoint with
 verified full-affine programs, a fused operator, controlled mixed versions, persistent
@@ -111,10 +113,10 @@ Its local output is
 The trace contains 64 users, 107,247 valid tokens, and 1.65 GiB of FP16 capsules. Packed FP16 is
 3.997x faster than the resident FP32 reference with relative K/V error `3.86e-4`. This protocol
 uses one theta0→theta11 program and a synchronous full baseline, so the later mixed-version fused
-result and independently pipelined exact comparison remain the stronger current evidence.
+result and independently pipelined exact comparison were the stronger evidence within that
+experiment lineage.
 
-The exact baseline now starts with pinned raw histories and ends with FP16 pinned-host K/V, matching
+The exact baseline starts with pinned raw histories and ends with FP16 pinned-host K/V, matching
 the compiled path's input/output location. The later system-v2 result adds the independently
-pipelined full-recompute baseline. The current successor is the fixed-cohort, destination-oriented
-out-of-core update job; request-arrival and foreground-interference experiments are not current
-requirements.
+pipelined full-recompute baseline. The fixed-cohort destination job was this record's historical
+successor; current work is defined by the roadmap.

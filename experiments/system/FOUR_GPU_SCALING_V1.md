@@ -1,5 +1,8 @@
 # KuaiRand mixed-version four-GPU scaling v1
 
+> Historical disposition: controlled adaptive scaling record for the pre-D2 runtime. It does not
+> close current D2, and its destination-v4 interface validation is not D3 evidence.
+
 ## Status
 
 `kuairand_long_context_4plus12_mixed_version_four_gpu_scaling_v1` is a frozen-layout,

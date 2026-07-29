@@ -1,5 +1,9 @@
 # KuaiRand cohort-jagged migration system v3
 
+> Historical disposition: frozen negative operator study. Its destination-oriented successor is
+> no longer the current architecture; the exact-layout and negative performance findings remain
+> valid only within this protocol.
+
 ## Status
 
 `kuairand_long_context_4plus12_cohort_jagged_system_v3` is an adaptive seed-0
@@ -174,6 +178,6 @@ trace. FP16 Tensor Cores, Triton tiling, pinned transfers, and LPT remain generi
   with a same-boundary strong baseline; this experiment rules out padding removal and mega-batch
   formation as that bottleneck at the current scale.
 
-The successor architecture is recorded in
-`experiments/system/DESTINATION_OUT_OF_CORE_V4.md`. Its filesystem and remote-object paths are
-interface/correctness implementations until physical I/O hardware is benchmarked.
+The historical successor is recorded in `experiments/system/DESTINATION_OUT_OF_CORE_V4.md`. Its
+filesystem and remote-object paths remain interface/correctness implementations, not current D3
+evidence.

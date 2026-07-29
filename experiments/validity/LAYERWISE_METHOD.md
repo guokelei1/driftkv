@@ -1,9 +1,12 @@
 # Fixed cheap projection plus deepest suffix-N full layers
 
+> Historical structural-baseline record. The measurements remain valid within this protocol, but
+> the suffix route is not the active D1 method.
+
 This is the corrected evaluation of the latest layer-wise method. It is not a per-user reuse
 policy and does not use JVP drift estimation.
 
-The quality results below remain current, but the legacy full-block timing has been superseded by
+The quality results below remain valid within this protocol, but the legacy full-block timing has been superseded by
 the exactly equivalent terminal-projection operator in [INTERVAL_ORACLE.md](INTERVAL_ORACLE.md).
 
 ## Operator
