@@ -137,6 +137,73 @@ class PointwiseAttention(nn.Module):
         v_all_flat = v_all.transpose(1, 2).reshape(B, n + m, self.inner)
         return out, (k_all_flat, v_all_flat)
 
+    def forward_with_cache_new_kv(
+        self,
+        x_new: torch.Tensor,
+        cached_k: torch.Tensor,
+        cached_v: torch.Tensor,
+    ):
+        B, m, _ = x_new.shape
+        n = cached_k.shape[1]
+        q = self.q_proj(x_new).view(
+            B,
+            m,
+            self.num_heads,
+            self.head_dim,
+        ).transpose(1, 2)
+        k_new = self.k_proj(x_new).view(
+            B,
+            m,
+            self.num_heads,
+            self.head_dim,
+        ).transpose(1, 2)
+        v_new = self.v_proj(x_new).view(
+            B,
+            m,
+            self.num_heads,
+            self.head_dim,
+        ).transpose(1, 2)
+        if n:
+            k_cached = cached_k.view(
+                B,
+                n,
+                self.num_heads,
+                self.head_dim,
+            ).transpose(1, 2)
+            v_cached = cached_v.view(
+                B,
+                n,
+                self.num_heads,
+                self.head_dim,
+            ).transpose(1, 2)
+            prefix_attention = self._activate(
+                torch.matmul(q, k_cached.transpose(-2, -1))
+                * self.scale
+            )
+            prefix_attention = self.attn_dropout(prefix_attention)
+            out = torch.matmul(prefix_attention, v_cached)
+            del prefix_attention
+        else:
+            out = torch.zeros_like(q)
+        suffix_attention = self._activate(
+            torch.matmul(q, k_new.transpose(-2, -1)) * self.scale
+        )
+        causal = torch.ones(
+            m,
+            m,
+            device=x_new.device,
+            dtype=suffix_attention.dtype,
+        ).tril()
+        suffix_attention = self.attn_dropout(
+            suffix_attention * causal[None, None, :, :]
+        )
+        out = out + torch.matmul(suffix_attention, v_new)
+        out = out.transpose(1, 2).reshape(B, m, self.inner)
+        out = self.out_proj(out)
+        k_new_flat = k_new.transpose(1, 2).reshape(B, m, self.inner)
+        v_new_flat = v_new.transpose(1, 2).reshape(B, m, self.inner)
+        return out, (k_new_flat, v_new_flat)
+
     def forward_stale_kv(
         self,
         x: torch.Tensor,

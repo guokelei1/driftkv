@@ -1,6 +1,15 @@
 # CohortKV 单配置全链路开发计划
 
-> 状态：2026-07-28 起生效。本文档定义当前唯一的实施顺序。
+> 状态：Stage 0–6 的冻结历史实施计划。本文档不再定义当前实施顺序；当前 Design 2
+> 以 [`DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) 为设计合同，并以
+> [`DESIGN2_FOUR_STAGE_EXECUTION.md`](future_design/DESIGN2_FOUR_STAGE_EXECUTION.md)
+> 为分阶段执行控制。当前 Stage B 事实见
+> [`DESIGN2_STAGE_B_HANDOFF.md`](future_design/DESIGN2_STAGE_B_HANDOFF.md)。
+>
+> **命名边界：** 本文 §3 的 “Design 1/2/3” 是 Stage 0–6 形成时的历史组件编号。当前论文把
+> 该 compiler/operator/lifecycle/transaction 整体归入 **D1**；当前 **D2** 专指
+> `DESIGN2_FINAL_PLAN.md` 中的 fixed-action physical-wave compilation。不得从本文恢复旧
+> “Design 2 = capsule operator”的论文结构。
 >
 > 当前阶段只在最成熟的 KuaiRand 长上下文配置上完成一次论文级 vertical slice。它是
 > **开发与集成阶段**，不是新的多 seed 确认性证据。完成并冻结 v1 后，才进入新 seed、
@@ -27,8 +36,9 @@
 > canary 失败可安全回退 exact，artifact/version 或 capacity 失败则在 transaction 前
 > fatal reject；正式两卡 copy-on-write normal/fallback/mid-job/pre-commit 四个 case
 > 已全部通过。Stage 6 的 CPU-only assembler 已复用并校验 Stage 1–5 冻结 artifact，
-> 输出最终 aggregate 和八个论文 sidecar；未重跑旧 GPU matrix。下一步是 Stage 7 的
-> 新 seed 复现，再做预声明的数据集和模型容量扩展。
+> 输出最终 aggregate 和八个论文 sidecar；未重跑旧 GPU matrix。文中原定的 Stage 7
+> 新 seed 与扩展顺序现作为历史计划保留，不再是当前队列；当前队列是闭合 D2 Stage B
+> 尚缺的独立 W4 normal/hard-failure gate，随后才允许进入 Stage C。
 >
 > 研究事实与实验语义仍分别以
 > [08_core_insights_and_roadmap.md](08_core_insights_and_roadmap.md) 和
@@ -107,7 +117,7 @@
 
 ## 3. 目标模块的基本设计
 
-### 3.1 Design 1：Version-cohort migration compiler
+### 3.1 Historical component A：Version-cohort migration compiler
 
 默认设计沿用目标稿 §4。
 
@@ -145,7 +155,7 @@ selected action 和有序 fallback。
 
 不得为了保留“full affine 总是被选中”的句子而放宽 final-test 规则。
 
-### 3.2 Design 2：Migration capsule 与 capsule-to-K/V operator
+### 3.2 Historical component B：Migration capsule 与 capsule-to-K/V operator
 
 默认 capsule 保存每层旧版本 `Norm(x)`、record ID、valid length 和 migration anchor。
 served K/V target 与 migration anchor 必须始终分离；近似生成 theta11 K/V 不会自动把
@@ -165,7 +175,7 @@ operator 的三个实现层是：
 Jagged/page compaction 已是当前 trace 上的负结果。除非 full-cohort profile 暴露新的 padding
 或 launch 瓶颈，否则不再搜索它；默认保留 dense/length-bucketed path。
 
-### 3.3 Design 3：Destination-oriented full-cohort engine
+### 3.3 Historical component C：Destination-oriented full-cohort engine
 
 默认 job contract 沿用目标稿 §6：
 
@@ -1237,16 +1247,19 @@ result family，不能回写或调优 seed-0 frozen policy。
 
 以上十项对原 Stage 0–6 v1 路径现已全部完成，`final_summary_seed0.json` 仍是该冻结
 package 的入口。Stage 4.10 是冻结后的主动 amendment，不回写这份 aggregate；它把
-program build 合并进 H12 scheduled-exact 生命周期，因此当前未完成项先从 Stage-4.10
-formal quality/cost closure 开始，而不是直接进入 Stage 7。
+program build 合并进 H12 scheduled-exact 生命周期，其 formal quality/cost closure 仍未完成。
 
-之后按以下顺序扩展：
+## 8. 冻结后的交接状态
 
-1. 在当前 seed-0 配置完成 Stage-4.10 的同卡 full-chain 质量与完整成本确认；
-2. 冻结选中的 program-calibration 形式后，在新 training seeds 上复现；
-3. 扩到预先选择的数据集和模型容量；
-4. 将扩展结果划分为 discovery 与 untouched validation；
-5. 如果跨数据集暴露结构失败，设计 v2 并在未参与设计的 seed/cell 上重新验证。
+当前不再按本文继续顺序扩展。新的活动路线是：
+
+1. 保持冻结的 Stage-4.9 H12 action artifact 和 Stage-4.5/Stage-5 接口不变；
+2. Stage A 已冻结，Stage B 已完成 W1/W2、尚缺独立 W4 gate；继续按
+   `DESIGN2_FOUR_STAGE_EXECUTION.md` 的 B→C→D 推进，并在每个 Stage 入口重审前序假设；
+3. Stage 4.10 保持为独立的 D1 program-lifecycle amendment，不阻塞 D2 Stage A，也不能在没有
+   新 ActionPlan 和新 protocol 的情况下替换 D2 的冻结输入；
+4. 在 D2 Stage C/D 的正式论文矩阵冻结前，决定是否完成并采用 Stage-4.10 calibration；
+5. 新 training seeds、数据集和模型容量扩展推迟到 D2 方法、harness 和主张边界稳定之后。
 
 多数据集结果不需要全部漂亮；它们的作用是验证适用范围和暴露边界，而不是为 v1 选择一个
 有利的测试集合。

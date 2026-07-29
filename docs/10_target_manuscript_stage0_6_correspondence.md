@@ -9,6 +9,19 @@
 > [`eval_protocol.md`](eval_protocol.md) 和
 > [`final_summary_seed0.json`](../results/system/cohortkv_single_config_full_chain_v1/final_summary_seed0.json)
 > 为准。
+>
+> 本文的“剩余证据”和 Stage 7 表述是 Stage 0–6 冻结时的差距快照，不是当前实施队列。
+> 当前 D2 的设计与执行状态分别见
+> [`DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) 和
+> [`DESIGN2_FOUR_STAGE_EXECUTION.md`](future_design/DESIGN2_FOUR_STAGE_EXECUTION.md)；
+> Stage B 当前 W1/W2 已完成、W4 未冻结的事实见
+> [`DESIGN2_STAGE_B_HANDOFF.md`](future_design/DESIGN2_STAGE_B_HANDOFF.md)。
+>
+> **当前命名覆盖：** Stage 0–6 的 compiler、direct-old-K/V operator、bounded renewal 和
+> transaction closure 现在整体归入 D1。当前 D2 是 immutable-action physical-wave
+> compilation：D1 决定 what must be recomputed，D2 决定 fixed work 如何移动、组批、执行和
+> 发布。本文 §5 的旧“三贡献槽位”是重写时快照，已被
+> `08_core_insights_and_roadmap.md` 的 D1/D2 结构取代。
 
 ## 1. 结论
 
@@ -56,10 +69,10 @@ Stage 0–6 没有“照原稿实现完”，而是完成了一次有实质修�
 | Direct-old-K/V hot-HBM complete job（§4.5、Table 8b） | 1/2/4 GPU 为 `0.930/0.494/0.255 s`，paired exact 为 `18.695/9.729/4.766 s`，即 `20.11×/19.71×/18.72×`；该路径以约 35.6 GB 已有 old K/V 为前提，exact 的 raw-history source 仅约 89 MB | **保留且完成** | 严格限定为 existing-old-K/V hot-HBM、same-location、prepublished-program data plane；同时报告 standing HBM，不把它写成相同 source-byte footprint、cold storage 或 serving SLO 结果 |
 | 固定历史、edge severity + age、15%–25% exact、depth≤4 lifecycle（§8.6） | Stage 4.6 完成，累计成本 `0.2134×`；但它只是 fixed-history control | **完成但被主结果取代** | 保留为机制演进或附录，不再作为最终 lifecycle headline |
 | 逐 cache norm/risk threshold 判断谁 exact（目标稿 lifecycle 前身） | 会造成 `0.15%–65.1%` exact refresh wave；norm shift 对真实误差的平均 Spearman 仅 `0.0341` | **淘汰** | 作为负结果；不得恢复“强 per-cache risk predictor”主张 |
-| 真实增长历史的连续迁移 | 目标稿没有完整吸收；Stage 4.7–4.9 新增 canonical-date causal history、previous-actual recursion 和 next-window evaluation | **当前新增核心** | 应上升为新的 Design 2，而不是藏在 “RQ4 continued” |
+| 真实增长历史的连续迁移 | 目标稿没有完整吸收；Stage 4.7–4.9 新增 canonical-date causal history、previous-actual recursion 和 next-window evaluation | **当前 D1 lifecycle 核心** | 并入 D1 的 action-plane/bounded-renewal contract；不得再称当前 Design 2 |
 | 新行为窗口在 migration 前由 source model append | Stage 4.9 已纠正为先迁移 retained prefix，再由 target model append | **旧语义被替换** | 正文必须使用新顺序；Stage 4.7/4.8 数字只能作为旧协议诊断 |
 | 新行为 append 计入 lifecycle/migration time | Stage 4.9 将 target-model append 单独计量并排除在 `U/E` 两边之外 | **计量边界被替换** | 主 migration 指标写成 matched retained-prefix `ΣU/ΣE`；若报告 cache-ready E2E，必须另跑最快 same-output exact |
-| H12 bounded renewal 与 token-debt scheduler | 目标稿未覆盖；H12 为冻结候选，`U/E=0.100017`，AUC/NDCG@100/Hit@100 ratio 为 `1.000039/0.997463/1.000000`；token-debt 为 `0.071319` 成本端点 | **当前新增核心** | H12 应成为生命周期 design；token-debt 只作为无 per-cache deadline 的成本下界 |
+| H12 bounded renewal 与 token-debt scheduler | 目标稿未覆盖；H12 为冻结候选，`U/E=0.100017`，AUC/NDCG@100/Hit@100 ratio 为 `1.000039/0.997463/1.000000`；token-debt 为 `0.071319` 成本端点 | **当前 D1 lifecycle 核心** | H12 属于 D1 的 bounded-renewal mechanism；token-debt 只作为无 per-cache deadline 的成本下界 |
 | Runtime sampling guard、逐 wave 自动升级和 re-migration（§6.2） | 未实现。Stage 5 只实现固定 job-level preflight、semantic canary 和执行前 cohort-wide exact fallback | **部分替换** | 不写 “automatic runtime guard completed”；准确写成 pre-execution fallback，runtime invalidation/rework 仍开放 |
 | Destination transaction 与 failure injection（§6.4–6.5） | 两卡 COW normal、semantic fallback、mid-job abort、pre-commit abort 均通过；两个 abort 后旧 682 records 全部可读 | **最小闭环完成** | 作为系统可靠性证据；必须与 `20×` 的 extent-reclaim 性能 mode 分开，后者 `abort_safe=false`，而 COW mode 没有吞吐主张；before-first/publication fault、journal、resume 和跨 job retirement 仍不声称 |
 | Durable SSD、remote object、automatic tier selection（§6、§8.7） | POSIX/remote 只有接口正确性；没有具名物理 SSD/GDS/remote 性能 | **降为 optional post-v1** | 从主贡献和完成条件删除；不能把 warm filesystem source read 称为 SSD destination 结果 |
@@ -107,22 +120,35 @@ Stage 0–6 没有“照原稿实现完”，而是完成了一次有实质修�
 2. 把 kernel、source state、destination 和 publication boundary 放在同一个成本合同中；
 3. 允许实验否定原方案，并把负结果转化为下一项设计依据。
 
-## 5. 建议的新论文主线
+## 5. 历史重写建议（已被当前 D1/D2 主线取代）
+
+当前 canonical paper story 是：
+
+1. **M1/D1：** stale reuse 与 all-exact full-history replay 之间的 semantic–compute dilemma；
+   D1 通过 version-cohort migration 和有界 exact reset 形成 immutable logical action
+   sparsity。
+2. **M2/D2：** row-sharded exact maintenance 的 physical cost 不随 logical work 自动线性
+   下降；D2 通过 `(S,R)` extents、segmented suffix-only state 和 merged exact pool 将固定
+   actions 降低为 physical sparsity。
+3. **D3：** communication-aware semantic selection、organic mixed versions 和跨 wave
+   renewal 仍是未来方向，不属于当前 D2。
+
+以下三槽位是本文件产生时的历史建议，仅用于理解为何旧稿需要重写：
 
 当前证据更适合下面三个贡献槽位：
 
-1. **Version-cohort compiler with direct old-K/V reparameterization**  
+1. **Version-cohort compiler with direct old-K/V reparameterization**
    将 shared residual 编译成 affine，再组合到已有 old K/V；normalized capsule 只用于
    calibration/reference。这里同时包含 label-free empirical semantic gate 和
    exact-terminated plan。“Certificate” 应始终解释为 held-out empirical contract，而不是
    distribution-free 或形式安全证明。
 
-2. **Bounded migrate-or-exact lifecycle for growing histories**  
+2. **Bounded migrate-or-exact lifecycle for growing histories**
    对 previous-actual cache 连续更新，以 deterministic bounded renewal 决定 migration 或
    exact；最终评价轴是 migration GPU cost 与 AUC/NDCG@100/Hit@100，而不是把中间
    K/V fidelity 或 norm shift 当 task oracle。
 
-3. **Destination-oriented runtime and transactional closure**  
+3. **Destination-oriented runtime and transactional closure**
    Fused direct-write operator、length bucketing、1/2/4-GPU placement、matched HBM/DRAM
    transaction、job-level preflight、exact fallback 和 COW commit/abort 共同构成系统实现；
    不再把每一项标准工程分别包装成独立创新。

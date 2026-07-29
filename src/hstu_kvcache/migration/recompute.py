@@ -10,7 +10,79 @@ import torch
 
 from ..models import HSTU, HSTUKVCache
 from .capsule import MigratedKVBatch, PinnedKVOutputPool
+from .cohort_jagged import JaggedMigratedKVBatch
 from .executor import CohortExecutionMetrics, CohortExecutionReport
+from .stage46_chain import pack_padded_cache
+
+
+@torch.inference_mode()
+def exact_kv(
+    model: HSTU,
+    item_ids: torch.Tensor,
+    behaviors: torch.Tensor,
+    time_deltas: torch.Tensor,
+    lengths: torch.Tensor | None = None,
+) -> HSTUKVCache:
+    return model.compute_kv(
+        item_ids,
+        behaviors,
+        time_deltas,
+        lengths=lengths,
+    )
+
+
+@torch.inference_mode()
+def exact_hidden_and_kv(
+    model: HSTU,
+    item_ids: torch.Tensor,
+    behaviors: torch.Tensor,
+    time_deltas: torch.Tensor,
+    lengths: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, HSTUKVCache]:
+    was_training = model.training
+    model.eval()
+    try:
+        hidden, cache = model(
+            item_ids,
+            behaviors,
+            time_deltas,
+            return_kv=True,
+            lengths=lengths,
+        )
+    finally:
+        if was_training:
+            model.train()
+    if cache is None:
+        raise RuntimeError("exact replay returned no K/V")
+    return hidden, cache
+
+
+@torch.inference_mode()
+def exact_hidden_and_kv_from_item_embeddings(
+    model: HSTU,
+    item_vectors: torch.Tensor,
+    behaviors: torch.Tensor,
+    time_deltas: torch.Tensor,
+    lengths: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, HSTUKVCache]:
+    was_training = model.training
+    model.eval()
+    try:
+        hidden, cache = model.forward_embedded(
+            model.combine_input_features(
+                item_vectors,
+                behaviors,
+                time_deltas,
+            ),
+            return_kv=True,
+            lengths=lengths,
+        )
+    finally:
+        if was_training:
+            model.train()
+    if cache is None:
+        raise RuntimeError("embedded exact replay returned no K/V")
+    return hidden, cache
 
 
 @dataclass(frozen=True)
@@ -215,7 +287,8 @@ class FullRecomputeStreamingExecutor:
 
     def _compute(self, batch: RawHistoryBatch) -> HSTUKVCache:
         if self.execution_dtype is None:
-            return self.model.compute_kv(
+            return exact_kv(
+                self.model,
                 batch.item_ids,
                 batch.behaviors,
                 batch.time_deltas,
@@ -225,7 +298,8 @@ class FullRecomputeStreamingExecutor:
             device_type="cuda",
             dtype=self.execution_dtype,
         ):
-            return self.model.compute_kv(
+            return exact_kv(
+                self.model,
                 batch.item_ids,
                 batch.behaviors,
                 batch.time_deltas,
@@ -362,6 +436,157 @@ class FullRecomputeStreamingExecutor:
                 elapsed_seconds=elapsed,
             ),
         )
+
+
+def build_segment_history_batch(
+    record_ids: Sequence[int],
+    migration_anchor_version: str,
+    histories: Sequence[object],
+    starts: Sequence[int],
+    stops: Sequence[int],
+    device: torch.device | str,
+) -> RawHistoryBatch:
+    record_ids = tuple(int(value) for value in record_ids)
+    histories = tuple(histories)
+    starts = tuple(int(value) for value in starts)
+    stops = tuple(int(value) for value in stops)
+    if (
+        not record_ids
+        or len(record_ids) != len(histories)
+        or len(record_ids) != len(starts)
+        or len(record_ids) != len(stops)
+    ):
+        raise ValueError("history segment rows differ")
+    lengths = tuple(
+        stop - start
+        for start, stop in zip(starts, stops, strict=True)
+    )
+    if any(value < 0 for value in lengths):
+        raise ValueError("history segment range is invalid")
+    width = max(lengths)
+    target = torch.device(device)
+    item_ids = torch.zeros(
+        (len(record_ids), width),
+        dtype=torch.long,
+        device=target,
+    )
+    behaviors = torch.zeros_like(item_ids)
+    time_deltas = torch.zeros(
+        (len(record_ids), width),
+        dtype=torch.float32,
+        device=target,
+    )
+    for row, (history, start, stop) in enumerate(
+        zip(histories, starts, stops, strict=True)
+    ):
+        if (
+            history is None
+            or not hasattr(history, "item_ids")
+            or not hasattr(history, "behaviors")
+            or not hasattr(history, "time_deltas")
+            or start < 0
+            or stop > len(history)
+        ):
+            raise ValueError("history segment exceeds source history")
+        length = stop - start
+        if length:
+            item_ids[row, :length] = torch.as_tensor(
+                history.item_ids[start:stop].copy(),
+                dtype=torch.long,
+                device=target,
+            )
+            behaviors[row, :length] = torch.as_tensor(
+                history.behaviors[start:stop].copy(),
+                dtype=torch.long,
+                device=target,
+            )
+            time_deltas[row, :length] = torch.as_tensor(
+                history.time_deltas[start:stop].copy(),
+                dtype=torch.float32,
+                device=target,
+            )
+    return RawHistoryBatch(
+        record_ids=record_ids,
+        migration_anchor_version=migration_anchor_version,
+        item_ids=item_ids,
+        behaviors=behaviors,
+        time_deltas=time_deltas,
+        lengths=torch.tensor(
+            lengths,
+            dtype=torch.long,
+            device=target,
+        ),
+    )
+
+
+def build_retained_history_batch(
+    record_ids: Sequence[int],
+    migration_anchor_version: str,
+    histories: Sequence[object],
+    retained_tokens: Sequence[int],
+    device: torch.device | str,
+) -> RawHistoryBatch:
+    record_ids = tuple(int(value) for value in record_ids)
+    retained_tokens = tuple(int(value) for value in retained_tokens)
+    return build_segment_history_batch(
+        record_ids=record_ids,
+        migration_anchor_version=migration_anchor_version,
+        histories=histories,
+        starts=(0,) * len(record_ids),
+        stops=retained_tokens,
+        device=device,
+    )
+
+
+@torch.inference_mode()
+def exact_jagged_kv(
+    model: HSTU,
+    batch: RawHistoryBatch,
+    target_version: str,
+    dtype: torch.dtype = torch.float16,
+) -> JaggedMigratedKVBatch:
+    cache = exact_kv(
+        model,
+        batch.item_ids,
+        batch.behaviors,
+        batch.time_deltas,
+        lengths=batch.lengths,
+    )
+    return pack_padded_cache(
+        cache,
+        batch.lengths,
+        batch.record_ids,
+        target_version,
+        target_version,
+        dtype=dtype,
+    )
+
+
+@torch.inference_mode()
+def exact_jagged_hidden_and_kv(
+    model: HSTU,
+    batch: RawHistoryBatch,
+    target_version: str,
+    dtype: torch.dtype = torch.float16,
+) -> tuple[JaggedMigratedKVBatch, torch.Tensor]:
+    hidden, cache = exact_hidden_and_kv(
+        model,
+        batch.item_ids,
+        batch.behaviors,
+        batch.time_deltas,
+        lengths=batch.lengths,
+    )
+    return (
+        pack_padded_cache(
+            cache,
+            batch.lengths,
+            batch.record_ids,
+            target_version,
+            target_version,
+            dtype=dtype,
+        ),
+        model.last_hidden(hidden, batch.lengths),
+    )
 
 
 @dataclass(frozen=True)

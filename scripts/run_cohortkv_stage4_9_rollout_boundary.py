@@ -30,9 +30,12 @@ from motivation_validity import seed_everything
 from hstu_kvcache.migration import (
     ROLLOUT_BOUNDARY_PROTOCOL,
     JaggedMigratedKVBatch,
+    RawHistoryBatch,
     RetainedPrefixPlan,
     append_jagged_suffix,
-    pack_padded_cache,
+    build_retained_history_batch,
+    exact_jagged_hidden_and_kv,
+    exact_jagged_kv,
     plan_retained_prefix,
     retained_population_sha256,
     tail_slice_jagged_cache,
@@ -387,22 +390,26 @@ def _segment_batch(
 @torch.inference_mode()
 def _exact_cache(
     model,
-    batch: dict[str, torch.Tensor],
+    batch: dict[str, torch.Tensor] | RawHistoryBatch,
     record_ids: tuple[int, ...],
     version: int,
     dtype: torch.dtype,
 ) -> JaggedMigratedKVBatch:
-    cache = model.compute_kv(
-        batch["item_ids"],
-        batch["behaviors"],
-        batch["time_deltas"],
-        lengths=batch["lengths"],
+    raw = (
+        batch
+        if isinstance(batch, RawHistoryBatch)
+        else RawHistoryBatch(
+            record_ids=record_ids,
+            migration_anchor_version=f"theta{version}",
+            item_ids=batch["item_ids"],
+            behaviors=batch["behaviors"],
+            time_deltas=batch["time_deltas"],
+            lengths=batch["lengths"],
+        )
     )
-    return pack_padded_cache(
-        cache,
-        batch["lengths"],
-        record_ids,
-        f"theta{version}",
+    return exact_jagged_kv(
+        model,
+        raw,
         f"theta{version}",
         dtype=dtype,
     )
@@ -411,30 +418,28 @@ def _exact_cache(
 @torch.inference_mode()
 def _exact_full(
     model,
-    batch: dict[str, torch.Tensor],
+    batch: dict[str, torch.Tensor] | RawHistoryBatch,
     record_ids: tuple[int, ...],
     version: int,
     dtype: torch.dtype,
 ) -> tuple[JaggedMigratedKVBatch, torch.Tensor]:
-    hidden, cache = model(
-        batch["item_ids"],
-        batch["behaviors"],
-        batch["time_deltas"],
-        return_kv=True,
-        lengths=batch["lengths"],
+    raw = (
+        batch
+        if isinstance(batch, RawHistoryBatch)
+        else RawHistoryBatch(
+            record_ids=record_ids,
+            migration_anchor_version=f"theta{version}",
+            item_ids=batch["item_ids"],
+            behaviors=batch["behaviors"],
+            time_deltas=batch["time_deltas"],
+            lengths=batch["lengths"],
+        )
     )
-    if cache is None:
-        raise RuntimeError("Stage 4.9 exact full replay returned no K/V")
-    return (
-        pack_padded_cache(
-            cache,
-            batch["lengths"],
-            record_ids,
-            f"theta{version}",
-            f"theta{version}",
-            dtype=dtype,
-        ),
-        model.last_hidden(hidden, batch["lengths"]),
+    return exact_jagged_hidden_and_kv(
+        model,
+        raw,
+        f"theta{version}",
+        dtype=dtype,
     )
 
 
@@ -455,13 +460,21 @@ def _retained_batch(
     record_by_id: dict[int, dict],
     target_window,
     device: torch.device,
-) -> dict[str, torch.Tensor]:
+) -> RawHistoryBatch:
     records = _records_for_ids(record_ids, record_by_id, target_window)
-    return _segment_batch(
-        records,
-        (0,) * len(records),
-        tuple(plans[value].retained_tokens for value in record_ids),
-        device,
+    version = getattr(target_window, "version", None)
+    return build_retained_history_batch(
+        record_ids=record_ids,
+        migration_anchor_version=(
+            f"theta{version}"
+            if version is not None
+            else "stage49_retained_unbound"
+        ),
+        histories=tuple(value.history for value in records),
+        retained_tokens=tuple(
+            plans[value].retained_tokens for value in record_ids
+        ),
+        device=device,
     )
 
 

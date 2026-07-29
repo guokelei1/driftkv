@@ -4,14 +4,59 @@
 > serving semantics, model family, or timing semantics requires a new protocol name and separate
 > result files.
 
-The active implementation sequence is
+The frozen Stage 0–6 implementation history is
 [`09_single_configuration_full_chain_plan.md`](09_single_configuration_full_chain_plan.md).
-That document is a development plan, not a result protocol: it creates no comparable evidence by
-itself. Before an integrated run is promoted from development evidence, its final configuration,
-metrics, timing boundary, baselines, and artifact schema must be frozen here under a new protocol
-name. Existing protocol strings and result families must not be silently reused for that run.
+The active Design 2 definition and staged execution control are
+[`future_design/DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) and
+[`future_design/DESIGN2_FOUR_STAGE_EXECUTION.md`](future_design/DESIGN2_FOUR_STAGE_EXECUTION.md).
+All three are plans or historical implementation records, not result protocols: they create no
+comparable evidence by themselves. D2 Stage A/B diagnostics must be labeled as development
+artifacts. The current execution uses a strict double gate:
+`stage_c_development_entry=go` has admitted and completed sample-only C0 wiring on W1/W2/W3 normal
+plus W3 pre-commit abort with `scientific_result=false`, while
+`stage_c_evaluation_entry=blocked` forbids formal Stage-C integrated evaluation and every paper
+claim until the independent four-A40 W4 normal/hard-failure gate closes and
+`stage_b_summary.json --check` passes. W3, C0, shared-GPU logical ranks, or Gloo cannot substitute
+for W4. C0 uses a fixed 16-record fixture and records `formal_stage_c=false`, no timing/full-cohort
+claim, `target_epoch_published=false`, and no capacity evidence; its development namespace pointer
+is not a formal epoch publication. These artifacts are categorically ineligible for the Stage-B
+summary.
+
+Separate W3 mechanism-development families now include the integrated v1–v5 pilot/full682 runs,
+full-payload validation, wave-embedding characterization, and the synthetic lookup contention
+probe recorded in `DESIGN2_DEVELOPMENT_STATUS.md`. They may contain real full-cohort timings, but
+remain `scientific_result=false` and `formal_stage_c=false`. They do not satisfy W4, freeze a
+formal D2 protocol, publish a formal target epoch, close the segmented consumer/next-wave boundary,
+or include the final plan/history preparation plus publication/commit/reclaim boundary. Their
+valid use is mechanism discovery and protocol design, not Motivation-2 numbers or paper tables.
+
+Before a formal Stage C integrated run or any Stage D result is promoted to paper evidence, its
+action-plan identity, configuration, metrics, timing boundary, communication accounting,
+baselines, and artifact schema must be frozen here under a new D2 protocol name. Existing protocol
+strings and result families must not be silently reused. The live non-scientific status and pending
+commands are recorded in
+[`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
 
 ## 1. Protocol families
+
+### `cohortkv_design2_*_development_v*`
+
+This namespace covers D2 Stage-A/B/C0 diagnostics and W3 mechanism discovery, including
+`cohortkv_design2_integrated_w3_development_v1` through `v5`,
+`cohortkv_design2_integrated_full_payload_development_v1`, and
+`cohortkv_design2_resource_isolation_development_v1`. Every artifact must retain its exact
+protocol string and negative claim flags. Different versions record implementation discovery and
+must not be pooled into a confirmatory timing distribution.
+
+The formal paper-facing families are not yet frozen. They will require separate names for:
+
+1. a design-independent logical-to-physical Motivation-2 experiment; and
+2. a fixed-action D2 physical-wave evaluation.
+
+The first varies predeclared exact volume and shard count without using D1 outcomes as its
+observation. The second fixes the D1 action hash and compares strong all-exact, naive sharded
+fixed-action mixed, and D2 physical-sparse mixed. Neither family exists merely because this plan is
+written; final names, hashes, timer, artifact schema, and run matrix must be frozen after W4.
 
 ### `validity_v1_incremental_prefix_cache`
 
@@ -294,6 +339,37 @@ Staleness modes:
 - `one_step`: cache from the version immediately before the latest three-date update;
 - `cumulative_theta0`: fixed-input prefix cache from the base model, consumed by later current
   versions. This is a controlled cache-age stress test, not an organic mixed-version rollout.
+
+### 3.1 Paper-facing unified motivation
+
+The legacy setup above is one M1 staleness protocol, not the complete paper motivation. The
+paper-facing logic has two separate evidence families:
+
+1. **M1 semantic–compute dilemma.** Existing streaming-value, opportunity-regime,
+   data/model-capacity, compiled-migration, and lifecycle protocols show that stale reuse preserves
+   useful streaming value but leaves a recoverable version-consistency gap, while all-exact replays
+   complete histories. Their metrics remain within their own protocol families and are not pooled.
+2. **M2 logical-to-physical gap.** A new protocol must characterize exact maintenance under
+   row-sharded embeddings before invoking D1: predeclared real-history exact-volume points,
+   matched owner/layout/endpoint, shard-count sweep, and local/replicated exact control. It reports
+   logical tokens alongside physical communication, padding, rank wait, and wave time. It does not
+   require request-arrival or serving traces.
+
+M2 may state that communication volume is large when bytes support it. It may state that
+communication dominates only after matched timing attribution supports that percentage. A
+hypothetical “20% exact work takes 40% time” is an experiment target, not a frozen result.
+
+The bridge from motivation to design is evaluated separately with one immutable D1 action plan:
+
+```text
+strong all-exact
+  → naive row-sharded fixed-action mixed
+  → D2 wave-compiled segmented mixed
+```
+
+D1 decides what is compiled or exact. D2 preserves those requested actions and decides placement,
+batching, order, stream, physical pool, segment layout, execution, and publication. Communication
+cost may affect those physical choices but not semantic action selection.
 
 ## 4. Current method setup
 
@@ -1475,6 +1551,23 @@ lifecycle or end-to-end state-movement claim. Its horizon is 12 but the measured
 11 updates, so a complete renewal cycle is not observed. Maximum observed migration depth 11
 must not be confused with the fixed-history Stage-4.6 depth-four guarantee.
 
+For D2, Stage-4.9 is an immutable action-plane input rather than a reusable performance
+denominator. The exported handoff contains:
+
+```text
+action_plan_sha256
+requested_action and requested_reason
+retained / suffix / final lengths (R/S/F)
+program identity and lineage
+```
+
+On the first H12 D2 edge, 548 records request compiled, 46 request scheduled exact, and 88 are
+natural exact. Thus `134/682 = 19.6%` is the runtime exact-route record fraction, not a policy-only
+fraction and not a compute/communication ratio. The corresponding full post-append lookup ledger
+is `347,062/934,917 = 37.1%`. D2 must not rerun the selector or change these requested actions
+according to measured communication. Fixed safety fallback records requested action, final
+action, and reason separately.
+
 `cohortkv_stage4_10_renewal_calibrated_h12_smoke_v1` preserves the Stage-4.9 retained-prefix,
 append, H12, and recursive-state definitions but changes the source of the per-edge direct
 program. After action selection, and before any migrant transform:
@@ -1621,6 +1714,27 @@ Statistical rules:
 - recovery above 100% can arise from task-metric variation because full is a consistency reference,
   not a ranking upper bound; it is not a superiority result without paired multi-metric evidence.
 
+Formal D2 reports require two non-interchangeable ledgers.
+
+Action plane:
+
+- requested compiled, scheduled-exact, natural-exact, final-action, and fallback counts;
+- retained/suffix/final tokens and exact-route record fraction;
+- action-plan hash, reason counts, program identity, and lineage.
+
+Physical plane:
+
+- per-phase requested/unique/local/remote IDs and routed ID/returned-vector bytes;
+- collective calls, exposed time, and per-rank wait/imbalance;
+- `(R,S,F)` extent shapes, padded work, and physical exact pools;
+- retained K/V read/write/P2P/rewrite bytes and suffix/segment bytes;
+- source/target/transient HBM;
+- plan/lowering/materialization, compute, validation, commit, reclaim, and optional contiguous
+  consumer time.
+
+Action-count fraction, lookup fraction, vector-byte fraction, and wall-time fraction must never be
+substituted for one another.
+
 ## 7. Cost protocol
 
 - Use CUDA events for GPU-resident batched migration and synchronize correctly.
@@ -1641,8 +1755,27 @@ Statistical rules:
 - Plan-only coordinator output is architecture metadata, not a timing or correctness result. If a
   later end-to-end protocol includes coordinator or source-reader overhead, that boundary must be
   declared symmetrically for compiled migration and exact recomputation.
+- The formal D2 primary timer begins with an immutable ActionPlan, owner-resident old K/V, loaded
+  model/program/embedding shards, and the declared raw-history tier ready. It includes any
+  non-persisted wave lowering, row-sharded lookup/collectives, compiled/exact/suffix compute,
+  target staging, segmented-manifest construction, validation, commit, reclaim, and any required
+  synchronous contiguous materialization. It ends only when one complete post-append target epoch
+  is visible.
+- If a serialized WavePlan legitimately moves lowering outside the execution timer, report both
+  execution-only and plan-inclusive single-wave cost plus reuse count/break-even.
+- Formal D2 compares the same action hash and endpoint across strong all-exact, naive sharded
+  fixed-action mixed, and D2 physical-sparse mixed. The integrated all-exact denominator is the
+  faster measured one-shot/two-stage implementation; exact cannot be forced through a slower
+  decomposed path.
 
 ## 8. Current artifacts
+
+D2 mechanism-development diagnostics, ineligible for paper tables:
+
+- `results/system/cohortkv_design2_integrated_w3_development_v*/`
+- `results/system/cohortkv_design2_integrated_full_payload_development_v1/`
+- `results/system/cohortkv_design2_resource_isolation_development_v1/`
+- `configs/cohortkv_d2/development/`
 
 Motivation:
 

@@ -106,6 +106,33 @@ class HSTUBlock(nn.Module):
         x_new_out = residual + out
         return x_new_out, (k_all, v_all)
 
+    def forward_with_cache_new_kv(
+        self,
+        x_new: torch.Tensor,
+        cached_k: torch.Tensor,
+        cached_v: torch.Tensor,
+    ):
+        residual = x_new
+        x_norm = self.norm(x_new)
+        attn_out, (k_new, v_new) = (
+            self.attn.forward_with_cache_new_kv(
+                x_norm,
+                cached_k,
+                cached_v,
+            )
+        )
+        if self.gating == "silu_gate":
+            out = attn_out * F.silu(self.gate_proj(x_norm))
+        elif self.gating == "glu":
+            out = attn_out * torch.sigmoid(self.gate_proj(x_norm))
+        elif self.gating == "ffn":
+            out = self.fc2(
+                F.silu(self.fc1(x_norm)) * self.fc3(x_norm)
+            )
+        else:
+            out = attn_out
+        return residual + out, (k_new, v_new)
+
     def forward_stale_kv(
         self,
         x: torch.Tensor,

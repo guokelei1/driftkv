@@ -1,0 +1,58 @@
+{
+  "case": "hard_failure",
+  "checks": {
+    "launcher_returncode_nonzero": true,
+    "peer_termination_bounded": true,
+    "rank1_exit_23_observed": true,
+    "subprocess_did_not_timeout": true
+  },
+  "content_sha256": "335a79b0e8f7426c8b81d7001746c6a2d5b79aa41fe5f96303642dcaf3cba6b5",
+  "injected_failure": {
+    "exit_code": 23,
+    "mechanism": "os._exit",
+    "rank": 1
+  },
+  "launch": {
+    "backend": "nccl",
+    "cleanup_signal": null,
+    "command": [
+      "/home/gkl/miniconda3/bin/torchrun",
+      "--standalone",
+      "--nnodes=1",
+      "--nproc-per-node=2",
+      "/data/gkl/findnew/o1/scripts/run_cohortkv_design2_distributed_tests.py",
+      "--case",
+      "hard_failure",
+      "--timeout-seconds",
+      "120.0"
+    ],
+    "device_uuids": [
+      "GPU-c71993c2-1a63-2462-2d0c-33c8bf79108c",
+      "GPU-cfa93a9f-ec9d-4e1d-7130-4733ac28a5c4"
+    ],
+    "elapsed_seconds": 5.896908781025559,
+    "process_group_alive_after_cleanup": false,
+    "process_group_alive_after_exit": false,
+    "returncode": 1,
+    "stderr_sha256": "b2697747873bd3d3aa27d4efd1b25404883b2b60454288f17a3819b94623f37b",
+    "stderr_tail": "W0729 03:26:21.335000 2404784 site-packages/torch/distributed/run.py:862] \nW0729 03:26:21.335000 2404784 site-packages/torch/distributed/run.py:862] *****************************************\nW0729 03:26:21.335000 2404784 site-packages/torch/distributed/run.py:862] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. \nW0729 03:26:21.335000 2404784 site-packages/torch/distributed/run.py:862] *****************************************\n/home/gkl/miniconda3/lib/python3.13/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.\n  return func(*args, **kwargs)\n[rank0]:[W729 03:26:24.425711066 ProcessGroupNCCL.cpp:5324] Guessing device ID based on global rank. This can cause a hang if rank to GPU mapping is heterogeneous. You can specify device_id in init_process_group()\nW0729 03:26:25.057000 2404784 site-packages/torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 2404964 closing signal SIGTERM\nE0729 03:26:25.222000 2404784 site-packages/torch/distributed/elastic/multiprocessing/api.py:988] failed (exitcode: 23) local_rank: 1 (pid: 2404965) of binary: /home/gkl/miniconda3/bin/python\nTraceback (most recent call last):\n  File \"/home/gkl/miniconda3/bin/torchrun\", line 6, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/home/gkl/miniconda3/lib/python3.13/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py\", line 367, in wrapper\n    return f(*args, **kwargs)\n  File \"/home/gkl/miniconda3/lib/python3.13/site-packages/torch/distributed/run.py\", line 1016, in main\n    run(args)\n    ~~~^^^^^^\n  File \"/home/gkl/miniconda3/lib/python3.13/site-packages/torch/distributed/run.py\", line 1007, in run\n    elastic_launch(\n    ~~~~~~~~~~~~~~~\n        config=config,\n        ~~~~~~~~~~~~~~\n        entrypoint=cmd,\n        ~~~~~~~~~~~~~~~\n    )(*cmd_args)\n    ~^^^^^^^^^^^\n  File \"/home/gkl/miniconda3/lib/python3.13/site-packages/torch/distributed/launcher/api.py\", line 191, in __call__\n    return launch_agent(self._config, self._entrypoint, list(args))\n  File \"/home/gkl/miniconda3/lib/python3.13/site-packages/torch/distributed/launcher/api.py\", line 371, in launch_agent\n    raise ChildFailedError(\n    ...<2 lines>...\n    )\ntorch.distributed.elastic.multiprocessing.errors.ChildFailedError: \n============================================================\n/data/gkl/findnew/o1/scripts/run_cohortkv_design2_distributed_tests.py FAILED\n------------------------------------------------------------\nFailures:\n[1]:\n  time      : 2026-07-29_03:26:25\n  host      : g202\n  rank      : 0 (local_rank: 0)\n  exitcode  : -15 (pid: 2404964)  (SIGTERM)\n  error_file: <N/A>\n  traceback : Signal 15 (SIGTERM) received by PID 2404964\n------------------------------------------------------------\nRoot Cause (first observed failure):\n[0]:\n  time      : 2026-07-29_03:26:25\n  host      : g202\n  rank      : 1 (local_rank: 1)\n  exitcode  : 23 (pid: 2404965) \n  error_file: <N/A>\n  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html\n============================================================",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_tail": "",
+    "subprocess_timeout_seconds": 45.0,
+    "timed_out": false,
+    "visible_devices": [
+      "0",
+      "1"
+    ],
+    "worker_timeout_seconds": 120.0
+  },
+  "protocol": "cohortkv_d2_stage_b_hard_failure_v1",
+  "scientific_result": false,
+  "scope": {
+    "failure_propagation_only": true,
+    "performance_result": false,
+    "target_epoch_published": false
+  },
+  "status": "complete",
+  "world_size": 2
+}

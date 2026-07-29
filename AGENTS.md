@@ -37,8 +37,12 @@
   strict task-quality gate passes 6/9 cells because some full-maintenance endpoints are near zero
   or negative. Task quality is not an admission oracle: every stale cohort receives unconditional
   compiled repair, then progressive residual replay and exact recomputation under budget. Version
-  cohorts are used for compilation, batching, placement, and scheduling, not to predict whether
-  reuse is safe. The next design problems are organic mixed versions and end-to-end state movement.
+  cohorts are used for compilation, not to predict whether reuse is safe. This frozen D1 determines
+  what is compiled or exactly recomputed and exports an immutable action plan. Active D2 determines
+  how that fixed work moves and executes: `(suffix, retained)` extent compilation, owner-local
+  retained repair, row-sharded exact/append, segmented suffix-only destination, merged physical
+  exact pools, and atomic publication. D2 must not reselect requested actions; communication-aware
+  semantic selection and organic mixed versions remain D3.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
   project crux. Its only valid role is a clearly labeled negative result in the motivation.
 - Single-configuration Stages 0–4.6 are frozen. The closest selective baseline fails its certificate;
@@ -59,8 +63,16 @@
   costs 0.2134x all-exact GPU time and preserves minimum cache/score/top100 fidelity
   0.9632/0.999950/0.9918. Its per-cache threshold predecessor is a negative result because it
   produced severe refresh waves; do not recover an adaptive-risk or optimal-selector claim.
-  Recommendation labels never route caches. Stage 5 guard, automatic fallback, transactional
-  rework, and failure visibility are the active next stage.
+  Recommendation labels never route caches. D1 Stages 0–6 and the declared Stage-5 guard/fallback/
+  transaction closure are frozen.
+- D2's paper story is logical-to-physical sparsity. `134/682 = 19.6%` exact-route records is an
+  action-count statistic, while the full mixed wave still performs `347,062/934,917 = 37.1%` of
+  all-exact lookup tokens. A three-A40 W3 development chain shows naive mixed losing to exact and
+  the segmented/shape-aware/merged-exact lowering producing a positive full682 point; full payload
+  correctness also passes. These are `scientific_result=false`, not paper evidence. Formal W4,
+  a new D2 protocol, 1/2/4-GPU same-boundary results, publication/commit/reclaim timing, and a
+  segmented consumer remain open. Synthetic lookup contention is supporting characterization,
+  not a serving trace or D2 gate.
 
 ## Code layout
 
@@ -89,6 +101,11 @@
   `scripts/validate_cohortkv_stage4_5_oldkv_full_transport.py`,
   `scripts/benchmark_cohortkv_stage4_5_oldkv.py`, and
   `scripts/freeze_cohortkv_stage4_5.py` — frozen direct-old-K/V source-plan entry points.
+- `src/hstu_kvcache/migration/design2_*.py`,
+  `scripts/benchmark_cohortkv_design2_integrated_w3.py`,
+  `scripts/validate_cohortkv_design2_integrated_full_payload.py`, and
+  `scripts/benchmark_cohortkv_design2_resource_isolation.py` — active D2 development entry
+  points; their current W3 artifacts are non-scientific mechanism discovery.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

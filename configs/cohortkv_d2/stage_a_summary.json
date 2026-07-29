@@ -1,0 +1,200 @@
+{
+  "action_plan": {
+    "action_partition_sha256": "f8a89298ed9c5fd064b920a22d8f72c35fd2738ca7140bf5e0c0a62be647666a",
+    "content_sha256": "c4bc383d28f3558fdd11be8788799aaa6f66e80f778a4670f781eb9295f0027e",
+    "counts": {
+      "compiled": 548,
+      "natural_exact": 88,
+      "records": 682,
+      "scheduled_exact": 46
+    },
+    "file_sha256": "3572a858111b1e9d08e4102512af46ef6a6d2b1fbe7ee7b2828162d28d58518d",
+    "prepared_data_sha256": "e03f3e80dacf9deccd5783d26a184d8ced7b339275bf13fa3b90de42a4b028b8",
+    "upstream_artifact_sha256": "bd2e7aa8b6bb4a2203ec416c9a69ecbe9c3eea43c3e4454664a449ffb516104f"
+  },
+  "artifacts": {
+    "action_plan": {
+      "bytes": 571768,
+      "path": "configs/cohortkv_d2/action_plan_theta1_theta2_staggered_renewal_h12.json",
+      "protocol": "cohortkv_d2_action_plan_v1",
+      "sha256": "3572a858111b1e9d08e4102512af46ef6a6d2b1fbe7ee7b2828162d28d58518d"
+    },
+    "capacity": {
+      "bytes": 139687,
+      "path": "configs/cohortkv_d2/stage_a_capacity_characterization.json",
+      "protocol": "cohortkv_d2_stage_a_capacity_characterization_v1",
+      "sha256": "2d8b8442d76b62cef6d4c59b3bda3f7cc0acc02e969baae0b40bb9dfa5459b9c"
+    },
+    "exact_frontend": {
+      "bytes": 6601,
+      "path": "configs/cohortkv_d2/stage_a_exact_frontend_validation.json",
+      "protocol": "cohortkv_d2_stage_a_exact_frontend_v1",
+      "sha256": "cdd2befa598e9e6099156a0e62c449e0f3e4efbb4c87291431465974830f497d"
+    },
+    "p2p": {
+      "bytes": 30626,
+      "path": "configs/cohortkv_d2/stage_a_p2p_topology.json",
+      "protocol": "cohortkv_d2_stage_a_p2p_topology_v2",
+      "sha256": "c8853e9e8a7a4e70a9aa34ee6b6cfecd12e97020f01bc5ec8566484bef55c7e2"
+    },
+    "plan_adapter": {
+      "bytes": 16819,
+      "path": "configs/cohortkv_d2/stage_a_plan_adapter_summary.json",
+      "protocol": "cohortkv_d2_stage_a_plan_adapter_v1",
+      "sha256": "33292fc8775cd0f7c8f05c0e7560ba34bac711cccc9208d6641961b047b873a0"
+    },
+    "requests": {
+      "bytes": 489727,
+      "path": "configs/cohortkv_d2/stage_a_request_characterization.json",
+      "protocol": "cohortkv_d2_stage_a_request_characterization_v1",
+      "sha256": "7e35d98eff0fdbc8c70632e3a9444e7805c2dad7c1a99b0294868de77189e90a"
+    },
+    "stage5_adapter": {
+      "bytes": 2947,
+      "path": "configs/cohortkv_d2/stage_a_stage5_adapter_validation.json",
+      "protocol": "cohortkv_d2_stage_a_stage5_adapter_v1",
+      "sha256": "4b8fc3bb43bced72cf0c64bf1accadad928e72784ed89d035714efa53eaa92af"
+    }
+  },
+  "decisions": {
+    "cross_island_transport": "stage_b_nccl_route_required",
+    "dedup": {
+      "decision": "defer_until_stage_b_actual_collective_bytes",
+      "gate": 0.1,
+      "implement_in_stage_b_baseline": false,
+      "maximum_remote_return_reduction": {
+        "w2_all_scopes": 0.17350873213880702,
+        "w2_batch4": 0.03194979965222655,
+        "w4_all_scopes": 0.11136810683114395,
+        "w4_batch4": 0.031452761512897665
+      },
+      "reason": "large planned coalescing scopes exceed the static gate, while batch-4 scopes do not; physical and exposed bytes remain unmeasured",
+      "retain_as_p5_candidate": true
+    },
+    "embedding_vector_transport": "fp32_mechanical_baseline",
+    "lower_precision_transport": "candidate_requires_stage_b_correctness",
+    "strict_cow_single_rank": "no_go",
+    "strict_cow_w2_w4": "static_admission_candidate_only"
+  },
+  "falsified_hypotheses": [
+    "compiled whole records are embedding-free",
+    "single-A40 strict-COW admission is feasible",
+    "the four A40s form one uniform direct-peer fabric",
+    "two-byte embedding transport is mechanically equivalent",
+    "dedup is a universal static no-go"
+  ],
+  "gates": {
+    "g0_action_plan": "pass",
+    "g1_mechanical_refactor": "pass",
+    "g2_distributed_exact": "not_started",
+    "g3_distributed_communication": "not_started",
+    "g7_capacity_claim": "not_passed",
+    "p0_2_stage5_adapter_contract": "pass",
+    "p0_3_phase_lookup": "pass",
+    "p0_4_topology_and_microbench": "pass",
+    "p0_5_request_characterization": "pass",
+    "paper_performance_claim": "not_evaluated"
+  },
+  "implementation": [
+    {
+      "bytes": 11753,
+      "path": "src/hstu_kvcache/models/hstu.py",
+      "sha256": "dcbed05b995e062279d2de8b5545990de216ace5f1978b17349cdbc4badef52f"
+    },
+    {
+      "bytes": 28659,
+      "path": "src/hstu_kvcache/migration/recompute.py",
+      "sha256": "d9164c4f36aa8b05a4001f02136fa62772c392355278996a98ed71a2dbd43285"
+    },
+    {
+      "bytes": 21232,
+      "path": "src/hstu_kvcache/migration/design2_plan.py",
+      "sha256": "d3c2ae9b1af961667c03c9f32495f1c75d3cc812119623ae1c8ea3c749de8667"
+    },
+    {
+      "bytes": 9389,
+      "path": "src/hstu_kvcache/migration/design2_runtime.py",
+      "sha256": "3409f0ce30f51e940b6317c02f9b8455852ef0fa1fe254b107d0fbe284a95559"
+    },
+    {
+      "bytes": 42975,
+      "path": "src/hstu_kvcache/migration/design2_metrics.py",
+      "sha256": "48f25e51b037809ce0329b870900b15c87c17155037c3e5a44cd6a946d4b7a7d"
+    },
+    {
+      "bytes": 4911,
+      "path": "scripts/export_cohortkv_d2_action_plan.py",
+      "sha256": "f3811331fe1bdf3615b53280d50988ef6436618f81826dec199cbcd16ae8eced"
+    },
+    {
+      "bytes": 6607,
+      "path": "scripts/characterize_cohortkv_d2_requests.py",
+      "sha256": "88e446b648ea72c9edb1b87760281d22f7e14fb8ce88c7e8d0b77fc0def0bebb"
+    },
+    {
+      "bytes": 7563,
+      "path": "scripts/characterize_cohortkv_d2_capacity.py",
+      "sha256": "3f53afa7dc0e54ecd4b3f674360dd15d80b6513d6de48647034ab12955a0e10c"
+    },
+    {
+      "bytes": 30854,
+      "path": "scripts/benchmark_cohortkv_design2_p2p.py",
+      "sha256": "40c45175b1c1dde47598a575e6aaf1818b13e6bfcd75c62884682686de3f9a6e"
+    },
+    {
+      "bytes": 26272,
+      "path": "scripts/validate_cohortkv_d2_exact_frontend.py",
+      "sha256": "0285286b7df12c204d01b108392327816231950d9ad9ab1e4337d0936f1ef921"
+    },
+    {
+      "bytes": 17756,
+      "path": "scripts/validate_cohortkv_d2_stage5_adapter.py",
+      "sha256": "914cdcb84f84a4b802369c42da5fd7bdb28adc45282547b7f1155bdd809ecf51"
+    },
+    {
+      "bytes": 17766,
+      "path": "scripts/freeze_cohortkv_design2_stage_a.py",
+      "sha256": "ebf87199a4a725addfd7ee0382f33140e6ff716dc1d63cbf899b0c70023e1b52"
+    },
+    {
+      "bytes": 6463,
+      "path": "tests/test_design2_plan.py",
+      "sha256": "6d3d5d87a46c2aef813c2f941899dcd87a4addef00dd794c0967b45697a6b568"
+    },
+    {
+      "bytes": 6300,
+      "path": "tests/test_design2_exact_frontend.py",
+      "sha256": "24d48f0fc5448737b857b40d4797ef1e305dab5b9b4aa69992d28ce3a2064ab7"
+    },
+    {
+      "bytes": 6995,
+      "path": "tests/test_design2_synthetic.py",
+      "sha256": "7d03b18c99089ea3a19bfd93bac89db0403b12334ed977994ea8e459065e952f"
+    }
+  ],
+  "protocol": "cohortkv_d2_stage_a_frozen_v1",
+  "provisional_assumptions": [
+    "W2/W4 capacity is modeled without an actual HBM source manifest",
+    "CUDA context remains a two-GiB margin rather than a measured rank cost",
+    "owner imbalance execution is a sampled microbenchmark",
+    "cross-island NCCL routing and physical collective bytes are unmeasured",
+    "FP32 remains the only mechanically equivalent item-vector path"
+  ],
+  "scientific_result": false,
+  "stage": "A",
+  "stage_b_entry": "go",
+  "stage_b_first_diagnostics": [
+    "world-size-1 SPMD must reproduce Stage A exact and phase ledgers",
+    "2-rank sharded exact must report actual local remote IDs and collective bytes",
+    "4-rank NCCL must exercise both NVLink islands and a cross-island route before optimization"
+  ],
+  "status": "complete",
+  "unsupported_claims": [
+    "multi-rank owner-compute correctness",
+    "row-sharded exact correctness or communication savings",
+    "integrated mixed-wave speedup",
+    "capacity G7 or a model-too-large-for-one-GPU claim",
+    "foreground embedding-tier isolation",
+    "any paper performance result from Stage A"
+  ]
+}

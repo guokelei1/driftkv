@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-28. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-29. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -24,20 +24,61 @@ recomputing the history but no longer version-consistent. The research question 
 > the current model at materially lower cost than a complete history forward, while recovering a
 > controllable fraction of fresh recommendation quality?
 
-The active abstraction is **structure-aware cache migration**. It is not a per-user prediction
-problem and it is not ordinary tail-token cache append.
+This is the D1 semantic–compute question. D1 emits an immutable per-record compiled/exact plan: it
+decides **what must be translated or recomputed**. The active D2 question is the next systems
+layer:
 
-The active systems scope is a **destination-oriented out-of-core K/V update job**. A model update
-supplies fixed old capsules, published source-to-target programs, a complete record set, execution
-GPUs, and an explicit HBM/DRAM/filesystem/remote destination. The job transforms bounded waves and
-publishes one complete target-version manifest. Training, request arrival, user hotness, routing,
-and training/serving GPU co-location are outside the current boundary because the available data
-does not identify them.
+> In a row-sharded multi-GPU deployment, can D1's logical sparsity be converted into physical
+> savings after embedding communication, suffix append, padding, K/V movement, synchronization,
+> and target publication are included?
 
-The technical design has exactly three connected layers: a cohort migration compiler, a
-capsule-to-K/V operator, and a destination-oriented execution engine. A thin update coordinator
-may parse a job specification and invoke these interfaces, but it is control-plane glue rather
-than a fourth research contribution, a reuse-safety predictor, or an online scheduler.
+The active abstraction is **structure-aware cache migration followed by fixed-action physical-wave
+compilation**. It is not a per-user reuse-safety prediction problem, an online request scheduler,
+or ordinary tail-token cache append.
+
+The frozen Stage 0–6 systems scope was a **destination-oriented K/V update job** with a shared
+compiler, a direct old-K/V operator, bounded execution waves, and complete target-version
+publication. Its normalized-capsule out-of-core path is a negative result; the winning data plane
+starts from existing hot old K/V. Training, request arrival, user hotness, and online routing
+remain outside the evidence boundary because the available data does not identify them.
+
+The active engineering scope is now **Design 2: Wave-Compiled Segmented Migration over
+Row-Sharded Embeddings**. For one immutable model-update action plan, compiled retained-prefix
+repair executes at the old-K/V record owner; exact and append obtain only their unavoidable item
+vectors from a row-sharded embedding tier; `(suffix, retained)` shapes determine compiled extents;
+physically identical exact reasons share one execution pool; and private retained/suffix segments
+become visible only through one coverage- and lineage-checked target epoch. This is the
+logical-to-physical sparsity question downstream of D1. D2 may choose placement, batching, order,
+stream, extent, and segment layout, but it does not change requested compiled/exact actions or add
+an online scheduler.
+
+Current design status is:
+
+1. **D1 is frozen evidence:** version-cohort affine compilation, direct old-K/V execution,
+   bounded renewal, and the declared Stage-5 transaction closure.
+2. **D2 Stage A is frozen; Stage B is implemented through W2 but not yet frozen:** owner-local
+   compiled retained repair, FP32 row-sharded exact/append, deterministic collective order,
+   requested/local/remote ID evidence, collective tensor-payload accounting, private ready/abort,
+   W1 repeat, W2 projected admission, and bounded W2 hard-failure propagation pass. A physical
+   GPU1/GPU3 cross-island W2 supplemental also passes. A physical GPU0/GPU1/GPU3 three-rank NCCL
+   normal/hard-failure diagnostic now passes as `scientific_result=false`; it covers asymmetric
+   composition but cannot replace W4. C0 development closure now passes W1/W2/W3 normal and W3
+   pre-commit abort on a fixed 16-record fixture. It closes only the development
+   wave/state-machine interface. Separate W3 mechanism discovery then traced naive mixed through
+   phase fusion, segmented suffix-only output, `(S,R)` shape-aware extents, and a lineage-preserving
+   merged exact pool. On full682/B8, the development mixed wave is `3.633 s` versus `6.716 s`
+   one-shot all-exact; all 682 payloads pass the declared tolerance. The corresponding lookup
+   ledger is `347,062/934,917 = 37.1%`, despite only `134/682 = 19.6%` exact-route records, and
+   measured one-way off-diagonal vector volume is `454.62/1,222.86 MiB = 37.2%`. These results
+   establish a plausible physical-lowering mechanism, not paper evidence: they exclude the formal
+   W4 gate, final publication/commit/reclaim timer, segmented consumer closure, 1/2/4-GPU protocol,
+   and a frozen paper evaluation family. The required independent-W4 normal and hard-failure runs
+   are pending because GPU2 is occupied by an external long-lived process.
+   The double gate therefore remains `stage_c_development_entry=go` and
+   `stage_c_evaluation_entry=blocked`; Stage B is unfrozen and every D2 paper-performance claim
+   remains blocked.
+3. **D3 is parked:** organic mixed-version program graphs and bounded renewal remain an unfrozen
+   future direction until D2 exposes a stable measured action/report interface.
 
 The single-configuration vertical slice on the KuaiRand 4+12, 16L/H512, seed-0 chain is now
 complete through Stage 6. Stages 0–4 closed experiment design, the closest
@@ -82,7 +123,7 @@ groupwise CPU-hosted recursive store and reports 662.87 GB of H2D/D2H logical mo
 so it is neither a full-cohort HBM-resident lifecycle claim nor an end-to-end movement claim.
 The 11-edge trace also does not complete the policy's 12-edge renewal horizon.
 
-Stage 4.10 is an active post-freeze amendment to the program lifecycle. Instead of loading an
+Stage 4.10 is a separate open post-freeze amendment to the program lifecycle. Instead of loading an
 adjacent program fitted on 40 separate users, H12 first freezes its action partition, then reuses
 the scheduled-exact cohort's aligned previous-actual K/V and current-model exact K/V to fit the
 shared program for that edge. The scheduled exact result also refreshes those same records, so
@@ -106,10 +147,18 @@ Stage-5 artifacts, validates the amended schema and whole-aggregate semantics, a
 `final_summary_seed0.json` plus correctness, timing/memory, table, figure, claim-map,
 negative-result, TBD-disposition, and code-snapshot sidecars. No prior GPU matrix was rerun. These
 remain the frozen v1 package, but Stage 4.10 is not retroactively included in that package or its
-manuscript hash. Before new-seed replication and predeclared dataset/model-capacity expansion,
-the renewal-calibrated route needs a new formal quality-and-cost closure. The current result
-remains adaptive single-seed development evidence. The detailed sequence is in
-`docs/09_single_configuration_full_chain_plan.md`.
+manuscript hash. Its renewal-calibrated route still needs a new formal quality-and-cost closure
+before it can enter the final paper matrix. It does not block D2 Stage A and must not silently
+replace the frozen Stage-4.9 inputs. The historical Stage 0–6 sequence is in
+`docs/09_single_configuration_full_chain_plan.md`; the active D2 definition and staged execution
+are in `docs/future_design/DESIGN2_FINAL_PLAN.md` and
+`docs/future_design/DESIGN2_FOUR_STAGE_EXECUTION.md`. The completed non-scientific Stage A
+boundary and the exact conditions for beginning Stage B are in
+`docs/future_design/DESIGN2_STAGE_A_HANDOFF.md`; the current non-scientific Stage B evidence,
+remaining W4 hard gate, and formal Stage-C-evaluation prohibition are in
+`docs/future_design/DESIGN2_STAGE_B_HANDOFF.md`. The current development/evaluation double gate,
+W3 artifact hashes, C0 state, and exact W4 closure commands are in
+`docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md`.
 
 The Stage-0 re-audit exposed two implementation-critical boundaries. Manifest `user_id` is the
 prepared one-based model index, not the raw log identifier; both are now frozen separately.
@@ -535,6 +584,10 @@ problem evidence, while large QK must be reported as a scale boundary. Exact set
 cells are in `experiments/motivation/CAPACITY_V2.md`; the reproducible aggregate is
 `results/motivation_scale/capacity_v2_summary.json`.
 
+This is M1 compute/quality-scale evidence, not M2 communication evidence. It does not establish
+that the embedding table must be sharded, that replication fails admission, or that communication
+dominates exact refresh; those require the separate row-sharded physical-work protocol.
+
 ### 2.11 Cohort-tiered migration scales as an operator; task quality is not an admission oracle
 
 The capacity design screen no longer treats a fixed suffix or prefix depth as the method. For each
@@ -566,8 +619,9 @@ quality gain. The unsupported conclusion is that task labels can identify which 
 cohort should reuse or migrate. Full recomputation is the semantic reference but is not a ranking
 upper bound, and neither cache age nor label-free drift predicts realized task gain reliably.
 Consequently the active system does not make a version-level reuse admission decision. Every stale
-cohort follows the same monotone semantic-synchronization ladder; version cohorts exist to compile,
-batch, place, and schedule work.
+cohort follows the same monotone semantic-synchronization ladder. D1 uses version cohorts to
+compile programs and freeze requested actions; only after that action hash is fixed does D2 batch,
+place, communicate, execute, and publish the physical wave.
 
 The frozen architecture and complete result are in
 `experiments/migration/COHORT_TIERED_MIGRATION_V1.md`; the reproducible aggregate is
@@ -778,28 +832,45 @@ control are not current paper gates. The 8+8 protocol is in
 
 ## 3. Current contribution hypothesis
 
-A complete paper could make three connected technical contributions if the remaining gates pass:
+The current paper hypothesis has one frozen method design and one active systems design. D3 is not
+yet part of the contribution set.
 
-1. Introduce a verified cohort migration compiler that generates migration actions, certifies
-   label-free current-model semantic fidelity and user coverage, then publishes the cheapest
-   qualifying program and an ordered fallback chain. Its fast path compiles an
-   attention-use-weighted full-affine residual into one K/V projection.
-2. Build a one-pass capsule-to-K/V operator that executes the shared program with fused epilogue
-   and direct final-layout publication. Jagged/page compaction remains a conditional layout
-   mechanism, not a positive contribution on the current long-context trace.
-3. Build a destination-oriented out-of-core executor that applies the published cohort program,
-   bounds transform/publication waves, streams complete extents across one or more GPUs, and
-   commits a complete target-version K/V manifest to an explicit HBM, DRAM, filesystem, or remote
-   endpoint.
+1. **D1 — compiled version-cohort cache translation.** Fit a shared current-minus-cheap K/V
+   residual, certify its label-free semantic/coverage contract, compose the affine with the source
+   K/V projection, and execute directly over existing old K/V with zero extra per-record
+   `Norm(x)` state. D1 determines what state is translated or exactly recomputed and emits the
+   immutable requested-action plan. The verified compiler, direct operator, and bounded-renewal
+   evidence are frozen; their single-seed/generality and total-economics limits remain explicit.
+2. **D2 — wave-compiled segmented physical execution.** Given exactly that action hash, keep
+   compiled retained state at its owner, lower compiled work by `(S,R)`, pool physically identical
+   exact work by `F`, access row-sharded embeddings only for unavoidable exact/append IDs, emit
+   suffix-only segments, and atomically publish one logical-complete target epoch. D2 determines
+   how fixed work moves and executes; it does not reselect actions.
 
-Defining model-version K/V invalidation and characterizing its quality/cost structure are the
-problem statement and empirical evidence for these contributions, not extra system layers. The
-update coordinator is likewise necessary integration code but is not a separate contribution.
+The paper-facing motivations mirror this split:
 
-The reusable idea is to move adaptation work out of the per-cache path: measure one version-pair
-cohort, learn a shared correction, compile it into a GPU-friendly operator, and batch one action
-per cohort. A dynamic arbitrary-layer planner is unnecessary: the all-interval and recent-token
-screens do not justify their search or fragmentation cost.
+1. **M1:** stale reuse preserves substantial streaming-training value but loses version
+   consistency; all-exact closes the gap by replaying every history.
+2. **M2:** under row-sharded embeddings, lowering logical exact work does not automatically lower
+   physical time in proportion. Communication, padded incremental attention, retained-prefix
+   rewrite, phase fragmentation, and publication can consume the arithmetic savings.
+
+M2 must first be demonstrated with all-exact/design-independent exact-volume scaling and then
+bridged with a naive sharded fixed-action mixed baseline. It does not require a serving trace.
+Until matched local/replicated-vs-row-sharded timing proves a percentage, the paper may claim
+communication amplification and measured physical mismatch, not that communication dominates
+recompute time.
+
+D2 only becomes a paper-level design if same-boundary evidence shows that the fixed-action
+physical lowering causally improves over naive sharded mixed and still forms a meaningful point
+against the faster measured all-exact baseline. Capacity admission, optional collective
+coalescing, and synthetic resource contention can strengthen the design but cannot replace this
+core gate. Owner-compute, row-sharded lookup, sorting, pooling, segmentation, and COW publication
+are conventional in isolation; the claimed mechanism is their coupled lowering of D1's
+heterogeneous action graph.
+
+Dynamic arbitrary-layer planning remains unnecessary: the all-interval and recent-token screens
+do not justify their search or fragmentation cost.
 
 ## 4. Next research gates
 
@@ -964,11 +1035,12 @@ Proceed in this order:
 6. Preserve the frozen Stage-4.9 same-device confirmation. Use `staggered_renewal_h12` as the
    bounded-renewal deployment candidate and `token_debt_total10` only as the cost endpoint; keep
    target append and host-device state movement outside `U/E` but report them separately.
-7. Treat Stage 4.10 as the active program-lifecycle amendment. Scheduled exact must supply the
-   only calibration pairs and its result must also refresh those records; program build is part of
-   `U`, no fixed fit cohort or semantic admission gate may reroute H12, and the old serialized
-   program must not remain a hidden dependency. Preserve both two-edge smokes as non-scientific
-   implementation evidence until a new full-chain task-quality result selects a fit form.
+7. Preserve Stage 4.10 as a separate open program-lifecycle amendment. Scheduled exact must supply
+   the only calibration pairs and its result must also refresh those records; program build is
+   part of `U`, no fixed fit cohort or semantic admission gate may reroute H12, and the old
+   serialized program must not remain a hidden dependency. Preserve both two-edge smokes as
+   non-scientific implementation evidence until a new full-chain task-quality result selects a fit
+   form. This amendment does not block D2 Stage A.
 8. Preserve the completed Stage-5 closure as frozen v1 evidence: one fixed job-level semantic preflight, safe exact
    fallback for program/shape/old-cache/canary failures before extent execution, fatal
    pre-transaction rejection for artifact/version or capacity failure, complete lineage, and
@@ -980,10 +1052,26 @@ Proceed in this order:
    artifact-to-claim bindings to pass.
 10. Keep INT8/FP8 capsules, capture/persistence matrices, named SSD performance, resume, and runtime
    sentinel research as optional post-v1 extensions; they do not block the core paper.
-11. Before Stage 7, run a new Stage-4.10 formal comparison with recommendation quality and complete
-    accounting on the recursive chain; select a calibration form without using smoke timing as a
-    quality proxy. Then begin new training seeds and predeclared dataset/model-capacity cells.
-12. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
+11. Execute D2 through
+    `docs/future_design/DESIGN2_FOUR_STAGE_EXECUTION.md`: Stage A has frozen the trustworthy
+    action/frontend/accounting boundaries and its handoff; Stage B has proved W1/W2 primitives
+    and a supplemental W3 development diagnostic but remains open until the independent-W4
+    normal/failure gate closes. C0 sample-only wiring is complete under
+    `stage_c_development_entry=go`; it remains `scientific_result=false` and cannot substitute for
+    Stage B. Stage C closes one fixed-action target epoch, and Stage D selects claims from paired
+    evidence. Follow `docs/future_design/DESIGN2_STAGE_B_HANDOFF.md` and
+    `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md`; re-audit the previous stage at every later
+    transition and do not start formal Stage-C evaluation before
+    `stage_b_summary.json --check` passes.
+12. Use the frozen Stage-4.9 H12 step-1 artifact during D2 development. If Stage 4.10 is selected
+    before the final D2 matrix, export a new immutable ActionPlan and freeze a new protocol; never
+    mix the amended program lifecycle into an existing D2 result family.
+13. Complete the Stage-4.10 full-chain comparison before using renewal-calibrated program build in
+    the final paper, and complete a primary-source novelty audit before making external novelty
+    claims.
+14. Begin new training seeds and predeclared dataset/model-capacity cells only after the D2 method,
+    harness, timing boundary, and claim set are frozen.
+15. Keep ZhihuRec as a reported boundary unless a task-independent protocol, rather than
    result-driven per-dataset tuning, creates a reason to revisit it.
 
 ### Gate F: turn kernel savings into a system result — normalized source fails, direct old K/V passes
@@ -1054,6 +1142,15 @@ coordinator remains control-plane glue. Details are in
 - Report operator state and data-movement cost alongside arithmetic time.
 - For system comparisons, freeze the destination first. Compiled migration and full recomputation
   must start and end at identical locations, dtype/layout, durability, and manifest boundaries.
+- Keep D1 and D2 denominators separate. D1 continuity reports retained-prefix `U/E`; D2 primary
+  includes natural exact, suffix/latest append, physical movement, staging, validation, commit, and
+  reclaim through one logical-complete target epoch.
+- For D2, report action fraction, lookup-token fraction, physical communication, padding/rewrite,
+  and wall-time fraction separately. In particular, `134/682 = 19.6%` exact-route records does not
+  imply 19.6% compute or communication; the current logical full-wave lookup fraction is 37.1%.
+- Every formal D2 method uses the same SPMD harness, row-sharded embedding, action hash, owner map,
+  and COW/publication boundary. Compare D2 against both naive sharded fixed-action mixed and the
+  faster measured one-shot/two-stage all-exact path.
 - Treat filesystem/remote interface validation as correctness only until physical storage/network
   hardware and cache/durability conditions are recorded.
 
@@ -1078,6 +1175,18 @@ coordinator remains control-plane glue. Details are in
   calibrated quality state;
 - longer context by itself increases the relative cache-maintenance quality gap; the Tenrec stress
   screen shows cost can grow while staleness tax shrinks.
+- approximately 20% exact-route records imply approximately 20% total compute, lookup,
+  communication, or wall time;
+- an entire compiled record or the complete mixed wave is embedding-free; only compiled retained
+  repair has that property;
+- the current 312,145-row forced-sharded table proves unsharded capacity infeasibility;
+- D2 changes requested compiled/exact actions according to measured communication cost;
+- online serving cannot batch/deduplicate, or the synthetic lookup stressor represents production
+  recommendation latency/SLO;
+- the W3 v1–v5 development timings are formal Stage-C or paper evidence;
+- segmented output is already consumed by serving or the next maintenance wave without a hidden
+  contiguous materialization;
+- the replicated dense HSTU trunk supports models that themselves require tensor parallelism.
 
 ## 7. Stop or pivot conditions
 
@@ -1230,5 +1339,44 @@ executable before the full-chain claim closes.
     actual/fresh pairs, count program construction in `U`, and pass real
     `theta0 -> theta1 -> theta2` recursive smoke with zero extra fit exact and no semantic gate.
 40. [ ] Run a new full-chain paired task-quality and complete-cost confirmation for Stage 4.10.
-    The two-edge one-repeat smoke must not select the calibration form or enter paper tables.
+    The two-edge one-repeat smoke must not select the calibration form or enter paper tables. This
+    is required before adopting renewal-calibrated programs in the final matrix, but does not block
+    D2 Stage A.
 41. [ ] In parallel, complete a primary-source related-work audit before making novelty claims.
+42. [x] Complete and freeze D2 Stage A. The canonical H12 ActionPlan contains
+    `548/46/88/682` compiled/scheduled-exact/natural-exact/total records; the FP32 split frontend
+    is bitwise equivalent, the real phase lookup ledger closes at retained
+    `637,954 → 50,099` and full-wave `934,917 → 347,062`, and the complete Stage-5 adapter
+    preserves commit/fallback/abort behavior on synthetic payloads. The `134/682 = 19.6%`
+    exact-route statistic is record count only; full-wave lookup remains 37.1% of all-exact.
+    Four-A40 topology and
+    compiled-extent microbenchmarks, request/dedup ceilings, and static strict-COW capacity are
+    frozen as non-scientific characterization. Single-rank strict-COW is rejected; W2/W4,
+    lower-precision transport, dedup, cross-island NCCL, actual collective bytes, and every
+    multi-rank or paper-performance claim remain for Stage B and later. See
+    `docs/future_design/DESIGN2_STAGE_A_HANDOFF.md`.
+43. [ ] Complete and freeze D2 Stage B. Stage-A reverse audit, implementation, current 407-test CI,
+    W1 normal/repeat, W2 normal, GPU1/GPU3 supplemental cross-island W2, requested/local/remote
+    ID hashes, collective tensor-payload reconstruction, projected W2 capacity and bounded W2
+    rank-exit propagation pass. Physical GPU0/GPU1/GPU3 W3 NCCL normal and hard-failure
+    development diagnostics also pass but are not formal evidence. Remaining hard gate: formal W4
+    normal and hard-failure on physical GPUs 0/1/2/3, then
+    `freeze_cohortkv_design2_stage_b.py` write/check. GPU2 is currently occupied by another user's
+    long-lived VLLM process; do not kill it, oversubscribe it, or substitute W2/W3/Gloo/logical
+    shared-GPU ranks. See `docs/future_design/DESIGN2_STAGE_B_HANDOFF.md`.
+44. [ ] Complete D2 Stage C on the frozen fixed H12 action plan. C0 sample-only development is
+    complete on W1/W2/W3 normal and W3 pre-commit abort with `scientific_result=false` and
+    `formal_stage_c=false`. A separate W3 v1–v5 mechanism discovery has already exposed the
+    logical-to-physical gap: naive mixed loses to exact, while segmented suffix-only output,
+    `(S,R)` extents, and merged exact pooling yield a positive full682/B8 development point;
+    full-payload tolerance also passes. These artifacts remain `scientific_result=false` and do
+    not replace W4, formal publication/consumer closure, or a frozen Stage-C protocol. Only after
+    Stage B passes may formal evaluation rerun same-binary all-exact, naive sharded fixed-action
+    mixed, and physical-sparse mixed through post-append commit/reclaim with a complete
+    logical/physical work ledger. Stop before Stage D if no plausible system point survives.
+45. [ ] Run D2 Stage D only under a newly frozen protocol: paired 1/2/4-GPU evidence,
+    same-action physical-lowering ablations, segmented-consumer/next-wave compatibility,
+    plan-inclusive preparation, full publication/commit/reclaim, capacity and communication
+    characterization, failure matrix, and an explicit keep/demote/delete decision for every
+    proposed mechanism. Synthetic lookup contention is optional supporting evidence, not a
+    serving claim or paper-strength requirement.

@@ -7,7 +7,13 @@
 > completed artifact. New-seed and cross-configuration experiments belong to Stage 7 and are
 > described only as open evidence. The paper deliberately separates one-hop hot-HBM data-plane
 > speed, repeated-update GPU work, one-time compiler cost, host-device movement, and
-> failure-safe publication.
+> failure-safe publication. It is now the frozen **D1-only baseline draft**. Under the current
+> paper structure, Sections 4–6 are connected components of D1; the deadline-based lifecycle in
+> Section 5 is not the current Design 2. Current D2 is fixed-action, wave-compiled segmented
+> execution over row-sharded embeddings and remains under formal evaluation. Its authoritative
+> definition and claim boundary are in `docs/08_core_insights_and_roadmap.md`,
+> `docs/eval_protocol.md`, and `docs/future_design/DESIGN2_FINAL_PLAN.md`; they must be integrated
+> in a later manuscript revision rather than filled into this frozen evidence snapshot.
 
 ## Abstract
 
@@ -251,7 +257,7 @@ acceptable. A later growing-history control also found that current-edge norm sh
 Spearman correlation `0.0341` with realized candidate error. These results motivate a deterministic
 renewal schedule rather than a learned or thresholded risk oracle.
 
-## 3. CohortKV overview
+## 3. CohortKV D1 overview
 
 ### 3.1 Job boundary and state objects
 
@@ -464,7 +470,7 @@ residual-\(p\), so its executable action set is compiled translation or exact. R
 remains a quality-tier action in plans whose declared auxiliary state is present; the runtime may
 not pretend that state exists or estimate its cost as zero.
 
-## 5. Design 2: Deadline-based migration under growing histories
+## 5. Design 1 continued: Deadline-based migration under growing histories
 
 ### 5.1 Correct canonical-date and timing boundary
 
@@ -536,7 +542,7 @@ a complete renewal cycle. The candidate pair and the rule preferring H12's per-c
 the cheaper aggregate-debt endpoint were frozen before either corrected same-device run was
 examined.
 
-## 6. System integration: Destination runtime and transactional closure
+## 6. Design 1 system closure: Destination runtime and transaction
 
 ### 6.1 A common destination extent
 

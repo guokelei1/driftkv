@@ -12,24 +12,72 @@ When documents disagree, use this order:
    state, supported claims, open gates, and stop conditions.
 2. [eval_protocol.md](eval_protocol.md) — authoritative experiment semantics, comparability, and
    valid artifact boundary.
-3. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
-   active implementation sequence for the KuaiRand long-context vertical slice.
-4. [10_target_manuscript_stage0_6_correspondence.md](10_target_manuscript_stage0_6_correspondence.md)
+3. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — active Design 2
+   problem definition, interfaces, MVP, experiments, and go/no-go gates.
+4. [future_design/DESIGN2_FOUR_STAGE_EXECUTION.md](future_design/DESIGN2_FOUR_STAGE_EXECUTION.md) —
+   active Design 2 execution control: stage inputs/outputs, risks, backtracking, and stop rules.
+5. [future_design/DESIGN2_STAGE_A_HANDOFF.md](future_design/DESIGN2_STAGE_A_HANDOFF.md) —
+   frozen non-scientific Stage A boundary, decisions, risks, unsupported claims, and Stage B entry
+   diagnostics.
+6. [future_design/DESIGN2_STAGE_B_HANDOFF.md](future_design/DESIGN2_STAGE_B_HANDOFF.md) —
+   current Stage B implementation/evidence boundary and the still-pending independent-W4 gate.
+7. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
+   current dual-gate ledger: Stage-C C0 plus W3 fixed-action physical-lowering discovery are
+   complete, while formal evaluation remains blocked on the independent-W4 Stage-B freeze.
+8. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+   frozen historical implementation sequence for the completed KuaiRand Stage 0–6 vertical slice
+   and its post-freeze Stage-4.10 amendment.
+9. [10_target_manuscript_stage0_6_correspondence.md](10_target_manuscript_stage0_6_correspondence.md)
    — correspondence between the pre-rewrite target manuscript and the frozen Stage 0–6 evidence,
    including the resulting paper reframing and remaining gaps.
-5. [Current CohortKV manuscript](../paper/cohortkv/manuscript_v3_target_en.md) — the
-   evidence-bound English draft rewritten from the completed Stage 0–6 vertical slice.
-6. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
+10. [Frozen D1-only CohortKV manuscript](../paper/cohortkv/manuscript_v3_target_en.md) — the
+   evidence-bound English draft rewritten from the completed Stage 0–6 vertical slice. It has not
+   yet incorporated the active D2 design/results and is not the current D1/D2 source of truth.
+11. [dataset_expansion_audit.md](dataset_expansion_audit.md) — dataset semantics, capacity, accepted
    ordered-exposure settings, and negative boundaries.
 
-The current manuscript contains no `TBD` placeholders. Open replications and implementation gaps
+The frozen D1 manuscript contains no `TBD` placeholders. Open replications and implementation gaps
 are stated as limitations rather than filled with seed-0 numbers. It remains subordinate to the
 roadmap and evaluation protocol when experimental semantics conflict.
 
 ## Current execution phase
 
-The **single-configuration full-chain development** phase is complete. Its frozen configuration
-was:
+The canonical paper story is:
+
+> D1 decides what must be translated or recomputed and creates logical action sparsity. D2 keeps
+> those actions immutable and compiles their placement, shape, movement, segmented output, and
+> publication so logical sparsity becomes physical savings. Communication-aware semantic action
+> selection remains D3.
+
+**Design 2 Stage A is frozen; Stage B implementation, W1/W2 evidence, the three-rank diagnostic,
+and C0 development closure are complete, but Stage B is not frozen because the independent-W4
+gate is pending.**
+`DESIGN2_FINAL_PLAN.md` freezes what D2 means; `DESIGN2_FOUR_STAGE_EXECUTION.md` controls how it is
+implemented; the two handoffs freeze what each transition may depend on. Stage A closes the
+canonical action plan, exact/frontend equivalence, phase ledger, Stage-5 adapter, request/dedup
+ceilings, four-A40 topology microbenchmarks, and static capacity assumptions. Its artifacts are
+explicitly non-scientific. Stage B now has owner-local compiled retained, FP32 row-sharded
+exact/append, requested/local/remote ID hashes, collective tensor-payload accounting, private
+ready/abort, W1 repeat, W2 capacity projection and bounded W2 hard-failure evidence. A physical
+GPU1/GPU3 cross-island W2 diagnostic also passes. A physical GPU0/GPU1/GPU3 W3 NCCL normal and
+hard-failure diagnostic now passes as `scientific_result=false`; it exercises asymmetric
+three-rank composition and authorizes C0 development only. It cannot replace W4. The current
+double gate is `stage_c_development_entry=go` and `stage_c_evaluation_entry=blocked`. C0 now
+completes W1/W2/W3 normal plus W3 pre-commit abort on a fixed 16-record fixture; it closes only the
+development wave/state-machine interface. The artifacts have no timing, full-cohort, capacity, or
+formal epoch-publication semantics.
+
+Separate three-GPU W3 mechanism discovery now completes a v1→v5 chain from naive mixed to
+segmented suffix-only, `(S,R)` shape-aware extents, and merged exact pooling. The full682/B8
+development point and full-payload validation are positive, but remain
+`scientific_result=false`: final publication/commit/reclaim, segmented consumer, formal 1/2/4-GPU
+protocol, and W4 are still open. Synthetic lookup contention is supporting characterization, not a
+serving trace or required D2 claim. Formal integrated evaluation and every D2 paper-performance
+claim remain blocked. The live ledger is
+`future_design/DESIGN2_DEVELOPMENT_STATUS.md`.
+
+The prior **single-configuration full-chain development** phase is complete and frozen. Its
+configuration was:
 
 - KuaiRand 4+12 long-context data;
 - the 16-layer, hidden/K/V-width-512 seed-0 model chain;
@@ -39,12 +87,13 @@ was:
 - HBM and DRAM as the primary destinations, plus an artifact-derived source-state accounting
   table. INT8/capture/SSD work is optional post-v1.
 
-This package remains development evidence. A post-freeze Stage-4.10 amendment is now active before
-Stage 7: H12 scheduled-exact records also calibrate the per-edge shared direct program, with build
-cost included in `U` and no separate fit-only exact cohort or semantic admission gate. Its
-two-edge smoke is complete, but full-chain task quality is not; new-seed and cross-capacity
-replication waits for that formal closure. The completed stages and same-interface fallback rules
-are in the active plan. Stage 0 is complete: the machine-readable
+This package remains development evidence. A post-freeze Stage-4.10 amendment explores whether H12
+scheduled-exact records should also calibrate the per-edge shared direct program, with build cost
+included in `U` and no separate fit-only exact cohort or semantic admission gate. Its two-edge smoke
+is complete, but full-chain task quality is not. Stage 4.10 remains a separate open D1
+program-lifecycle amendment: it does not block D2 Stage A, and its outputs must not silently replace
+the frozen Stage-4.9 action/program inputs. The historical completed stages and same-interface
+fallback rules remain in the Stage 0–6 plan. Stage 0 is complete: the machine-readable
 blueprint, 682-record workload manifest, and result schema are under
 `configs/cohortkv_single_config_v1/`. Its re-audit separates internal/raw user identity, makes
 residual hidden-suffix storage explicit, enforces all 18 primary system points, and requires HBM
@@ -88,8 +137,12 @@ package with a deterministic CPU-only assembly over frozen Stage-1 through Stage
 publishing `final_summary_seed0.json` and eight checked sidecars without rerunning the old GPU
 matrix. Runtime sentinel, online rework/resume, INT8/capture, and SSD benchmarks remain optional.
 Stage 4.10 then adds non-scientific inverse-Norm and direct-K/V renewal-calibrated smokes over
-`theta0 -> theta1 -> theta2`; neither is yet selected. The next experimental work is its
-same-device full-chain quality/cost confirmation, followed by Stage 7.
+`theta0 -> theta1 -> theta2`; neither is yet selected. Its formal same-device full-chain
+quality/cost closure is still required before that amendment can enter a final paper matrix.
+The C0 development lane is complete. Targeted W1/W2/W3 diagnostics remain allowed if they address a
+specific interface risk, but they do not advance the formal gate. When GPU2 is safely free, run the
+formal four-independent-A40 W4 normal and hard-failure cases, then the deterministic Stage B
+freeze. Formal Stage-C evaluation and Stage 7 replication remain blocked until that gate closes.
 
 ## Key experiment records
 
@@ -156,8 +209,8 @@ inventory here.
 The former project-wide review snapshot and the large system-candidate exploration were removed
 from the active directory. They mixed current tasks with speculative serving, second-hardware,
 larger-model, compression, and alternate-paper directions that are outside the present scope.
-Their useful current content is now represented by the authoritative roadmap, current manuscript,
-and single-configuration plan.
+Their useful current content is now represented by the authoritative roadmap, frozen D1-only
+manuscript, frozen single-configuration plan, and the active D2 documents.
 
 The old background PNG was also removed after the paper-native problem-and-scope figure superseded
 it. All removed tracked files remain recoverable from Git history and must not be cited as current

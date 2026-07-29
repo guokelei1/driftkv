@@ -89,34 +89,48 @@ class HSTU(nn.Module):
         behaviors: torch.Tensor,
         time_deltas: torch.Tensor,
     ) -> torch.Tensor:
-        x = self.item_emb(item_ids) + self.behavior_emb(behaviors) + self.temporal_enc(time_deltas)
+        return self.combine_input_features(
+            self.lookup_item_embeddings(item_ids),
+            behaviors,
+            time_deltas,
+        )
+
+    def lookup_item_embeddings(
+        self,
+        item_ids: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.item_emb(item_ids)
+
+    def combine_input_features(
+        self,
+        item_vectors: torch.Tensor,
+        behaviors: torch.Tensor,
+        time_deltas: torch.Tensor,
+    ) -> torch.Tensor:
+        if item_vectors.shape[:-1] != behaviors.shape:
+            raise ValueError("item vectors and behaviors shapes differ")
+        if time_deltas.shape != behaviors.shape:
+            raise ValueError("time deltas and behaviors shapes differ")
+        if item_vectors.shape[-1] != self.cfg.hidden_size:
+            raise ValueError("item vector width differs from model hidden size")
+        x = item_vectors + self.behavior_emb(behaviors) + self.temporal_enc(time_deltas)
         x = self.in_proj(x)
         return self.input_dropout(x)
 
-    def forward(
+    def forward_embedded(
         self,
-        item_ids: torch.Tensor,
-        behaviors: torch.Tensor,
-        time_deltas: torch.Tensor,
+        x: torch.Tensor,
         return_kv: bool = False,
         return_hidden: bool = True,
         lengths: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, HSTUKVCache | None]:
-        """Run the transducer.
-
-        Args:
-            item_ids/behaviors: [B, L] long, padded with 0.
-            time_deltas: [B, L] float seconds, 0 for first event / padding.
-            return_kv: also return the derived KV cache F(theta, x_u).
-            return_hidden: return final hidden states (set False to save memory
-                when only KV is needed).
-
-        Returns (hidden_or_zeros, kv_cache_or_none).
-        """
-        x = self.embed_inputs(item_ids, behaviors, time_deltas)
+        if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
+            raise ValueError("embedded inputs must have shape [batch, sequence, hidden]")
         L = x.shape[1]
         valid = None
         if lengths is not None:
+            if lengths.shape != (x.shape[0],):
+                raise ValueError("lengths and embedded batch dimension differ")
             lengths = lengths.to(x.device)
             valid = torch.arange(L, device=x.device).unsqueeze(0) < lengths.unsqueeze(1)
             x = x * valid.unsqueeze(-1)
@@ -139,6 +153,22 @@ class HSTU(nn.Module):
             x = torch.empty(0, device=x.device)
         return x, kv
 
+    def forward(
+        self,
+        item_ids: torch.Tensor,
+        behaviors: torch.Tensor,
+        time_deltas: torch.Tensor,
+        return_kv: bool = False,
+        return_hidden: bool = True,
+        lengths: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, HSTUKVCache | None]:
+        return self.forward_embedded(
+            self.embed_inputs(item_ids, behaviors, time_deltas),
+            return_kv=return_kv,
+            return_hidden=return_hidden,
+            lengths=lengths,
+        )
+
     @torch.no_grad()
     def compute_kv(
         self,
@@ -159,6 +189,33 @@ class HSTU(nn.Module):
                 item_ids,
                 behaviors,
                 time_deltas,
+                return_kv=True,
+                return_hidden=False,
+                lengths=lengths,
+            )
+        finally:
+            if was_training:
+                self.train()
+        assert kv is not None
+        return kv
+
+    @torch.no_grad()
+    def compute_kv_from_item_embeddings(
+        self,
+        item_vectors: torch.Tensor,
+        behaviors: torch.Tensor,
+        time_deltas: torch.Tensor,
+        lengths: torch.Tensor | None = None,
+    ) -> HSTUKVCache:
+        was_training = self.training
+        self.eval()
+        try:
+            _, kv = self.forward_embedded(
+                self.combine_input_features(
+                    item_vectors,
+                    behaviors,
+                    time_deltas,
+                ),
                 return_kv=True,
                 return_hidden=False,
                 lengths=lengths,
@@ -191,6 +248,100 @@ class HSTU(nn.Module):
         return self.item_emb.score(last, candidate_ids)
 
     @torch.no_grad()
+    def forward_with_cache_embedded(
+        self,
+        cached_kv: HSTUKVCache,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
+            raise ValueError("embedded suffix must have shape [batch, sequence, hidden]")
+        if cached_kv.k.shape[1] != x.shape[0]:
+            raise ValueError("cached K/V and embedded suffix batch dimensions differ")
+        m = x.shape[1]
+        new_kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
+        for li, blk in enumerate(self.blocks):
+            cached_k = cached_kv.k[li]
+            cached_v = cached_kv.v[li]
+            x, (k_all, v_all) = blk.forward_with_cache(x, cached_k, cached_v)
+            new_kvs.append((k_all, v_all))
+        x = self.final_norm(x)
+        updated_kv = HSTUKVCache.from_layer_list(
+            new_kvs,
+            seq_len=cached_kv.seq_len + m,
+        )
+        return x, updated_kv
+
+    @torch.no_grad()
+    def forward_with_cache_embedded_new_kv(
+        self,
+        cached_kv: HSTUKVCache,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
+            raise ValueError("embedded suffix must have shape [batch, sequence, hidden]")
+        if cached_kv.k.shape[1] != x.shape[0]:
+            raise ValueError("cached K/V and embedded suffix batch dimensions differ")
+        new_kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
+        for layer, block in enumerate(self.blocks):
+            x, new_kv = block.forward_with_cache_new_kv(
+                x,
+                cached_kv.k[layer],
+                cached_kv.v[layer],
+            )
+            new_kvs.append(new_kv)
+        x = self.final_norm(x)
+        return x, HSTUKVCache.from_layer_list(
+            new_kvs,
+            seq_len=x.shape[1],
+        )
+
+    @torch.no_grad()
+    def forward_with_cache_from_item_embeddings(
+        self,
+        cached_kv: HSTUKVCache,
+        new_item_vectors: torch.Tensor,
+        new_behaviors: torch.Tensor,
+        new_time_deltas: torch.Tensor,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        was_training = self.training
+        self.eval()
+        try:
+            return self.forward_with_cache_embedded(
+                cached_kv,
+                self.combine_input_features(
+                    new_item_vectors,
+                    new_behaviors,
+                    new_time_deltas,
+                ),
+            )
+        finally:
+            if was_training:
+                self.train()
+
+    @torch.no_grad()
+    def forward_with_cache_from_item_embeddings_new_kv(
+        self,
+        cached_kv: HSTUKVCache,
+        new_item_vectors: torch.Tensor,
+        new_behaviors: torch.Tensor,
+        new_time_deltas: torch.Tensor,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        was_training = self.training
+        self.eval()
+        try:
+            return self.forward_with_cache_embedded_new_kv(
+                cached_kv,
+                self.combine_input_features(
+                    new_item_vectors,
+                    new_behaviors,
+                    new_time_deltas,
+                ),
+            )
+        finally:
+            if was_training:
+                self.train()
+
+    @torch.no_grad()
     def forward_with_cache(
         self,
         cached_kv: HSTUKVCache,
@@ -198,33 +349,17 @@ class HSTU(nn.Module):
         new_behaviors: torch.Tensor,
         new_time_deltas: torch.Tensor,
     ) -> tuple[torch.Tensor, HSTUKVCache]:
-        """Incremental inference: reuse prefix KV (possibly from theta_old) + new suffix tokens.
-
-        This is the core KV-cache-reuse operation:
-          * Prefix [1..n] KV was cached (maybe by theta_old) -> reused as-is.
-          * Suffix [n+1..n+m] is embedded + processed with the CURRENT model (theta_new).
-          * At each layer, Q/gating/norm use theta_new; prefix K,V stay from the cache.
-
-        Args:
-            cached_kv: HSTUKVCache with K,V [num_layers, B, n, inner] from a prior forward.
-            new_item_ids/behaviors/time_deltas: [B, m] for the new suffix tokens.
-
-        Returns: hidden [B, m, H] for new positions, updated_kv HSTUKVCache [B, n+m, inner].
-        """
         was_training = self.training
         self.eval()
         try:
-            B, m = new_item_ids.shape
-            x = self.embed_inputs(new_item_ids, new_behaviors, new_time_deltas)  # [B, m, H]
-            new_kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
-            for li, blk in enumerate(self.blocks):
-                cached_k = cached_kv.k[li]  # [B, n, inner]
-                cached_v = cached_kv.v[li]
-                x, (k_all, v_all) = blk.forward_with_cache(x, cached_k, cached_v)
-                new_kvs.append((k_all, v_all))
-            x = self.final_norm(x)
-            updated_kv = HSTUKVCache.from_layer_list(new_kvs, seq_len=cached_kv.seq_len + m)
-            return x, updated_kv
+            return self.forward_with_cache_embedded(
+                cached_kv,
+                self.embed_inputs(
+                    new_item_ids,
+                    new_behaviors,
+                    new_time_deltas,
+                ),
+            )
         finally:
             if was_training:
                 self.train()

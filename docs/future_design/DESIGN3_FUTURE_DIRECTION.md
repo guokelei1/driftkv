@@ -45,7 +45,7 @@ D3 controller
                          │
                          ▼
 D2 runtime
-  placement + compiled/exact/append + transaction
+  physical-wave compilation + segmented compiled/exact/append + transaction
                          │
                          ▼
                     D2WaveReport
@@ -60,6 +60,10 @@ D3 负责：
 - exact/replay budget；
 - migration depth/deadline；
 - cross-wave backlog 和 program-cache policy。
+
+exact fraction、requested `compiled|exact` 和 communication-aware semantic admission 都是
+D3/policy 变量，不是 D2 runtime knobs。D2 可以把 measured communication/movement cost 写入
+`D2WaveReport` 供下一 wave 使用，但当前 wave 的 requested actions 已冻结。
 
 D2 继续负责：
 
@@ -88,7 +92,9 @@ record action。
    depth；compiled/composed repair 不重置。
 5. **Depth 按跨越的 model edges 计数。** 五条边即使被压成一个 kernel，semantic debt 仍增加五。
 6. **Append 必须使用 target model。** delta/latest tokens 不得错误地套用旧版本 program。
-7. **只有完整 post-append cache 可以发布。** retained prefix 仍是 D2 private intermediate。
+7. **只有逻辑完整的 post-append cache 可以发布。** 它可以是 coverage 完整、顺序明确的
+   `{retained,suffix}` segmented manifest，不强制物理 contiguous；若 consumer 必须拼接，
+   拼接成本属于 D2 boundary。
 8. **不得发布 stale-as-current。** capacity 不足必须在 transaction 前显式 reject、evict 或走
    声明的 cold/exact 路径，不能静默 defer 后伪装成 current version。
 9. **现有 per-cache threshold route 是 refresh-wave negative result。** 不恢复 adaptive-risk 或
