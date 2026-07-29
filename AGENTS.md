@@ -41,8 +41,13 @@
   what is compiled or exactly recomputed and exports an immutable action plan. Active D2 determines
   how that fixed work moves and executes: `(suffix, retained)` extent compilation, owner-local
   retained repair, row-sharded exact/append, segmented suffix-only destination, merged physical
-  exact pools, and atomic publication. D2 must not reselect requested actions; communication-aware
-  semantic selection and organic mixed versions remain D3.
+  exact pools, collective dependencies, and atomic publication. D2 outputs global WavePlan
+  constraints rather than a capacity-specific launch schedule. The proposed D3 is an
+  Action-Aware Out-of-Core Pipeline: it preserves D1 actions and D2 owner/operator/bin/dependency/
+  layout constraints while deriving a per-rank capacity-safe ResidencyPlan over ordinary host
+  DRAM, bounded pinned staging, and HBM. D2/D3 must not reselect requested actions;
+  communication-aware semantic selection and organic mixed versions are a later feedback layer,
+  not D3.
 - The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
   project crux. Its only valid role is a clearly labeled negative result in the motivation.
 - Single-configuration Stages 0–4.6 are frozen. The closest selective baseline fails its certificate;
@@ -73,6 +78,13 @@
   a new D2 protocol, 1/2/4-GPU same-boundary results, publication/commit/reclaim timing, and a
   segmented consumer remain open. Synthetic lookup contention is supporting characterization,
   not a serving trace or D2 gate.
+- D3 currently has a paper skeleton and design hypothesis only. It has no frozen protocol or paper
+  result. Its strong baselines must share the action-required source-byte multiset: sequential
+  capacity groups and an action-oblivious double buffer, plus same-boundary all-exact with its
+  actual raw-history bytes. The primary boundary is ordinary host DRAM → bounded pinned staging →
+  GPU → ordinary host DRAM private target → atomic manifest. SSD/database ingress, serving traces,
+  host-DRAM oversubscription, and online hotness are out of scope. A no-I/O chunk sum is
+  characterization only; the old normalized-capsule DRAM result is not direct-old-K/V D3 evidence.
 
 ## Code layout
 

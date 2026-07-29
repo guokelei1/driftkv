@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-29. This file replaces all earlier problem statements and
+> Status: authoritative as of 2026-07-30. This file replaces all earlier problem statements and
 > phase plans.
 
 ## 1. Current thesis
@@ -32,15 +32,28 @@ layer:
 > savings after embedding communication, suffix append, padding, K/V movement, synchronization,
 > and target publication are included?
 
-The active abstraction is **structure-aware cache migration followed by fixed-action physical-wave
-compilation**. It is not a per-user reuse-safety prediction problem, an online request scheduler,
-or ordinary tail-token cache append.
+The proposed D3 question is the next memory-hierarchy layer:
+
+> When complete source plus private target K/V exceeds per-rank usable HBM, can the fixed D1
+> actions and D2 distributed constraints be executed from ordinary host DRAM without losing their
+> gains to capacity cuts, CPU staging, PCIe movement, or pipeline bubbles?
+
+The paper abstraction is now **semantic ActionPlan → distributed WavePlan constraints →
+capacity-bounded ResidencyPlan**. D1 decides what to compute; D2 decides the owner, operator,
+shape/pool membership, collective dependencies, and target layout; D3 decides legal capacity cuts,
+packing, and DRAM–GPU launch order. It is not a per-user reuse-safety prediction problem, an online
+request scheduler, or ordinary tail-token cache append.
 
 The frozen Stage 0–6 systems scope was a **destination-oriented K/V update job** with a shared
 compiler, a direct old-K/V operator, bounded execution waves, and complete target-version
 publication. Its normalized-capsule out-of-core path is a negative result; the winning data plane
 starts from existing hot old K/V. Training, request arrival, user hotness, and online routing
 remain outside the evidence boundary because the available data does not identify them.
+
+The new D3 direction does not relabel that old normalized-capsule result. It defines a separate
+ordinary-host-DRAM → GPU → ordinary-host-DRAM protocol over direct-old-K/V compiled actions,
+raw-history exact actions, bounded pinned staging, and a complete private host target. No such D3
+protocol or paper result is frozen yet.
 
 The active engineering scope is now **Design 2: Wave-Compiled Segmented Migration over
 Row-Sharded Embeddings**. For one immutable model-update action plan, compiled retained-prefix
@@ -77,8 +90,12 @@ Current design status is:
    The double gate therefore remains `stage_c_development_entry=go` and
    `stage_c_evaluation_entry=blocked`; Stage B is unfrozen and every D2 paper-performance claim
    remains blocked.
-3. **D3 is parked:** organic mixed-version program graphs and bounded renewal remain an unfrozen
-   future direction until D2 exposes a stable measured action/report interface.
+3. **D3 has a paper-facing design hypothesis but is unfrozen:** Action-Aware Out-of-Core
+   Pipelining will preserve D1 actions and D2 WavePlan constraints while deriving a per-rank
+   capacity-safe ResidencyPlan over ordinary host DRAM. Sequential capacity groups and an
+   action-oblivious double buffer are mandatory strong baselines. Organic mixed-version program
+   graphs and communication-aware semantic selection are no longer D3; they remain a later
+   cross-update feedback direction.
 
 The single-configuration vertical slice on the KuaiRand 4+12, 16L/H512, seed-0 chain is now
 complete through Stage 6. Stages 0–4 closed experiment design, the closest
@@ -832,8 +849,10 @@ control are not current paper gates. The 8+8 protocol is in
 
 ## 3. Current contribution hypothesis
 
-The current paper hypothesis has one frozen method design and one active systems design. D3 is not
-yet part of the contribution set.
+The current paper skeleton has one frozen method design, one active distributed systems design,
+and one unfrozen memory-hierarchy design hypothesis. D3 belongs to the intended contribution set
+only if its new same-boundary protocol and go/no-go gates pass; the paper must keep its mechanisms
+and results marked as pending until then.
 
 1. **D1 — compiled version-cohort cache translation.** Fit a shared current-minus-cheap K/V
    residual, certify its label-free semantic/coverage contract, compose the affine with the source
@@ -846,14 +865,23 @@ yet part of the contribution set.
    exact work by `F`, access row-sharded embeddings only for unavoidable exact/append IDs, emit
    suffix-only segments, and atomically publish one logical-complete target epoch. D2 determines
    how fixed work moves and executes; it does not reselect actions.
+3. **D3 — action-aware out-of-core pipeline (unfrozen).** Given the ActionPlan and D2 WavePlan
+   constraints, form a separate ResidencyPlan that cuts over-capacity bins into legal per-rank
+   micro-waves, packs resource-complementary work, and overlaps ordinary-host staging, H2D, GPU
+   execution, D2H, and host writeback. All mixed baselines share the same action-required source
+   bytes. D3 is a paper-level design only if it beats action-oblivious double buffering and forms
+   a meaningful point against same-boundary all-exact.
 
-The paper-facing motivations mirror this split:
+The paper-facing motivations mirror the three layers:
 
 1. **M1:** stale reuse preserves substantial streaming-training value but loses version
    consistency; all-exact closes the gap by replaying every history.
 2. **M2:** under row-sharded embeddings, lowering logical exact work does not automatically lower
    physical time in proportion. Communication, padded incremental attention, retained-prefix
    rewrite, phase fragmentation, and publication can consume the arithmetic savings.
+3. **M3:** a global distributed plan can exceed per-rank usable HBM. Sequential capacity groups
+   make execution possible but may expose CPU/PCIe movement, fragment D2 bins, and serialize
+   transfer, compute, and writeback.
 
 M2 must first be demonstrated with all-exact/design-independent exact-volume scaling and then
 bridged with a naive sharded fixed-action mixed baseline. It does not require a serving trace.
@@ -868,6 +896,13 @@ coalescing, and synthetic resource contention can strengthen the design but cann
 core gate. Owner-compute, row-sharded lookup, sorting, pooling, segmentation, and COW publication
 are conventional in isolation; the claimed mechanism is their coupled lowering of D1's
 heterogeneous action graph.
+
+D3 only becomes a paper-level design after a separate ordinary-host-DRAM protocol fixes
+ActionPlan/WavePlan constraints, action-required source bytes, per-rank usable-HBM admission, and
+the private host target endpoint. A no-I/O chunk sum is characterization only. Main comparisons
+must include sequential capacity groups, an action-oblivious double buffer, D3, and same-boundary
+all-exact. The old normalized-capsule HBM/DRAM result is a representation-specific negative, not
+direct-old-K/V D3 evidence.
 
 Dynamic arbitrary-layer planning remains unnecessary: the all-interval and recent-token screens
 do not justify their search or fragmentation cost.

@@ -30,6 +30,14 @@ formal D2 protocol, publish a formal target epoch, close the segmented consumer/
 or include the final plan/history preparation plus publication/commit/reclaim boundary. Their
 valid use is mechanism discovery and protocol design, not Motivation-2 numbers or paper tables.
 
+Design 3 is currently an unfrozen Action-Aware Out-of-Core Pipeline hypothesis, not an experiment
+family. It requires a new protocol with an ordinary-host-DRAM source and private target, bounded
+pinned staging, per-rank usable-HBM admission, fixed D1 ActionPlan and D2 WavePlan constraints, and
+separate ResidencyPlans. Sequential capacity groups and an action-oblivious double buffer must
+share the mixed action-required source-byte multiset; same-boundary all-exact reports its distinct
+raw-history bytes. No existing normalized-capsule HBM/DRAM result may be relabeled as direct-old-K/V
+D3 evidence.
+
 Before a formal Stage C integrated run or any Stage D result is promoted to paper evidence, its
 action-plan identity, configuration, metrics, timing boundary, communication accounting,
 baselines, and artifact schema must be frozen here under a new D2 protocol name. Existing protocol
