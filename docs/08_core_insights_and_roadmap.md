@@ -147,7 +147,7 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | two-card benchmark plan ready | question, flexible H12/QK benchmark route, minimal two-rank adapter, baseline and co-design directions | GPU0/GPU1 M0 implementation, real QK M1, mechanism discovery, then final interfaces/protocol/evidence |
+| D3 | two-card M0 S0 implemented; development only | flexible WorkManifest/grouping, GPU0/GPU1 pageable-DRAM sequential path, real D2 compiled/exact execution, full682 exactly-once private-target writeback and phase profile | same-revision S1, real QK M1, mechanism discovery, then final interfaces/protocol/evidence |
 
 D3 development begins from the current D1 plan and implemented D2 runtime using a minimal
 two-rank `WorkManifest`; a normalized exporter is not a prerequisite for the first benchmark.
@@ -155,6 +155,16 @@ Within one `stack_revision`, baselines and candidates share the recorded work sn
 revisions are allowed during discovery but must rerun their own baselines. All early outputs remain
 non-scientific until a D3 protocol is frozen. D2 paper claims remain blocked independently;
 starting D3 does not promote W3 evidence.
+
+The current M0 full pass is `scientific_result=false`, `formal_design3=false`, and uses a logical
+payload cap rather than physical oversubscription. It partitions H12 into 26 groups and writes
+all 682 records (30.64 GB including small metadata/hidden outputs) exactly once. The latest
+17.73-second single-pass S0 profile records 7.02–7.79 seconds of D2 execution including embedding
+collectives/rank wait and 9.93–10.01 seconds across pageable→pinned, H2D, D2H, and pinned→pageable
+phases on the two ranks. Lookup collectives account for 0.72–1.64 seconds; subtracting only that
+measured component leaves a 6.15–6.30-second non-collective estimate. Peak allocated HBM is
+18.53/13.90 GB and the one-slot pinned footprint is 1.53/1.56 GB. This supports proceeding to
+overlap exploration; it is not a speedup, capacity, or paper claim.
 
 ## 4. Supported findings
 
@@ -332,9 +342,11 @@ A cross-layer candidate may also have different action/source bytes, but it must
 differences and rerun baselines under its new `stack_revision`.
 
 The initial M0 development timer covers ordinary-DRAM↔pinned copies, H2D/D2H, GPU compute,
-collectives, private-target writes, and coverage/checksum. Plan, commit, and reclaim are reported
-separately until the final protocol is chosen. The later paper-facing timer must explicitly close
-and include the complete selected boundary. A no-I/O chunk sum is characterization only.
+collectives, and private-target writes. Per-group sampled finite/metadata checks currently occur
+inside the wall timer; global exactly-once coverage is checked after it. Full checksum/numerical
+parity, plan, commit, and reclaim are outside this first profile. The later paper-facing timer must
+explicitly close and include its selected complete boundary. A no-I/O chunk sum is characterization
+only.
 
 ## 7. Current execution order
 
@@ -353,11 +365,10 @@ and include the complete selected boundary. A no-I/O chunk sum is characterizati
 
 ### D3 mechanism entry
 
-The following benchmark-first route is now active, but this roadmap does not claim it has been
-implemented:
+The benchmark-first route is active. Steps 1–2 are implemented for development M0; step 3 is next:
 
-1. fix GPU0/GPU1 and export a minimal H12/W2 `WorkManifest`;
-2. implement ordinary-DRAM source/target, byte-bounded groups, and a two-rank sequential path;
+1. keep the implemented GPU0/GPU1 H12/W2 `WorkManifest` and S0 as the same-revision reference;
+2. retain its ordinary-DRAM source/target, byte-bounded groups, and exactly-once checks;
 3. add a basic double buffer, event-based phase timing, and bounded pinned/HBM memory;
 4. in parallel audit QK and construct the smallest real two-card physical out-of-core model edge;
 5. reproduce sequential/double-buffer/all-exact on that real workload;
@@ -426,7 +437,7 @@ Do not claim that:
 - the current dense model requires tensor parallelism;
 - synthetic lookup contention is a serving trace or SLO result;
 - normalized-capsule DRAM, destination-v4 correctness, or hot-HBM Stage 4.5 is D3 evidence;
-- D3 has an implementation, frozen protocol, or performance result;
+- D3 has a final/paper-ready mechanism implementation, frozen protocol, or performance result;
 - SSD, database, remote object storage, RDMA, GDS, or host-DRAM oversubscription is evaluated.
 
 ## 10. Document and artifact map

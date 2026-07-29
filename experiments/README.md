@@ -25,8 +25,9 @@ names. They are not renamed when the paper/system name changes to EvoKV.
 | negative result | supports a scoped rejection or boundary; never silently discarded |
 | interface/smoke validation | correctness of the exercised path only; no performance claim |
 
-No current D3 result exists. In particular, destination-v4, normalized-capsule DRAM, and hot-HBM
-direct-old-K/V records cannot be relabeled as D3 evidence.
+No frozen D3 paper result exists. The current M0 S0 files are development diagnostics only. In
+particular, destination-v4, normalized-capsule DRAM, and hot-HBM direct-old-K/V records cannot be
+relabeled as D3 evidence.
 
 ## Validity and structural baselines
 
@@ -111,11 +112,13 @@ frozen yet. W3 integrated timings, full-payload validation, and synthetic lookup
 
 ## D3
 
-There is no D3 experiment record. The first implementation must begin from
+There is no frozen D3 experiment record. The first implementation now follows
 [../docs/future_design/DESIGN3_FUTURE_DIRECTION.md](../docs/future_design/DESIGN3_FUTURE_DIRECTION.md)
 and its concrete
 [foundation/exploration plan](../docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) by
-building a minimal H12/W2 `WorkManifest` and GPU0/GPU1 ordinary-DRAM benchmark. A normalized
+producing a minimal H12/W2 `WorkManifest` plus GPU0/GPU1 ordinary-DRAM S0 benchmark under
+`configs/evokv_d3/development/`. The next implementation step is the same-revision S1 double
+buffer, followed by the real-capacity QK M1. A normalized
 constraint exporter is deferred until the selected mechanism clarifies the final interface. All
 initial artifacts are development-only. H12 capacity caps are emulation, not physical out-of-core
 evidence; paper-facing capacity evidence uses a larger real-history two-A40 workload.

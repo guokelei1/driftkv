@@ -6,6 +6,15 @@
 固定 D3 的主方向和第一套两卡 benchmark 路径。D1/D2/D3 的具体接口、责任边界和候选机制都
 可以在实测后调整。
 
+当前 checkpoint：Milestone A 已完成开发态 M0/S0。H12/W2 的 682 records 被划为 26 个
+logical-payload-bounded groups；GPU0/GPU1 使用一个可复用 pinned slot，跑通 ordinary
+DRAM→HBM→真实 D2 compiled/exact→ordinary DRAM。full run 将约 30.64 GB private target
+exactly-once 写回普通 DRAM。最新 makespan 17.73 秒。两 rank 包含 embedding collective 与
+rank wait 的 D2 execution 为 7.02–7.79 秒，其中 lookup collective 为 0.72–1.64 秒；四段
+host/device movement 与 writeback 合计 9.93–10.01 秒。该单次 profile 仅说明 D3 数据通路已成为
+同量级瓶颈，仍是
+`scientific_result=false` 的容量模拟，不是 speedup 或物理 out-of-core 证据。
+
 当本文档与 [../08_core_insights_and_roadmap.md](../08_core_insights_and_roadmap.md) 或
 [../eval_protocol.md](../eval_protocol.md) 冲突时，以后二者记录的已有证据边界为准；尚未形成
 证据的 D3 实现路线以本文档为当前工作入口。
@@ -90,8 +99,9 @@ revision 下重新跑对应 baseline。不能把修改前的 baseline 与修改�
 - 当前 W2 `strict_cow_lpt` owner snapshot；
 - 当前 row-sharded embedding 与 D2 operators。
 
-H12 的完整 old K/V 与 private target 合计约 54.97 GiB，实际能够放入两张 A40。因此 M0
-通过显式开发用 HBM budget，例如 24 GiB/rank，强制产生多个 groups。它用于：
+H12 的完整 old K/V 与 private target 合计约 54.97 GiB，实际能够放入两张 A40。因此当前
+M0 使用 1 GiB/rank 的 logical-payload group bound 强制产生多个 groups。它不是 analytical
+HBM admission；执行器另外报告实测 peak HBM 和 pinned-slot footprint。M0 用于：
 
 1. 写出 pageable DRAM source/target；
 2. 跑通两卡 sequential groups；
@@ -197,9 +207,10 @@ ordinary pageable DRAM source
   → ordinary pageable DRAM target
 ```
 
-使用 `/dev/shm/evokv_d3/<run-id>/` 放临时大 payload，仓库只保存 compact manifest 和结果。
-GPU0/GPU1 与 CPU workers 绑定 NUMA0。source pages 可以预先 materialize/prefault，但完整
-source 不能预先 pin 住。
+使用 in-process pageable tensors 或 `/dev/shm/evokv_d3/<run-id>/` 放临时大 payload，仓库
+只保存 compact manifest 和结果。GPU0/GPU1 位于同一 NUMA0 island；正式 profile 再显式
+绑定 CPU workers。source pages 可以预先 materialize/prefault，但完整 source 不能预先 pin
+住。
 
 M0/M1 都为每条记录保留完整 committed old K/V。执行器可以根据当前 action 只搬需要的
 ranges；同时报告：
@@ -208,6 +219,9 @@ ranges；同时报告：
 - `source_bytes_read`；
 - `H2D_bytes`；
 - `D2H_bytes`。
+
+当前 M0 为缩短机制调试，只实际物化 compiled action 会读取的 retained old-K/V，并用 manifest
+记录完整 committed store 的容量；这不构成物理容量证据。M1 必须实际物化完整 old-K/V store。
 
 ### 2.3 容量控制
 
@@ -277,8 +291,9 @@ group size/order。
 
 ### 3.4 初始 timer
 
-主要 wall time 从第一个 ordinary→pinned copy 前开始，到最后一个 target extent 写回普通
-DRAM并完成 coverage/checksum 为止。记录：
+目标 wall boundary 从第一个 ordinary→pinned copy 前开始，到最后一个 target extent 写回
+普通 DRAM 为止。当前 S0 在 timer 内做 sampled finite/metadata 检查，在 timer 后做 global
+exactly-once；full checksum/numerical parity 是 S1 对比前的补充检查。记录：
 
 - ordinary→pinned；
 - H2D；
@@ -363,6 +378,12 @@ Milestone 只定义要看到的输入和输出，不锁死中间实现。遇到�
 
 ### A：两卡 M0 sequential benchmark
 
+**状态：完成开发态 foundation。**
+
+已完成 exactly-once、metadata、有限值和 ordinary-DRAM endpoint 检查；D2 算子本身沿用已通过
+full-payload development validation 的路径。独立的端到端数值 parity 可在 S1 对比前补，不
+阻塞流水骨架实现。
+
 **目标。** 尽快得到第一个真实 DRAM→GPU0/GPU1→DRAM 完整 run。
 
 **输入。** H12 ActionPlan、W2 owner/runtime、现有 checkpoints/program。
@@ -379,6 +400,8 @@ Milestone 只定义要看到的输入和输出，不锁死中间实现。遇到�
 D3 executor，复用算子而不是直接改造 W3 benchmark。
 
 ### B：两卡 M0 strong pipeline
+
+**状态：当前下一步。**
 
 **目标。** 得到 S1，并知道普通流水已经能隐藏多少搬运。
 
@@ -466,16 +489,16 @@ D，而不是用更多形式化工作包装失败候选。
 
 ## 7. 状态持久化
 
-开发产物建议放在 `configs/evokv_d3/development/`：
+开发产物放在 `configs/evokv_d3/development/`。当前文件和后续位置是：
 
 ```text
-benchmark_spec.json
-work_manifest.json
-source_manifest.json
-run_s0.json
-run_s1.json
-run_candidate.json
-development_status.json
+h12_w2_m0_work_manifest.json
+h12_w2_m0_group_plan.json
+h12_w2_m0_foundation.json
+h12_w2_m0_s0_canary.json
+h12_w2_m0_s0_full.json
+h12_w2_m0_s1_*.json
+h12_w2_m0_candidate_*.json
 ```
 
 每个 run 至少记录：
@@ -490,16 +513,16 @@ development_status.json
 - correctness；
 - 当前结论、失败原因和下一步。
 
-大 K/V payload 只存在 `/dev/shm` 等临时 DRAM 路径，不进入 Git。
+大 K/V payload 只存在进程内 pageable DRAM 或 `/dev/shm` 等临时路径，不进入 Git。
 
 ## 8. 立即执行顺序
 
 接下来严格限制在 GPU0/GPU1，但实现内部保持灵活：
 
-1. 从 H12/W2 导出最小 `WorkManifest`；
-2. 新建 pageable-DRAM source/target 与 byte-bounded grouping；
-3. 跑通 two-rank S0；
-4. 加 S1 double buffer 和 phase metrics；
+1. 已从 H12/W2 导出最小 `WorkManifest`；
+2. 已新建 pageable-DRAM source/target 与 byte-bounded grouping；
+3. 已跑通 two-rank S0 canary 和 full682；
+4. 当前加入 S1 double buffer、rank-wait/bubble metrics，并重跑同 revision 对比；
 5. 同时完成 QK capacity audit；
 6. A/B 稳定后训练一个 QK base + 一个 short update，并物化 M1；
 7. 在 M1 profile 上决定第一个真正的 D3 候选。

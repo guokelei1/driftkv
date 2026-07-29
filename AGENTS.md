@@ -85,9 +85,16 @@
   a new D2 protocol, 1/2/4-GPU same-boundary results, publication/commit/reclaim timing, and a
   segmented consumer remain open. Synthetic lookup contention is supporting characterization,
   not a serving trace or D2 gate.
-- D3 currently has a paper skeleton and design hypothesis only. It has no frozen protocol or paper
-  result. Its immediate task is to run a minimal two-rank ordinary-DRAM→GPU0/GPU1→ordinary-DRAM
-  benchmark: H12/W2 WorkManifest, sequential groups, then a basic double buffer. A normalized
+- D3 now has a working non-scientific M0 foundation, not a frozen protocol or paper result. The
+  H12/W2 WorkManifest contains 682 records in 26 logical-payload-bounded groups. GPU0/GPU1 S0 moves
+  pageable DRAM through one reusable pinned slot, executes the real compiled/exact D2 paths, and
+  writes private segmented targets back to pageable DRAM. The full pass covers all 682 records and
+  30.64 GB of output exactly once; its latest 17.73-second single-pass profile records
+  7.02–7.79 seconds of D2 execution including embedding collectives/rank wait and
+  9.93–10.01 seconds of host/device movement and writeback across the two ranks. Lookup
+  collectives account for 0.72–1.64 seconds of the D2 execution measurement.
+  These numbers are mechanism diagnostics only. The immediate task is a same-revision S1 double
+  buffer and the larger real QK M1. A normalized
   exporter, atomic publication/failure closure, and 1/2/4-GPU matrix are later formalization tasks,
   not mechanism-discovery prerequisites. Within one isolation revision, baselines share the work
   and source-byte snapshot; co-design revisions report changed actions/owners/source bytes and
@@ -128,9 +135,11 @@
   `scripts/benchmark_cohortkv_design2_resource_isolation.py` — active D2 development entry
   points; their current W3 artifacts are non-scientific mechanism discovery.
 - `src/hstu_kvcache/migration/destination.py` and `out_of_core.py` are historical destination-v4
-  implementation assets, not a D3 implementation or result. New D3 work must preserve the
-  D2 constraint boundary, first materialize its normalized exporter/hash, and then create an
-  explicit `ResidencyPlan` path.
+  implementation assets, not current D3 evidence.
+- `src/hstu_kvcache/migration/design3_work.py`,
+  `scripts/build_evokv_design3_m0_work.py`, and
+  `scripts/benchmark_evokv_design3_m0.py` are the active flexible D3 M0 manifest/grouping and
+  GPU0/GPU1 pageable-DRAM S0 entry points. Their artifacts are development diagnostics.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

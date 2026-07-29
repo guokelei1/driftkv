@@ -45,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | flexible GPU0/GPU1 benchmark plan ready; implementation and evidence not started |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | GPU0/GPU1 M0 S0 implemented as a development profile; S1 and real-capacity M1 open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -63,8 +63,9 @@ ResidencyPlan-only ablation.
 - Result families with different protocol strings must remain separate.
 - D2 W3 integrated timings, full-payload validation, and synthetic lookup contention are
   `scientific_result=false` mechanism discovery.
-- D3 currently has no result family. Destination-v4 correctness, normalized-capsule DRAM results,
-  and hot-HBM D1 results cannot be renamed as D3 evidence.
+- D3 has a non-scientific M0 development family, not a frozen result family. Destination-v4
+  correctness, normalized-capsule DRAM results, and hot-HBM D1 results cannot be renamed as D3
+  evidence.
 - The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
   current EvoKV manuscript or design source of truth.
 
@@ -84,11 +85,11 @@ they do not imply that the corresponding old architecture is current.
 
 ## D3 benchmark-first entry
 
-The immediate implementation uses GPU0/GPU1 only:
+The active implementation uses GPU0/GPU1 only:
 
-1. export a minimal H12/W2 `WorkManifest`;
-2. build pageable-DRAM source/target and a two-rank sequential path;
-3. add a basic double buffer and phase metrics;
+1. keep the completed minimal H12/W2 `WorkManifest`;
+2. use the completed pageable-DRAM two-rank S0 as the reference;
+3. add a basic double buffer and wait/bubble metrics;
 4. audit and construct the smallest real QK workload whose complete working set physically
    exceeds the two A40s;
 5. use its profile to decide whether the best design is an isolated D3 scheduler or a cross-layer
@@ -102,7 +103,10 @@ owners, pools, layout, and source bytes and reruns its own baselines.
 The concrete route is
 [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md).
 H12 software capacity caps are development emulation only and cannot become paper evidence. All
-D3 development artifacts remain non-scientific until a new protocol is frozen.
+D3 M0 now includes a full682 GPU0/GPU1 sequential pass through pageable DRAM, one reusable pinned
+slot, the real D2 mixed compute path, and private pageable writeback. It is a single-pass mechanism
+profile under emulated capacity, not a paper result. D3 development artifacts remain
+non-scientific until a new protocol is frozen.
 
 ## Removed material
 

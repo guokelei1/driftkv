@@ -34,10 +34,13 @@ formal D2 protocol, publish a formal target epoch, close the segmented consumer/
 or include the final plan/history preparation plus publication/commit/reclaim boundary. Their
 valid use is mechanism discovery and protocol design, not Motivation-2 numbers or paper tables.
 
-Design 3 has no frozen protocol family or result. Mechanism discovery may begin on GPU0/GPU1 with
+Design 3 has no frozen protocol family or paper result. Mechanism discovery is active on GPU0/GPU1 with
 a minimal H12/W2 `WorkManifest`, ordinary-host-DRAM source/private target, bounded staging, and
-per-rank HBM admission; it does not wait for a normalized D2 exporter or full transaction closure.
-These runs are development-only.
+an observed per-rank HBM footprint; it does not wait for a normalized D2 exporter or full
+transaction closure.
+The `evokv_design3_m0_pageable_s0_development_v0` canary/full artifacts are development-only:
+single-pass S0 mechanism profiles under an emulated logical-payload cap, with no speedup or physical
+out-of-core claim.
 
 An isolation-track result compares sequential, double-buffer, and proposed schedulers within one
 recorded `stack_revision` and work/source snapshot. A co-design track may globally regenerate D1

@@ -23,9 +23,10 @@ Isolation-track experiments keep one D1/D2 `WorkManifest` fixed. Co-design exper
 globally regenerate actions, owners, pools, or layout before execution, record a new
 `stack_revision`, and rerun their baselines.
 
-Current D2 code has a single-rank wave adapter and capacity-specific W3 resident extents. The first
-D3 task is a minimal two-rank H12/W2 adapter and ordinary-DRAM benchmark, not a general exporter.
-Normalization, stable hashes, and formal transaction closure follow after the mechanism is clear.
+Current D2 code has a single-rank wave adapter and capacity-specific W3 resident extents. D3 now
+has a minimal two-rank H12/W2 adapter and ordinary-DRAM S0 benchmark, not a general exporter. The
+next task is a same-revision S1 double buffer, followed by a real-capacity QK M1. Normalization,
+stable hashes, and formal transaction closure follow after the mechanism is clear.
 
 The H12 workload is the first semantic canary, not physical oversubscription evidence. The preferred
 D3 mechanism-selection route audits a larger real-history QK workload whose owner-local source
