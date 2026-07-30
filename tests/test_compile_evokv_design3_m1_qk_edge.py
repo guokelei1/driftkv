@@ -208,3 +208,41 @@ def test_plan_only_needs_no_training_checkpoint_or_gpu(
         snapshot["owner_independent_plan_sha256"]
         == printed["action_snapshot"]["owner_independent_plan_sha256"]
     )
+
+
+def test_fit_item_compaction_preserves_histories_and_uses_sorted_rows() -> None:
+    samples = [
+        {
+            "history": {
+                "item_ids": np.asarray([9, 2, 9], dtype=np.int64),
+                "behaviors": np.asarray([1, 2, 1], dtype=np.int64),
+            },
+            "pos_items": [],
+        },
+        {
+            "history": {
+                "item_ids": np.asarray([4, 2], dtype=np.int64),
+                "behaviors": np.asarray([3, 1], dtype=np.int64),
+            },
+            "pos_items": [],
+        },
+    ]
+
+    used, compact = MODULE.compact_fit_samples(samples)
+
+    assert used == (0, 2, 4, 9)
+    assert compact[0]["history"]["item_ids"].tolist() == [3, 1, 3]
+    assert compact[1]["history"]["item_ids"].tolist() == [2, 1]
+    assert np.array_equal(
+        compact[0]["history"]["behaviors"],
+        samples[0]["history"]["behaviors"],
+    )
+    assert samples[0]["history"]["item_ids"].tolist() == [9, 2, 9]
+
+
+def test_primary_defaults_select_large_entity_boundary() -> None:
+    args = MODULE.parse_args([])
+
+    assert args.prepared_data.endswith("qk_entity_2560.npz")
+    assert args.checkpoint_dir.endswith("qk_entity_h1536/seed0")
+    assert args.cohort_ids.endswith("qk_entity_cohorts.json")

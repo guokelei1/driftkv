@@ -13,19 +13,19 @@ from hstu_kvcache.utils import save_json
 
 PROTOCOL = "evokv_design3_m1_qk_request_characterization_dev_v0"
 DEFAULT_PREPARED_DATA = (
-    "data/processed/evokv_d3_m1_qk_ctx512144_8704.npz"
+    "data/processed/evokv_d3_m1_qk_entity_2560.npz"
 )
 DEFAULT_ACTION_SNAPSHOT = (
     "configs/evokv_d3/m1/"
-    "qk_ctx512144_adjacent_action_snapshot.json"
+    "qk_entity_adjacent_action_snapshot.json"
 )
 DEFAULT_OUTPUT = (
     "configs/evokv_d3/m1/"
-    "qk_ctx512144_request_characterization.json"
+    "qk_entity_request_characterization.json"
 )
 WORLD_SIZE = 2
-HIDDEN_SIZE = 512
-NUM_LAYERS = 16
+DEFAULT_HIDDEN_SIZE = 1536
+DEFAULT_NUM_LAYERS = 24
 KV_COMPONENTS = 2
 KV_DTYPE_BYTES = 2
 EMBEDDING_DTYPE_BYTES = 4
@@ -47,11 +47,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_ACTION_SNAPSHOT,
     )
     parser.add_argument("--output", default=DEFAULT_OUTPUT)
-    parser.add_argument("--expected-records", type=int, default=8192)
+    parser.add_argument("--expected-records", type=int, default=2048)
     parser.add_argument(
         "--expected-history-tokens",
         type=int,
         default=512,
+    )
+    parser.add_argument(
+        "--hidden-size",
+        type=int,
+        default=DEFAULT_HIDDEN_SIZE,
+    )
+    parser.add_argument(
+        "--num-layers",
+        type=int,
+        default=DEFAULT_NUM_LAYERS,
     )
     return parser.parse_args(argv)
 
@@ -250,10 +260,14 @@ class RequestAccumulator:
         num_items: int,
         num_prediction_items: int,
         world_size: int,
+        hidden_size: int,
     ) -> None:
+        if hidden_size < 1:
+            raise ValueError("hidden size must be positive")
         self.num_items = num_items
         self.num_prediction_items = num_prediction_items
         self.world_size = world_size
+        self.hidden_size = hidden_size
         rows = num_items + 1
         self.request_tokens = 0
         self.role_tokens = np.zeros(2, dtype=np.int64)
@@ -419,7 +433,7 @@ class RequestAccumulator:
         }
 
     def summary(self) -> dict[str, object]:
-        vector_bytes = HIDDEN_SIZE * EMBEDDING_DTYPE_BYTES
+        vector_bytes = self.hidden_size * EMBEDDING_DTYPE_BYTES
         offrank_tokens = int(self.rank_offrank_tokens.sum())
         unique = self._unique(self.seen)
         unique_offrank_per_requester = sum(
@@ -536,6 +550,7 @@ def reconstruct_and_characterize(
     records: list[dict[str, object]],
     layout: dict[str, int],
     owners: dict[int, int],
+    hidden_size: int,
 ) -> tuple[
     dict[str, object],
     dict[str, object],
@@ -570,11 +585,13 @@ def reconstruct_and_characterize(
             num_items,
             num_prediction_items,
             WORLD_SIZE,
+            hidden_size,
         ),
         "mixed": RequestAccumulator(
             num_items,
             num_prediction_items,
             WORLD_SIZE,
+            hidden_size,
         ),
     }
     verified = []
@@ -653,17 +670,17 @@ def reconstruct_and_characterize(
             "num_prediction_items": num_prediction_items,
             "context_hash_buckets": context_hash_buckets,
             "num_embedding_rows_including_padding": num_items + 1,
-            "hidden_size": HIDDEN_SIZE,
+            "hidden_size": hidden_size,
             "embedding_dtype": "float32",
             "embedding_dtype_bytes": EMBEDDING_DTYPE_BYTES,
             "item_id_dtype": "int64",
             "item_id_dtype_bytes": ITEM_ID_DTYPE_BYTES,
             "return_vector_bytes_per_request": (
-                HIDDEN_SIZE * EMBEDDING_DTYPE_BYTES
+                hidden_size * EMBEDDING_DTYPE_BYTES
             ),
             "full_embedding_table_bytes_fp32_including_padding": (
                 (num_items + 1)
-                * HIDDEN_SIZE
+                * hidden_size
                 * EMBEDDING_DTYPE_BYTES
             ),
             "exact_records": exact_records,
@@ -677,8 +694,15 @@ def build_result(
     action_snapshot: str | Path,
     expected_records: int,
     expected_history_tokens: int,
+    hidden_size: int = DEFAULT_HIDDEN_SIZE,
+    num_layers: int = DEFAULT_NUM_LAYERS,
 ) -> dict[str, object]:
-    if expected_records < 1 or expected_history_tokens < 1:
+    if (
+        expected_records < 1
+        or expected_history_tokens < 1
+        or hidden_size < 1
+        or num_layers < 1
+    ):
         raise ValueError("expected M1 dimensions must be positive")
     snapshot = load_json(action_snapshot)
     records, layout = validate_snapshot_integrity(
@@ -705,15 +729,16 @@ def build_result(
             records,
             layout,
             owners,
+            hidden_size,
         )
     )
     all_exact = method_summaries["all_exact"]
     mixed = method_summaries["mixed"]
     old_bytes_per_record = (
         int(records[0]["old_tokens"])
-        * NUM_LAYERS
+        * num_layers
         * KV_COMPONENTS
-        * HIDDEN_SIZE
+        * hidden_size
         * KV_DTYPE_BYTES
     )
     per_rank_records = [
@@ -799,9 +824,9 @@ def build_result(
                     "setup_only_excluded_from_primary_timer"
                 ),
                 "cache_geometry": {
-                    "layers": NUM_LAYERS,
+                    "layers": num_layers,
                     "kv_components": KV_COMPONENTS,
-                    "kv_width": HIDDEN_SIZE,
+                    "kv_width": hidden_size,
                     "dtype": "float16",
                     "dtype_bytes": KV_DTYPE_BYTES,
                 },
@@ -832,6 +857,8 @@ def main(argv: list[str] | None = None) -> None:
         args.action_snapshot,
         args.expected_records,
         args.expected_history_tokens,
+        args.hidden_size,
+        args.num_layers,
     )
     save_json(result, args.output)
     print(

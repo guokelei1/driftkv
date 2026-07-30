@@ -16,31 +16,38 @@ from hstu_kvcache.migration.design2_plan import (
     canonical_sha256,
     file_sha256,
 )
+from hstu_kvcache.migration.design3_checkpoint import (
+    D3VersionCheckpoint,
+    load_compact_hstu,
+    resolve_version_checkpoint,
+    training_model_config,
+)
 from hstu_kvcache.migration.organic_schedulers import (
     SchedulerRecord,
     select_work_balanced_staggered_renewal,
 )
+from hstu_kvcache.models import HSTUConfig
 from hstu_kvcache.utils import save_json
 
 PROTOCOL = "evokv_design3_m1_qk_adjacent_compiler_dev_v0"
 ACTION_PROTOCOL = "evokv_design3_m1_qk_adjacent_action_snapshot_dev_v0"
-DEFAULT_PREPARED_DATA = "data/processed/evokv_d3_m1_qk_ctx512144_8704.npz"
+DEFAULT_PREPARED_DATA = "data/processed/evokv_d3_m1_qk_entity_2560.npz"
 DEFAULT_TRAINING_RESULT = (
     "results/system/evokv_design3_m1/"
-    "qk_ctx512144_two_version_training_seed0.json"
+    "qk_entity_h1536_sharded_two_version_training_seed0.json"
 )
-DEFAULT_CHECKPOINT_DIR = "checkpoints/evokv_design3_m1_qk_ctx512144/seed0"
-DEFAULT_COHORT_IDS = "configs/evokv_d3/m1/qk_ctx512144_cohorts.json"
+DEFAULT_CHECKPOINT_DIR = "checkpoints/evokv_design3_m1_qk_entity_h1536/seed0"
+DEFAULT_COHORT_IDS = "configs/evokv_d3/m1/qk_entity_cohorts.json"
 DEFAULT_ACTION_OUTPUT = (
-    "configs/evokv_d3/m1/qk_ctx512144_adjacent_action_snapshot.json"
+    "configs/evokv_d3/m1/qk_entity_adjacent_action_snapshot.json"
 )
 DEFAULT_PROGRAM_OUTPUT = (
-    "checkpoints/evokv_design3_m1_qk_ctx512144/seed0/"
+    "checkpoints/evokv_design3_m1_qk_entity_h1536/seed0/"
     "theta0_to_theta1_direct_oldkv_fp16.pt"
 )
 DEFAULT_OUTPUT = (
     "results/system/evokv_design3_m1/"
-    "qk_ctx512144_adjacent_compiler_seed0.json"
+    "qk_entity_h1536_adjacent_compiler_seed0.json"
 )
 HISTORY_FIELDS = (
     "item_ids",
@@ -585,50 +592,68 @@ def training_inputs(
     prepared_data_sha256: str,
 ) -> tuple[
     dict[str, object],
-    dict[str, object],
-    dict[str, object],
+    HSTUConfig,
+    dict[str, D3VersionCheckpoint],
 ]:
     training = load_json(training_result)
     if training.get("status") != "complete":
         raise ValueError("two-version training result is incomplete")
     prepared = training.get("prepared_data")
-    model = training.get("model")
-    checkpoints = training.get("checkpoints")
     if (
         not isinstance(prepared, dict)
         or prepared.get("sha256") != prepared_data_sha256
-        or not isinstance(model, dict)
-        or not isinstance(checkpoints, list)
     ):
         raise ValueError("two-version training boundary differs")
-    by_version = {
-        str(value.get("version")): value for value in checkpoints if isinstance(value, dict)
-    }
-    descriptors = []
-    for version in (0, 1):
-        expected = by_version.get(f"theta{version}")
-        path = Path(checkpoint_dir) / f"theta_{version}.pt"
-        if not isinstance(expected, dict) or not path.is_file():
-            raise FileNotFoundError(path)
-        digest = file_sha256(path)
-        if digest != expected.get("sha256"):
-            raise ValueError(f"theta{version} checkpoint hash differs")
-        descriptors.append(
-            {
-                "version": f"theta{version}",
-                "path": str(path),
-                "sha256": digest,
-                "bytes": path.stat().st_size,
-            }
+    cfg = training_model_config(training)
+    checkpoints = {
+        f"theta{version}": resolve_version_checkpoint(
+            training,
+            checkpoint_dir,
+            version,
         )
+        for version in (0, 1)
+    }
     return (
         training,
-        model,
-        {
-            "theta0": descriptors[0],
-            "theta1": descriptors[1],
-        },
+        cfg,
+        checkpoints,
     )
+
+
+def compact_fit_samples(
+    fit_samples: list[dict[str, object]],
+) -> tuple[tuple[int, ...], list[dict[str, object]]]:
+    arrays = [
+        np.asarray(value["history"]["item_ids"], dtype=np.int64)
+        for value in fit_samples
+    ]
+    if not arrays:
+        raise ValueError("fit cohort is empty")
+    used = np.unique(
+        np.concatenate(
+            [
+                np.zeros(1, dtype=np.int64),
+                *arrays,
+            ]
+        )
+    )
+    if used[0] != 0 or np.any(used < 0):
+        raise ValueError("fit histories contain invalid item IDs")
+    remapped = []
+    for sample, item_ids in zip(fit_samples, arrays, strict=True):
+        compact = np.searchsorted(used, item_ids)
+        if not np.array_equal(used[compact], item_ids):
+            raise RuntimeError("fit item compaction failed")
+        remapped.append(
+            {
+                **sample,
+                "history": {
+                    **sample["history"],
+                    "item_ids": compact.astype(np.int64, copy=False),
+                },
+            }
+        )
+    return tuple(int(value) for value in used), remapped
 
 
 def compile_adjacent_program(
@@ -652,9 +677,6 @@ def compile_adjacent_program(
         load_direct_oldkv_program,
         write_direct_oldkv_program,
     )
-    from hstu_kvcache.models import HSTUConfig
-    from hstu_kvcache.streaming import load_checkpoint_model
-
     device = torch.device(args.device)
     if device.type != "cuda" or not torch.cuda.is_available():
         raise ValueError("adjacent program compilation requires CUDA")
@@ -667,31 +689,31 @@ def compile_adjacent_program(
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
-    training, model_value, checkpoints = training_inputs(
+    training, cfg, checkpoints = training_inputs(
         args.training_result,
         args.checkpoint_dir,
         str(snapshot["prepared_data_sha256"]),
     )
-    cfg = HSTUConfig(**model_value)
     layout = snapshot["layout"]
     if (
         cfg.max_seq_len != int(layout["history_tokens"])
-        or cfg.hidden_size != 512
-        or cfg.num_layers != 16
-        or cfg.num_heads != 8
-        or cfg.head_dim != 64
+        or cfg.head_dim is None
+        or cfg.num_heads * cfg.head_dim != cfg.hidden_size
     ):
         raise ValueError("M1 QK model and adjacent snapshot shapes differ")
-    source_model = load_checkpoint_model(
+    used_item_ids, compact_samples = compact_fit_samples(
+        fit_samples
+    )
+    source_model = load_compact_hstu(
         cfg,
-        args.checkpoint_dir,
-        0,
+        checkpoints["theta0"],
+        used_item_ids,
         device,
     )
-    target_model = load_checkpoint_model(
+    target_model = load_compact_hstu(
         cfg,
-        args.checkpoint_dir,
-        1,
+        checkpoints["theta1"],
+        used_item_ids,
         device,
     )
     fit_args = argparse.Namespace(
@@ -707,7 +729,7 @@ def compile_adjacent_program(
     family, fit = fit_attention_family(
         target_model,
         source_model,
-        fit_samples,
+        compact_samples,
         fit_args,
         device,
     )
@@ -733,10 +755,21 @@ def compile_adjacent_program(
             "cohort_content_sha256": snapshot["cohort_content_sha256"],
             "training_result_sha256": file_sha256(args.training_result),
             "training_protocol": training.get("protocol"),
-            "source_checkpoint_sha256": checkpoints["theta0"]["sha256"],
-            "target_checkpoint_sha256": checkpoints["theta1"]["sha256"],
+            "source_checkpoint_sha256": (
+                checkpoints["theta0"].identity_sha256
+            ),
+            "target_checkpoint_sha256": (
+                checkpoints["theta1"].identity_sha256
+            ),
             "fit_selection_sha256": snapshot["roles"]["fit"]["selection_sha256"],
             "fit_records": len(fit_samples),
+            "fit_unique_embedding_rows_including_padding": len(
+                used_item_ids
+            ),
+            "fit_embedding_loading": (
+                "only rows touched by fit histories are extracted from "
+                "memory-mapped checkpoint shards"
+            ),
             "attention_mix": 1.0,
             "attention_weight_cap": args.attention_weight_cap,
             "max_fit_tokens_per_layer": args.max_fit_tokens,
@@ -774,7 +807,10 @@ def compile_adjacent_program(
             "sha256": file_sha256(args.training_result),
             "protocol": training.get("protocol"),
         },
-        "checkpoints": checkpoints,
+        "checkpoints": {
+            name: value.descriptor()
+            for name, value in checkpoints.items()
+        },
         "fit": fit,
         "program": loaded_descriptor,
         "runtime_seconds": time.perf_counter() - started,

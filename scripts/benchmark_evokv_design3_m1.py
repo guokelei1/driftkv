@@ -23,9 +23,6 @@ from hstu_kvcache.migration.design2_distributed import (
     close_d2_distributed_runtime,
     init_d2_distributed_runtime,
 )
-from hstu_kvcache.migration.design2_embedding import (
-    build_modulo_sharded_hstu_from_cpu,
-)
 from hstu_kvcache.migration.design2_integrated import (
     IntegratedAppendOnlyKVBatch,
     integrated_sharded_append_only,
@@ -35,6 +32,11 @@ from hstu_kvcache.migration.design2_plan import (
     canonical_sha256,
     file_sha256,
 )
+from hstu_kvcache.migration.design3_checkpoint import (
+    load_runtime_sharded_hstu,
+    resolve_version_checkpoint,
+    training_model_config,
+)
 from hstu_kvcache.migration.design3_store import (
     PageableDramExtentStore,
 )
@@ -43,32 +45,32 @@ from hstu_kvcache.migration.stage45_oldkv import (
     DirectOldKVFusedOperator,
     load_direct_oldkv_program,
 )
-from hstu_kvcache.models import HSTU, HSTUConfig
+from hstu_kvcache.models import HSTUConfig
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = "evokv_design3_m1_qk_pageable_s0_development_v0"
 DEFAULT_PREPARED_DATA = (
-    "data/processed/evokv_d3_m1_qk_ctx512144_8704.npz"
+    "data/processed/evokv_d3_m1_qk_entity_2560.npz"
 )
 DEFAULT_ACTION_SNAPSHOT = (
     "configs/evokv_d3/m1/"
-    "qk_ctx512144_adjacent_action_snapshot.json"
+    "qk_entity_adjacent_action_snapshot.json"
 )
 DEFAULT_TRAINING_RESULT = (
     "results/system/evokv_design3_m1/"
-    "qk_ctx512144_two_version_training_seed0.json"
+    "qk_entity_h1536_sharded_two_version_training_seed0.json"
 )
 DEFAULT_CHECKPOINT_DIR = (
-    "checkpoints/evokv_design3_m1_qk_ctx512144/seed0"
+    "checkpoints/evokv_design3_m1_qk_entity_h1536/seed0"
 )
 DEFAULT_COMPILER_RESULT = (
     "results/system/evokv_design3_m1/"
-    "qk_ctx512144_adjacent_compiler_seed0.json"
+    "qk_entity_h1536_adjacent_compiler_seed0.json"
 )
 DEFAULT_STORE_DIR = "/dev/shm/evokv_d3"
 DEFAULT_OUTPUT = (
     "results/system/evokv_design3_m1/"
-    "qk_ctx512144_s0_canary_seed0.json"
+    "qk_entity_h1536_s0_canary_seed0.json"
 )
 
 
@@ -262,7 +264,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--store-dir", default=DEFAULT_STORE_DIR)
     parser.add_argument(
         "--run-id",
-        default="qk_ctx512144_seed0",
+        default="qk_entity_h1536_seed0",
     )
     parser.add_argument(
         "--reuse-complete-old-store",
@@ -313,15 +315,6 @@ def _load_json(path: str | Path) -> dict[str, object]:
     if not isinstance(value, dict):
         raise ValueError(f"JSON object required: {path}")
     return value
-
-
-def _load_cpu_model(cfg: HSTUConfig, checkpoint: Path) -> HSTU:
-    model = HSTU(cfg)
-    model.load_state_dict(
-        torch.load(checkpoint, map_location="cpu", weights_only=True)
-    )
-    model.eval()
-    return model
 
 
 def load_action_snapshot(
@@ -539,10 +532,10 @@ def capacity_projection(
         "dtype": "float16",
         "num_layers": cfg.num_layers,
         "kv_width": cfg.hidden_size,
-        "embedding_rows": cfg.num_items,
+        "embedding_rows": cfg.num_items + 1,
         "prediction_rows": cfg.num_prediction_items,
         "embedding_global_fp32_bytes": (
-            cfg.num_items * cfg.hidden_size * 4
+            (cfg.num_items + 1) * cfg.hidden_size * 4
         ),
         "old_store_payload_bytes": sum(
             value["old_store_payload_bytes"] for value in ranks
@@ -573,7 +566,7 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
     training = _load_json(training_path)
     if training.get("status") != "complete":
         raise ValueError("M1 training result is incomplete")
-    cfg = HSTUConfig(**training["model"])
+    cfg = training_model_config(training)
     if (
         str(snapshot.get("prepared_data_sha256"))
         != file_sha256(prepared_path)
@@ -613,7 +606,7 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
         "embedding_scale_role": (
             "functional_canary_not_primary_d2_partition_evidence"
             if cfg.num_items == 512144
-            else "unfrozen_larger_candidate_requires_scale_audit"
+            else "large_qk_entity_primary_m1_candidate"
         ),
         "records": len(actions),
         "counts": {
@@ -1850,38 +1843,6 @@ def run_s0(
     }
 
 
-def _checkpoint_path(
-    checkpoint_dir: Path,
-    version: int,
-) -> Path:
-    return checkpoint_dir / f"theta_{version}.pt"
-
-
-def _validate_checkpoint(
-    training: Mapping[str, object],
-    checkpoint: Path,
-    version: int,
-) -> None:
-    descriptors = training.get("checkpoints")
-    if not isinstance(descriptors, list):
-        raise ValueError("M1 training checkpoint descriptors are missing")
-    expected = next(
-        (
-            value
-            for value in descriptors
-            if isinstance(value, dict)
-            and value.get("version") == f"theta{version}"
-        ),
-        None,
-    )
-    if (
-        expected is None
-        or not checkpoint.is_file()
-        or expected.get("sha256") != file_sha256(checkpoint)
-    ):
-        raise ValueError(f"M1 theta{version} checkpoint binding differs")
-
-
 def _validate_visible_devices(
     expected: str,
 ) -> tuple[str, ...]:
@@ -1925,9 +1886,16 @@ def _old_store_binding(
     action_path: Path,
     snapshot: Mapping[str, object],
     training_path: Path,
-    source_checkpoint: Path,
+    source_checkpoint: str | Path,
     owner_sha256: str,
 ) -> dict[str, object]:
+    checkpoint_sha256 = (
+        file_sha256(source_checkpoint)
+        if isinstance(source_checkpoint, Path)
+        else source_checkpoint
+    )
+    if len(checkpoint_sha256) != 64:
+        raise ValueError("M1 source checkpoint identity is invalid")
     return {
         "protocol": f"{PROTOCOL}_old_store_binding_v0",
         "rank": rank,
@@ -1944,7 +1912,7 @@ def _old_store_binding(
         ],
         "owner_map_sha256": owner_sha256,
         "training_result_sha256": file_sha256(training_path),
-        "source_checkpoint_sha256": file_sha256(source_checkpoint),
+        "source_checkpoint_sha256": checkpoint_sha256,
     }
 
 
@@ -2096,11 +2064,13 @@ def run_distributed(
             != file_sha256(prepared_path)
         ):
             raise ValueError("M1 data/training boundary differs")
-        cfg = HSTUConfig(**training["model"])
+        cfg = training_model_config(training)
+        layout = snapshot.get("layout")
         if (
-            cfg.num_layers != 16
-            or cfg.hidden_size != 512
-            or cfg.max_seq_len != 512
+            not isinstance(layout, Mapping)
+            or cfg.max_seq_len != int(layout["history_tokens"])
+            or cfg.head_dim is None
+            or cfg.num_heads * cfg.head_dim != cfg.hidden_size
         ):
             raise ValueError("M1 QK model shape differs")
         if (
@@ -2184,8 +2154,12 @@ def run_distributed(
             max_final_tokens,
         )
         old_path, target_path = _store_paths(args, runtime.rank)
-        source_checkpoint = _checkpoint_path(checkpoint_dir, 0)
-        _validate_checkpoint(training, source_checkpoint, 0)
+        source_checkpoint = resolve_version_checkpoint(
+            training,
+            checkpoint_dir,
+            0,
+            verify_shard_ranks=(runtime.rank,),
+        )
         old_store, reused_old = _open_or_create_old_store(
             old_path,
             local_actions,
@@ -2199,7 +2173,7 @@ def run_distributed(
             action_path,
             snapshot,
             training_path,
-            source_checkpoint,
+            source_checkpoint.identity_sha256,
             selected_owner_sha256,
         )
         if reused_old:
@@ -2210,14 +2184,13 @@ def run_distributed(
             "written_bytes": 0,
         }
         if not reused_old:
-            source_cpu = _load_cpu_model(cfg, source_checkpoint)
-            source_model = build_modulo_sharded_hstu_from_cpu(
-                source_cpu,
+            source_model = load_runtime_sharded_hstu(
+                cfg,
+                source_checkpoint,
                 runtime.rank,
                 runtime.world_size,
                 runtime.device,
             )
-            del source_cpu
             dist.barrier()
             source_materialization = {
                 "reused": False,
@@ -2248,6 +2221,7 @@ def run_distributed(
             local_report = {
                 "rank": runtime.rank,
                 "records": len(local_actions),
+                "source_checkpoint": source_checkpoint.descriptor(),
                 "source_materialization": source_materialization,
                 "old_store_ledger": old_ledger.to_dict(),
                 "old_store_binding": {
@@ -2270,16 +2244,19 @@ def run_distributed(
                 if args.prefault_target_store
                 else 0
             )
-            target_checkpoint = _checkpoint_path(checkpoint_dir, 1)
-            _validate_checkpoint(training, target_checkpoint, 1)
-            target_cpu = _load_cpu_model(cfg, target_checkpoint)
-            target_model = build_modulo_sharded_hstu_from_cpu(
-                target_cpu,
+            target_checkpoint = resolve_version_checkpoint(
+                training,
+                checkpoint_dir,
+                1,
+                verify_shard_ranks=(runtime.rank,),
+            )
+            target_model = load_runtime_sharded_hstu(
+                cfg,
+                target_checkpoint,
                 runtime.rank,
                 runtime.world_size,
                 runtime.device,
             )
-            del target_cpu
             program_cpu, loaded_program = _load_program(
                 _path(args.compiler_result),
                 action_path,
@@ -2322,6 +2299,8 @@ def run_distributed(
                     runtime.device
                 ),
                 "records": len(local_actions),
+                "source_checkpoint": source_checkpoint.descriptor(),
+                "target_checkpoint": target_checkpoint.descriptor(),
                 "compiled": sum(
                     value.route == "compiled"
                     for value in local_actions
@@ -2383,7 +2362,7 @@ def run_distributed(
             "embedding_scale_role": (
                 "functional_canary_not_primary_d2_partition_evidence"
                 if cfg.num_items == 512144
-                else "unfrozen_larger_candidate_requires_scale_audit"
+                else "large_qk_entity_primary_m1_candidate"
             ),
             "execution": {
                 "world_size": runtime.world_size,

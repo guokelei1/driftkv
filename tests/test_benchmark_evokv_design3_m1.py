@@ -239,3 +239,11 @@ def test_old_store_reuse_is_bound_to_model_data_plan_and_owner(
         changed = {**binding, "owner_map_sha256": "c" * 64}
         with pytest.raises(ValueError):
             MODULE._validate_old_store_binding(store_path, changed)
+
+
+def test_primary_runtime_defaults_select_large_entity_boundary() -> None:
+    args = MODULE.parse_args([])
+
+    assert args.prepared_data.endswith("qk_entity_2560.npz")
+    assert args.checkpoint_dir.endswith("qk_entity_h1536/seed0")
+    assert args.run_id == "qk_entity_h1536_seed0"

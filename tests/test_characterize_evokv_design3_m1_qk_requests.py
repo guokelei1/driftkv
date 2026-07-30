@@ -177,6 +177,8 @@ def test_characterization_binds_inputs_and_splits_requests(
         snapshot,
         expected_records=4,
         expected_history_tokens=8,
+        hidden_size=512,
+        num_layers=16,
     )
 
     assert result["bindings"]["prepared_data"][
@@ -209,6 +211,36 @@ def test_characterization_binds_inputs_and_splits_requests(
     assert result["timing_scope"]["old_source_materialization"][
         "classification"
     ] == "setup_only_excluded_from_primary_timer"
+    assert result["configuration"]["embedding"]["hidden_size"] == 512
+    assert result["configuration"]["embedding"][
+        "return_vector_bytes_per_request"
+    ] == 2048
+    assert result["timing_scope"]["old_source_materialization"][
+        "cache_geometry"
+    ]["layers"] == 16
+
+
+def test_new_entity_defaults() -> None:
+    args = MODULE.parse_args([])
+
+    assert (
+        args.prepared_data
+        == "data/processed/evokv_d3_m1_qk_entity_2560.npz"
+    )
+    assert (
+        args.action_snapshot
+        == "configs/evokv_d3/m1/"
+        "qk_entity_adjacent_action_snapshot.json"
+    )
+    assert (
+        args.output
+        == "configs/evokv_d3/m1/"
+        "qk_entity_request_characterization.json"
+    )
+    assert args.expected_records == 2048
+    assert args.expected_history_tokens == 512
+    assert args.hidden_size == 1536
+    assert args.num_layers == 24
 
 
 def test_main_writes_compact_result(tmp_path: Path, capsys) -> None:
@@ -236,6 +268,10 @@ def test_main_writes_compact_result(tmp_path: Path, capsys) -> None:
     written = json.loads(output.read_text())
     assert printed["status"] == "complete"
     assert written["scientific_result"] is False
+    assert written["configuration"]["embedding"]["hidden_size"] == 1536
+    assert written["timing_scope"]["old_source_materialization"][
+        "cache_geometry"
+    ]["layers"] == 24
     assert "records" not in written
     assert output.stat().st_size < 50_000
 
