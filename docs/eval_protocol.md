@@ -42,6 +42,23 @@ The `evokv_design3_m0_pageable_s0_development_v0` canary/full artifacts are deve
 single-pass S0 mechanism profiles under an emulated logical-payload cap, with no speedup or physical
 out-of-core claim.
 
+The materialized QK input
+`evokv_design3_m1_qk_base_entity_data_development_v0` is a separate non-scientific M1 foundation,
+not a runtime protocol. It fits the entity address space only from every QK user's first 64 raw
+exposures: 250,000 prediction rows plus 2,609,835 exact base-context rows, or 2,859,836 physical
+rows including padding. Stream-only item identities map into the existing context rows and cannot
+be positive targets. The planned model is 24L/H1536 with 24 64-dimensional heads; its FP32
+embedding is 17,570,832,384 bytes (16.364 GiB). The materialized stream contains 512
+fit/calibration users followed by one nested 2,048-user benchmark pool, uses `[512,544)` only for
+the `theta1` update, and reserves `[544,576)` for held-out `theta0`/`theta1` evaluation. Its
+2,048-record complete FP16 old plus private-target K/V geometry is 288 GiB.
+
+Those values establish data identity and planned capacity only. The two-rank sharded trainer is
+implemented, but no formal training run, `theta0→theta1` checkpoint result, edge-specific D1
+program/action plan, D2 snapshot, physical M1 K/V materialization, M1 S0/S1, or D3 candidate has
+run. The earlier H512 QK model/checkpoint/S0 canary and the H12 M0 profile remain functional
+development diagnostics; neither may be compared with or renamed as this M1.
+
 An isolation-track result compares sequential, double-buffer, and proposed schedulers within one
 recorded `stack_revision` and work/source snapshot. A co-design track may globally regenerate D1
 actions, D2 owners/pools/layout, and source bytes before execution, but it must record those changes

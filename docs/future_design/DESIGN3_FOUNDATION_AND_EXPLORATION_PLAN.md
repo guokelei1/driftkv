@@ -15,6 +15,15 @@ host/device movement 与 writeback 合计 9.93–10.01 秒。该单次 profile �
 同量级瓶颈，仍是
 `scientific_result=false` 的容量模拟，不是 speedup 或物理 out-of-core 证据。
 
+M1 的非科学数据 foundation 也已物化，但尚未执行大模型或 K/V runtime。QK 全体用户的
+first-64 raw exposures 产生 2,859,835 个 base-active item entities；top-250k 是 prediction
+rows，其余 2,609,835 行是 lossless context entities，stream-only item 只 hash 到已有 context
+rows。含 padding 的 H1536 FP32 embedding 有 2,859,836 行、16.364 GiB。输入包含 512 个
+fit/calibration users 和一个 2,048-user benchmark pool，`window_0=[512,544)` 用于更新，
+`window_1=[544,576)` 独立 held out。24L/H1536 下，2,048 records 的完整 old 加 private
+target FP16 K/V 几何为 288 GiB。双卡 sharded trainer 已实现；正式训练、`theta0→theta1`、
+新 D1/D2 边界、M1 K/V 物化、M1 S0/S1 和 D3 候选都尚未运行。
+
 当本文档与 [../08_core_insights_and_roadmap.md](../08_core_insights_and_roadmap.md) 或
 [../eval_protocol.md](../eval_protocol.md) 冲突时，以后二者记录的已有证据边界为准；尚未形成
 证据的 D3 实现路线以本文档为当前工作入口。
@@ -123,46 +132,41 @@ dummy K/V、冷 embedding rows 或人为 owner 倾斜制造容量。
 
 ### 1.2 M1：真实物理 out-of-core benchmark
 
-M0 跑通后，使用真实更大 workload 替换其 payload。当前首选 Tenrec QK，因为它具有大量真实
-长历史和 item identities。QK 的 39,615 个 raw length≥512 用户只是候选池；先做 label-free
-capacity audit，再决定最终 cohort。
+M0 跑通后，使用 Tenrec QK 的真实大 workload 替换软件容量 cap。当前开发态 foundation 已
+固定并物化：
 
-候选构造路线：
+1. 每个用户的 first-64 raw exposures 拟合完整 base entity address space；
+2. base-frequency top-250k 为 prediction rows，其余 base-seen items 一一对应 context rows；
+3. 仅在 base 后首次出现的 item 通过 SplitMix64 映射到已有 context rows，不扩展冷行；
+4. 512 个 fit/calibration users 与一个 stable-hash 2,048-user benchmark pool 分离，benchmark
+   还保留 512/1,024/2,048 nested prefixes；
+5. old history 是 `[0,512)`，`theta1` update 是 `[512,544)`，target history 是 `[32,544)`，
+   独立 held-out evaluation 是 `[544,576)`。
 
-1. 优先使用 old window 512、滑动 32 tokens、target window 512；
-2. 若完整 histories 不足，尝试 old 480 + append 32；
-3. vocabulary 只由 base period 拟合；
-4. 根据 vocabulary filtering 后的真实 histories 做 stable-hash 用户选择；
-5. calibration/program-fit users 与 benchmark users 分离。
-
-对于 16L/H512 FP16 K/V，old 512 + target 512 约为 32 MiB/record。先审计嵌套 cohort：
-
-| Records | 候选 old + private target K/V |
-|---:|---:|
-| 2,048 | 64 GiB |
-| 4,096 | 128 GiB |
-| 8,192 | 256 GiB |
-
-这些只是构造目标。实际配置由真实 extents、owner balance、model/embedding footprint 和实测
-usable HBM 决定。选择一个两卡完整 resident 明确放不下、但任一 group 可以安全执行的主点。
+该表有 2,859,835 个语义行和一个 padding row。按 H1536 FP32，它占
+17,570,832,384 bytes（16.364 GiB）。24L/H1536 的一条 512-token FP16 K/V、单版本为
+72 MiB；2,048 records 的 complete old 与 private target 合计 288 GiB。这个值是由已物化
+records 和固定模型形状得到的工作集几何，不是已经完成的 DRAM/HBM runtime 测量。旧 H512
+QK 小 canary 继续用于接口 smoke test，但不能成为 M1 证据。
 
 ### 1.3 M1 最小模型版本
 
 只为 D3 mechanism discovery 构造一个 model-update edge：
 
 - 一个训练 seed；
-- 初始模型目标 16L/H512；
+- 固定 24L/H1536、24 heads、每 head 64 维；
 - 一个 base model `theta0`；
-- 一个 short streaming update `theta1`；
+- 只用 `window_0=[512,544)` 产生一个 short-update `theta1`；
+- `window_1=[544,576)` 只做 held-out `theta0`/`theta1` 推荐检查；
 - `training_sequences=all_chunks`，记录 effective targets；
 - base/update 各自只使用对应 ordinal interval 的训练 targets；
 - source 是 `theta0` 对 old window 生成的 exact K/V；
 - D1 在 `theta0→theta1` 上产生一份当前 action plan；
 - D2 在两卡上产生一份当前执行快照。
 
-第二个 update、recursive migrated source、多 seed 和完整质量复现都推迟到候选 D3 机制出现
-以后。若 QK 配置审计失败，可以调整真实 window、catalog 或 record count；不把某一个预设
-配置当作必须完成的接口。
+双卡 row-sharded trainer 及其分片 checkpoint 路径已实现，但正式训练尚未启动，因此上述
+checkpoint、推荐正收益、D1 program/action、D2 snapshot 都还不是结果。第二个 update、
+recursive migrated source、多 seed 和完整质量复现继续推迟到候选 D3 机制出现以后。
 
 ## 2. 最小两卡执行骨架
 
@@ -420,21 +424,26 @@ event-based timing，不要求先重构全部 D2 runtime。
 
 ### C：真实 QK 物理容量 benchmark
 
+**状态：数据 foundation 和 sharded trainer 已完成；大模型训练与执行未开始。**
+
 **目标。** 用真实用户、真实历史和真实 model edge 替换 M0 的软件容量 cap。
 
-**输入。** QK capacity audit 和已经跑通的 A/B executor。
+**输入。** 已物化的 QK base-entity input、固定 24L/H1536 形状、双卡 sharded trainer 和
+已经跑通的 M0 executor。
 
 **输出。**
 
-- 冻结一个可执行的 QK cohort；
+- 已冻结的 512 fit/calibration + 2,048 benchmark QK cohort；
 - `theta0→theta1`；
+- 独立 `window_1` held-out 推荐检查；
 - D1/D2 当前工作快照；
 - 完整 ordinary-DRAM old K/V；
-- 物理超出两卡 HBM 的 M1；
+- 288-GiB、物理超出两卡 HBM 的 M1；
 - M1 上的 S0/S1，随后补 E0。
 
-**最大风险。** 长 histories 经 vocabulary filtering 后不足，或 source materialization 太慢。
-可以调整真实 catalog/window/count，或优化增量 writer；不必维持预设的 4,096 records。
+**最大风险。** 大分片 checkpoint 的训练/装载、edge-specific D1 program 编译或 288-GiB
+source/target materialization 迟迟无法完成。若 C 卡住，先区分 trainer、checkpoint、D1/D2
+adapter 和 writer 哪一层失败；不能退回 H512 canary 后仍把结果称为 M1。
 
 ### D：D3 与跨层机制探索
 
@@ -501,6 +510,10 @@ h12_w2_m0_s1_*.json
 h12_w2_m0_candidate_*.json
 ```
 
+M1 数据身份单独由 `configs/evokv_d3/m1/qk_entity_manifest.json` 和
+`configs/evokv_d3/m1/qk_entity_cohorts.json` 绑定；大 NPZ、checkpoints 和 K/V payload
+保持 local/ignored。它们当前只证明输入已物化，不证明训练或 runtime 已执行。
+
 每个 run 至少记录：
 
 - `stack_revision`；
@@ -523,9 +536,11 @@ h12_w2_m0_candidate_*.json
 2. 已新建 pageable-DRAM source/target 与 byte-bounded grouping；
 3. 已跑通 two-rank S0 canary 和 full682；
 4. 当前加入 S1 double buffer、rank-wait/bubble metrics，并重跑同 revision 对比；
-5. 同时完成 QK capacity audit；
-6. A/B 稳定后训练一个 QK base + 一个 short update，并物化 M1；
-7. 在 M1 profile 上决定第一个真正的 D3 候选。
+5. 已完成 QK base-entity audit、512+2,048 cohort 和 two-window input 物化；
+6. 已实现 H1536/24L 两卡 sharded trainer，但尚未运行正式 `theta0→theta1`；
+7. 运行训练与 held-out 检查，随后生成新的 D1 program/action 和 D2 execution snapshot；
+8. 物化 288-GiB complete old/private-target K/V，并跑 M1 S0/S1/E0；
+9. 在 M1 profile 上决定第一个真正的 D3 候选。
 
 这个顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被设计
 推翻的正式接口。

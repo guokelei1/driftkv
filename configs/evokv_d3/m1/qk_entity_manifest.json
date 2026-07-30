@@ -1,0 +1,212 @@
+{
+  "protocol": "evokv_design3_m1_qk_base_entity_data_development_v0",
+  "status": "materialized",
+  "scientific_result": false,
+  "formal_design3": false,
+  "source": {
+    "path": "/data/gkl/findnew/o1/data/tenrec/Tenrec.zip",
+    "archive_size_bytes": 5304937830,
+    "member": "Tenrec/QK-video.csv",
+    "member_size_bytes": 15116976129,
+    "member_compressed_size_bytes": 3066945136,
+    "member_crc32": "2be3ed9c"
+  },
+  "catalog": {
+    "base_prefix_raw_events": 64,
+    "base_entity_items": 2859835,
+    "num_prediction_items": 250000,
+    "context_entity_rows": 2609835,
+    "context_rule": "every item observed in each user's first 64 raw exposures receives one stable row; the top 250000 base-frequency rows are prediction items, remaining rows are context-only entities, and an item first observed after the base prefix maps by SplitMix64 into the existing context-entity rows without extending the table",
+    "base_entity_item_ids_sha256": "edefba99d4ccfe9264ad976320cdf86fafc70602efd1cc19b399cabcdb890aa0",
+    "prediction_item_ids_sha256": "43384d83ee1bdbbf3213d34e81f37454b65a1d67e1a7e06434f28236d79df757",
+    "context_entity_item_ids_sha256": "c7a765d28ce7496c7934593074c50b8275973643b831e4cdaf0779436508dba4",
+    "base_rows": 262654269,
+    "cache": "data/processed/evokv_d3_m1_qk_entity_cache/entity_catalog_base64_top250000.npz",
+    "planned_embedding": {
+      "rows_including_padding": 2859836,
+      "hidden_size": 1536,
+      "dtype": "float32",
+      "bytes": 17570832384,
+      "gibibytes": 16.364112854003906
+    }
+  },
+  "planned_model_shape": {
+    "hidden_size": 1536,
+    "num_layers": 24,
+    "num_heads": 24,
+    "head_dim": 64,
+    "max_seq_len": 512
+  },
+  "planned_primary_kv": {
+    "records": 2048,
+    "layers": 24,
+    "history_tokens": 512,
+    "kv_width": 1536,
+    "dtype": "float16",
+    "per_record_per_version_bytes": 75497472,
+    "old_and_private_target_bytes": 309237645312,
+    "old_and_private_target_gibibytes": 288.0
+  },
+  "history": {
+    "old": [
+      0,
+      512
+    ],
+    "target": [
+      32,
+      544
+    ],
+    "theta1_update": [
+      512,
+      544
+    ],
+    "heldout_evaluation": [
+      544,
+      576
+    ],
+    "required_events": 576
+  },
+  "cohorts": {
+    "eligible_users": 25770,
+    "length_basis": "all raw exposure events; stream-only items use a context-entity fallback and no event is dropped",
+    "fit_calibration_users": 512,
+    "benchmark_users": 2048,
+    "primary_benchmark_users": 2048,
+    "nested_benchmark_prefixes": {
+      "512": {
+        "prefix_length": 512,
+        "user_ids_sha256": "b6e67c19391926389b658e01a56cc715cceaeb18a91f121ce1e188d8f95dbe24"
+      },
+      "1024": {
+        "prefix_length": 1024,
+        "user_ids_sha256": "6f1daa8ea2df8dce804e2346e67c1f2731009b97d56bef96b8016daf0b10829f"
+      },
+      "2048": {
+        "prefix_length": 2048,
+        "user_ids_sha256": "4ec8a34f14ebea38b27a86986dc5733a97493d3e914872857357842db7975a6c"
+      }
+    },
+    "selected_user_ids_sha256": "72f818b5bbf8867bad167ac9361dfbdd6e186c60161c96b4e01c25dfbb387bf8",
+    "cache": "data/processed/evokv_d3_m1_qk_entity_cache/entity_cohort_base64_top250000_events576_fit512_bench2048.npz",
+    "ids": "configs/evokv_d3/m1/qk_entity_cohorts.json"
+  },
+  "source_mapping_stats": {
+    "rows": 493458970,
+    "prediction_rows": 441831834,
+    "exact_context_rows": 50334129,
+    "stream_only_fallback_rows": 1293007,
+    "context_rows": 51627136,
+    "dropped_rows": 0,
+    "unique_prediction_entities_seen": 250000,
+    "unique_exact_context_entities_seen": 2609835,
+    "unique_stream_only_original_items_seen": 893601,
+    "unique_fallback_context_entities_touched": 756630,
+    "fallback_collisions": 136971,
+    "base_entity_direct_coverage": 1.0
+  },
+  "output": {
+    "protocol": "evokv_design3_m1_qk_base_entity_data_development_v0",
+    "scientific_result": false,
+    "formal_design3": false,
+    "dataset": "tenrec-qk",
+    "source": {
+      "path": "/data/gkl/findnew/o1/data/tenrec/Tenrec.zip",
+      "archive_size_bytes": 5304937830,
+      "member": "Tenrec/QK-video.csv",
+      "member_size_bytes": 15116976129,
+      "member_compressed_size_bytes": 3066945136,
+      "member_crc32": "2be3ed9c"
+    },
+    "source_rows_scanned_until_complete": 493458970,
+    "base_entity_items": 2859835,
+    "num_prediction_items": 250000,
+    "context_entity_rows": 2609835,
+    "context_hash_buckets": 2609835,
+    "context_hash_buckets_role": "loader compatibility count; base context entities have exact rows and only stream-only originals use hashing",
+    "fitted_items": 2859835,
+    "context_rule": "every item observed in each user's first 64 raw exposures receives one stable row; the top 250000 base-frequency rows are prediction items, remaining rows are context-only entities, and an item first observed after the base prefix maps by SplitMix64 into the existing context-entity rows without extending the table",
+    "catalog_fit": "all distinct items from each user's first 64 raw exposures; top 250000 by base frequency are prediction rows",
+    "base_entity_item_ids_sha256": "edefba99d4ccfe9264ad976320cdf86fafc70602efd1cc19b399cabcdb890aa0",
+    "prediction_item_ids_sha256": "43384d83ee1bdbbf3213d34e81f37454b65a1d67e1a7e06434f28236d79df757",
+    "context_entity_item_ids_sha256": "c7a765d28ce7496c7934593074c50b8275973643b831e4cdaf0779436508dba4",
+    "selected_user_ids_sha256": "72f818b5bbf8867bad167ac9361dfbdd6e186c60161c96b4e01c25dfbb387bf8",
+    "selected_users": 2560,
+    "fit_calibration_users": 512,
+    "benchmark_users": 2048,
+    "primary_benchmark_users": 2048,
+    "nested_benchmark_prefixes": [
+      512,
+      1024,
+      2048
+    ],
+    "history_length": 512,
+    "slide": 32,
+    "required_filtered_events": 576,
+    "base_prefix": 512,
+    "window_size": 32,
+    "window_count": 2,
+    "old_window_filtered_positions": [
+      0,
+      512
+    ],
+    "target_window_filtered_positions": [
+      32,
+      544
+    ],
+    "update_window_filtered_positions": [
+      512,
+      544
+    ],
+    "heldout_window_filtered_positions": [
+      544,
+      576
+    ],
+    "base_window_rows": 1310720,
+    "update_window_rows": 81920,
+    "heldout_window_rows": 81920,
+    "split_rows": {
+      "base": 1310720,
+      "window_0": 81920,
+      "window_1": 81920
+    },
+    "split_positive_rows": {
+      "base": 226516,
+      "window_0": 13492,
+      "window_1": 13426
+    },
+    "rows": 1474560,
+    "positive_rows": 253434,
+    "prediction_rows": 1218459,
+    "context_rows": 256101,
+    "exact_context_rows": 242620,
+    "stream_only_fallback_rows": 13481,
+    "unique_prediction_entity_rows_accessed": 179588,
+    "unique_exact_context_entity_rows_accessed": 185687,
+    "unique_stream_only_original_items_accessed": 13163,
+    "unique_fallback_context_entity_rows_accessed": 13126,
+    "unique_mapped_entity_rows_accessed": 377423,
+    "unique_direct_base_entity_rows_accessed": 365275,
+    "mapped_entity_row_coverage": 0.13197369778326373,
+    "direct_base_entity_row_coverage": 0.12772590027047015,
+    "source_mapping_stats": {
+      "rows": 493458970,
+      "prediction_rows": 441831834,
+      "exact_context_rows": 50334129,
+      "stream_only_fallback_rows": 1293007,
+      "context_rows": 51627136,
+      "dropped_rows": 0,
+      "unique_prediction_entities_seen": 250000,
+      "unique_exact_context_entities_seen": 2609835,
+      "unique_stream_only_original_items_seen": 893601,
+      "unique_fallback_context_entities_touched": 756630,
+      "fallback_collisions": 136971,
+      "base_entity_direct_coverage": 1.0
+    },
+    "num_behaviors": 5,
+    "positive_rule": "click or follow or like or share for prediction rows; every exact-context and stream-fallback row is forced to zero",
+    "ordering": "stable official within-user file order without calendar-time semantics",
+    "output": "data/processed/evokv_d3_m1_qk_entity_2560.npz",
+    "output_bytes": 12247408
+  },
+  "scope": "non-scientific two-version QK D2/D3 mechanism-development input; ordinal order is not calendar time"
+}

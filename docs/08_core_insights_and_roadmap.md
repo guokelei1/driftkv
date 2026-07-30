@@ -147,7 +147,7 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | two-card M0 S0 implemented; development only | flexible WorkManifest/grouping, GPU0/GPU1 pageable-DRAM sequential path, real D2 compiled/exact execution, full682 exactly-once private-target writeback and phase profile | same-revision S1, real QK M1, mechanism discovery, then final interfaces/protocol/evidence |
+| D3 | two-card M0 S0 plus QK M1 data foundation implemented; development only | flexible M0 WorkManifest/grouping and GPU0/GPU1 pageable-DRAM sequential path; base-only QK entity table, fixed 2,048-record cohort, and two-rank sharded edge trainer | train and validate `theta0→theta1`, rebuild the corresponding D1/D2 boundary, materialize M1 old/private-target K/V, run M1 S0/S1, discover a mechanism, then freeze interfaces/protocol/evidence |
 
 D3 development begins from the current D1 plan and implemented D2 runtime using a minimal
 two-rank `WorkManifest`; a normalized exporter is not a prerequisite for the first benchmark.
@@ -165,6 +165,20 @@ phases on the two ranks. Lookup collectives account for 0.72–1.64 seconds; sub
 measured component leaves a 6.15–6.30-second non-collective estimate. Peak allocated HBM is
 18.53/13.90 GB and the one-slot pinned footprint is 1.53/1.56 GB. This supports proceeding to
 overlap exploration; it is not a speedup, capacity, or paper claim.
+
+The separate QK M1 data foundation is now materialized under
+`evokv_design3_m1_qk_base_entity_data_development_v0`, also with
+`scientific_result=false` and `formal_design3=false`. The first 64 raw exposures per QK user
+produce 2,859,835 base-active item entities: the base-frequency top 250,000 are prediction rows,
+the other 2,609,835 are lossless context rows, and items first observed later hash only into those
+existing context rows. Including padding, the planned 24L/H1536 model has 2,859,836 FP32
+embedding rows (17,570,832,384 bytes, 16.364 GiB). The materialized input contains 512
+fit/calibration users and one nested 2,048-user benchmark pool, with `[512,544)` as the `theta1`
+training window and `[544,576)` as held-out evaluation. For 2,048 records, complete FP16
+source plus private-target K/V is 288 GiB. These are checked data and planned-capacity facts only:
+the sharded trainer is implemented, but no H1536 training, checkpoint edge, regenerated D1/D2
+snapshot, M1 K/V store, M1 S0/S1, or D3 mechanism result exists yet. The earlier H512 QK
+canary and M0 remain functional development evidence and cannot substitute for M1.
 
 ## 4. Supported findings
 
@@ -365,18 +379,22 @@ only.
 
 ### D3 mechanism entry
 
-The benchmark-first route is active. Steps 1–2 are implemented for development M0; step 3 is next:
+The benchmark-first route is active. The M0 reference and QK M1 data foundation are implemented;
+the large model edge and all M1 execution remain next:
 
 1. keep the implemented GPU0/GPU1 H12/W2 `WorkManifest` and S0 as the same-revision reference;
 2. retain its ordinary-DRAM source/target, byte-bounded groups, and exactly-once checks;
 3. add a basic double buffer, event-based phase timing, and bounded pinned/HBM memory;
-4. in parallel audit QK and construct the smallest real two-card physical out-of-core model edge;
-5. reproduce sequential/double-buffer/all-exact on that real workload;
-6. use the measured profile to explore both an isolated D3 scheduler and, when useful, globally
+4. use the materialized QK entity input and implemented two-rank sharded trainer to produce and
+   held-out-check one `theta0→theta1` edge;
+5. regenerate the edge-specific D1 program/action plan and D2 execution snapshot, then materialize
+   the complete 288-GiB old/private-target K/V working set;
+6. reproduce sequential/double-buffer/all-exact on that real workload;
+7. use the measured profile to explore both an isolated D3 scheduler and, when useful, globally
    replanned D1/D2/D3 co-design revisions;
-7. only after a mechanism is clear, normalize interfaces, close transaction semantics, and freeze
+8. only after a mechanism is clear, normalize interfaces, close transaction semantics, and freeze
    a D3 protocol;
-8. defer 3/4-GPU and broader matrices until the GPU0/GPU1 result is understood.
+9. defer 3/4-GPU and broader matrices until the GPU0/GPU1 result is understood.
 
 The capacity coordinate is
 
@@ -437,6 +455,8 @@ Do not claim that:
 - the current dense model requires tensor parallelism;
 - synthetic lookup contention is a serving trace or SLO result;
 - normalized-capsule DRAM, destination-v4 correctness, or hot-HBM Stage 4.5 is D3 evidence;
+- the materialized QK M1 data foundation means the H1536 model edge, 288-GiB K/V store, or M1
+  runtime has already executed;
 - D3 has a final/paper-ready mechanism implementation, frozen protocol, or performance result;
 - SSD, database, remote object storage, RDMA, GDS, or host-DRAM oversubscription is evaluated.
 

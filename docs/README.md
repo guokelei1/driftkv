@@ -45,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | GPU0/GPU1 M0 S0 implemented as a development profile; S1 and real-capacity M1 open |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | GPU0/GPU1 M0 S0 and the QK M1 data foundation are implemented; large-edge training, M1 S0/S1, and mechanism discovery remain open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -66,6 +66,8 @@ ResidencyPlan-only ablation.
 - D3 has a non-scientific M0 development family, not a frozen result family. Destination-v4
   correctness, normalized-capsule DRAM results, and hot-HBM D1 results cannot be renamed as D3
   evidence.
+- The materialized QK M1 entity input is also non-scientific foundation state: it does not mean
+  the H1536 model, new D1/D2 edge, 288-GiB K/V store, or M1 runtime has executed.
 - The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
   current EvoKV manuscript or design source of truth.
 
@@ -90,9 +92,11 @@ The active implementation uses GPU0/GPU1 only:
 1. keep the completed minimal H12/W2 `WorkManifest`;
 2. use the completed pageable-DRAM two-rank S0 as the reference;
 3. add a basic double buffer and wait/bubble metrics;
-4. audit and construct the smallest real QK workload whose complete working set physically
-   exceeds the two A40s;
-5. use its profile to decide whether the best design is an isolated D3 scheduler or a cross-layer
+4. use the materialized QK base-entity input and implemented sharded trainer to produce one
+   H1536/24L `theta0→theta1` edge with an independent held-out window;
+5. regenerate its D1/D2 snapshot, materialize the planned 288-GiB K/V working set, and run M1
+   S0/S1/all-exact;
+6. use its profile to decide whether the best design is an isolated D3 scheduler or a cross-layer
    revision.
 
 A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
@@ -107,6 +111,13 @@ D3 M0 now includes a full682 GPU0/GPU1 sequential pass through pageable DRAM, on
 slot, the real D2 mixed compute path, and private pageable writeback. It is a single-pass mechanism
 profile under emulated capacity, not a paper result. D3 development artifacts remain
 non-scientific until a new protocol is frozen.
+
+The QK M1 input now contains 512 fit/calibration users plus a nested 2,048-user benchmark pool.
+Its first-64 base-only entity table has 2,859,836 rows including padding; at H1536 the FP32
+embedding is 16.364 GiB, and a 24-layer 2,048-record complete old/private-target FP16 K/V working
+set is 288 GiB. `window_0` is the only update and `window_1` is held out. This is a materialized
+data/capacity foundation, not a trained model or system measurement; the old H512 QK canary remains
+only a functional diagnostic.
 
 ## Removed material
 
