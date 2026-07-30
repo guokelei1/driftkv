@@ -18,20 +18,24 @@ When documents disagree, use this order:
    supported claims, current status, open work, and stop conditions.
 2. [eval_protocol.md](eval_protocol.md) — authoritative result-family, timer, workload, and
    comparability boundary.
-3. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
+3. [10_paper_experiment_blueprint.md](10_paper_experiment_blueprint.md) — paper-wide benchmark
+   portfolio, exact experiment matrix, physical scale budget, run count, and figure/claim map. It
+   is authoritative only for the planned evaluation map; it neither overrides D2/D3 mechanism
+   definitions nor makes development artifacts scientific.
+4. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
    mechanism and current D1→D2 starting interface.
-4. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
+5. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
    implemented D2 state, non-scientific development evidence, pending W4/formal-evaluation work,
    and the D3 handoff.
-5. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
+6. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
    problem definition, source/capacity/timer contract, candidate mechanisms, baselines, and
    go/no-go conditions.
-6. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
+7. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
    — executable two-card foundation benchmark, staged baseline closure, candidate search, and
    backtracking plan; it creates no protocol or evidence.
-7. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+8. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
    frozen D1 Stage 0–6 evidence ledger. It is history, not a current execution plan.
-8. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
+9. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
    semantics, usable capacity, and generality boundaries.
 
 Repository-local agent rules are in [../AGENTS.md](../AGENTS.md). Experiment records are indexed

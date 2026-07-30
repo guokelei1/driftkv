@@ -552,6 +552,20 @@ fixed(model + embedding shard + program + context)
 <= physical HBM - allocator/safety margin.
 ```
 
+### Paper evaluation expansion
+
+The complete evaluation portfolio and physical scale budget are now specified in
+[`10_paper_experiment_blueprint.md`](10_paper_experiment_blueprint.md). Execution proceeds by:
+
+1. materializing the formal QK role split and nested real-user manifests;
+2. producing edge-specific X1/X2 programs, action plans, and verified 1/2/4-way embedding shards;
+3. closing the resident/out-of-core timers, segmented consumer, NUMA-aware DRAM arena, and
+   transaction/correctness boundary;
+4. running one exact/naive/full two-GPU canary per new protocol family;
+5. expanding only then to the 66-cell paper-core matrix.
+
+The blueprint plans new result families; it does not promote any W3 or D3 development artifact.
+
 ## 8. Go/no-go and pivot rules
 
 D2 should not be promoted as a paper design unless fixed-action physical lowering survives the
@@ -607,6 +621,8 @@ Do not claim that:
 
 ## 10. Document and artifact map
 
+- Paper-wide experiment blueprint:
+  [10_paper_experiment_blueprint.md](10_paper_experiment_blueprint.md)
 - Current D2 design:
   [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md)
 - D2 implementation/evidence status:
