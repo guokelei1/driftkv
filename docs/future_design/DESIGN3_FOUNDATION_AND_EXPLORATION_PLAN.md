@@ -15,7 +15,7 @@ host/device movement 与 writeback 合计 9.93–10.01 秒。该单次 profile �
 同量级瓶颈，仍是
 `scientific_result=false` 的容量模拟，不是 speedup 或物理 out-of-core 证据。
 
-M1 已推进到真实物理 out-of-core 的 sequential S0，并冻结为当前 D3 开发边界。QK 全体用户
+M1 已推进到真实物理 out-of-core 的首个 D3 候选，并冻结为当前 D3 开发边界。QK 全体用户
 的 first-64 raw exposures 产生 2,859,835 个 base-active item entities；top-250k 是
 prediction rows，其余 2,609,835 行是 lossless context entities，stream-only item 只 hash
 到已有 context rows。含 padding 的 H1536 FP32 embedding 有 2,859,836 行、16.364 GiB。
@@ -29,21 +29,32 @@ characterizer 已在相同 records 上完成：mixed/all-exact request tokens �
 262,336/1,048,576，off-rank FP32 return-vector bytes 为
 805,380,096/3,216,408,576。完整 exact old K/V 已实际物化到 ordinary DRAM，共 144 GiB。
 随后 GPU0/GPU1 full S0 以九个 sequential groups 处理全部 2,048 records，并写出完整
-144-GiB private target；old+target 为 288 GiB。S0 makespan 为 53.497 秒。决定 makespan 的
-rank 0 phase sum 为 50.017 秒，其中 pageable→pinned、H2D、D2H、publish 合计
-26.397 秒，占 52.8%。因此“顺序分组存在强 DRAM staging/publication 瓶颈”已经测到，下一步
-不再是继续构造 M1，而是实现同 revision 的 S1 double buffer。
+144-GiB private target；old+target 为 288 GiB。原始 S0 makespan 为 53.497 秒。决定
+makespan 的 rank 0 phase sum 为 50.017 秒，其中 pageable→pinned、H2D、D2H、publish
+合计 26.397 秒，占 52.8%，直接暴露了 DRAM staging/publication 瓶颈。
 
 为给需要两个 resident slots 的 S1 建立同容量 baseline，同一 revision 又完成了
-`group_records_per_rank=64` 的 paired S0：17 groups、makespan 54.577 秒，比 group-128
-慢 2.019%。rank 0 movement/publication 为 29.000/52.619 秒（55.1%），rank 1 为
-29.368/52.637 秒（55.8%），两 rank peak allocated HBM 都是 20.146 GiB。缩组没有消除
-瓶颈，反而增加了 movement 与 fragmentation；后续 S1 必须与这个 group-64 S0 配对，同时把
-group-128 保留为顺序执行的较快 characterization 点。
+`group_records_per_rank=64` 的 paired S0。最初的 54.577 秒包含每组
+`gc.collect()`/`torch.cuda.empty_cache()`，只保留为 fragmentation 诊断。去掉这两个
+非算法性维护动作后，公平 S0 为 48.238 秒，仍是 17 groups、相同 records/actions/endpoints，
+两 rank peak allocated HBM 都是 20.146 GiB。
 
-以上 training、D1/D2 snapshot、materialization 和 S0 全部仍是
+Strong S1 使用两组 bounded slots，把整组的 prefetch \(i+1\)、D2 execute \(i\) 和 drain
+\(i-1\) 重叠，完成时间为 32.703 秒，相对公平 S0 为 1.475x。但它仍暴露
+6.795/6.195 秒的 rank-0/1 input-boundary wait。只对输入做 microbatch ping-pong 后，
+该等待降到 0.275/0.243 秒，makespan 为 31.096 秒；同时 output-credit wait 升到
+4.865/3.706 秒，说明瓶颈从输入明确转移到串行输出。
+
+当前 D3 候选把同样的微段流水扩展到两个方向：CPU packing \(j+1\) 与 H2D \(j\) 重叠，
+D2H \(j+1\) 与 ordinary-DRAM publish \(j\) 重叠。它不增加 group-level lookahead、HBM
+resident group、pinned slot 或 drain credit，也不改变 D1 action、D2 collective order 和
+target layout。group-64/microbatch-8 完成时间为 28.885 秒，相对 S1 为 1.133x、相对公平
+S0 为 1.670x；两个 77.3-GB/rank target 均与 S1 逐字节一致。microbatch-16 为
+29.337 秒且占用更多 reserved HBM，因此不选。
+
+以上 training、D1/D2 snapshot、materialization、S0、S1 和 D3 candidate 全部仍是
 `scientific_result=false`、`formal_design3=false` 的单次开发工件；它们冻结 benchmark
-边界，不冻结论文 protocol，也不构成 speedup 或最终 D3 机制。
+边界和当前机制选择，不冻结论文 protocol，也不是论文 performance claim。
 
 当本文档与 [../08_core_insights_and_roadmap.md](../08_core_insights_and_roadmap.md) 或
 [../eval_protocol.md](../eval_protocol.md) 冲突时，以后二者记录的已有证据边界为准；尚未形成
@@ -193,7 +204,7 @@ development boundary；它不是多 seed 的算法质量结论。
 
 edge-specific direct-old-K/V program、20.0195%-exact D1 action snapshot 和 D2 request
 characterization 都已完成并绑定相同 checkpoint/data identity。第二个 update、recursive
-migrated source、多 seed 和完整质量复现继续推迟到候选 D3 机制出现以后。
+migrated source、多 seed 和完整质量复现继续推迟到 E0 与当前候选的最小资格验证以后。
 
 ## 2. 最小两卡执行骨架
 
@@ -284,7 +295,8 @@ M0 的第一版结束条件是：
 - peak HBM 不越过配置预算。
 
 第一版不要求完整 atomic epoch switch 和所有 fault injection。private target 不对外发布即可。
-在 D3 候选机制确定后，再补 global commit/abort/reclaim，避免事务实现挡住数据流水探索。
+在 D3 候选通过 E0 并最终选定后，再补 global commit/abort/reclaim，避免事务实现挡住机制
+资格验证。
 
 ### 2.5 大 extent 的索引边界
 
@@ -326,10 +338,11 @@ rank 0 决定 makespan。其 phase sum 为 50.017 秒：
 - pinned/pageable target publication：9.643 秒。
 
 四项合计 26.397 秒，占 phase sum 的 52.8%。这不是把 52.8% 都称为 PCIe；它包含两端
-ordinary-memory copy。当前可以下的结论只有：顺序分组使 DRAM staging/publication 成为强
-瓶颈，值得马上验证 S1 是否能把它与 D2 compute/collective 重叠。
+ordinary-memory copy。该历史 checkpoint 得出的结论是：顺序分组使 DRAM
+staging/publication 成为强瓶颈，因此进入了后续 S1 与 D3 验证。
 
-S1 的双 slots 不能直接与 group-128 单 slot 比容量，因此已经补跑 group-64 paired S0：
+S1 的双 slots 不能直接与 group-128 单 slot 比容量，因此已经补跑 group-64 paired S0。
+第一遍执行包含每组 GC/allocator flush：
 
 - 2,048 records、17 groups、makespan 54.577 秒；
 - rank 0 movement/publication 29.000/52.619 秒（55.1%）；
@@ -337,7 +350,9 @@ S1 的双 slots 不能直接与 group-128 单 slot 比容量，因此已经补�
 - 两 rank peak allocated HBM 均为 20.146 GiB。
 
 它比 group-128 S0 慢 2.019%，且 movement time/fraction 都更高。这排除了“只把 group
-缩小就能解决搬运瓶颈”的简单解释，也冻结了第一版 group-64 S1 的直接 S0 control。
+缩小就能解决搬运瓶颈”的简单解释。当前公平 control 进一步删除了每组
+`gc.collect()`/`torch.cuda.empty_cache()`，其余边界不变，makespan 为 48.238 秒。后续
+S1/D3 speedup 只与这个 no-flush S0 比较；54.577 秒只保留为旧 harness characterization。
 
 ### 3.2 S1：strong double buffer
 
@@ -355,17 +370,38 @@ drain i-1
 第一版只搜索少量 group-size/buffer-depth 组合，目的是得到可信通用流水基线，不做大规模
 tuning。
 
-当前下一步直接在 M1 的同一 work/source revision 和 group-64 capacity setting 上实现 S1，
-以 group-64 paired S0 为直接 control。group-128 S0 继续报告为 sequential
-characterization；M0 S1 可以作为小型调试入口，但不再是启动真实 S1 的前置条件。
+M1 strong S1 已完成。它保持 group-64、同一 work/source revision、相同 ordinary-DRAM
+endpoints 和 primary timer，使用两个非别名 slots、lookahead-1 和 single-drain credit，
+makespan 为 32.703 秒，相对公平 S0 为 1.475x。两 rank 的 input-boundary wait 仍为
+6.795/6.195 秒，因此 S1 是可信的强基线，但不是 out-of-core 流水的终点。
 
-### 3.3 E0：same-boundary all-exact
+### 3.3 D3：bidirectionally segmented I/O
 
-E0 对最终系统叙事重要，但不阻塞第一版 M1 S1。S1 流水稳定后，再让 all-exact 使用相同
-两卡、DRAM endpoint、target layout、capacity budget 和 timer。E0 可以独立选择适合 exact
-的 group size/order。
+当前候选在 S1 的 bounded group pipeline 内再加入一级 microbatch pipeline：
 
-### 3.4 初始 timer
+```text
+input:  pageable pack j+1  || H2D j
+compute: unchanged D1/D2 group and collective order
+output: D2H j+1            || pageable publish j
+```
+
+输入和输出各交替复用两个现有 pinned components。CUDA event 在 pinned storage 被 CPU
+读取或覆盖前建立生命周期边界；外层仍只有一个 prefetched group 和一个 outstanding drain。
+因此该机制不靠增加 resident group 或无界队列获取收益。
+
+只分段输入的中间版本为 31.096 秒，并把 input wait 转移成 4.865/3.706 秒 output-credit
+wait。双向版本进一步降到 28.885 秒，output-credit wait 降至 1.735/0.738 秒。相对 strong
+S1 的额外收益为 1.133x。full S1/D3 两 rank 的 target 均逐字节一致，ledger 为
+complete/no-partial/no-missing/exactly-once。当前最佳为 microbatch-8；microbatch-16
+29.337 秒且 reserved HBM 更高。
+
+### 3.4 E0：same-boundary all-exact
+
+E0 是当前下一步。它让 all-exact 使用相同两卡、DRAM endpoint、target layout、capacity
+budget 和 timer；可以独立选择适合 exact 的 group size/order。S1 与当前 D3 的 complete
+full targets 已完成两 rank 逐字节 parity；E0 仍需自己的 reference/correctness 记录。
+
+### 3.5 初始 timer
 
 目标 wall boundary 从第一个 ordinary→pinned copy 前开始，到最后一个 target extent 写回
 普通 DRAM 为止。当前 S0 在 timer 内做 sampled finite/metadata 检查，在 timer 后做 global
@@ -386,63 +422,50 @@ primary timer。开发阶段优先保证各变体使用同一计时方式。
 当前 M1 S0 还将 complete old-store materialization、model/program load、operator warmup 和
 target prefault 放在 primary timer 外。53.497 秒是 `run_s0` 的两 rank makespan；50.017 秒
 是 makespan rank 的分项 phase sum。52.8% 搬运比例以 phase sum 为分母，不能与 wall time
-混写。group-64 S0 也使用相同边界，其 54.577 秒与未来 group-64 S1 才是直接配对。
-S1 必须保持这一 revision 和边界，新增的 overlap/wait/bubble 指标再单独说明。
+混写。fair group-64 S0、S1 和 D3 使用相同边界；直接对比为
+48.238→32.703→28.885 秒。54.577 秒的旧 S0 含每组 runtime maintenance，不再作为
+speedup 分母。overlap/wait/bubble 指标用于因果分析，其中
+`estimated_hidden_{input,output}_seconds` 只是保守估计，不能替代 wall/credit/boundary wait。
 
-## 4. D3 探索方向，而不是预先指定唯一算法
+## 4. Profile 收敛出的 D3
 
-S0/S1 跑通后，先看 profile 再决定候选。优先探索：
+### 4.1 当前选择
 
-### 4.1 Capacity-aware grouping
+机制不是预先指定的。公平 S0 先证明 whole-group sequential path 的搬运瓶颈；strong S1
+证明普通 double buffering 能隐藏大部分开销，但留下 input-boundary stall；input-only
+candidate 消除该 stall 后又暴露 output-credit stall。由这条因果链得到的最小机制是：
 
-- group 太小导致 launch/collective 碎片；
-- group 太大挤压双缓冲；
-- 两 rank 字节不平衡导致 collective wait；
-- exact/compiled shape 混合导致 padding。
+- 外层保持 capacity-safe group 的 `prefetch i+1 / execute i / drain i-1`；
+- 内层把每组切成 bounded microbatches；
+- 输入端交替复用两个 pinned components，使 CPU pack 与 H2D 重叠；
+- 输出端交替复用两个 pinned components，使 D2H 与 ordinary-DRAM publication 重叠；
+- 保持固定 D1 actions、D2 owner/collective order、route-pure groups 和单 drain credit。
 
-目标是找到合理 micro-wave 单位，而不是先追求通用最优 planner。
+这比继续增加 whole-group lookahead 更符合容量边界：它不额外驻留第三组 old K/V，也不建立
+无界 output queue。当前 28.885 秒和 full byte parity 使其成为唯一 active D3 candidate。
 
-### 4.2 Action-aware overlap
+### 4.2 接下来只做资格验证
 
-当前假设：
+当前不再泛化搜索 scheduler。下一步先完成：
 
-- compiled 更偏 old-K/V transfer；
-- exact/append 更偏 embedding collective 与 compute。
+- same-boundary all-exact E0；
+- 至少一个 action/capacity mix sensitivity；
+- 最小重复执行或第二 edge；
+- publication/transaction 计时边界；
+- 判断收益是否稳定跨越 exact-preferred crossover。
 
-可以尝试把 transfer-heavy 与 compute-heavy work 交错，使：
+若这些检查通过，再把 capacity group、microbatch cut、双向 credits 和 launch order 固化为
+`ResidencyPlan`。microbatch-16 已经比 microbatch-8 更慢且占用更多 HBM，不继续 exhaustive
+tuning。
 
-```text
-compiled H2D
-overlap with
-exact compute / collective
-```
+### 4.3 只在资格验证失败时回退
 
-如果 profile 不支持这种互补，就放弃该假设，不强行保留 C2 名称。
+若 E0 或 sensitivity 否定当前机制，再考虑 rank-aware byte balance、collective-arrival-aware
+prefetch、D2 owner/pool granularity 或 D1/D3 budget co-design。任何改变 actions、owners、
+pools 或 layout 的候选都是新的 `stack_revision`，必须重跑自己的 S0/S1，而不是与本 revision
+直接比较。
 
-### 4.3 Cross-rank coordinated pipeline
-
-两卡独立 prefetch 容易使一张卡提前、另一张卡阻塞 collective。可以探索：
-
-- global group order；
-- rank-aware byte balance；
-- collective-arrival-aware prefetch；
-- shared credits/backpressure；
-- 限制同时 H2D/D2H 对 PCIe 的争抢。
-
-### 4.4 允许的联合调整
-
-若单纯 D3 scheduling 不够，可以探索：
-
-- D2 owner placement 同时考虑 source bytes 与 target bytes；
-- D2 pool/granularity 更适合 capacity slicing；
-- D1 planner 输出更适合 streaming execution 的 action groups；
-- D1 budget 与 D3 capacity pressure 的联合 sensitivity；
-- segmented target layout 为 host writeback 做调整。
-
-这些变体不再叫“纯 D3 ablation”，而叫新的 `stack_revision`。最终哪部分进入 D2、哪部分进入
-D3，由实验结果和论文叙事共同决定。
-
-### 4.5 不急着做的内容
+### 4.4 不急着做的内容
 
 - 3/4 GPU；
 - topology sweep；
@@ -452,7 +475,7 @@ D3，由实验结果和论文叙事共同决定。
 - formal failure matrix；
 - exhaustive parameter sweep。
 
-在 GPU0/GPU1 上 proposed method 尚未清楚胜过 S1 前，不进入这些方向。
+当前 proposed 已胜过 S1，但上述方向仍应等 E0 和最小资格验证完成后再决定。
 
 ## 5. 五个灵活 milestone
 
@@ -463,8 +486,8 @@ Milestone 只定义要看到的输入和输出，不锁死中间实现。遇到�
 **状态：完成开发态 foundation。**
 
 已完成 exactly-once、metadata、有限值和 ordinary-DRAM endpoint 检查；D2 算子本身沿用已通过
-full-payload development validation 的路径。独立的端到端数值 parity 可在 S1 对比前补，不
-阻塞流水骨架实现。
+full-payload development validation 的路径。后续 M1 已进一步完成 S1/D3 full-target
+逐字节 parity；M0 不再承担独立 reference 资格验证。
 
 **目标。** 尽快得到第一个真实 DRAM→GPU0/GPU1→DRAM 完整 run。
 
@@ -496,16 +519,17 @@ cap，并先测出顺序分组的问题。
 - D2 embedding request/traffic characterizer 和 edge-specific direct-old-K/V program；
 - 144-GiB complete ordinary-DRAM old K/V；
 - 288-GiB old/private-target、九组 group-128、2,048-record M1 S0；
-- 同 revision 的 17-group group-64 paired S0；
+- 同 revision 的 17-group group-64 old-harness diagnostic 与 48.238-second fair S0；
 - makespan 53.497 秒，以及 rank-0 movement/publication 26.397/50.017 秒的瓶颈归因。
 
 **实际遇到的最大风险。** 大 extent 使 Triton 的 int32 flattened index 跨越 \(2^{31}\)。
-该问题已改为 64-bit pointer arithmetic，并通过 cold-cache 大组执行。这个回看说明：后续若
-S1 在大组上异常，先检查 A/M0 从未覆盖的规模边界，再判断是流水逻辑错误。
+该问题已改为 64-bit pointer arithmetic，并通过 cold-cache 大组执行。这个回看说明：后续
+E0、sensitivity 或 replication 若在大 extent 上异常，先检查 A/M0 从未覆盖的规模边界，再
+判断是机制问题。
 
 ### C：两卡 M1 strong pipeline
 
-**状态：当前下一步。**
+**状态：完成开发态 strong baseline。**
 
 **目标。** 在 B 的同一 development revision 上得到 S1，并知道普通 double buffering 能隐藏
 多少已经测到的 52.8% DRAM staging/publication 开销。
@@ -513,40 +537,42 @@ S1 在大组上异常，先检查 A/M0 从未覆盖的规模边界，再判断�
 **输入。** B 的固定 checkpoints、D1/D2 work snapshot、完整 144-GiB old store、相同
 ordinary-DRAM private-target endpoint、S0 timer 和 group-64 capacity setting。
 
-**输出。**
+**已完成输出。**
 
 - bounded input/output double buffers；
 - CUDA streams/events 与 basic backpressure；
-- group-64 S0/S1 同 revision、同 capacity 对比；
+- fair group-64 S0/S1 同 revision、同 capacity 对比：48.238→32.703 秒；
 - H2D/D2H、ordinary-copy、rank wait 和 bubbles；
-- S1 稳定后补 same-boundary E0。
+- 完整 target ledger、exactly-once 和 full-payload parity。
 
-**最大风险。** 当前 hot path 的全局 synchronize 可能破坏 overlap；双缓冲本身也会占用更多
-pinned/HBM credits，迫使 group 变小并增加 collective/launch 碎片。若 S1 迟迟没有收益，先
-分别检查 event 依赖、CPU copy 并发、group capacity 和双 rank arrival，而不是立刻否定 B
-测到的瓶颈。允许在同一 work snapshot 内调整物理 group size，但每个 S0/S1 pair 必须共享
-相同设置。
+**实际风险与回看。** S1 获得 1.475x，但 whole-group prefetch 仍有 6.20--6.79 秒输入
+边界等待。这个结果没有否定 B 的瓶颈；它把下一层问题定位为 capacity group 内部的串行
+staging。S1 保留为 action-oblivious strong baseline。
 
 ### D：D3 与跨层机制探索
 
+**状态：首个 isolation candidate 已完成。**
+
 **目标。** 在 M1 上找到比 S1 更好的、收益可解释的机制。
 
-**输入。** C 的两卡 S0/S1/E0 与 phase profile。
+**输入。** C 的两卡 S0/S1 与 phase profile；E0 不阻塞第一轮机制发现。
 
-**输出。**
+**已完成输出。**
 
-- 若干小而清楚的候选；
-- 每个候选对应的 `stack_revision`；
-- 同 revision baseline；
-- wall-time 与 bytes/wait/bubble 归因；
-- 保留一个最小有效机制，或得到明确 no-go。
+- input-only causal probe：31.096 秒，证明瓶颈转移到 output credit；
+- bidirectionally segmented I/O：28.885 秒；
+- 相对 strong S1 1.133x、相对 fair S0 1.670x；
+- unchanged D1/D2 work revision、full byte parity 和 bounded-memory ledger；
+- microbatch-16 negative sensitivity：29.337 秒且 reserved HBM 更高。
 
-**最大风险。** strong S1 已经接近 DRAM/PCIe 上限。此时可以探索 D1/D2/D3 联合调整，但不能
-通过弱化 S1 制造贡献。
+**当前最大风险。** 收益仍是单边界、单 seed、双卡 development result，且 E0 未完成。
+下一步应验证 exact crossover 和最小 sensitivity，而不是继续堆叠 buffer 或弱化 S1。
 
 ### E：机制稳定后再正式化
 
-**目标。** 把开发 benchmark 上的机制变成论文设计。
+**状态：当前下一阶段。**
+
+**目标。** 先用 E0 和最小 sensitivity 判断当前机制能否变成论文设计，再正式化。
 
 **届时再补。**
 
@@ -559,8 +585,8 @@ pinned/HBM credits，迫使 group 变小并增加 collective/launch 碎片。若
 - 第二 model edge 和正式 replication；
 - frozen protocol。
 
-**最大风险。** 收益只存在于一个 group size 或 M0 capacity cap。若在真实 M1 上消失，则回到
-D，而不是用更多形式化工作包装失败候选。
+**最大风险。** 当前收益无法在 E0、capacity/action sensitivity 或 replication 中保持。若
+资格验证失败，则回到 D 重新定位机制，而不是用更多形式化工作包装失败候选。
 
 ## 6. 开发判断标准
 
@@ -571,9 +597,10 @@ D，而不是用更多形式化工作包装失败候选。
 3. **通用流水有多强？** S1 相对 S0 隐藏了多少？
 4. **场景特异机制是否有额外收益？** proposed 是否稳定胜过 S1，且能由 profile 解释？
 
-如果 proposed 只胜 S0、不胜 S1，它暂时只是实现路径。如果 action-aware scheduling 没有收益，
-允许回到 owner、pool、group 或 D1 plan 粒度继续探索。这里的回退不是违反接口，而是设计
-过程本身。
+当前四个问题在这一个 M1 point 上的回答分别是：能；双向 staging/writeback；S1 为
+1.475x；D3 再相对 S1 为 1.133x，且由输入等待消失后输出等待接棒、再被分段输出降低的 profile
+解释。它已经超过“只胜 sequential”的最低机制门槛，但还没有回答 E0 crossover、replication
+和正式论文证据。
 
 论文阶段仍需要严格可比性、correctness、physical capacity、all-exact、failure 和扩展实验；
 但这些不阻塞当前两卡机制发现。
@@ -604,12 +631,15 @@ results/system/evokv_design3_m1/qk_entity_h1536_adjacent_compiler_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_materialize_full_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_s0_full_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_seed0.json
-results/system/evokv_design3_m1/qk_entity_h1536_s1_group64_dry_run_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_noflush_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_s1_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_d3_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_mb16_seed0.json
 ```
 
-materialize、group-128 S0 和 group-64 paired S0 分别证明 144-GiB old store 与两种
-288-GiB sequential boundaries 已执行；S1 文件当前只是 dry-run schedule，不是 S1 timing。
-这些工件仍不证明正式 protocol、speedup 或最终 D3 机制。
+这些文件记录从物理 materialization、顺序瓶颈、strong S1、input-only 归因到双向分段候选的
+完整开发链。它们仍不证明正式 protocol、E0 crossover、replication 或 paper speedup。
 
 每个 run 至少记录：
 
@@ -625,8 +655,8 @@ materialize、group-128 S0 和 group-64 paired S0 分别证明 144-GiB old store
 
 大 K/V payload 只存在进程内 pageable DRAM 或 `/dev/shm` 等临时路径，不进入 Git。当前
 M1 old store 可以在同一 run-id 下通过完整 coverage 和 model/data/plan/owner binding
-复用；失败后的 partial target 不能自动覆盖，进入 S1 前应使用独立 target identity 或显式
-reset，不能误把残留 coverage 当成新 run。
+复用；失败后的 partial target 不能自动覆盖。每次 candidate run 前应使用独立 target
+identity 或显式 reset，不能误把残留 coverage 当成新 run。
 
 ## 8. 立即执行顺序
 
@@ -640,9 +670,10 @@ reset，不能误把残留 coverage 当成新 run。
 6. 已生成 20.0195%-exact D1 snapshot、D2 characterizer 和 direct-old-K/V program；
 7. 已物化 144-GiB complete old K/V，并完成 2,048-record、九组、288-GiB group-128 M1
    S0；
-8. 已补 group-64、17-group paired S0；当前实现同 setting 的 M1 S1 double buffer、
-   rank-wait/bubble metrics；
-9. S1 稳定后补 E0，再根据 M1 profile 决定第一个真正的 D3 候选。
+8. 已补 fair group-64、17-group S0 和同 setting 的 M1 strong S1；
+9. 已完成 input-only causal probe 和 bidirectionally segmented I/O D3，当前最佳为
+   group-64/microbatch-8 的 28.885 秒；
+10. 下一步补 same-boundary E0 与最小 sensitivity/replication，再决定是否冻结正式 D3。
 
 这个顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被设计
 推翻的正式接口。

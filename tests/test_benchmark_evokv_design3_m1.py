@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 
@@ -256,6 +257,7 @@ def _tiny_slot() -> MODULE.M1PinnedSlot:
 
 def test_s1_mode_and_disjoint_slot_contract() -> None:
     args = MODULE.parse_args(["--mode", "s1"])
+    proposed = MODULE.parse_args(["--mode", "d3"])
     first = _tiny_slot()
     second = _tiny_slot()
 
@@ -265,6 +267,7 @@ def test_s1_mode_and_disjoint_slot_contract() -> None:
         MODULE._validate_s1_slots((first, second))
 
     assert args.mode == "s1"
+    assert proposed.mode == "d3"
 
 
 def test_s1_input_edge_reports_overlap_and_exposed_tail() -> None:
@@ -300,3 +303,205 @@ def test_s1_input_edge_reports_overlap_and_exposed_tail() -> None:
     assert edge["staging_tail_after_producer_seconds"] == pytest.approx(1.0)
     assert edge["measured_boundary_wait_seconds"] == pytest.approx(0.75)
     assert edge["overlap_fraction"] == pytest.approx(2.0 / 3.0)
+
+
+@pytest.mark.skipif(
+    not torch.cuda.is_available(),
+    reason="CUDA is required for segmented input staging",
+)
+def test_d3_segmented_input_preserves_source_and_history(
+    tmp_path: Path,
+) -> None:
+    actions = tuple(
+        MODULE.M1Action.from_dict(_record(index, False))
+        for index in range(3)
+    )
+    group = MODULE.M1Group(
+        ordinal=0,
+        route="compiled",
+        record_ids_by_rank=((0, 1, 2), ()),
+    )
+    cfg = HSTUConfig(
+        num_items=100,
+        num_prediction_items=80,
+        num_behaviors=5,
+        hidden_size=2,
+        num_layers=1,
+        num_heads=1,
+        head_dim=2,
+        max_seq_len=4,
+    )
+    target = {
+        action.record_id: {
+            "item_ids": np.arange(4, dtype=np.int64)
+            + action.record_id * 10,
+            "behaviors": np.arange(4, dtype=np.int64),
+            "time_deltas": np.arange(4, dtype=np.float32),
+        }
+        for action in actions
+    }
+    expected = []
+    with PageableDramExtentStore.create(
+        tmp_path / "old.bin",
+        tuple(value.record_id for value in actions),
+        (4, 4, 4),
+        num_layers=1,
+        width=2,
+    ) as store:
+        for action in actions:
+            k = (
+                torch.arange(8, dtype=torch.float16)
+                .view(1, 4, 2)
+                .add(action.record_id * 100)
+            )
+            store.write_record(action.record_id, k, k + 1000)
+            expected.append(k[:, 1:4])
+        slots = (
+            MODULE._allocate_slot(cfg, 1, 3, 4, 4),
+            MODULE._allocate_slot(cfg, 1, 3, 4, 4),
+        )
+        device = torch.device("cuda:0")
+        stream = torch.cuda.Stream(device=device)
+        staged = MODULE._stage_d3_group_input(
+            group,
+            0,
+            {value.record_id: value for value in actions},
+            MODULE.M1Histories(old={}, target=target),
+            store,
+            slots,
+            0,
+            device,
+            stream,
+            1,
+        )
+
+    assert staged.input_pipeline == "segmented_microbatch_pingpong"
+    assert staged.input_segments == 3
+    assert staged.source is not None
+    assert torch.equal(
+        staged.source.k.cpu(),
+        torch.cat(expected, dim=1),
+    )
+    assert [
+        int(value.item_ids[0, 0].item())
+        for value in staged.device_histories
+    ] == [3, 13, 23]
+
+
+@pytest.mark.skipif(
+    not torch.cuda.is_available(),
+    reason="CUDA is required for segmented output draining",
+)
+def test_d3_segmented_output_preserves_order_and_lifetime(
+    tmp_path: Path,
+) -> None:
+    actions = tuple(
+        MODULE.M1Action.from_dict(_record(index, False))
+        for index in range(3)
+    )
+    cfg = HSTUConfig(
+        num_items=100,
+        num_prediction_items=80,
+        num_behaviors=5,
+        hidden_size=2,
+        num_layers=1,
+        num_heads=1,
+        head_dim=2,
+        max_seq_len=4,
+    )
+    device = torch.device("cuda:0")
+    retained_rows = [
+        torch.arange(6, dtype=torch.float16)
+        .view(1, 3, 2)
+        .add(index * 100)
+        for index in range(3)
+    ]
+    suffix_rows = [
+        torch.full(
+            (1, 1, 2),
+            50 + index * 100,
+            dtype=torch.float16,
+        )
+        for index in range(3)
+    ]
+    retained_k = torch.cat(retained_rows, dim=1).to(device)
+    suffix_k = torch.cat(suffix_rows, dim=1).to(device)
+    target_retained = MODULE._device_jagged(
+        actions,
+        retained_k,
+        retained_k + 1000,
+        "retained_tokens",
+        "theta0",
+        "theta1",
+    )
+    target_suffix = MODULE._device_jagged(
+        actions,
+        suffix_k,
+        suffix_k + 1000,
+        "suffix_tokens",
+        "theta1",
+        "theta1",
+    )
+    ready = torch.cuda.Event()
+    ready.record()
+    computed = MODULE.M1S1ComputedGroup(
+        group=MODULE.M1Group(
+            ordinal=0,
+            route="compiled",
+            record_ids_by_rank=((0, 1, 2), ()),
+        ),
+        actions=actions,
+        target_retained=target_retained,
+        target_suffix=target_suffix,
+        target_exact=None,
+        report={"ordinal": 0, "route": "compiled"},
+        lookup_metrics={},
+        execution_started_at=0.0,
+        execution_finished_at=1.0,
+        ready_event=ready,
+        slot_index=0,
+    )
+    slots = (
+        MODULE._allocate_slot(cfg, 1, 3, 4, 4),
+        MODULE._allocate_slot(cfg, 1, 3, 4, 4),
+    )
+    with PageableDramExtentStore.create(
+        tmp_path / "target.bin",
+        (0, 1, 2),
+        (4, 4, 4),
+        num_layers=1,
+        width=2,
+    ) as store:
+        result = MODULE._drain_d3_computed_group(
+            computed,
+            store,
+            slots,
+            device,
+            torch.cuda.Stream(device=device),
+            1,
+        )
+        observed = []
+        for index in range(3):
+            k = torch.empty((1, 4, 2), dtype=torch.float16)
+            v = torch.empty_like(k)
+            store.read_record_into(index, k, v)
+            observed.append(k)
+        ledger = store.ledger()
+
+    report = result["group_report"]
+    assert report["output_pipeline"] == (
+        "segmented_microbatch_pingpong"
+    )
+    assert report["output_segments"] == 3
+    assert result["observed_record_ids"] == (0, 1, 2)
+    assert ledger.complete_records == 3
+    assert all(
+        torch.equal(
+            observed[index],
+            torch.cat(
+                (retained_rows[index], suffix_rows[index]),
+                dim=1,
+            ),
+        )
+        for index in range(3)
+    )

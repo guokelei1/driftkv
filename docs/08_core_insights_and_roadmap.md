@@ -147,7 +147,7 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | real QK M1 sequential foundation complete; development only | M0 path; 2,560-user QK boundary; two-rank `theta0→theta1`; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V materialization; group-128 and S1-paired group-64 S0 over a 288-GiB old/private-target working set | implement same-revision S1 double buffering, add E0, discover a mechanism beyond a strong S1, then freeze interfaces/protocol/evidence |
+| D3 | hierarchical out-of-core mechanism discovered; development only | M0 path; real two-rank QK M1 boundary; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V; fair group-64 S0; strong S1; bidirectionally segmented input/output pipeline; full-payload parity | same-boundary E0, sensitivity/replication, final interface and transaction boundary, frozen protocol, and paper evidence |
 
 D3 development uses the current D1 plan and implemented D2 runtime. M0 uses a minimal two-rank
 `WorkManifest`; the QK M1 revision binds its action snapshot, owner map, group plan, checkpoints,
@@ -194,13 +194,30 @@ D2H, and ordinary-DRAM publication contribute 26.397 seconds, or 52.8%. This is 
 that sequential grouping exposes a strong DRAM staging/publication bottleneck and justifies S1
 double buffering.
 
-S1 needs a smaller resident group to admit two bounded slots, so the same revision also has a
-paired group-64 S0 rather than comparing S1 only with the faster group-128 run. It processes the
-same 2,048 records in 17 groups with a 54.577-second makespan, 2.019% slower than group-128.
-Rank 0 spends 29.000/52.619 phase seconds in the same four movement/publication phases (55.1%);
-rank 1 spends 29.368/52.637 seconds (55.8%). Peak allocated HBM is 20.146 GiB on both ranks.
-Shrinking groups therefore does not remove the bottleneck: it increases fragmentation and observed
-movement/publication time. This group-64 result is the capacity-paired sequential baseline for S1.
+S1 needs a smaller resident group to admit two bounded slots, so the same revision also uses a
+17-group, group-64 control. Its first 54.577-second execution included per-group Python GC and CUDA
+allocator-cache flushing. That run remains evidence that shrinking groups alone does not remove
+movement, but it is not the fair control for the current runtime. Removing only that avoidable
+between-group maintenance gives a 48.238-second S0 over the identical records, actions, group
+cuts, endpoints, and primary timer. It completes exactly once with 20.146-GiB peak allocated HBM.
+
+The strong S1 then overlaps whole-group input staging, D2 execution, and output drain using two
+bounded slots and one output credit. It completes in 32.703 seconds, or 1.475x faster than fair S0.
+The full mixed wave remains correct, but rank 0/1 still expose 6.795/6.195 seconds of
+input-boundary wait. A first D3 probe segments only pageable packing and H2D inside each capacity
+group. It lowers those waits to 0.275/0.243 seconds, but the faster producer exposes
+4.865/3.706 seconds of output-credit wait, so makespan reaches only 31.096 seconds.
+
+The current D3 candidate is therefore a bounded hierarchical pipeline rather than another
+whole-group buffer. It alternates two pinned input components so CPU packing for segment \(j+1\)
+overlaps H2D for \(j\), and alternates the existing two pinned output components so D2H for
+segment \(j+1\) overlaps ordinary-DRAM publication for \(j\). D1 actions, D2 owner/collective
+order, capacity groups, target layout, and one-drain backpressure are unchanged. At group-64 and
+microbatch-8 it completes in 28.885 seconds: 1.133x over strong S1 and 1.670x over fair S0.
+Output-credit wait falls to 1.735/0.738 seconds. Peak allocated HBM is 29.27/29.09 GiB and peak
+reserved HBM is 39.42 GiB on both ranks. A microbatch-16 check is slower at 29.337 seconds and
+raises reserved HBM to 41.54 GiB, so microbatch-8 is the current development point rather than an
+open-ended sweep. Both complete 77.3-GB/rank D3 targets are byte-identical to S1.
 
 The first large compiled group also exposed an implementation-scale boundary hidden by the small
 benchmarks: 128 records per rank at 480 retained tokens create 61,440-token extents whose
@@ -208,8 +225,8 @@ layer-23 flattened source offset is 2,170,552,320 elements, beyond signed 32-bit
 direct-old-K/V Triton kernel now performs pointer arithmetic in 64 bits, and a cold-cache rerun
 crossing \(2^{31}\) completed. This is a correctness fix and scale validation, not a separate
 design claim. All QK M1 artifacts above remain `scientific_result=false` and
-`formal_design3=false`; S0 is one development profile, not a speedup, final D3 mechanism, or paper
-result.
+`formal_design3=false`. The S0/S1/D3 sequence establishes a mechanism and its causal profile, but
+does not yet freeze a paper protocol or result.
 
 ## 4. Supported findings
 
@@ -410,21 +427,22 @@ only.
 
 ### D3 mechanism entry
 
-The benchmark-first route has reached a real physical M1 S0 boundary:
+The benchmark-first route has reached a real physical M1 mechanism boundary:
 
 1. the two-rank 24L/H1536 `theta0→theta1` edge and positive held-out signal are complete;
 2. the 2,048-record D1 snapshot is fixed at 410 exact and 1,638 compiled actions, and its D2
    request/communication characterizer is complete;
-3. the 144-GiB old store is materialized; group-128 S0 completes the boundary in nine groups, and
-   the S1-paired group-64 S0 completes the same work in 17 groups;
-4. next, implement a same-revision S1 with bounded double-buffered input/output staging,
-   event-based dependencies, and explicit wait/bubble accounting;
-5. compare S1 against S0 on the same work/source snapshot, then add same-boundary all-exact E0;
-6. use the measured S0/S1/E0 profile to explore both an isolated D3 scheduler and, when useful,
-   globally replanned D1/D2/D3 co-design revisions;
-7. only after a mechanism is clear, normalize interfaces, close transaction semantics, and freeze
-   a D3 protocol;
-8. defer 3/4-GPU and broader matrices until the GPU0/GPU1 result is understood.
+3. the 144-GiB old store is materialized; fair group-64 S0 completes the boundary in 48.238
+   seconds;
+4. same-revision strong S1 completes in 32.703 seconds and identifies residual input-boundary
+   stalls;
+5. input-only segmentation removes those stalls but exposes serialized output drain;
+6. the bidirectionally segmented D3 candidate overlaps packing/H2D and D2H/publication within each
+   capacity group, completing in 28.885 seconds with byte-identical full outputs;
+7. next, add same-boundary all-exact E0 and the smallest sensitivity/replication set needed to
+   decide whether this mechanism is the final isolation design;
+8. only then normalize interfaces, close transaction semantics, freeze a D3 protocol, and expand
+   beyond GPU0/GPU1.
 
 The capacity coordinate is
 
@@ -485,10 +503,11 @@ Do not claim that:
 - the current dense model requires tensor parallelism;
 - synthetic lookup contention is a serving trace or SLO result;
 - normalized-capsule DRAM, destination-v4 correctness, or hot-HBM Stage 4.5 is D3 evidence;
-- the QK M1 S0 profile is a speedup, a final D3 mechanism, a frozen protocol, or paper evidence;
+- the QK M1 S0/S1/D3 development profiles are a frozen protocol or paper evidence;
 - its 52.8% rank-0 movement fraction is entirely PCIe time rather than the declared combination of
   ordinary-memory staging, H2D, D2H, and publication;
-- D3 has a final/paper-ready mechanism implementation, frozen protocol, or performance result;
+- D3 has a final/paper-ready implementation, frozen protocol, replicated performance result, or
+  all-exact crossover;
 - SSD, database, remote object storage, RDMA, GDS, or host-DRAM oversubscription is evaluated.
 
 ## 10. Document and artifact map

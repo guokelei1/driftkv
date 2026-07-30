@@ -37,9 +37,11 @@ valid use is mechanism discovery and protocol design, not Motivation-2 numbers o
 Design 3 has no frozen paper protocol or paper result. Mechanism discovery is active on GPU0/GPU1
 and does not wait for a normalized D2 exporter or full transaction closure. The
 `evokv_design3_m0_pageable_s0_development_v0` canary/full artifacts remain development-only
-profiles under an emulated logical-payload cap, with no speedup or physical out-of-core claim.
+profiles under an emulated logical-payload cap. The real QK M1 family now contains a physical
+out-of-core S0/S1/D3 mechanism sequence, but every member remains `scientific_result=false` and
+`formal_design3=false`.
 
-The real QK M1 development boundary is now complete through sequential S0. Its input protocol
+The real QK M1 development boundary is now complete through the first segmented-I/O candidate. Its input protocol
 `evokv_design3_m1_qk_base_entity_data_development_v0` fits the entity address space only from
 every QK user's first 64 raw exposures: 250,000 prediction rows plus 2,609,835 exact base-context
 rows, or 2,859,836 physical rows including padding. Stream-only item identities map into existing
@@ -63,12 +65,14 @@ mixed versus 1,048,576 all-exact request tokens; 126,588 versus 309,467 unique i
 805,380,096 versus 3,216,408,576 off-rank FP32 return-vector bytes. These are request/byte
 characterizations, not measured D2 speedups or a formal D2 result.
 
-The M1 runtime protocol `evokv_design3_m1_qk_pageable_s0_development_v0` has two distinct modes
-that must not be conflated. `mode=materialize` produced a complete 144-GiB exact `theta0` old-K/V
-store in ordinary DRAM, 72 GiB per rank, outside the S0 primary timer. `mode=s0` reused that bound
-store, prefaulted a separate 144-GiB private target outside the timer, and processed all 2,048
-records in nine sequential route-pure groups. The complete old plus private-target footprint is
-288 GiB. Both ranks report complete, non-partial, non-missing coverage and exactly-once execution.
+The M1 runtime protocol `evokv_design3_m1_qk_pageable_s0_development_v0` has distinct
+materialization and sequential-execution identities that must not be conflated.
+`mode=materialize` produced a complete 144-GiB exact `theta0` old-K/V store in ordinary DRAM,
+72 GiB per rank, outside the primary timer. Execution modes reuse that bound store and prefault a
+separate 144-GiB private target outside the timer. The complete old plus private-target footprint
+is 288 GiB. All full runs below process the same 2,048 records, preserve the 410-exact/1,638-
+compiled actions and stable owner map, and report complete, non-partial, non-missing coverage with
+exactly-once execution.
 
 The single full S0 development profile has a 53.497-second makespan. The makespan rank reports a
 50.017-second phase sum, of which pageable→pinned, H2D, D2H, and ordinary-DRAM publication total
@@ -77,14 +81,41 @@ grouping has a strong DRAM staging/publication bottleneck and motivates same-rev
 buffering. It is not a speedup, a final D3 mechanism, or paper evidence, and the 52.8% must not be
 renamed as PCIe-only time.
 
-Because S1 needs two bounded resident slots, its direct sequential control uses the same revision
-with `group_records_per_rank=64`, not the faster group-128 configuration. This paired S0 processes
-the same 2,048 records in 17 groups and has a 54.577-second makespan, 2.019% slower than group-128.
-Rank 0 reports 29.000/52.619 seconds of movement/publication (55.1%) and rank 1 reports
-29.368/52.637 seconds (55.8%); peak allocated HBM is 20.146 GiB on each rank. Thus group
-shrinkage alone neither explains nor solves the bottleneck. The future S1 comparison must use this
-group-64 S0 as its same-capacity baseline, while still reporting group-128 as the faster of the two
-measured sequential characterization points.
+Because S1 needs two bounded resident slots, its direct sequential control uses
+`group_records_per_rank=64`. The first 17-group execution took 54.577 seconds but included
+per-group `gc.collect()` and `torch.cuda.empty_cache()`. It remains a fragmentation diagnostic and
+must not be used as the direct runtime baseline. The fair S0 removes only that avoidable
+between-group maintenance and records 48.238327569 seconds with the same records, actions, group
+cuts, source/target endpoints, and timer. Peak allocated HBM remains 20.146 GiB on each rank.
+
+`evokv_design3_m1_qk_pageable_s1_development_v0` is the strong action-oblivious baseline. It uses
+two nonalias bounded slots, one group of lookahead, independent prefetch/drain CUDA streams, one
+drain credit, and unchanged main-thread collective order. It completes the same 17 groups in
+32.703160657 seconds, 1.4750x faster than fair S0. Rank 0/1 expose 6.7947/6.1954 seconds of
+input-boundary wait, which is the measured residual that admits finer-grained exploration.
+
+`evokv_design3_m1_qk_segmented_input_d3_development_v0` changes only the input stage. Within a
+capacity group it alternates the two pinned input components so CPU packing for microbatch
+\(j+1\) overlaps H2D for \(j\). It lowers input-boundary wait to 0.2753/0.2432 seconds and
+completes in 31.096282832 seconds, but output-credit wait rises to 4.8651/3.7060 seconds. This
+input-only artifact is retained as causal evidence that the bottleneck moved; it is not the
+selected mechanism.
+
+`evokv_design3_m1_qk_segmented_io_d3_development_v1` is the current candidate. It retains the
+input pipeline and also alternates the existing two pinned output components so D2H for
+microbatch \(j+1\) overlaps publication of \(j\) into ordinary DRAM. It adds no HBM group,
+pinned slot, collective issuer, or output credit. At group-64/microbatch-8 it completes in
+28.884778045 seconds, 1.1329x faster than S1 and 1.6700x faster than fair S0. Output-credit wait
+falls to 1.7348/0.7378 seconds; peak allocated HBM is 29.27/29.09 GiB and peak reserved HBM is
+39.42 GiB on both ranks. A microbatch-16 development check is slower at 29.336641804 seconds and
+raises reserved HBM to 41.54 GiB, so it is not the selected point.
+
+The S1 and segmented-I/O D3 full target files were compared independently for both ranks:
+each 77,309,939,712-byte target is byte-identical. Canary parity, real-CUDA three-segment slot-reuse
+tests, full coverage, and exactly-once checks also pass. The conservative
+`estimated_hidden_input_seconds` and `estimated_hidden_output_seconds` fields are diagnostics, not
+exact attribution; wall time, boundary/credit wait, CUDA transfer time, bytes, and ledger coverage
+are the primary measurements.
 
 A 128-record/rank compiled group also crossed the signed 32-bit flattened-index boundary in the
 direct-old-K/V Triton kernel: 61,440 retained tokens at layer 23 start at element offset
@@ -92,11 +123,12 @@ direct-old-K/V Triton kernel: 61,440 retained tokens at layer 23 start at elemen
 to 64-bit before pointer arithmetic. A cold-cache execution crossing \(2^{31}\) completed. This is
 an implementation correctness/scale validation only; it creates no independent performance claim.
 
-Every QK M1 artifact in this paragraph remains `scientific_result=false` and
+Every QK M1 artifact in this section remains `scientific_result=false` and
 `formal_design3=false`. The 2,560-user edge, action snapshot, characterizer, materialized store,
-and S0 profile are frozen only as the current development revision. They do not freeze a D3
-protocol or mechanism. The earlier H512 QK canary and H12 M0 profile remain functional
-development diagnostics and cannot be pooled with M1.
+fair S0, S1, and selected development candidate freeze only the current mechanism-discovery
+revision. They do not freeze a paper protocol or establish E0 crossover, replication, or
+generality. The earlier H512 QK canary and H12 M0 profile remain functional development
+diagnostics and cannot be pooled with M1.
 
 An isolation-track result compares sequential, double-buffer, and proposed schedulers within one
 recorded `stack_revision` and work/source snapshot. A co-design track may globally regenerate D1
@@ -158,13 +190,16 @@ protocol strings:
 - `evokv_design3_m1_qk_adjacent_action_snapshot_dev_v0`;
 - `evokv_design3_m1_qk_request_characterization_dev_v0`;
 - `evokv_design3_m1_qk_adjacent_compiler_dev_v0`;
-- `evokv_design3_m1_qk_pageable_s0_development_v0`.
+- `evokv_design3_m1_qk_pageable_s0_development_v0`;
+- `evokv_design3_m1_qk_pageable_s1_development_v0`;
+- `evokv_design3_m1_qk_segmented_input_d3_development_v0`;
+- `evokv_design3_m1_qk_segmented_io_d3_development_v1`.
 
-The last protocol contains `dry-run`, `materialize`, and `s0` modes plus different group settings.
+The S0 protocol contains `dry-run`, `materialize`, and `s0` modes plus different group settings.
 Those fields are part of the identity and boundary; sharing a protocol string does not permit
-pooling their times. In particular, group-128 S0 is the sequential throughput characterization,
-while group-64 S0 is the capacity-paired control for group-64 S1. No S1 timing exists merely
-because its dry-run schedule exists.
+pooling their times. The no-flush group-64 S0 is the direct current-runtime control for group-64
+S1 and D3. Group-128 and the earlier group-64-with-flush executions remain sequential
+characterizations under their recorded harness behavior.
 
 ### `validity_v1_incremental_prefix_cache`
 
@@ -1912,7 +1947,17 @@ D3 mechanism-development diagnostics, also ineligible for paper tables:
 - `results/system/evokv_design3_m1/qk_entity_h1536_s0_full_seed0.json` — full 2,048-record,
   nine-group, 288-GiB sequential S0 profile.
 - `results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_seed0.json` — same-revision,
-  17-group sequential control paired to the S1 capacity setting.
+  17-group sequential fragmentation diagnostic with per-group cleanup;
+- `results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_noflush_seed0.json` — fair
+  17-group sequential control for the current runtime;
+- `results/system/evokv_design3_m1/qk_entity_h1536_s1_group64_seed0.json` — strong bounded
+  whole-group pipeline;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_group64_seed0.json` — input-only segmented
+  causal probe;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_seed0.json` — current
+  bidirectionally segmented I/O candidate;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_mb16_seed0.json` —
+  non-selected microbatch-16 sensitivity.
 
 Motivation:
 

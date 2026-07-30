@@ -51,6 +51,7 @@ from hstu_kvcache.models import HSTUConfig
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = "evokv_design3_m1_qk_pageable_s0_development_v0"
 S1_PROTOCOL = "evokv_design3_m1_qk_pageable_s1_development_v0"
+D3_PROTOCOL = "evokv_design3_m1_qk_segmented_io_d3_development_v1"
 DEFAULT_PREPARED_DATA = (
     "data/processed/evokv_d3_m1_qk_entity_2560.npz"
 )
@@ -229,10 +230,23 @@ class M1S1StagedGroup:
     staging_started_at: float
     staging_finished_at: float
     slot_index: int
+    input_pipeline: str = "serial_microbatch"
+    input_segments: int = 0
+    input_slot_reuse_wait_seconds: float = 0.0
+    input_final_tail_wait_seconds: float = 0.0
 
     @property
     def staging_wall_seconds(self) -> float:
         return self.staging_finished_at - self.staging_started_at
+
+    @property
+    def estimated_hidden_input_seconds(self) -> float:
+        return max(
+            self.pageable_to_pinned_seconds
+            + self.h2d_seconds
+            - self.staging_wall_seconds,
+            0.0,
+        )
 
 
 @dataclass(frozen=True)
@@ -248,6 +262,18 @@ class M1S1ComputedGroup:
     execution_finished_at: float
     ready_event: torch.cuda.Event
     slot_index: int
+
+
+@dataclass(frozen=True)
+class M1D3OutputTransfer:
+    actions: tuple[M1Action, ...]
+    segments: tuple[
+        tuple[torch.Tensor, torch.Tensor],
+        ...,
+    ]
+    started: torch.cuda.Event
+    finished: torch.cuda.Event
+    bytes_moved: int
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -271,7 +297,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=("dry-run", "materialize", "s0", "s1"),
+        choices=("dry-run", "materialize", "s0", "s1", "d3"),
         default="dry-run",
     )
     parser.add_argument(
@@ -2106,6 +2132,227 @@ def _stage_s1_group_input(
         staging_started_at=staging_started_at,
         staging_finished_at=time.perf_counter(),
         slot_index=slot_index,
+        input_segments=micro_steps,
+    )
+
+
+def _stage_d3_group_input(
+    group: M1Group,
+    rank: int,
+    actions_by_id: Mapping[int, M1Action],
+    histories: M1Histories,
+    old_store: PageableDramExtentStore,
+    slots: Sequence[M1PinnedSlot],
+    slot_index: int,
+    device: torch.device,
+    stream: torch.cuda.Stream,
+    micro_batch_records: int,
+) -> M1S1StagedGroup:
+    _validate_s1_slots(slots)
+    staging_started_at = time.perf_counter()
+    group_actions = _actions_for_ids(
+        group.record_ids_by_rank[rank],
+        actions_by_id,
+    )
+    microbatches_by_rank = tuple(
+        _chunks(
+            _actions_for_ids(
+                group.record_ids_by_rank[value],
+                actions_by_id,
+            ),
+            micro_batch_records,
+        )
+        for value in range(len(group.record_ids_by_rank))
+    )
+    micro_steps = max(
+        (len(value) for value in microbatches_by_rank),
+        default=0,
+    )
+    local_microbatches = microbatches_by_rank[rank]
+    pageable_seconds = 0.0
+    h2d_bytes = 0
+    oldkv_read_bytes = 0
+    source_group = None
+    source_offset = 0
+    source_k = None
+    source_v = None
+    device_histories = []
+    h2d_events: list[
+        tuple[torch.cuda.Event, torch.cuda.Event]
+    ] = []
+    component_ready: list[torch.cuda.Event | None] = [
+        None,
+        None,
+    ]
+    slot_reuse_wait_seconds = 0.0
+    final_tail_wait_seconds = 0.0
+    with torch.cuda.device(device):
+        if group.route == "compiled" and group_actions:
+            retained_tokens = sum(
+                value.retained_tokens for value in group_actions
+            )
+            with torch.cuda.stream(stream):
+                source_k = torch.empty(
+                    (
+                        old_store.num_layers,
+                        retained_tokens,
+                        old_store.width,
+                    ),
+                    dtype=torch.float16,
+                    device=device,
+                )
+                source_v = torch.empty_like(source_k)
+        for step in range(micro_steps):
+            component = step % 2
+            ready = component_ready[component]
+            if ready is not None:
+                wait_started = time.perf_counter()
+                ready.synchronize()
+                slot_reuse_wait_seconds += (
+                    time.perf_counter() - wait_started
+                )
+            slot = slots[component]
+            actions = (
+                local_microbatches[step]
+                if step < len(local_microbatches)
+                else ()
+            )
+            if group.route == "compiled" and actions:
+                stage_started = time.perf_counter()
+                source, read_bytes = _source_batch_from_store(
+                    slot,
+                    old_store,
+                    actions,
+                    "theta0",
+                )
+                pageable_seconds += (
+                    time.perf_counter() - stage_started
+                )
+                if (
+                    source is None
+                    or source_k is None
+                    or source_v is None
+                ):
+                    raise RuntimeError(
+                        "M1 D3 compiled source is missing"
+                    )
+                stop = source_offset + source.token_count
+                source_start = torch.cuda.Event(
+                    enable_timing=True
+                )
+                source_end = torch.cuda.Event(
+                    enable_timing=True
+                )
+                with torch.cuda.stream(stream):
+                    source_start.record()
+                    source_k[:, source_offset:stop].copy_(
+                        source.k,
+                        non_blocking=True,
+                    )
+                    source_v[:, source_offset:stop].copy_(
+                        source.v,
+                        non_blocking=True,
+                    )
+                    source_end.record()
+                h2d_events.append(
+                    (source_start, source_end)
+                )
+                h2d_bytes += _tensor_pair_nbytes(
+                    source.k,
+                    source.v,
+                )
+                oldkv_read_bytes += read_bytes
+                source_offset = stop
+            starts = (
+                tuple(value.delta_start for value in actions)
+                if group.route == "compiled"
+                else (0,) * len(actions)
+            )
+            stage_started = time.perf_counter()
+            history = _history_batch_into_slot(
+                slot,
+                actions,
+                histories.target,
+                starts,
+                tuple(value.final_tokens for value in actions),
+                "theta1",
+            )
+            pageable_seconds += (
+                time.perf_counter() - stage_started
+            )
+            h2d_bytes += history.nbytes
+            history_start = torch.cuda.Event(
+                enable_timing=True
+            )
+            history_end = torch.cuda.Event(enable_timing=True)
+            with torch.cuda.stream(stream):
+                history_start.record()
+                device_history = history.to(
+                    device,
+                    non_blocking=True,
+                )
+                history_end.record()
+            h2d_events.append(
+                (history_start, history_end)
+            )
+            component_ready[component] = history_end
+            device_histories.append(device_history)
+            del history
+        tail_started = time.perf_counter()
+        for ready in component_ready:
+            if ready is not None:
+                ready.synchronize()
+        final_tail_wait_seconds = (
+            time.perf_counter() - tail_started
+        )
+        h2d_seconds = sum(
+            started.elapsed_time(finished) / 1000.0
+            for started, finished in h2d_events
+        )
+        if group.route == "compiled" and group_actions:
+            retained_tokens = sum(
+                value.retained_tokens for value in group_actions
+            )
+            if (
+                source_k is None
+                or source_v is None
+                or source_offset != retained_tokens
+            ):
+                raise RuntimeError(
+                    "M1 D3 compiled source extent differs"
+                )
+            with torch.cuda.stream(stream):
+                source_group = _device_jagged(
+                    group_actions,
+                    source_k,
+                    source_v,
+                    "retained_tokens",
+                    "theta0",
+                    "theta0",
+                )
+            stream.synchronize()
+    return M1S1StagedGroup(
+        group=group,
+        actions=group_actions,
+        local_microbatches=local_microbatches,
+        micro_steps=micro_steps,
+        source=source_group,
+        device_histories=tuple(device_histories),
+        oldkv_read_bytes=oldkv_read_bytes,
+        h2d_bytes=h2d_bytes,
+        pageable_to_pinned_seconds=pageable_seconds,
+        h2d_seconds=h2d_seconds,
+        staging_started_at=staging_started_at,
+        staging_finished_at=time.perf_counter(),
+        slot_index=slot_index,
+        input_pipeline="segmented_microbatch_pingpong",
+        input_segments=micro_steps,
+        input_slot_reuse_wait_seconds=(
+            slot_reuse_wait_seconds
+        ),
+        input_final_tail_wait_seconds=(
+            final_tail_wait_seconds
+        ),
     )
 
 
@@ -2365,6 +2612,17 @@ def _compute_s1_staged_group(
         ),
         "h2d_seconds": staged.h2d_seconds,
         "input_staging_wall_seconds": staged.staging_wall_seconds,
+        "input_pipeline": staged.input_pipeline,
+        "input_segments": staged.input_segments,
+        "input_slot_reuse_wait_seconds": (
+            staged.input_slot_reuse_wait_seconds
+        ),
+        "input_final_tail_wait_seconds": (
+            staged.input_final_tail_wait_seconds
+        ),
+        "estimated_hidden_input_seconds": (
+            staged.estimated_hidden_input_seconds
+        ),
         "d2d_transform_seconds": group_d2d_seconds,
         "d2d_assemble_seconds": group_assemble_seconds,
         "lookup_exchange_seconds": group_lookup_seconds,
@@ -2564,6 +2822,279 @@ def _drain_s1_computed_group(
     }
 
 
+def _enqueue_d3_output_transfer(
+    computed: M1S1ComputedGroup,
+    actions: tuple[M1Action, ...],
+    slot: M1PinnedSlot,
+    stream: torch.cuda.Stream,
+    retained_offset: int,
+    suffix_offset: int,
+    exact_offset: int,
+) -> tuple[M1D3OutputTransfer, int, int, int]:
+    group = computed.group
+    target_retained = computed.target_retained
+    target_suffix = computed.target_suffix
+    target_exact = computed.target_exact
+    started = torch.cuda.Event(enable_timing=True)
+    finished = torch.cuda.Event(enable_timing=True)
+    segments: list[tuple[torch.Tensor, torch.Tensor]] = []
+    with torch.cuda.stream(stream):
+        started.record()
+        token_offset = 0
+        if group.route == "compiled":
+            retained_stop = retained_offset + sum(
+                value.retained_tokens for value in actions
+            )
+            suffix_stop = suffix_offset + sum(
+                value.suffix_tokens for value in actions
+            )
+            if (
+                target_retained is None
+                or target_suffix is None
+            ):
+                raise RuntimeError(
+                    "M1 D3 compiled drain output is absent"
+                )
+            retained_k, retained_v, token_offset = (
+                _copy_values_to_output(
+                    slot,
+                    target_retained.k[
+                        :,
+                        retained_offset:retained_stop,
+                    ],
+                    target_retained.v[
+                        :,
+                        retained_offset:retained_stop,
+                    ],
+                    token_offset,
+                )
+            )
+            suffix_k, suffix_v, token_offset = (
+                _copy_values_to_output(
+                    slot,
+                    target_suffix.k[
+                        :,
+                        suffix_offset:suffix_stop,
+                    ],
+                    target_suffix.v[
+                        :,
+                        suffix_offset:suffix_stop,
+                    ],
+                    token_offset,
+                )
+            )
+            segments = [
+                (retained_k, retained_v),
+                (suffix_k, suffix_v),
+            ]
+            retained_offset = retained_stop
+            suffix_offset = suffix_stop
+        else:
+            exact_stop = exact_offset + sum(
+                value.final_tokens for value in actions
+            )
+            if target_exact is None:
+                raise RuntimeError(
+                    "M1 D3 exact drain output is absent"
+                )
+            k, v, token_offset = _copy_values_to_output(
+                slot,
+                target_exact.k[
+                    :,
+                    exact_offset:exact_stop,
+                ],
+                target_exact.v[
+                    :,
+                    exact_offset:exact_stop,
+                ],
+                token_offset,
+            )
+            segments = [(k, v)]
+            exact_offset = exact_stop
+        finished.record()
+    values = tuple(segments)
+    return (
+        M1D3OutputTransfer(
+            actions=actions,
+            segments=values,
+            started=started,
+            finished=finished,
+            bytes_moved=sum(
+                _tensor_pair_nbytes(k, v)
+                for k, v in values
+            ),
+        ),
+        retained_offset,
+        suffix_offset,
+        exact_offset,
+    )
+
+
+def _publish_d3_output_transfer(
+    transfer: M1D3OutputTransfer,
+    target_store: PageableDramExtentStore,
+    route: str,
+) -> tuple[float, float, int]:
+    wait_started = time.perf_counter()
+    transfer.finished.synchronize()
+    ready_wait_seconds = time.perf_counter() - wait_started
+    if not _finite_sample(transfer.segments):
+        raise RuntimeError("M1 D3 output K/V is nonfinite")
+    publish_started = time.perf_counter()
+    published_bytes = publish_output_segments(
+        target_store,
+        transfer.actions,
+        route,
+        transfer.segments,
+    )
+    publish_seconds = time.perf_counter() - publish_started
+    return ready_wait_seconds, publish_seconds, published_bytes
+
+
+def _drain_d3_computed_group(
+    computed: M1S1ComputedGroup,
+    target_store: PageableDramExtentStore,
+    slots: Sequence[M1PinnedSlot],
+    device: torch.device,
+    stream: torch.cuda.Stream,
+    micro_batch_records: int,
+) -> dict[str, object]:
+    _validate_s1_slots(slots)
+    drain_started_at = time.perf_counter()
+    group = computed.group
+    group_actions = computed.actions
+    group_d2h_bytes = 0
+    group_published_bytes = 0
+    group_d2h_seconds = 0.0
+    group_publish_seconds = 0.0
+    d2h_ready_wait_seconds = 0.0
+    observed = []
+    retained_offset = 0
+    suffix_offset = 0
+    exact_offset = 0
+    output_segments = 0
+    pending = None
+    with torch.cuda.device(device):
+        with torch.cuda.stream(stream):
+            stream.wait_event(computed.ready_event)
+        for index, actions in enumerate(
+            _chunks(group_actions, micro_batch_records)
+        ):
+            transfer, retained_offset, suffix_offset, exact_offset = (
+                _enqueue_d3_output_transfer(
+                    computed,
+                    actions,
+                    slots[index % 2],
+                    stream,
+                    retained_offset,
+                    suffix_offset,
+                    exact_offset,
+                )
+            )
+            output_segments += 1
+            if pending is not None:
+                (
+                    ready_wait,
+                    publish_seconds,
+                    published_bytes,
+                ) = _publish_d3_output_transfer(
+                    pending,
+                    target_store,
+                    group.route,
+                )
+                d2h_ready_wait_seconds += ready_wait
+                group_publish_seconds += publish_seconds
+                group_published_bytes += published_bytes
+                group_d2h_seconds += (
+                    pending.started.elapsed_time(
+                        pending.finished
+                    )
+                    / 1000.0
+                )
+                group_d2h_bytes += pending.bytes_moved
+                observed.extend(
+                    value.record_id
+                    for value in pending.actions
+                )
+            pending = transfer
+        if pending is not None:
+            (
+                ready_wait,
+                publish_seconds,
+                published_bytes,
+            ) = _publish_d3_output_transfer(
+                pending,
+                target_store,
+                group.route,
+            )
+            d2h_ready_wait_seconds += ready_wait
+            group_publish_seconds += publish_seconds
+            group_published_bytes += published_bytes
+            group_d2h_seconds += (
+                pending.started.elapsed_time(
+                    pending.finished
+                )
+                / 1000.0
+            )
+            group_d2h_bytes += pending.bytes_moved
+            observed.extend(
+                value.record_id for value in pending.actions
+            )
+    if group.route == "compiled" and group_actions:
+        if (
+            computed.target_retained is None
+            or computed.target_suffix is None
+            or retained_offset
+            != computed.target_retained.token_count
+            or suffix_offset
+            != computed.target_suffix.token_count
+        ):
+            raise RuntimeError(
+                "M1 D3 compiled drain extent differs"
+            )
+    if group.route == "exact" and group_actions:
+        if (
+            computed.target_exact is None
+            or exact_offset != computed.target_exact.token_count
+        ):
+            raise RuntimeError("M1 D3 exact drain extent differs")
+    drain_finished_at = time.perf_counter()
+    drain_wall_seconds = (
+        drain_finished_at - drain_started_at
+    )
+    report = dict(computed.report)
+    report.update(
+        {
+            "d2h_bytes": group_d2h_bytes,
+            "published_bytes": group_published_bytes,
+            "d2h_seconds": group_d2h_seconds,
+            "publish_seconds": group_publish_seconds,
+            "drain_wall_seconds": drain_wall_seconds,
+            "output_pipeline": (
+                "segmented_microbatch_pingpong"
+            ),
+            "output_segments": output_segments,
+            "output_d2h_ready_wait_seconds": (
+                d2h_ready_wait_seconds
+            ),
+            "estimated_hidden_output_seconds": max(
+                group_d2h_seconds
+                + group_publish_seconds
+                - drain_wall_seconds,
+                0.0,
+            ),
+        }
+    )
+    return {
+        "group_report": report,
+        "observed_record_ids": tuple(observed),
+        "d2h_bytes": group_d2h_bytes,
+        "published_bytes": group_published_bytes,
+        "drain_started_at": drain_started_at,
+        "drain_finished_at": drain_finished_at,
+    }
+
+
 def _s1_input_edge(
     producer_group_ordinal: int,
     producer_execution_started_at: float,
@@ -2657,6 +3188,7 @@ def run_s1(
     slots: Sequence[M1PinnedSlot],
     device: torch.device,
     micro_batch_records: int,
+    segmented_input: bool = False,
 ) -> dict[str, object]:
     if not groups:
         raise ValueError("M1 S1 requires at least one group")
@@ -2686,29 +3218,67 @@ def run_s1(
     overlapped_input_seconds = 0.0
     overlapped_drain_seconds = 0.0
     eligible_drain_seconds = 0.0
+    input_segments = 0
+    input_slot_reuse_wait_seconds = 0.0
+    input_final_tail_wait_seconds = 0.0
+    estimated_hidden_input_seconds = 0.0
+    output_segments = 0
+    output_d2h_ready_wait_seconds = 0.0
+    estimated_hidden_output_seconds = 0.0
     torch.cuda.reset_peak_memory_stats(device)
     baseline_allocated = torch.cuda.memory_allocated(device)
     wall_started = time.perf_counter()
     prefetch_stream = torch.cuda.Stream(device=device)
     drain_stream = torch.cuda.Stream(device=device)
-    current = _stage_s1_group_input(
-        groups[0],
-        rank,
-        actions_by_id,
-        histories,
-        old_store,
-        slots[0],
-        0,
-        device,
-        prefetch_stream,
-        micro_batch_records,
-    )
+
+    def stage_group_input(
+        group: M1Group,
+        group_index: int,
+    ) -> M1S1StagedGroup:
+        slot_index = group_index % 2
+        if segmented_input:
+            return _stage_d3_group_input(
+                group,
+                rank,
+                actions_by_id,
+                histories,
+                old_store,
+                slots,
+                slot_index,
+                device,
+                prefetch_stream,
+                micro_batch_records,
+            )
+        return _stage_s1_group_input(
+            group,
+            rank,
+            actions_by_id,
+            histories,
+            old_store,
+            slots[slot_index],
+            slot_index,
+            device,
+            prefetch_stream,
+            micro_batch_records,
+        )
+
+    current = stage_group_input(groups[0], 0)
     initial_fill_seconds = current.staging_wall_seconds
     phases["pageable_to_pinned_seconds"] += (
         current.pageable_to_pinned_seconds
     )
     phases["h2d_seconds"] += current.h2d_seconds
     h2d_bytes += current.h2d_bytes
+    input_segments += current.input_segments
+    input_slot_reuse_wait_seconds += (
+        current.input_slot_reuse_wait_seconds
+    )
+    input_final_tail_wait_seconds += (
+        current.input_final_tail_wait_seconds
+    )
+    estimated_hidden_input_seconds += (
+        current.estimated_hidden_input_seconds
+    )
     input_arrivals[current.group.ordinal] = {
         "input_fill_class": "initial_unoverlapped_fill",
         "input_overlap_seconds": 0.0,
@@ -2724,6 +3294,9 @@ def run_s1(
         drained: Mapping[str, object],
     ) -> None:
         nonlocal d2h_bytes, published_bytes
+        nonlocal output_segments
+        nonlocal output_d2h_ready_wait_seconds
+        nonlocal estimated_hidden_output_seconds
         report_value = drained["group_report"]
         if not isinstance(report_value, Mapping):
             raise RuntimeError("M1 S1 group report differs")
@@ -2740,6 +3313,21 @@ def run_s1(
         )
         d2h_bytes += int(drained["d2h_bytes"])
         published_bytes += int(drained["published_bytes"])
+        output_segments += int(
+            report.get("output_segments", 0)
+        )
+        output_d2h_ready_wait_seconds += float(
+            report.get(
+                "output_d2h_ready_wait_seconds",
+                0.0,
+            )
+        )
+        estimated_hidden_output_seconds += float(
+            report.get(
+                "estimated_hidden_output_seconds",
+                0.0,
+            )
+        )
         observed.extend(drained["observed_record_ids"])
 
     with (
@@ -2759,17 +3347,9 @@ def run_s1(
             if index + 1 < len(groups):
                 next_index = index + 1
                 prefetch_future = prefetch_executor.submit(
-                    _stage_s1_group_input,
+                    stage_group_input,
                     groups[next_index],
-                    rank,
-                    actions_by_id,
-                    histories,
-                    old_store,
-                    slots[next_index % 2],
-                    next_index % 2,
-                    device,
-                    prefetch_stream,
-                    micro_batch_records,
+                    next_index,
                 )
             computed_value = _compute_s1_staged_group(
                 current,
@@ -2812,15 +3392,26 @@ def run_s1(
                     drain_edge["drain_wall_seconds"]
                 )
                 consume_drain(drained)
-            drain_future = drain_executor.submit(
-                _drain_s1_computed_group,
-                computed,
-                target_store,
-                slots[computed.slot_index],
-                device,
-                drain_stream,
-                micro_batch_records,
-            )
+            if segmented_input:
+                drain_future = drain_executor.submit(
+                    _drain_d3_computed_group,
+                    computed,
+                    target_store,
+                    slots,
+                    device,
+                    drain_stream,
+                    micro_batch_records,
+                )
+            else:
+                drain_future = drain_executor.submit(
+                    _drain_s1_computed_group,
+                    computed,
+                    target_store,
+                    slots[computed.slot_index],
+                    device,
+                    drain_stream,
+                    micro_batch_records,
+                )
             producer_group_ordinal = computed.group.ordinal
             producer_execution_started_at = (
                 computed.execution_started_at
@@ -2854,6 +3445,16 @@ def run_s1(
             )
             phases["h2d_seconds"] += next_group.h2d_seconds
             h2d_bytes += next_group.h2d_bytes
+            input_segments += next_group.input_segments
+            input_slot_reuse_wait_seconds += (
+                next_group.input_slot_reuse_wait_seconds
+            )
+            input_final_tail_wait_seconds += (
+                next_group.input_final_tail_wait_seconds
+            )
+            estimated_hidden_input_seconds += (
+                next_group.estimated_hidden_input_seconds
+            )
             input_arrivals[next_group.group.ordinal] = {
                 "input_fill_class": "prefetched",
                 "input_overlap_seconds": edge[
@@ -2917,6 +3518,33 @@ def run_s1(
         "drain_pipeline_edges": drain_edges,
         "overlap_metrics": {
             "buffer_depth": 2,
+            "input_pipeline": (
+                "segmented_microbatch_pingpong"
+                if segmented_input
+                else "serial_microbatch"
+            ),
+            "input_segments": input_segments,
+            "input_slot_reuse_wait_seconds": (
+                input_slot_reuse_wait_seconds
+            ),
+            "input_final_tail_wait_seconds": (
+                input_final_tail_wait_seconds
+            ),
+            "estimated_hidden_input_seconds": (
+                estimated_hidden_input_seconds
+            ),
+            "output_pipeline": (
+                "segmented_microbatch_pingpong"
+                if segmented_input
+                else "serial_microbatch"
+            ),
+            "output_segments": output_segments,
+            "output_d2h_ready_wait_seconds": (
+                output_d2h_ready_wait_seconds
+            ),
+            "estimated_hidden_output_seconds": (
+                estimated_hidden_output_seconds
+            ),
             "initial_fill_seconds": initial_fill_seconds,
             "prefetched_input_staging_seconds": (
                 prefetched_input_seconds
@@ -2964,14 +3592,22 @@ def run_s1(
             "overlapped": (
                 "prefetch group i+1, execute group i, and "
                 "D2H plus CPU publication for group i-1 run "
-                "concurrently on disjoint slot components"
+                "concurrently on disjoint slot components; "
+                + (
+                    "inside each group, pageable fill for input "
+                    "segment j+1 overlaps H2D j, and output D2H "
+                    "j+1 overlaps CPU publication j"
+                    if segmented_input
+                    else "input microbatches remain serial"
+                )
             ),
             "collective_order": (
                 "only the main thread issues D2 collectives in "
                 "unchanged group, microbatch, counts, ids, vectors order"
             ),
             "collective_timing": (
-                "S1 uses current-compute-stream CUDA events so "
+                "pipelined modes use current-compute-stream CUDA "
+                "events so "
                 "collective accounting does not fence copy streams"
             ),
             "non_overlappable": (
@@ -3320,7 +3956,7 @@ def run_distributed(
                     max_final_tokens,
                 ),
             )
-            if args.mode == "s1"
+            if args.mode in {"s1", "d3"}
             else (slot,)
         )
         old_path, target_path = _store_paths(args, runtime.rank)
@@ -3459,8 +4095,9 @@ def run_distributed(
                     execution_slots,
                     runtime.device,
                     args.micro_batch_records,
+                    segmented_input=args.mode == "d3",
                 )
-                if args.mode == "s1"
+                if args.mode in {"s1", "d3"}
                 else run_s0(
                     groups,
                     runtime.rank,
@@ -3536,7 +4173,9 @@ def run_distributed(
         )
         report = {
             "protocol": (
-                S1_PROTOCOL if args.mode == "s1" else PROTOCOL
+                D3_PROTOCOL
+                if args.mode == "d3"
+                else S1_PROTOCOL if args.mode == "s1" else PROTOCOL
             ),
             "status": "complete" if complete else "failed",
             "scientific_result": False,
@@ -3547,7 +4186,9 @@ def run_distributed(
                 "two_gpu_qk_pageable_dram_group_at_a_time_s0_foundation"
                 if args.mode == "s0"
                 else (
-                    "two_gpu_qk_strong_group_double_buffer_s1_baseline"
+                    "two_gpu_qk_segmented_io_pingpong_d3_proposed"
+                    if args.mode == "d3"
+                    else "two_gpu_qk_strong_group_double_buffer_s1_baseline"
                     if args.mode == "s1"
                     else "two_gpu_qk_complete_oldkv_materialization_foundation"
                 )
@@ -3562,12 +4203,27 @@ def run_distributed(
                 "physical_visible_devices": list(visible_tokens),
                 "owner_policy": "stable_record_modulo",
                 "group_order": "sequential_route_pure",
-                "buffer_depth": 2 if args.mode == "s1" else 1,
+                "buffer_depth": (
+                    2 if args.mode in {"s1", "d3"} else 1
+                ),
+                "input_pipeline": (
+                    "segmented_microbatch_pingpong"
+                    if args.mode == "d3"
+                    else "serial_microbatch"
+                ),
+                "output_pipeline": (
+                    "segmented_microbatch_pingpong"
+                    if args.mode == "d3"
+                    else "serial_microbatch"
+                ),
+                "output_drain_credit": (
+                    1 if args.mode in {"s1", "d3"} else 0
+                ),
                 "bounded_pinned_staging": True,
                 "source_store": "complete_theta0_oldkv_fp16",
                 "timed_source_read": (
                     "compiled_retained_extent_only"
-                    if args.mode in {"s0", "s1"}
+                    if args.mode in {"s0", "s1", "d3"}
                     else None
                 ),
                 "target_store": "complete_private_theta1_kv_fp16",
@@ -3611,7 +4267,7 @@ def run_distributed(
                     value[args.mode]["wall_seconds"]
                     for value in rank_reports
                 )
-                if args.mode in {"s0", "s1"}
+                if args.mode in {"s0", "s1", "d3"}
                 else max(
                     value["source_materialization"]["wall_seconds"]
                     for value in rank_reports
@@ -3623,7 +4279,7 @@ def run_distributed(
                 if args.scope == "canary"
                 else (
                     "compare S1 against the same-revision S0 boundary"
-                    if args.mode == "s1"
+                    if args.mode in {"s1", "d3"}
                     else "test a same-revision double buffer only after "
                     "confirming the movement bottleneck"
                 )

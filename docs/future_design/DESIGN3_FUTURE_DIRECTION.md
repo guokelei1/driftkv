@@ -1,8 +1,8 @@
-# EvoKV Design 3 方向：Action-Aware Out-of-Core Pipeline
+# EvoKV Design 3 方向：Hierarchical Out-of-Core Pipeline
 
 日期：2026-07-30
 
-状态：**核心问题与两卡主方向已确定，内部接口和机制保持可调整；协议和结果尚不存在**。
+状态：**核心问题与首个两卡机制已确定；开发结果已存在，正式协议和论文结果尚不存在**。
 本文档描述当前最可能的 D3 形态，不是阻塞机制发现的接口合同，也不能作为 paper claim 的
 证据。D1/D2 的已有证据仍按各自冻结协议解释，但新的 D3 development 可以从轻量 adapter
 开始，并允许根据 DRAM/HBM 实测形成新的跨层 `stack_revision`。
@@ -85,13 +85,18 @@ commit。两卡 M0 的最小终点可以先使用 private target + coverage/chec
 ### 2.1 D1 `ActionPlan`
 
 D1 在一个 `stack_revision` 内记录 source/target version、policy、provenance、counts 和
-content hash。当前
-H12 v1 在 record level 固定：
+content hash。H12 保留为 semantic canary；当前物理 M1 在 QK 上固定 2,048 records，其中
+410 exact、1,638 compiled。每条 record 固定：
 
 - record id、`compiled|exact` action 与 reason；
 - old/retained/delta/latest/target-prefix/final extents；
 - previous-cache presence、last-exact version 和 migration depth；
 - history 与 extent-identity hashes。
+
+该 M1 使用 24L/H1536、16.364-GiB global FP32 embedding 和一个短
+`theta0→theta1` edge。完整 committed old K/V 为 144 GiB，complete private target 也为
+144 GiB；两 rank 各持有 1,024 records 和 72 GiB old/target payload。17 个 route-pure
+capacity groups 是当前 S0/S1/D3 共同的固定物理边界。
 
 Compiled program 是由 D2 adapter 绑定的独立 D1 artifact，不是 action-record field。若未来引入
 `progressive` action，必须先版本化 schema 并显式声明 auxiliary state；D3 不能自行推断。
@@ -135,6 +140,7 @@ D3 只决定：
 - legal bin/pool slices；
 - per-rank capacity admission；
 - micro-wave packing；
+- capacity group 内的 microbatch segmentation；
 - prefetch/execute/writeback launch order；
 - pinned-buffer credits、backpressure 和 NUMA/PCIe staging placement。
 
@@ -162,14 +168,40 @@ dtype/layout/durability、GPU topology、per-rank HBM budget、timer 和 manifes
 
 ## 4. 候选机制
 
-### 4.1 Global compatibility, bounded slices
+### 4.1 Capacity groups are the outer boundary
 
-先从已导出的 D2 compatibility membership 在全 cohort 建立逻辑 pools，再在 pool 内做
-byte-bounded cuts。若一个 pool 自身超过 HBM，D3 必须切开；它只能最小化 fragmentation，
-不能声称保留一个物理 global launch。W3 的固定 `extent_size` resident schedule 不是这里的
-输入。
+先从 D2 compatibility membership 建立 route-pure logical pools，再做 capacity-safe cuts。
+若一个 pool 超过 HBM，D3 必须切开；它不能声称保留一个物理 global launch。当前 M1 使用
+17 个 group-64 cuts。顺序执行是 S0，whole-group lookahead-1 是 strong S1；二者共享完全
+相同的 D1/D2 work。
 
-### 4.2 Per-rank concurrent-buffer admission
+### 4.2 Active mechanism: two-level bidirectional pipeline
+
+Strong S1 的外层流水为：
+
+```text
+prefetch group i+1 || execute group i || drain group i-1
+```
+
+它已经把 fair S0 从 48.238 秒降到 32.703 秒，但 whole-group input 仍留下
+6.20--6.79 秒 boundary wait。当前 D3 在每个 capacity group 内再切 microbatches：
+
+```text
+pageable pack j+1 || H2D j
+unchanged D2 compute/collective
+D2H j+1           || ordinary-DRAM publish j
+```
+
+两级流水共同构成 `ResidencyPlan`。输入和输出各交替复用两个已有 pinned components；
+CUDA events 在 CPU 读取或覆盖 pinned storage 前建立生命周期边界。外层仍只有一个
+prefetched group、一个 outstanding drain 和一个 main-thread collective issuer，因此收益
+不是来自第三个 resident group、无界队列或改变 D1/D2 work。
+
+Input-only segmentation 是必要的因果 probe：它把 makespan 降到 31.096 秒，同时将瓶颈转移
+为 3.71--4.87 秒 output-credit wait。双向 segmentation 再将 makespan 降到 28.885 秒，
+相对 S1 为 1.133x；full outputs 与 S1 逐字节一致。
+
+### 4.3 Per-rank concurrent-buffer admission
 
 对 micro-wave `i`，每个 rank 都必须满足：
 
@@ -187,62 +219,42 @@ fixed(model + embedding shard + program + context)
 rho = max_r(work_bytes_r / usable_HBM_r)
 ```
 
-第一轮只需找到最小的真实 `rho > 1` 主点；`rho = 0.5, 1, 2, 4` 留到机制稳定后的扩展。
+当前真实主点已经是 \(\rho>1\)：144-GiB old 与 144-GiB private target 无法驻留两张 A40。
+group-64/microbatch-8 的 peak allocated HBM 为 29.27/29.09 GiB，reserved 为
+39.42 GiB。microbatch-16 更慢且把 reserved 提高到 41.54 GiB，所以不选。
 
-### 4.3 Resource-complementary packing
+### 4.4 Fallback, not the active mechanism
 
-D1 actions 提供不同资源 profile：
-
-- compiled：old-K/V source bytes 大、GPU compute 较轻、retained repair 不访问 embedding；
-- exact：raw IDs 小、dense compute 和 row-sharded embedding collective 重；
-- append：suffix IDs 与 incremental compute；
-- progressive：显式 auxiliary bytes 和部分模型 replay。
-
-D3 的核心假设是：在 shape/owner/collective constraints 内，把 transfer-heavy 和
-compute/collective-heavy slices 组合，可以减少 PCIe、GPU 或 collective 暴露空洞。该假设必须
-通过 independent ablation 证伪或保留。
-
-### 4.4 Ordinary-DRAM pipeline
-
-候选 pipeline 同时覆盖：
-
-```text
-CPU fill pinned input for i+1
-H2D i+1
-GPU execute i
-D2H i-1
-CPU drain pinned output for i-1
-```
-
-需要独立 CUDA streams、bounded pinned pools、memory credits、backpressure 和
-NUMA/PCIe-local placement。所有 rank 必须遵守 D2 collective dependencies，包括 empty
-participation。所有 target extents 在全局 coverage、lineage 和 checksum 通过前保持 private。
+只有当 E0 或 sensitivity 否定当前机制时，才恢复 resource-complementary action packing、
+rank-aware byte balance、collective-arrival-aware prefetch 或 D1/D2/D3 co-design。任何改变
+actions、owners、pools 或 layout 的版本都必须获得新 `stack_revision` 并重跑其 S0/S1。
 
 ## 5. Motivation 与实验
 
-### 5.1 D3-independent characterization
+### 5.1 Development characterization
 
-先从 H12/W2 导出最小 `WorkManifest`，在 GPU0/GPU1 上建立 M0，比较：
+H12/W2 M0 已完成最小接口验证，但真实物理结论来自 QK M1。相同 2,048 records、固定
+D1/D2 work、17 groups 和 ordinary-DRAM endpoints 下，当前链路是：
 
-- no-I/O chunk characterization：每个 capacity-safe chunk 在 timer 外 preload，只提供
-  optimistic ceiling，不是 same-endpoint baseline；
-- sequential capacity groups；
-- action-oblivious double buffer。
+```text
+fair sequential S0        48.238 s
+strong whole-group S1     32.703 s
+input-only causal probe   31.096 s
+bidirectional D3          28.885 s
+```
 
-报告 CPU staging、H2D/D2H、GPU compute、collective、bin fragmentation、pipeline bubbles、
-peak per-rank HBM 和 total completion time。旧 normalized-capsule source path 只能作为风险
-警示，不能冒充 direct-old-K/V ordinary-DRAM 证据。
+这条链同时报告 CPU staging、H2D/D2H、GPU compute、collective、pipeline waits、peak HBM
+和 total completion time。旧 normalized-capsule path 仍只能作为风险警示，不能与
+direct-old-K/V M1 pooling。
 
 ### 5.2 D3 baselines
 
-主 baseline：
+当前主 baseline/candidate：
 
-1. same-boundary all-exact；
-2. sequential capacity groups；
-3. action-oblivious double buffer；
-4. global-compatibility-aware cuts；
-5. `+` resource-complementary packing；
-6. `+` topology-aware full pipeline。
+1. fair sequential capacity groups；
+2. strong action-oblivious whole-group pipeline；
+3. bidirectionally segmented D3；
+4. same-boundary all-exact E0（尚未执行）。
 
 Isolation-track variants 共享 source-byte multiset 和 `WorkManifest`。Co-design variants 记录
 不同的 action/owner/source bytes，并在同一新 revision 下重跑 baselines。所有 speedup 只在
@@ -268,15 +280,15 @@ D3 最终进入论文结果时应满足：
 4. 相对 action-oblivious double buffer 的可归因收益；
 5. 至少一个相对 fastest same-boundary all-exact 有意义的 operating point；
 6. report positive region 和 exact-preferred crossover；
-7. no serving、SSD 或 direct-old-K/V DRAM 已验证等越界 claim。
+7. 不把 development timing 写成 formal result，也不扩张到 serving、SSD 或 remote tier。
 
 若只胜过 sequential loop，不胜过 strong double buffer，D3 只是 implementation path。若
 unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 scheduler 没有意义，
 应停止并重新研究 source representation，而不是无限调参。
 
-## 7. D3-ready 入口
+## 7. 当前实现与正式化缺口
 
-当前已经存在、可用于第一步两卡 adapter 的上游事实是：
+当前两卡 adapter、M1 store 和双向流水已经存在。它们依赖的上游事实是：
 
 - immutable H12 `ActionPlan` 及其 hash；
 - deterministic owner/embedding rules；
@@ -294,30 +306,29 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 - 对当前 runtime 的 record-coverage/parity 检查；
 - stable content hash，供所有 D3 variants 共同绑定。
 
-此外，当前不能依赖：
+此外，正式 evaluation 不能依赖：
 
 - W3 timing 是正式 D2 结果；
 - resident D2 schedule 能放入 HBM；
 - segmented target 已被 serving 或下一轮直接消费；
-- direct-old-K/V ordinary-DRAM source 已有性能结果；
+- direct-old-K/V ordinary-DRAM development timing 等同于 formal evidence；
 - Python plan/materialization、CPU copy、pinned staging、commit 或 reclaim 免费；
 - destination-v4 normalized capsule 能代表本 D3 source contract。
 
-这些正式工件不阻塞 M0。第一轮使用最小 `WorkManifest`、private target 和
-coverage/checksum 进入 mechanism discovery。所有新 artifact 记录
+这些正式工件没有阻塞 M0/M1 mechanism discovery。当前 artifact 记录
 `scientific_result=false`、`formal_design3=false`、`stack_revision`、per-rank capacity ledger
-和 timer components。只有 mechanism 变得清楚后，才决定最终 exporter/interface，并在
-`docs/eval_protocol.md` 冻结正式 family。
+和 timer components。当前机制已经清楚到可以进入 E0 与最小资格验证；通过后才决定最终
+exporter/interface，并在 `docs/eval_protocol.md` 冻结正式 family。
 
 ## 8. 实施顺序
 
-1. 固定 GPU0/GPU1，从 H12/W2 导出最小 `WorkManifest`；
-2. 实现 ordinary-DRAM source/target、capacity groups 和 two-rank sequential path；
-3. 加 basic double buffer、event timing 与 bounded buffers；
-4. 同时审计 QK，构造最小真实两卡物理 out-of-core M1；
-5. 在 M1 上建立 S0/S1/E0，并按 profile 探索 isolated D3 与 cross-layer candidates；
-6. 机制明确后再补 normalized exporter、transaction、protocol 和扩展矩阵；
-7. 在 GPU0/GPU1 结论清楚前不跑 3/4 GPU。
+1. 已从 H12/W2 导出最小 `WorkManifest` 并完成 M0；
+2. 已构造 QK M1 ordinary-DRAM source/target 和真实物理 oversubscription；
+3. 已完成 fair S0 与 strong S1；
+4. 已由 profile 构造并验证 bidirectionally segmented D3；
+5. 下一步完成 same-boundary E0 和最小 capacity/action/replication qualification；
+6. 若通过，再补 normalized exporter、transaction、formal protocol 和扩展矩阵；
+7. GPU0/GPU1 的 E0 结论清楚前不跑 3/4 GPU。
 
 ## 9. 更远期反馈层
 

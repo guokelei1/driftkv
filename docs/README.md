@@ -45,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | real QK M1 training, fixed D1/D2 work, 144-GiB old-store materialization, and group-128/group-64 288-GiB S0 controls are complete; S1 and mechanism discovery remain open |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | bounded hierarchical `ResidencyPlan`; final interface open | real QK M1 boundary, fair S0, strong S1, and a bidirectionally segmented I/O candidate are complete in development; E0, formal protocol, and replication remain open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -66,9 +66,9 @@ ResidencyPlan-only ablation.
 - D3 has a non-scientific M0 development family, not a frozen result family. Destination-v4
   correctness, normalized-capsule DRAM results, and hot-HBM D1 results cannot be renamed as D3
   evidence.
-- The QK M1 training, D1/D2 snapshot/characterizer, 144-GiB old-store materialization, and
-  288-GiB S0 are real development executions, but all remain `scientific_result=false` and cannot
-  be used as paper evidence or a D3 speedup.
+- The QK M1 training, D1/D2 snapshot/characterizer, 144-GiB old-store materialization, fair S0,
+  strong S1, and segmented-I/O D3 runs are real development executions. They remain
+  `scientific_result=false` and are mechanism-discovery evidence, not paper results.
 - The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
   current EvoKV manuscript or design source of truth.
 
@@ -96,10 +96,10 @@ The active implementation uses GPU0/GPU1 only:
    frozen M1 development boundary;
 4. retain its 410-exact/1,638-compiled D1 snapshot, D2 characterizer, complete 144-GiB old store,
    nine-group group-128 S0, and S1-paired 17-group group-64 S0;
-5. add same-revision group-64 M1 S1 double buffering and wait/bubble metrics, then add all-exact
-   E0;
-6. use the S0/S1/E0 profile to decide whether the best design is an isolated D3 scheduler or a
-   cross-layer revision.
+5. retain the completed same-revision group-64 strong S1 and its wait/bubble profile;
+6. retain the first isolated D3 candidate: microbatch-level ping-pong on both
+   pageable→pinned→HBM input and HBM→pinned→pageable output;
+7. add same-boundary all-exact E0, then freeze or revise the mechanism before formal evaluation.
 
 A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
 paper-evidence tasks, not prerequisites for the first benchmark. Within one isolation revision,
@@ -129,11 +129,21 @@ DRAM staging/publication bottleneck that S1 should overlap. The first large grou
 Triton int32→int64 pointer-index fix; a cold-cache execution crossing \(2^{31}\) completed. These
 are non-scientific development diagnostics, not speedup or paper claims.
 
-The capacity-paired group-64 S0 processes the same records in 17 groups. It takes 54.577 seconds,
-2.019% longer than group-128; movement/publication is 29.000/52.619 seconds (55.1%) on rank 0 and
-29.368/52.637 seconds (55.8%) on rank 1, with 20.146-GiB peak allocated HBM on both. Smaller
-groups therefore do not solve the bottleneck. This is the direct sequential control for
-group-64 S1; group-128 remains a separate sequential characterization point.
+The first capacity-paired group-64 S0 took 54.577 seconds but included avoidable per-group Python
+GC and CUDA allocator-cache flushing. It remains a fragmentation diagnostic, not the direct
+runtime control. Remeasuring the same 2,048 records and 17 groups without that maintenance gives
+the fair sequential S0: 48.238 seconds, complete coverage, and 20.146-GiB peak allocated HBM.
+
+Strong group-64 S1 overlaps whole-group prefetch, execution, and drain with two bounded slots. It
+finishes in 32.703 seconds, a 1.475x speedup over fair S0, but still exposes 6.20--6.79 seconds of
+input-boundary wait. Segmenting only the input cuts that wait to 0.24--0.28 seconds yet moves the
+bottleneck to output credits and reaches only 31.096 seconds. The current D3 candidate therefore
+segments both directions: within each capacity group, pinned input components overlap CPU packing
+with H2D, while pinned output components overlap D2H with ordinary-DRAM publication. It completes
+in 28.885 seconds, 1.133x faster than strong S1 and 1.670x faster than fair S0. Both 77.3-GB/rank
+targets are byte-identical to S1, and peak allocated/reserved HBM remains about
+29.27/39.42 GiB. These are development results under
+`evokv_design3_m1_qk_segmented_io_d3_development_v1`, not a frozen paper protocol.
 
 ## Removed material
 

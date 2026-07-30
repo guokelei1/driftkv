@@ -24,9 +24,12 @@ globally regenerate actions, owners, pools, or layout before execution, record a
 `stack_revision`, and rerun their baselines.
 
 Current D2 code has a single-rank wave adapter and capacity-specific W3 resident extents. D3 now
-has a minimal two-rank H12/W2 adapter and ordinary-DRAM S0 benchmark, not a general exporter. The
-next task is a same-revision S1 double buffer, followed by a real-capacity QK M1. Normalization,
-stable hashes, and formal transaction closure follow after the mechanism is clear.
+has both the minimal H12/W2 adapter and a real-capacity two-rank QK M1 chain. On the fixed 288-GiB
+old/private-target boundary, fair S0 is 48.238 seconds, strong S1 is 32.703 seconds, and the
+bidirectionally segmented I/O candidate is 28.885 seconds with full byte parity. It is still a
+development mechanism, not a general exporter or formal result. Same-boundary E0 and the smallest
+useful sensitivity/replication set come before normalization, stable hashes, and transaction
+closure.
 
 The H12 workload is the first semantic canary, not physical oversubscription evidence. The preferred
 D3 mechanism-selection route audits a larger real-history QK workload whose owner-local source
