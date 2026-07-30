@@ -45,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | hashed, rate-matched `ResidencyPlan`; final interface open | real QK M1 boundary, fair S0, strong S1, full-group GPU staging, independent route-specific I/C/O granularity, same-source joint profiles, stable route interleaving, exact-stack paired execution, and byte parity are complete in development; E0, held-out qualification, formal repeats, action/capacity mixes, transaction closure, and a formal protocol remain open |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | hashed, rate-matched `ResidencyPlan`; final interface open | real QK M1 boundary, grouped development E0/D1-only contribution diagnostics, fair S0, strong S1, full-group GPU staging, independent route-specific I/C/O granularity, same-source joint profiles, stable route interleaving, exact-stack paired execution, and byte parity are complete in development; independently tuned formal E0, held-out qualification, formal repeats, action/capacity mixes, transaction closure, and a formal protocol remain open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -101,8 +101,8 @@ The active implementation uses GPU0/GPU1 only:
 6. retain the fixed-order segmented-I/O candidate as the causal predecessor;
 7. use the implemented planner to bind route-specific I/C/O granularity, capacity, and a stable
    compiled/exact interleaving into one replayable plan;
-8. add same-boundary all-exact E0 plus held-out action/capacity sensitivity before formal
-   evaluation.
+8. retain the completed grouped E0/D1-only contribution diagnostics, then independently tune and
+   repeat formal E0 plus held-out action/capacity sensitivity before formal evaluation.
 
 A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
 paper-evidence tasks, not prerequisites for the first benchmark. Within one isolation revision,

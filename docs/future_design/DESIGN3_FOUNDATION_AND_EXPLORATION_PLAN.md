@@ -66,6 +66,22 @@ groups。同一 exact stack/hash 下，route-major 为 28.514442098 秒，select
 77,309,939,712-byte target 均与 S1 逐字节一致。Compiled input-16 与 output-4 只是在各自
 开发观察点没有提升，不能解释为一般性拒绝；当前也没有验证非对称 triple 的收益。
 
+同一 QK M1 容量边界现已补齐 contribution diagnostics。16 个 group-64 的 sequential
+all-exact 为 44.639 秒，强双 slot all-exact 为 33.549 秒；17 个 group-64 的
+owner-local naive-staged D1-only 为 57.597 秒，当前 binary 的 sequential D1+D2 为
+49.753 秒。D1-only 与 D2 都请求 262,336 个 embedding tokens，但前者每 rank 发起 852
+次 collective，后者为 387 次。该结果不支持“D1 单独带来系统加速”；它支持的链条是：
+D1 先制造逻辑稀疏性，D2 回收连续重写和 collective fragmentation，D3 再把仍然暴露的
+out-of-core movement 组织成流水。相对 strong all-exact，D1+D2 S1 的收益只有 2.52%，
+selected D3 的开发态收益为 16.10%。
+
+当前 selected D3 已接近 fixed D1/D2 的 compute-bound 区域。关键 rank 的 affine、
+non-lookup compute、lookup 和 assemble 合计约 26.59 秒，剩余 exposed pipeline wait
+约 1.49 秒；仅继续消除 bubble 的上限约 5.5%。下一轮不应优先增加 buffer 或继续穷举
+segment size，而应先测 DMA 与 affine/embedding collective 的 pairwise interference，
+再探索 phase-aware DMA pacing、rank/collective-arrival-aware planning，以及独立的
+compiled compute-batch 轴。
+
 以上 training、D1/D2 snapshot、materialization、S0、S1 和 D3 candidate 全部仍是
 `scientific_result=false`、`formal_design3=false` 的开发工件；它们冻结 benchmark
 边界和当前机制选择，不冻结论文 protocol，也不是论文 performance claim。
@@ -218,7 +234,8 @@ development boundary；它不是多 seed 的算法质量结论。
 
 edge-specific direct-old-K/V program、20.0195%-exact D1 action snapshot 和 D2 request
 characterization 都已完成并绑定相同 checkpoint/data identity。第二个 update、recursive
-migrated source、多 seed 和完整质量复现继续推迟到 E0 与当前候选的最小资格验证以后。
+migrated source、多 seed 和完整质量复现继续推迟到 formal E0、重复与当前候选的最小
+资格验证以后。
 
 ## 2. 最小两卡执行骨架
 
@@ -309,8 +326,8 @@ M0 的第一版结束条件是：
 - peak HBM 不越过配置预算。
 
 第一版不要求完整 atomic epoch switch 和所有 fault injection。private target 不对外发布即可。
-在 D3 候选通过 E0 并最终选定后，再补 global commit/abort/reclaim，避免事务实现挡住机制
-资格验证。
+在 D3 候选通过 formal E0、重复和最小 sensitivity 并最终选定后，再补
+global commit/abort/reclaim，避免事务实现挡住机制资格验证。
 
 ### 2.5 大 extent 的索引边界
 
@@ -431,9 +448,11 @@ drain credit 和一个 collective issuer。
 
 ### 3.5 E0：same-boundary all-exact
 
-E0 是当前下一步。它让 all-exact 使用相同两卡、DRAM endpoint、target layout、capacity
-budget 和 timer；可以独立选择适合 exact 的 group size/order。S1 与当前 D3 的 complete
-full targets 已完成两 rank 逐字节 parity；E0 仍需自己的 reference/correctness 记录。
+开发态 E0 已完成。它让 all-exact 使用相同两卡、DRAM endpoint、target layout、capacity
+budget 和 timer；16 个 group-64 的 sequential/S1 时间为 44.639/33.549 秒，均写出完整
+144-GiB target，old-K/V read 为零，coverage 与 exactly-once 通过。正式 E0 仍需独立调优
+group/microbatch、重复运行并冻结 source hash，不能把这两个单次 development artifact
+直接当作论文分母。
 
 ### 3.6 初始 timer
 
@@ -485,7 +504,7 @@ candidate 消除该 stall 后又暴露 output-credit stall。由这条因果链�
 
 当前不再泛化搜索 scheduler，也不做完整粒度笛卡尔积。下一步先完成：
 
-- same-boundary all-exact E0；
+- independently tuned and repeated formal E0；
 - 至少一个 action/capacity mix sensitivity；
 - 最小重复执行或第二 edge；
 - publication/transaction 计时边界；
@@ -498,7 +517,7 @@ microbatch-16、compiled input-16 和 compiled output-4 在各自开发观察点
 
 ### 4.3 只在资格验证失败时回退
 
-若 E0 或 sensitivity 否定当前机制，再考虑 rank-aware byte balance、collective-arrival-aware
+若 formal E0 或 sensitivity 否定当前机制，再考虑 rank-aware byte balance、collective-arrival-aware
 prefetch、D2 owner/pool granularity 或 D1/D3 budget co-design。任何改变 actions、owners、
 pools 或 layout 的候选都是新的 `stack_revision`，必须重跑自己的 S0/S1，而不是与本 revision
 直接比较。
@@ -513,7 +532,8 @@ pools 或 layout 的候选都是新的 `stack_revision`，必须重跑自己的 
 - formal failure matrix；
 - exhaustive parameter sweep。
 
-当前 proposed 已胜过 S1，但上述方向仍应等 E0 和最小资格验证完成后再决定。
+当前 proposed 已胜过 S1 和单次 development E0，但上述方向仍应等 formal E0 和最小资格
+验证完成后再决定。
 
 ## 5. 五个灵活 milestone
 
@@ -562,8 +582,8 @@ cap，并先测出顺序分组的问题。
 
 **实际遇到的最大风险。** 大 extent 使 Triton 的 int32 flattened index 跨越 \(2^{31}\)。
 该问题已改为 64-bit pointer arithmetic，并通过 cold-cache 大组执行。这个回看说明：后续
-E0、sensitivity 或 replication 若在大 extent 上异常，先检查 A/M0 从未覆盖的规模边界，再
-判断是机制问题。
+formal E0、sensitivity 或 replication 若在大 extent 上异常，先检查 A/M0 从未覆盖的规模
+边界，再判断是机制问题。
 
 ### C：两卡 M1 strong pipeline
 
@@ -593,7 +613,8 @@ staging。S1 保留为 action-oblivious strong baseline。
 
 **目标。** 在 M1 上找到比 S1 更好的、收益可解释的机制。
 
-**输入。** C 的两卡 S0/S1 与 phase profile；E0 不阻塞第一轮机制发现。
+**输入。** C 的两卡 S0/S1 与 phase profile；第一轮机制发现当时不由 E0 阻塞，现已补齐
+development E0。
 
 **已完成输出。**
 
@@ -607,16 +628,17 @@ staging。S1 保留为 action-oblivious strong baseline。
 - microbatch-16、compiled input-16、compiled output-4 是未改善观察点，不是一般性 rejection。
 
 **当前最大风险。** 当前只有一个 exact-stack paired control/candidate，仍共享一个训练
-seed、action mix，且 profile selection 与 evaluation 尚未形成正式 held-out boundary，E0
-也未完成。相邻 identity-only revision 的收益幅度更大，表明系统波动不可忽略。下一步应
-补正式重复、验证 exact crossover 和最小 held-out sensitivity，而不是继续堆叠 buffer 或
-弱化 S1。
+seed、action mix，且 profile selection 与 evaluation 尚未形成正式 held-out boundary。
+Development E0 已产生 positive crossover，但尚未独立调优或重复。相邻 identity-only
+revision 的收益幅度更大，表明系统波动不可忽略。下一步应补 formal E0、正式重复和最小
+held-out sensitivity，而不是继续堆叠 buffer 或弱化 S1。
 
 ### E：机制稳定后再正式化
 
 **状态：当前下一阶段。**
 
-**目标。** 先用 E0 和最小 sensitivity 判断当前机制能否变成论文设计，再正式化。
+**目标。** Development E0 已给出 positive crossover；现在用 independent tuning/repeats
+和最小 sensitivity 判断当前机制能否变成论文设计，再正式化。
 
 **届时再补。**
 
@@ -629,8 +651,9 @@ seed、action mix，且 profile selection 与 evaluation 尚未形成正式 held
 - 第二 model edge 和正式 replication；
 - frozen protocol。
 
-**最大风险。** 当前收益无法在 E0、capacity/action sensitivity 或 replication 中保持。若
-资格验证失败，则回到 D 重新定位机制，而不是用更多形式化工作包装失败候选。
+**最大风险。** 当前 development crossover 无法在 independently tuned/repeated E0、
+capacity/action sensitivity 或 replication 中保持。若资格验证失败，则回到 D 重新定位
+机制，而不是用更多形式化工作包装失败候选。
 
 ## 6. 开发判断标准
 
@@ -642,13 +665,13 @@ seed、action mix，且 profile selection 与 evaluation 尚未形成正式 held
 4. **场景特异机制是否有额外收益？** proposed 是否稳定胜过 S1，且能由 profile 解释？
 
 当前四个问题在这一个 M1 point 上的回答分别是：能；双向 staging/writeback 加 route
-resource imbalance；S1 为 1.475x；selected D3 median 再相对 S1 为 1.167x。固定分段先解决
+resource imbalance；S1 为 1.475x；selected D3 单次运行相对 S1 为 1.16186x。固定分段先解决
 组内串行 I/O，stable interleave 再用 compute-heavy exact 遮住 I/O-heavy compiled 阶段。
-它已经超过“只胜 sequential”的最低机制门槛，但还没有回答 E0 crossover、held-out
-generality 和正式论文证据。
+它已经超过“只胜 sequential”的最低机制门槛，并在该单次 development point 上回答了 E0
+crossover；held-out generality、正式重复和论文证据仍未完成。
 
-论文阶段仍需要严格可比性、correctness、physical capacity、all-exact、failure 和扩展实验；
-但这些不阻塞当前两卡机制发现。
+论文阶段仍需要严格可比性、correctness、physical capacity、independently tuned/repeated
+all-exact、failure 和扩展实验；但这些不阻塞当前两卡机制发现。
 
 ## 7. 状态持久化
 
@@ -677,6 +700,10 @@ results/system/evokv_design3_m1/qk_entity_h1536_materialize_full_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_s0_full_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_noflush_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_e0_s0_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_e0_s1_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_d1_only_s0_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_d1_d2_s0_group64_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_s1_group64_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_d3_group64_seed0.json
 results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_seed0.json
@@ -691,8 +718,8 @@ results/system/evokv_design3_m1/qk_entity_h1536_d3_profile_compiled_o4_seed0.jso
 ```
 
 这些文件记录从物理 materialization、顺序瓶颈、strong S1、input-only 归因、双向分段到
-route-aware stable interleave 的完整开发链。它们仍不证明正式 protocol、E0 crossover、
-independent replication 或 paper speedup。
+route-aware stable interleave 的完整开发链，并建立单次 development E0 crossover。它们仍
+不证明正式 protocol、independent replication、generality 或 paper speedup。
 
 每个 run 至少记录：
 
@@ -728,8 +755,9 @@ identity 或显式 reset，不能误把残留 coverage 当成新 run。
 10. 已实现 route-specific 三段解耦、bounded-flow planner、stable interleave、plan/stack
     hash，并以 28.514442098/28.147194647 秒完成同一 exact-stack route-major/selected pair
     与 full byte parity；
-11. 下一步补 same-boundary E0、正式重复与最小 held-out sensitivity，再决定是否冻结正式
-    D3。
+11. 已补 grouped E0 与 owner-local D1-only contribution diagnostics；
+12. 下一步补 independently tuned formal E0、正式重复与最小 held-out sensitivity，再决定
+    是否冻结正式 D3。
 
 这个顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被设计
 推翻的正式接口。

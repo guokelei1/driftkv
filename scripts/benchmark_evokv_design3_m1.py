@@ -8,7 +8,7 @@ import os
 import time
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +26,7 @@ from hstu_kvcache.migration.design2_distributed import (
 )
 from hstu_kvcache.migration.design2_integrated import (
     IntegratedAppendOnlyKVBatch,
+    integrated_sharded_append,
     integrated_sharded_append_only,
     integrated_sharded_exact,
 )
@@ -61,6 +62,13 @@ D3_RESIDENCY_PROTOCOL = (
 )
 D3_RUNNER_PROTOCOL = (
     "evokv_design3_m1_qk_decoupled_residency_runner_development_v2"
+)
+E0_PROTOCOL = "evokv_design3_m1_qk_grouped_all_exact_development_v0"
+E0_S1_PROTOCOL = (
+    "evokv_design3_m1_qk_grouped_all_exact_s1_development_v0"
+)
+D1_ONLY_PROTOCOL = (
+    "evokv_design3_m1_qk_grouped_d1_only_development_v0"
 )
 DEFAULT_PREPARED_DATA = (
     "data/processed/evokv_d3_m1_qk_entity_2560.npz"
@@ -378,6 +386,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="dry-run",
     )
     parser.add_argument(
+        "--design-stack",
+        choices=("all-exact", "d1-only", "d1-d2"),
+        default="d1-d2",
+    )
+    parser.add_argument(
         "--scope",
         choices=("canary", "full"),
         default="canary",
@@ -550,6 +563,19 @@ def validate_args(args: argparse.Namespace) -> None:
         and args.reuse_complete_old_store
     ):
         raise ValueError("materialize mode cannot reuse the old store")
+    if args.design_stack == "d1-only" and args.mode not in {
+        "dry-run",
+        "s0",
+    }:
+        raise ValueError("M1 D1-only currently requires sequential groups")
+    if args.design_stack == "all-exact" and args.mode not in {
+        "dry-run",
+        "s0",
+        "s1",
+    }:
+        raise ValueError("M1 all-exact requires a grouped execution mode")
+    if args.design_stack != "d1-d2" and args.residency_plan is not None:
+        raise ValueError("M1 residency plan requires the D1+D2 stack")
 
 
 def _path(value: str | Path) -> Path:
@@ -682,6 +708,24 @@ def load_action_snapshot(
     ):
         raise ValueError("M1 action snapshot records differ")
     return snapshot, actions
+
+
+def effective_actions(
+    actions: Sequence[M1Action],
+    design_stack: str,
+) -> tuple[M1Action, ...]:
+    if design_stack == "all-exact":
+        return tuple(
+            replace(
+                value,
+                requested_action="exact",
+                requested_reason="scheduled_exact",
+            )
+            for value in actions
+        )
+    if design_stack in {"d1-only", "d1-d2"}:
+        return tuple(actions)
+    raise ValueError("M1 design stack differs")
 
 
 def build_owner_map(
@@ -931,13 +975,14 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
     ):
         raise ValueError("M1 prepared data binding differs")
     owners = build_owner_map(all_actions, 2)
-    actions = select_actions(
+    selected_actions = select_actions(
         all_actions,
         owners,
         2,
         args.scope,
         args.canary_records_per_route_per_rank,
     )
+    actions = effective_actions(selected_actions, args.design_stack)
     groups = build_s0_groups(
         actions,
         owners,
@@ -961,6 +1006,7 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
         "scientific_result": False,
         "formal_design3": False,
         "mode": "dry-run",
+        "design_stack": args.design_stack,
         "scope": args.scope,
         "embedding_scale_role": (
             "functional_canary_not_primary_d2_partition_evidence"
@@ -970,6 +1016,10 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
         "records": len(actions),
         "counts": {
             route: sum(value.route == route for value in actions)
+            for route in ("compiled", "exact")
+        },
+        "source_action_counts": {
+            route: sum(value.route == route for value in selected_actions)
             for route in ("compiled", "exact")
         },
         "groups": len(groups),
@@ -1842,6 +1892,37 @@ def materialize_old_store(
     }
 
 
+def _stage_history_range(
+    slot: M1PinnedSlot,
+    actions: Sequence[M1Action],
+    histories: Mapping[int, Mapping[str, np.ndarray]],
+    starts: Sequence[int],
+    stops: Sequence[int],
+    device: torch.device,
+) -> tuple[RawHistoryBatch, float, float, int]:
+    stage_started = time.perf_counter()
+    history = _history_batch_into_slot(
+        slot,
+        actions,
+        histories,
+        starts,
+        stops,
+        "theta1",
+    )
+    stage_seconds = time.perf_counter() - stage_started
+    h2d_start = torch.cuda.Event(enable_timing=True)
+    h2d_end = torch.cuda.Event(enable_timing=True)
+    h2d_start.record()
+    device_history = history.to(device, non_blocking=True)
+    h2d_end.record()
+    return (
+        device_history,
+        stage_seconds,
+        _event_seconds(h2d_start, h2d_end),
+        history.nbytes,
+    )
+
+
 def run_s0(
     groups: Sequence[M1Group],
     rank: int,
@@ -1855,7 +1936,10 @@ def run_s0(
     slot: M1PinnedSlot,
     device: torch.device,
     micro_batch_records: int,
+    design_stack: str = "d1-d2",
 ) -> dict[str, object]:
+    if design_stack not in {"all-exact", "d1-only", "d1-d2"}:
+        raise ValueError("M1 S0 design stack differs")
     phases = {
         "pageable_to_pinned_seconds": 0.0,
         "h2d_seconds": 0.0,
@@ -1928,19 +2012,34 @@ def run_s0(
             source_v = torch.empty_like(source_k)
             target_retained_k = torch.empty_like(source_k)
             target_retained_v = torch.empty_like(source_v)
-            suffix_tokens = sum(
-                value.suffix_tokens for value in group_actions
-            )
-            target_suffix_k = torch.empty(
-                (
-                    program.num_layers,
-                    suffix_tokens,
-                    program.kv_width,
-                ),
-                dtype=torch.float16,
-                device=device,
-            )
-            target_suffix_v = torch.empty_like(target_suffix_k)
+            if design_stack == "d1-only":
+                final_tokens = sum(
+                    value.final_tokens for value in group_actions
+                )
+                target_exact_k = torch.empty(
+                    (
+                        program.num_layers,
+                        final_tokens,
+                        program.kv_width,
+                    ),
+                    dtype=torch.float16,
+                    device=device,
+                )
+                target_exact_v = torch.empty_like(target_exact_k)
+            else:
+                suffix_tokens = sum(
+                    value.suffix_tokens for value in group_actions
+                )
+                target_suffix_k = torch.empty(
+                    (
+                        program.num_layers,
+                        suffix_tokens,
+                        program.kv_width,
+                    ),
+                    dtype=torch.float16,
+                    device=device,
+                )
+                target_suffix_v = torch.empty_like(target_suffix_k)
             source_offset = 0
             for actions in local_microbatches:
                 stage_started = time.perf_counter()
@@ -1992,22 +2091,34 @@ def run_s0(
                 "theta0",
                 "theta1",
             )
-            target_suffix = _device_jagged(
-                group_actions,
-                target_suffix_k,
-                target_suffix_v,
-                "suffix_tokens",
-                "theta1",
-                "theta1",
-            )
+            if design_stack == "d1-only":
+                target_exact = _device_jagged(
+                    group_actions,
+                    target_exact_k,
+                    target_exact_v,
+                    "final_tokens",
+                    "theta1",
+                    "theta1",
+                )
+            else:
+                target_suffix = _device_jagged(
+                    group_actions,
+                    target_suffix_k,
+                    target_suffix_v,
+                    "suffix_tokens",
+                    "theta1",
+                    "theta1",
+                )
             del (
                 source_k,
                 source_v,
                 target_retained_k,
                 target_retained_v,
-                target_suffix_k,
-                target_suffix_v,
             )
+            if design_stack == "d1-only":
+                del target_exact_k, target_exact_v
+            else:
+                del target_suffix_k, target_suffix_v
             d2d_start = torch.cuda.Event(enable_timing=True)
             d2d_end = torch.cuda.Event(enable_timing=True)
             d2d_start.record()
@@ -2052,33 +2163,6 @@ def run_s0(
                 if step < len(local_microbatches)
                 else ()
             )
-            if group.route == "compiled":
-                starts = tuple(value.delta_start for value in actions)
-            else:
-                starts = (0,) * len(actions)
-            stage_started = time.perf_counter()
-            history = _history_batch_into_slot(
-                slot,
-                actions,
-                histories.target,
-                starts,
-                tuple(value.final_tokens for value in actions),
-                "theta1",
-            )
-            stage_seconds = time.perf_counter() - stage_started
-            group_stage_seconds += stage_seconds
-            phases["pageable_to_pinned_seconds"] += stage_seconds
-            history_bytes = history.nbytes
-            group_h2d_bytes += history_bytes
-            h2d_bytes += history_bytes
-            h2d_start = torch.cuda.Event(enable_timing=True)
-            h2d_end = torch.cuda.Event(enable_timing=True)
-            h2d_start.record()
-            device_history = history.to(device, non_blocking=True)
-            h2d_end.record()
-            seconds = _event_seconds(h2d_start, h2d_end)
-            group_h2d_seconds += seconds
-            phases["h2d_seconds"] += seconds
             transformed = None
             if actions and group.route == "compiled":
                 retained_stop = retained_offset + sum(
@@ -2106,38 +2190,224 @@ def run_s0(
                 seconds = _event_seconds(gather_start, gather_end)
                 group_assemble_seconds += seconds
                 phases["d2d_assemble_seconds"] += seconds
+                if design_stack == "d1-only":
+                    retained_offset = retained_stop
                 del transformed_k, transformed_v
-            compute_started = time.perf_counter()
-            if group.route == "compiled":
-                result = integrated_sharded_append_only(
+            if design_stack == "d1-only":
+                prefix = transformed
+                if group.route == "exact":
+                    (
+                        retained_history,
+                        stage_seconds,
+                        seconds,
+                        history_bytes,
+                    ) = _stage_history_range(
+                        slot,
+                        actions,
+                        histories.target,
+                        (0,) * len(actions),
+                        tuple(
+                            value.retained_tokens for value in actions
+                        ),
+                        device,
+                    )
+                    group_stage_seconds += stage_seconds
+                    phases["pageable_to_pinned_seconds"] += stage_seconds
+                    group_h2d_seconds += seconds
+                    phases["h2d_seconds"] += seconds
+                    group_h2d_bytes += history_bytes
+                    h2d_bytes += history_bytes
+                    compute_started = time.perf_counter()
+                    retained_result = integrated_sharded_exact(
+                        model,
+                        retained_history,
+                        "theta1",
+                    )
+                    torch.cuda.synchronize(device)
+                    compute_and_lookup_seconds = (
+                        time.perf_counter() - compute_started
+                    )
+                    lookup_seconds = (
+                        retained_result.lookup_metrics.collective_seconds
+                    )
+                    compute_seconds = max(
+                        compute_and_lookup_seconds - lookup_seconds,
+                        0.0,
+                    )
+                    group_lookup_seconds += lookup_seconds
+                    group_compute_seconds += compute_seconds
+                    phases["lookup_exchange_seconds"] += lookup_seconds
+                    phases["compute_excluding_lookup_seconds"] += (
+                        compute_seconds
+                    )
+                    _sum_lookup_metrics(
+                        group_lookup,
+                        retained_result.lookup_metrics,
+                    )
+                    _sum_lookup_metrics(
+                        lookup_totals,
+                        retained_result.lookup_metrics,
+                    )
+                    prefix = retained_result.fragment
+                    del retained_history, retained_result
+                (
+                    delta_history,
+                    stage_seconds,
+                    seconds,
+                    history_bytes,
+                ) = _stage_history_range(
+                    slot,
+                    actions,
+                    histories.target,
+                    tuple(value.delta_start for value in actions),
+                    tuple(
+                        value.target_prefix_tokens for value in actions
+                    ),
+                    device,
+                )
+                group_stage_seconds += stage_seconds
+                phases["pageable_to_pinned_seconds"] += stage_seconds
+                group_h2d_seconds += seconds
+                phases["h2d_seconds"] += seconds
+                group_h2d_bytes += history_bytes
+                h2d_bytes += history_bytes
+                compute_started = time.perf_counter()
+                delta_result = integrated_sharded_append(
                     model,
-                    transformed,
-                    device_history,
+                    prefix,
+                    delta_history,
                     "theta1",
                 )
+                torch.cuda.synchronize(device)
+                compute_and_lookup_seconds = (
+                    time.perf_counter() - compute_started
+                )
+                lookup_seconds = (
+                    delta_result.lookup_metrics.collective_seconds
+                )
+                compute_seconds = max(
+                    compute_and_lookup_seconds - lookup_seconds,
+                    0.0,
+                )
+                group_lookup_seconds += lookup_seconds
+                group_compute_seconds += compute_seconds
+                phases["lookup_exchange_seconds"] += lookup_seconds
+                phases["compute_excluding_lookup_seconds"] += (
+                    compute_seconds
+                )
+                _sum_lookup_metrics(
+                    group_lookup,
+                    delta_result.lookup_metrics,
+                )
+                _sum_lookup_metrics(
+                    lookup_totals,
+                    delta_result.lookup_metrics,
+                )
+                prefix = delta_result.fragment
+                del delta_history, delta_result
+                (
+                    latest_history,
+                    stage_seconds,
+                    seconds,
+                    history_bytes,
+                ) = _stage_history_range(
+                    slot,
+                    actions,
+                    histories.target,
+                    tuple(
+                        value.target_prefix_tokens for value in actions
+                    ),
+                    tuple(value.final_tokens for value in actions),
+                    device,
+                )
+                group_stage_seconds += stage_seconds
+                phases["pageable_to_pinned_seconds"] += stage_seconds
+                group_h2d_seconds += seconds
+                phases["h2d_seconds"] += seconds
+                group_h2d_bytes += history_bytes
+                h2d_bytes += history_bytes
+                compute_started = time.perf_counter()
+                result = integrated_sharded_append(
+                    model,
+                    prefix,
+                    latest_history,
+                    "theta1",
+                )
+                torch.cuda.synchronize(device)
+                compute_and_lookup_seconds = (
+                    time.perf_counter() - compute_started
+                )
+                lookup_seconds = result.lookup_metrics.collective_seconds
+                compute_seconds = max(
+                    compute_and_lookup_seconds - lookup_seconds,
+                    0.0,
+                )
+                group_lookup_seconds += lookup_seconds
+                group_compute_seconds += compute_seconds
+                phases["lookup_exchange_seconds"] += lookup_seconds
+                phases["compute_excluding_lookup_seconds"] += (
+                    compute_seconds
+                )
+                _sum_lookup_metrics(group_lookup, result.lookup_metrics)
+                _sum_lookup_metrics(lookup_totals, result.lookup_metrics)
+                del latest_history, prefix
             else:
-                result = integrated_sharded_exact(
-                    model,
+                if group.route == "compiled":
+                    starts = tuple(
+                        value.delta_start for value in actions
+                    )
+                else:
+                    starts = (0,) * len(actions)
+                (
                     device_history,
-                    "theta1",
+                    stage_seconds,
+                    seconds,
+                    history_bytes,
+                ) = _stage_history_range(
+                    slot,
+                    actions,
+                    histories.target,
+                    starts,
+                    tuple(value.final_tokens for value in actions),
+                    device,
                 )
-            torch.cuda.synchronize(device)
-            compute_and_lookup_seconds = (
-                time.perf_counter() - compute_started
-            )
-            lookup_seconds = result.lookup_metrics.collective_seconds
-            compute_seconds = max(
-                compute_and_lookup_seconds - lookup_seconds,
-                0.0,
-            )
-            group_lookup_seconds += lookup_seconds
-            group_compute_seconds += compute_seconds
-            phases["lookup_exchange_seconds"] += lookup_seconds
-            phases["compute_excluding_lookup_seconds"] += (
-                compute_seconds
-            )
-            _sum_lookup_metrics(group_lookup, result.lookup_metrics)
-            _sum_lookup_metrics(lookup_totals, result.lookup_metrics)
+                group_stage_seconds += stage_seconds
+                phases["pageable_to_pinned_seconds"] += stage_seconds
+                group_h2d_seconds += seconds
+                phases["h2d_seconds"] += seconds
+                group_h2d_bytes += history_bytes
+                h2d_bytes += history_bytes
+                compute_started = time.perf_counter()
+                if group.route == "compiled":
+                    result = integrated_sharded_append_only(
+                        model,
+                        transformed,
+                        device_history,
+                        "theta1",
+                    )
+                else:
+                    result = integrated_sharded_exact(
+                        model,
+                        device_history,
+                        "theta1",
+                    )
+                torch.cuda.synchronize(device)
+                compute_and_lookup_seconds = (
+                    time.perf_counter() - compute_started
+                )
+                lookup_seconds = result.lookup_metrics.collective_seconds
+                compute_seconds = max(
+                    compute_and_lookup_seconds - lookup_seconds,
+                    0.0,
+                )
+                group_lookup_seconds += lookup_seconds
+                group_compute_seconds += compute_seconds
+                phases["lookup_exchange_seconds"] += lookup_seconds
+                phases["compute_excluding_lookup_seconds"] += (
+                    compute_seconds
+                )
+                _sum_lookup_metrics(group_lookup, result.lookup_metrics)
+                _sum_lookup_metrics(lookup_totals, result.lookup_metrics)
             if result.fragment is not None:
                 assemble_start = torch.cuda.Event(enable_timing=True)
                 assemble_end = torch.cuda.Event(enable_timing=True)
@@ -2181,15 +2451,24 @@ def run_s0(
                 phases["d2d_assemble_seconds"] += seconds
             elif actions:
                 raise RuntimeError("M1 S0 lost local microbatch output")
-            del device_history, result, transformed
+            if design_stack != "d1-only":
+                del device_history
+            del result, transformed
         if group.route == "compiled" and group_actions:
             assert target_retained is not None
-            assert target_suffix is not None
-            if (
-                retained_offset != target_retained.token_count
-                or suffix_offset != target_suffix.token_count
-            ):
-                raise RuntimeError("M1 compiled group assembly differs")
+            if design_stack == "d1-only":
+                assert target_exact is not None
+                if exact_offset != target_exact.token_count:
+                    raise RuntimeError("M1 D1 group assembly differs")
+            else:
+                assert target_suffix is not None
+                if (
+                    retained_offset != target_retained.token_count
+                    or suffix_offset != target_suffix.token_count
+                ):
+                    raise RuntimeError(
+                        "M1 compiled group assembly differs"
+                    )
         if group.route == "exact" and group_actions:
             assert target_exact is not None
             if exact_offset != target_exact.token_count:
@@ -2207,7 +2486,7 @@ def run_s0(
             d2h_end = torch.cuda.Event(enable_timing=True)
             d2h_start.record()
             token_offset = 0
-            if group.route == "compiled":
+            if group.route == "compiled" and design_stack != "d1-only":
                 retained_stop = retained_offset + sum(
                     value.retained_tokens for value in actions
                 )
@@ -2274,7 +2553,11 @@ def run_s0(
             bytes_written = publish_output_segments(
                 target_store,
                 actions,
-                group.route,
+                (
+                    "exact"
+                    if design_stack == "d1-only"
+                    else group.route
+                ),
                 segments,
             )
             seconds = time.perf_counter() - publish_started
@@ -2330,6 +2613,7 @@ def run_s0(
     expected_ids = set(target_store.record_ids)
     return {
         "wall_seconds": time.perf_counter() - wall_started,
+        "design_stack": design_stack,
         "phase_seconds": phases,
         "primary_phase_sum_seconds": sum(phases.values()),
         "lookup_metrics": lookup_totals,
@@ -4336,7 +4620,7 @@ def run_distributed(
         )
         d3_execution_identity = (
             _d3_execution_identity(args, visible_tokens)
-            if args.mode == "d3"
+            if args.mode == "d3" and args.design_stack == "d1-d2"
             else None
         )
         residency_plan, residency_plan_file_sha256 = (
@@ -4391,12 +4675,16 @@ def run_distributed(
                 "full execution requires an explicit override"
             )
         owners = build_owner_map(all_actions, runtime.world_size)
-        actions = select_actions(
+        selected_actions = select_actions(
             all_actions,
             owners,
             runtime.world_size,
             args.scope,
             args.canary_records_per_route_per_rank,
+        )
+        actions = effective_actions(
+            selected_actions,
+            args.design_stack,
         )
         actions_by_id = {
             value.record_id: value for value in actions
@@ -4769,23 +5057,28 @@ def run_distributed(
                 runtime.world_size,
                 runtime.device,
             )
-            program_cpu, loaded_program = _load_program(
-                _path(args.compiler_result),
-                action_path,
-                snapshot,
-                cfg,
-            )
             operator = DirectOldKVFusedOperator()
-            program = operator.prepare_program(
-                program_cpu,
-                runtime.device,
-            )
-            del program_cpu
-            operator_warmup_seconds = _warmup_operator(
-                operator,
-                program,
-                runtime.device,
-            )
+            if args.design_stack == "all-exact":
+                program = None
+                loaded_program = None
+                operator_warmup_seconds = 0.0
+            else:
+                program_cpu, loaded_program = _load_program(
+                    _path(args.compiler_result),
+                    action_path,
+                    snapshot,
+                    cfg,
+                )
+                program = operator.prepare_program(
+                    program_cpu,
+                    runtime.device,
+                )
+                del program_cpu
+                operator_warmup_seconds = _warmup_operator(
+                    operator,
+                    program,
+                    runtime.device,
+                )
             dist.barrier()
             execution_result = (
                 run_s1(
@@ -4817,6 +5110,7 @@ def run_distributed(
                     slot,
                     runtime.device,
                     args.micro_batch_records,
+                    args.design_stack,
                 )
             )
             local_report = {
@@ -4881,19 +5175,36 @@ def run_distributed(
         )
         report = {
             "protocol": (
-                D3_RESIDENCY_PROTOCOL
+                E0_S1_PROTOCOL
+                if args.design_stack == "all-exact"
+                and args.mode == "s1"
+                else E0_PROTOCOL
+                if args.design_stack == "all-exact"
+                else D1_ONLY_PROTOCOL
+                if args.design_stack == "d1-only"
+                else D3_RESIDENCY_PROTOCOL
                 if residency_plan is not None
                 else D3_PROTOCOL
                 if args.mode == "d3"
-                else S1_PROTOCOL if args.mode == "s1" else PROTOCOL
+                else S1_PROTOCOL
+                if args.mode == "s1"
+                else PROTOCOL
             ),
             "status": "complete" if complete else "failed",
             "scientific_result": False,
             "formal_design3": False,
             "mode": args.mode,
+            "design_stack": args.design_stack,
             "scope": args.scope,
             "benchmark_role": (
-                "two_gpu_qk_pageable_dram_group_at_a_time_s0_foundation"
+                "two_gpu_qk_grouped_all_exact_s1_baseline"
+                if args.design_stack == "all-exact"
+                and args.mode == "s1"
+                else "two_gpu_qk_grouped_all_exact_s0_diagnostic"
+                if args.design_stack == "all-exact"
+                else "two_gpu_qk_grouped_d1_only_naive_staged_diagnostic"
+                if args.design_stack == "d1-only"
+                else "two_gpu_qk_pageable_dram_group_at_a_time_s0_foundation"
                 if args.mode == "s0"
                 else (
                     (
@@ -4943,6 +5254,9 @@ def run_distributed(
                 "bounded_pinned_staging": True,
                 "source_store": "complete_theta0_oldkv_fp16",
                 "timed_source_read": (
+                    "none_raw_history_only"
+                    if args.design_stack == "all-exact"
+                    else
                     "compiled_retained_extent_only"
                     if args.mode in {"s0", "s1", "d3"}
                     else None
@@ -4959,6 +5273,12 @@ def run_distributed(
             "counts": {
                 route: sum(
                     value.route == route for value in actions
+                )
+                for route in ("compiled", "exact")
+            },
+            "source_action_counts": {
+                route: sum(
+                    value.route == route for value in selected_actions
                 )
                 for route in ("compiled", "exact")
             },

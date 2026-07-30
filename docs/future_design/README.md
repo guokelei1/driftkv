@@ -31,8 +31,11 @@ current exact stack/hash, route-major `(8,8,8)` takes 28.514442098 seconds and t
 ResidencyPlan order takes 28.147194647 seconds (1.013047x; 1.2879% lower wall time) with complete
 exactly-once byte parity. The plan uses same-source joint profiles, a one-lookahead/one-drain flow
 model, and a synchronized per-rank capacity preflight. It is still a development mechanism, not a general
-exporter or formal result. Same-boundary E0, held-out qualification, formal repeats,
-action/capacity mixes, and transaction closure precede a frozen protocol.
+exporter or formal result. Grouped development E0 now measures 44.639 seconds sequentially and
+33.549 seconds with the strong action-oblivious two-slot baseline; owner-local naive-staged
+D1-only is 57.597 seconds and the current-binary sequential D1+D2 rerun is 49.753 seconds.
+Independently tuned formal E0, held-out qualification, formal repeats, action/capacity mixes, and
+transaction closure still precede a frozen protocol.
 
 The H12 workload is the first semantic canary, not physical oversubscription evidence. The preferred
 D3 mechanism-selection route audits a larger real-history QK workload whose owner-local source

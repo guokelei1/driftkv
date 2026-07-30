@@ -2,8 +2,8 @@
 
 日期：2026-07-30
 
-状态：**route-aware ResidencyPlan 已实现并完成 exact-stack 两卡 paired 开发运行；正式重复、
-协议和论文结果尚不存在**。
+状态：**route-aware ResidencyPlan、grouped development E0 和 contribution diagnostics
+已完成；正式重复、协议和论文结果尚不存在**。
 本文档描述当前最可能的 D3 形态，不是阻塞机制发现的接口合同，也不能作为 paper claim 的
 证据。D1/D2 的已有证据仍按各自冻结协议解释，但新的 D3 development 可以从轻量 adapter
 开始，并允许根据 DRAM/HBM 实测形成新的跨层 `stack_revision`。
@@ -253,9 +253,10 @@ group-64/microbatch-8 的 peak allocated HBM 为 29.27/29.09 GiB，reserved 为
 
 ### 4.4 Fallback, not the active mechanism
 
-只有当 E0 或 sensitivity 否定当前机制时，才恢复 resource-complementary action packing、
-rank-aware byte balance、collective-arrival-aware prefetch 或 D1/D2/D3 co-design。任何改变
-actions、owners、pools 或 layout 的版本都必须获得新 `stack_revision` 并重跑其 S0/S1。
+若 independently tuned/repeated E0 或 sensitivity 推翻当前 development-positive
+crossover，才恢复 resource-complementary action packing、rank-aware byte balance、
+collective-arrival-aware prefetch 或 D1/D2/D3 co-design。任何改变 actions、owners、pools
+或 layout 的版本都必须获得新 `stack_revision` 并重跑其 S0/S1。
 
 ## 5. Motivation 与实验
 
@@ -285,7 +286,14 @@ direct-old-K/V M1 pooling。
 2. strong action-oblivious whole-group pipeline；
 3. fixed-order bidirectionally segmented D3；
 4. route-aware ResidencyPlan；
-5. same-boundary all-exact E0（尚未执行）。
+5. same-boundary grouped all-exact E0。
+
+E0 现有开发态顺序/双 slot 时间为 44.639/33.549 秒。补充的 owner-local、naive-staged
+D1-only 路径为 57.597 秒，当前 binary 的 sequential D1+D2 rerun 为 49.753 秒。它们说明
+D1 的逻辑稀疏性在超显存场景下不会自动转化为 wall-time 收益；D2 能减少连续重写和
+collective fragmentation，但最终相对 strong all-exact 的明确 crossover 仍依赖 D3。
+这些均为单次 development diagnostics，不是 formal waterfall；D1-only 也不是
+placement-oblivious owner-compute ablation。
 
 Isolation-track variants 共享 source-byte multiset 和 `WorkManifest`。Co-design variants 记录
 不同的 action/owner/source bytes，并在同一新 revision 下重跑 baselines。所有 speedup 只在
@@ -337,7 +345,7 @@ plan/stack hash 和双向流水已经存在。它们依赖的上游事实是：
 - owner/operator/program/membership/collective/layout/transaction 的完整序列化；
 - 对当前 runtime 的 record-coverage/parity 检查；
 - held-out calibration/evaluation boundary 或第二个 action/capacity mix；
-- same-boundary all-exact E0 与 transaction closure。
+- independently tuned and repeated formal E0 与 transaction closure。
 
 此外，正式 evaluation 不能依赖：
 
@@ -351,8 +359,8 @@ plan/stack hash 和双向流水已经存在。它们依赖的上游事实是：
 这些正式工件没有阻塞 M0/M1 mechanism discovery。当前 artifact 记录
 `scientific_result=false`、`formal_design3=false`、`stack_revision`、per-rank capacity ledger
 和 timer components。当前 plan/profile 自身已有 stable content hash，但它不是正式 D2
-constraint exporter。当前机制已经清楚到可以进入 E0 与最小资格验证；通过后才决定最终
-exporter/interface，并在 `docs/eval_protocol.md` 冻结正式 family。
+constraint exporter。当前开发态 E0 已完成，接下来进入独立调优、重复和最小资格验证；
+通过后才决定最终 exporter/interface，并在 `docs/eval_protocol.md` 冻结正式 family。
 
 ## 8. 实施顺序
 
@@ -362,10 +370,11 @@ exporter/interface，并在 `docs/eval_protocol.md` 冻结正式 family。
 4. 已由 profile 构造并验证 bidirectionally segmented D3；
 5. 已实现 route-aware ResidencyPlan，并在同一 exact stack/hash 上完成 route-major 与
    selected-order 配对、full byte parity 和 capacity preflight；
-6. 下一步完成 same-boundary E0、held-out qualification、正式重复和最小
+6. 已完成 same-boundary grouped E0 和 owner-local D1-only contribution diagnostics；
+7. 下一步完成 independently tuned formal E0、held-out qualification、正式重复和最小
    capacity/action-mix qualification；
-7. 若通过，再补 normalized exporter、transaction、formal protocol 和扩展矩阵；
-8. GPU0/GPU1 的 E0 结论清楚前不跑 3/4 GPU。
+8. 若通过，再补 normalized exporter、transaction、formal protocol 和扩展矩阵；
+9. GPU0/GPU1 的正式结论清楚前不跑 3/4 GPU。
 
 ## 9. 更远期反馈层
 

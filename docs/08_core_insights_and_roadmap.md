@@ -159,7 +159,7 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | route-aware out-of-core mechanism implemented; development only | M0 path; real two-rank QK M1 boundary; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V; fair group-64 S0; strong S1; full-group GPU staging with independent route I/C/O granularity; hashed same-source-profile `ResidencyPlan`; stable-route interleaving; exact-stack paired control/candidate and full-payload parity | same-boundary E0, held-out qualification, formal repeats, action/capacity sensitivity, final transaction boundary, frozen protocol, and paper evidence |
+| D3 | route-aware out-of-core mechanism implemented; development only | M0 path; real two-rank QK M1 boundary; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V; grouped all-exact and D1-only diagnostics; fair group-64 S0; strong S1; full-group GPU staging with independent route I/C/O granularity; hashed same-source-profile `ResidencyPlan`; stable-route interleaving; exact-stack paired control/candidate and full-payload parity | independently tuned and repeated formal E0, held-out qualification, formal repeats, action/capacity sensitivity, final transaction boundary, frozen protocol, and paper evidence |
 
 D3 development uses the current D1 plan and implemented D2 runtime. M0 uses a minimal two-rank
 `WorkManifest`; the QK M1 revision binds its action snapshot, owner map, group plan, checkpoints,
@@ -255,6 +255,40 @@ output-4 did not improve their observed development points; they do not reject t
 generally. An adjacent identity-only revision observed 29.7169→28.0497 (5.61%), but it is retained
 only as a variability and mechanism-development diagnostic, not a frozen benefit. These runtime
 executions share one trained seed and action/capacity mix.
+
+A same-boundary contribution diagnostic now fills the previously missing grouped paths. Sequential
+group-64 all-exact completes in 44.638644214 seconds; its action-oblivious two-slot version
+completes in 33.548799294 seconds. An owner-local D1-only path keeps the same 1,638 compiled and
+410 scheduled-exact actions but uses the unfused staged semantics
+`retained → delta → latest` and a contiguous final cache. It completes in 57.597180375 seconds.
+It requests the same 262,336 global embedding tokens as D2, but issues 852 collectives per rank
+instead of 387. The current-binary sequential D1+D2 rerun completes in 49.752669533 seconds; the
+earlier fair S0 was 48.238327569 seconds, exposing single-run variability that must be resolved by
+formal repeats.
+
+The sequential diagnostic is deliberately not monotone: D1-only is 29.03% slower than grouped
+all-exact, D2 physical lowering recovers 13.62% relative to D1-only, and full D3 lowers the
+current-binary D1+D2 path by 43.43%, for a net 36.94% reduction versus sequential grouped
+all-exact. Under the stronger shared two-slot baseline, D1+D2 takes 32.703160657 seconds versus
+33.548799294 seconds for all-exact, and full D3 reaches 28.147194647 seconds, 16.10% below strong
+all-exact. The selected D3 artifact predates the contribution switches in the runner, so these
+cross-row percentages are development guidance rather than a same-binary formal result. The
+D1-only diagnostic intentionally keeps target-owner execution; it conservatively
+isolates staged contiguous execution from D2 fusion/segmentation and does not measure a
+placement-oblivious cross-owner baseline or claim the entire owner-compute contribution.
+All four contribution rows pass finite-value, complete-coverage, and exactly-once publication
+checks. The D1-only staged output has not yet received a full or sampled tolerance comparison
+against its numerical reference, so these timings remain mechanism-development evidence.
+
+The selected D3 point is already predominantly compute-bound. On the critical rank, affine
+transform, non-lookup compute, lookup, and assembly total about 26.59 seconds of the 28.147-second
+wall time; measured exposed pipeline wait is about 1.49 seconds. Perfectly removing the remaining
+I/O bubbles therefore has only about a 5.5% direct ceiling on this fixed D1/D2 work. The stronger
+remaining opportunity is interference-aware scheduling: selected-run effective H2D/D2H bandwidth
+falls to roughly 4.50/4.86 GB/s from about 23.85/23.94 GB/s in sequential S0, while compute also
+lengthens under blind overlap. More buffers or another segment-size sweep is not the priority.
+The next D3 exploration should first test phase-aware DMA pacing and rank/collective-arrival-aware
+planning, then an independently varied compiled compute batch.
 
 The first large compiled group also exposed an implementation-scale boundary hidden by the small
 benchmarks: 128 records per rank at 480 retained tokens create 61,440-token extents whose
@@ -495,9 +529,10 @@ The benchmark-first route has reached a real physical M1 mechanism boundary:
 8. the selected point retains `(8,8,8)` on both routes; input-16 and output-4 did not improve their
    observed probes, but route-asymmetric granularity benefit and general rejection of alternatives
    are not established;
-9. next, add same-boundary all-exact E0, held-out qualification, formal repeats, and the smallest
-   action/capacity sensitivity needed to test whether the planner selects meaningfully different
-   plans;
+9. grouped same-boundary all-exact and D1-only contribution diagnostics now complete the
+   development waterfall; next add independently tuned formal E0, held-out qualification, formal
+   repeats, and the smallest action/capacity sensitivity needed to test whether the planner
+   selects meaningfully different plans;
 10. only then close transaction semantics, freeze a D3 protocol, and expand beyond GPU0/GPU1.
 
 The capacity coordinate is

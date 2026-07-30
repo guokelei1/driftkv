@@ -107,8 +107,14 @@
   input-16 and output-4 only failed to improve their observed development points. Plan/profile
   construction is outside the timer. An adjacent identity-only revision observed 29.7169→28.0497
   (5.61%), but it is a variability diagnostic, not a frozen benefit. All results remain
-  `scientific_result=false` and `formal_design3=false`; same-boundary E0, held-out qualification,
-  formal repeats, action/capacity mixes, transaction closure, and a frozen protocol remain open.
+  `scientific_result=false` and `formal_design3=false`. Grouped development E0 is now
+  44.638644214 seconds sequentially and 33.548799294 seconds with the action-oblivious two-slot
+  pipeline. Owner-local naive-staged D1-only is 57.597180375 seconds; the current-binary
+  sequential D1+D2 rerun is 49.752669533 seconds. D1-only and D2 request the same 262,336 global
+  lookup tokens but issue 852 versus 387 collectives/rank. These are contribution diagnostics,
+  not a placement-oblivious owner-compute ablation or formal waterfall. Independently tuned E0,
+  held-out qualification, formal repeats, action/capacity mixes, transaction closure, and a
+  frozen protocol remain open.
   H12 is only a capacity-emulated semantic canary. SSD/database ingress, serving traces, host-DRAM
   oversubscription, and online hotness remain out of scope.
 

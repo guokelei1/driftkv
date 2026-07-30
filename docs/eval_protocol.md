@@ -66,6 +66,36 @@ mixed versus 1,048,576 all-exact request tokens; 126,588 versus 309,467 unique i
 805,380,096 versus 3,216,408,576 off-rank FP32 return-vector bytes. These are request/byte
 characterizations, not measured D2 speedups or a formal D2 result.
 
+Three additional contribution protocols remain development-only. The sequential
+`evokv_design3_m1_qk_grouped_all_exact_development_v0` converts the same 2,048-record universe to
+all exact in memory, forms 16 group-64 capacity groups, reads no old K/V, and completes in
+44.638644214 seconds. The action-oblivious two-slot
+`evokv_design3_m1_qk_grouped_all_exact_s1_development_v0` preserves that work and completes in
+33.548799294 seconds. Both request 1,048,576 global embedding tokens and write a complete 144-GiB
+private target.
+
+`evokv_design3_m1_qk_grouped_d1_only_development_v0` preserves the frozen 1,638 compiled and 410
+scheduled-exact actions, the same target-owner map, 17 group-64 cuts, ordinary-DRAM source/target,
+and sequential timer. It deliberately restores the naive staged D1 execution: compiled records
+transform retained K/V and then append delta and latest separately; scheduled-exact records
+recompute retained and append the same two suffix phases; both materialize a contiguous final
+cache. It completes in 57.597180375 seconds, requests 262,336 global lookup tokens, and issues 852
+collectives per rank. This is an owner-local naive-staged diagnostic, not a placement-oblivious
+owner-compute ablation. The current-binary D1+D2 S0 rerun completes in 49.752669533 seconds with
+the same 262,336 lookup tokens and 387 collectives per rank. Its difference from the earlier
+48.238327569-second S0 is run/revision variability, not a second mechanism result.
+
+These single executions support only a mechanism interpretation. Along the sequential diagnostic,
+D1-only is 29.03% slower than grouped all-exact, D2 lowering reduces D1-only time by 13.62%, and
+the existing selected D3 point is 36.94% below sequential all-exact end to end. Along the stronger
+two-slot comparison, D1+D2 S1 is 2.52% below all-exact S1 and selected D3 is 16.10% below
+all-exact S1. The selected D3 result has an earlier runner source hash, so none of these
+cross-protocol percentages is a formal same-binary waterfall.
+The completed development rows establish finite output, complete target coverage, and exactly-once
+publication. They do not yet establish numerical equivalence for the staged D1-only output; a
+sampled or full tolerance comparison is required before this path can enter a formal contribution
+table.
+
 The M1 runtime protocol `evokv_design3_m1_qk_pageable_s0_development_v0` has distinct
 materialization and sequential-execution identities that must not be conflated.
 `mode=materialize` produced a complete 144-GiB exact `theta0` old-K/V store in ordinary DRAM,
@@ -177,12 +207,12 @@ an implementation correctness/scale validation only; it creates no independent p
 
 Every QK M1 artifact in this section remains `scientific_result=false` and
 `formal_design3=false`. The 2,560-user edge, action snapshot, characterizer, materialized store,
-fair S0, S1, and selected development candidate define only the current mechanism-discovery
-revision. They do not freeze a paper protocol or establish E0 crossover, formal replication, or
-generality. The current profile selection and evaluation reuse the same M1 revision, so a formal
-result still needs held-out qualification, formal repeats, at least one additional action/capacity
-mix, and transaction closure. The
-earlier H512 QK canary and H12 M0 profile remain functional development
+grouped E0/D1-only diagnostics, fair S0, S1, and selected development candidate define only the
+current mechanism-discovery revision. They establish a development E0 crossover but do not freeze
+a paper protocol or establish formal replication or generality. The current profile selection and
+evaluation reuse the same M1 revision, so a formal result still needs held-out qualification,
+formal repeats, at least one additional action/capacity mix, and transaction closure. The earlier
+H512 QK canary and H12 M0 profile remain functional development
 diagnostics and cannot be pooled with M1.
 
 An isolation-track result compares sequential, double-buffer, and proposed schedulers within one
@@ -2012,6 +2042,13 @@ D3 mechanism-development diagnostics, also ineligible for paper tables:
   17-group sequential fragmentation diagnostic with per-group cleanup;
 - `results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_noflush_seed0.json` — fair
   17-group sequential control for the current runtime;
+- `results/system/evokv_design3_m1/qk_entity_h1536_e0_s0_group64_seed0.json` and
+  `qk_entity_h1536_e0_s1_group64_seed0.json` — sequential and strong two-slot grouped all-exact
+  contribution diagnostics;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d1_only_s0_group64_seed0.json` — owner-local,
+  naive-staged grouped D1-only contribution diagnostic;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d1_d2_s0_group64_seed0.json` — current-binary
+  sequential D1+D2 rerun for the contribution diagnostic;
 - `results/system/evokv_design3_m1/qk_entity_h1536_s1_group64_seed0.json` — strong bounded
   whole-group pipeline;
 - `results/system/evokv_design3_m1/qk_entity_h1536_d3_group64_seed0.json` — input-only segmented

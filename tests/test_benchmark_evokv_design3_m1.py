@@ -119,6 +119,52 @@ def test_action_snapshot_owner_and_group_plan_are_stable(
     )
 
 
+def test_all_exact_stack_preserves_record_boundary_and_rebuilds_groups() -> None:
+    source = tuple(
+        MODULE.M1Action.from_dict(value)
+        for value in _snapshot()["records"]
+    )
+    effective = MODULE.effective_actions(source, "all-exact")
+    owners = MODULE.build_owner_map(source, 2)
+    groups = MODULE.build_s0_groups(effective, owners, 2, 2)
+
+    assert [value.record_id for value in effective] == [
+        value.record_id for value in source
+    ]
+    assert all(value.route == "exact" for value in effective)
+    assert all(
+        value.requested_reason == "scheduled_exact"
+        for value in effective
+    )
+    assert len(groups) == 3
+    assert all(value.route == "exact" for value in groups)
+
+
+def test_contribution_stack_modes_reject_d3_cross_contamination() -> None:
+    MODULE.validate_args(
+        MODULE.parse_args(
+            ["--mode", "s0", "--design-stack", "d1-only"]
+        )
+    )
+    MODULE.validate_args(
+        MODULE.parse_args(
+            ["--mode", "s1", "--design-stack", "all-exact"]
+        )
+    )
+    with pytest.raises(ValueError, match="sequential groups"):
+        MODULE.validate_args(
+            MODULE.parse_args(
+                ["--mode", "s1", "--design-stack", "d1-only"]
+            )
+        )
+    with pytest.raises(ValueError, match="grouped execution"):
+        MODULE.validate_args(
+            MODULE.parse_args(
+                ["--mode", "d3", "--design-stack", "all-exact"]
+            )
+        )
+
+
 def _reorder_groups() -> tuple[MODULE.M1Group, ...]:
     return (
         MODULE.M1Group(10, "compiled", ((0,), (1,))),
