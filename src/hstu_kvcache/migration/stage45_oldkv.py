@@ -436,19 +436,22 @@ if triton is not None:
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
     ):
-        layer = tl.program_id(0)
+        layer = tl.cast(tl.program_id(0), tl.int64)
+        token_count = tl.cast(tokens, tl.int64)
         token_offsets = (
-            tl.program_id(1) * BLOCK_M + tl.arange(0, BLOCK_M)
+            tl.cast(tl.program_id(1), tl.int64) * BLOCK_M
+            + tl.arange(0, BLOCK_M).to(tl.int64)
         )
         output_offsets = (
-            tl.program_id(2) * BLOCK_N + tl.arange(0, BLOCK_N)
+            tl.cast(tl.program_id(2), tl.int64) * BLOCK_N
+            + tl.arange(0, BLOCK_N).to(tl.int64)
         )
-        reduction_offsets = tl.arange(0, BLOCK_K)
+        reduction_offsets = tl.arange(0, BLOCK_K).to(tl.int64)
         accumulator = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
         for start in range(0, kv_width, BLOCK_K):
             current_reduction = start + reduction_offsets
             source_mask = (
-                (token_offsets[:, None] < tokens)
+                (token_offsets[:, None] < token_count)
                 & (current_reduction[None, :] < kv_width)
             )
             weight_mask = (
@@ -457,7 +460,7 @@ if triton is not None:
             )
             old_k_values = tl.load(
                 old_k
-                + layer * tokens * kv_width
+                + layer * token_count * kv_width
                 + token_offsets[:, None] * kv_width
                 + current_reduction[None, :],
                 mask=source_mask,
@@ -465,7 +468,7 @@ if triton is not None:
             )
             old_v_values = tl.load(
                 old_v
-                + layer * tokens * kv_width
+                + layer * token_count * kv_width
                 + token_offsets[:, None] * kv_width
                 + current_reduction[None, :],
                 mask=source_mask,
@@ -497,21 +500,21 @@ if triton is not None:
         values = accumulator + bias[None, :]
         tl.store(
             output_k
-            + layer * tokens * kv_width
+            + layer * token_count * kv_width
             + token_offsets[:, None] * kv_width
             + output_offsets[None, :],
             values,
-            mask=(token_offsets[:, None] < tokens)
+            mask=(token_offsets[:, None] < token_count)
             & (output_offsets[None, :] < kv_width),
         )
         value_offsets = output_offsets - kv_width
         tl.store(
             output_v
-            + layer * tokens * kv_width
+            + layer * token_count * kv_width
             + token_offsets[:, None] * kv_width
             + value_offsets[None, :],
             values,
-            mask=(token_offsets[:, None] < tokens)
+            mask=(token_offsets[:, None] < token_count)
             & (output_offsets[None, :] >= kv_width)
             & (output_offsets[None, :] < output_width),
         )
