@@ -16,13 +16,13 @@ SPEC.loader.exec_module(MODULE)
 
 
 def test_qk_model_shape() -> None:
-    cfg = MODULE.qk_model_config(250000, 5)
+    cfg = MODULE.qk_model_config(312144, 5, 50000)
     assert cfg.hidden_size == 512
     assert cfg.num_layers == 16
     assert cfg.num_heads == 8
     assert cfg.head_dim == 64
     assert cfg.max_seq_len == 512
-    assert cfg.num_prediction_items == 250000
+    assert cfg.num_prediction_items == 50000
 
 
 def test_qk_boundary_metadata_stays_flexible() -> None:

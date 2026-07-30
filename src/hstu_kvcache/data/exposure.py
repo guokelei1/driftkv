@@ -41,6 +41,21 @@ def load_prepared_exposure_plan(
         raise ValueError("prepared exposure user index is out of range")
     if item_idx.min() < 1 or item_idx.max() > int(metadata["fitted_items"]):
         raise ValueError("prepared exposure item index is out of range")
+    num_prediction_items = int(
+        metadata.get("num_prediction_items", metadata["fitted_items"])
+    )
+    context_hash_buckets = int(metadata.get("context_hash_buckets", 0))
+    if (
+        not 1 <= num_prediction_items <= int(metadata["fitted_items"])
+        or context_hash_buckets < 0
+        or num_prediction_items + context_hash_buckets
+        != int(metadata["fitted_items"])
+    ):
+        raise ValueError("prepared exposure item roles are invalid")
+    if np.any((item_idx > num_prediction_items) & (label > 0)):
+        raise ValueError(
+            "prepared exposure context-only items cannot be positive targets"
+        )
     names = np.array(
         ["base", *[f"window_{index}" for index in range(window_count)]],
         dtype=object,
@@ -62,6 +77,8 @@ def load_prepared_exposure_plan(
         num_behaviors=int(metadata["num_behaviors"]),
         user_map={},
         item_map={},
+        num_prediction_items=num_prediction_items,
+        context_hash_buckets=context_hash_buckets,
     )
     plan = StreamingDataPlan(
         trace=trace,

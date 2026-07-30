@@ -115,3 +115,61 @@ def test_qk_builder_uses_filtered_positions_nested_hash_and_phase_cache(
     cohort_ids = json.loads(config.cohort_ids.read_text())
     assert cohort_ids["benchmark_user_ids"] == expected[1:3].tolist()
     assert cohort_ids["nested_benchmark_prefixes"]["1"]["prefix_length"] == 1
+
+
+def test_qk_builder_maps_context_rows_and_removes_their_positive_targets(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "Tenrec.zip"
+    write_qk_archive(source)
+    config = MODULE.BuildConfig(
+        source=source,
+        cache_dir=tmp_path / "cache",
+        output=tmp_path / "processed_context.npz",
+        manifest=tmp_path / "manifest_context.json",
+        cohort_ids=tmp_path / "cohorts_context.json",
+        catalog_size=1,
+        base_prefix=2,
+        history_length=3,
+        slide=1,
+        fit_calibration_users=1,
+        cohort_sizes=(1, 2),
+        context_hash_buckets=4,
+        chunk_size=3,
+    )
+
+    result = MODULE.run(config)
+
+    assert result["status"] == "materialized"
+    assert config.catalog_cache.name == "catalog_top1_base2.npz"
+    assert "ctx4" in config.cohort_cache.name
+    cohort, cohort_metadata = MODULE.load_npz(config.cohort_cache)
+    assert cohort["eligible_filtered_lengths"].tolist() == [8, 8, 8, 8]
+    assert cohort_metadata["cohort_length_basis"].startswith("all raw exposure")
+    with np.load(config.output, allow_pickle=False) as source_npz:
+        metadata = json.loads(str(source_npz["metadata_json"].item()))
+        item_idx = source_npz["item_idx"]
+        labels = source_npz["label"]
+        behaviors = source_npz["behavior"]
+        raw = source_npz["raw_ordinal"]
+        prediction = source_npz["is_prediction_item"].astype(bool)
+        expected_item = (
+            config.catalog_size
+            + 1
+            + int(
+                MODULE.splitmix64(np.array([9], dtype=np.int64))[0]
+                % np.uint64(config.context_hash_buckets)
+            )
+        )
+        assert np.all(item_idx[raw == 2] == expected_item)
+        assert np.all(behaviors[raw == 2] == 2)
+        assert np.all(labels[~prediction] == 0)
+        assert np.all(labels[raw == 3] == 0)
+        assert metadata["num_prediction_items"] == 1
+        assert metadata["context_hash_buckets"] == 4
+        assert metadata["fitted_items"] == 5
+        assert metadata["prediction_rows"] == 3
+        assert metadata["context_rows"] == 9
+        assert metadata["unique_context_original_items_seen"] == 4
+        assert metadata["context_buckets_touched"] > 0
+        assert metadata["source_mapping_stats"]["context_rows"] == 14

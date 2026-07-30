@@ -17,9 +17,15 @@ PROTOCOL = "evokv_design3_m1_qk_data_development_v1"
 DEFAULT_SOURCE = Path("data/tenrec/Tenrec.zip")
 DEFAULT_MEMBER = "Tenrec/QK-video.csv"
 DEFAULT_CACHE_DIR = Path("data/processed/evokv_d3_m1_qk_cache")
-DEFAULT_OUTPUT = Path("data/processed/evokv_d3_m1_qk_8704.npz")
-DEFAULT_MANIFEST = Path("configs/evokv_d3/m1/qk_m1_manifest.json")
-DEFAULT_COHORT_IDS = Path("configs/evokv_d3/m1/qk_m1_cohorts.json")
+DEFAULT_OUTPUT = Path(
+    "data/processed/evokv_d3_m1_qk_ctx512144_8704.npz"
+)
+DEFAULT_MANIFEST = Path(
+    "configs/evokv_d3/m1/qk_ctx512144_manifest.json"
+)
+DEFAULT_COHORT_IDS = Path(
+    "configs/evokv_d3/m1/qk_ctx512144_cohorts.json"
+)
 DEFAULT_HASH_SALT = "evokv-d3-qk-m1-v1"
 TENREC_COLUMNS = ("user_id", "item_id", "click", "follow", "like", "share")
 
@@ -39,6 +45,7 @@ class BuildConfig:
     fit_calibration_users: int = 512
     cohort_sizes: tuple[int, ...] = (2_048, 4_096, 8_192)
     hash_salt: str = DEFAULT_HASH_SALT
+    context_hash_buckets: int = 262_144
     chunk_size: int = 2_000_000
     refresh: bool = False
 
@@ -64,7 +71,8 @@ class BuildConfig:
     def cohort_cache(self) -> Path:
         return self.cache_dir / (
             f"cohort_top{self.catalog_size}_events{self.required_events}_"
-            f"fit{self.fit_calibration_users}_bench{self.benchmark_users}.npz"
+            f"fit{self.fit_calibration_users}_bench{self.benchmark_users}_"
+            f"ctx{self.context_hash_buckets}.npz"
         )
 
 
@@ -88,6 +96,11 @@ def parse_args() -> argparse.Namespace:
         default=[2_048, 4_096, 8_192],
     )
     parser.add_argument("--hash-salt", default=DEFAULT_HASH_SALT)
+    parser.add_argument(
+        "--context-hash-buckets",
+        type=int,
+        default=262_144,
+    )
     parser.add_argument("--chunk-size", type=int, default=2_000_000)
     parser.add_argument("--audit-only", action="store_true")
     parser.add_argument("--refresh", action="store_true")
@@ -109,6 +122,7 @@ def config_from_args(args: argparse.Namespace) -> BuildConfig:
         fit_calibration_users=args.fit_calibration_users,
         cohort_sizes=tuple(sorted(set(args.cohort_sizes))),
         hash_salt=args.hash_salt,
+        context_hash_buckets=args.context_hash_buckets,
         chunk_size=args.chunk_size,
         refresh=args.refresh,
     )
@@ -129,6 +143,8 @@ def validate_config(config: BuildConfig) -> None:
         raise ValueError("cohort sizes must be sorted and unique")
     if config.chunk_size < 1:
         raise ValueError("chunk size must be positive")
+    if config.context_hash_buckets < 0:
+        raise ValueError("context hash bucket count cannot be negative")
 
 
 def source_fingerprint(config: BuildConfig) -> dict:
@@ -147,6 +163,35 @@ def source_fingerprint(config: BuildConfig) -> dict:
 def array_sha256(values: np.ndarray) -> str:
     canonical = np.asarray(values, dtype="<i8")
     return hashlib.sha256(canonical.tobytes()).hexdigest()
+
+
+def splitmix64(values: np.ndarray) -> np.ndarray:
+    hashed = values.astype(np.uint64, copy=True)
+    hashed = hashed + np.uint64(0x9E3779B97F4A7C15)
+    hashed = (hashed ^ (hashed >> np.uint64(30))) * np.uint64(
+        0xBF58476D1CE4E5B9
+    )
+    hashed = (hashed ^ (hashed >> np.uint64(27))) * np.uint64(
+        0x94D049BB133111EB
+    )
+    return hashed ^ (hashed >> np.uint64(31))
+
+
+def prediction_mask(items: np.ndarray, keep_items: np.ndarray) -> np.ndarray:
+    in_range = (items >= 0) & (items < len(keep_items))
+    selected = np.zeros(len(items), dtype=np.bool_)
+    selected[in_range] = keep_items[items[in_range]]
+    return selected
+
+
+def context_rule(config: BuildConfig) -> str:
+    if config.context_hash_buckets == 0:
+        return "out-of-catalog events are removed"
+    return (
+        "out-of-catalog original item maps to catalog_size + 1 + "
+        "splitmix64(original_item_id) modulo context_hash_buckets; "
+        "context-only rows cannot be positive targets"
+    )
 
 
 def grow_vector(values: np.ndarray, required: int) -> np.ndarray:
@@ -331,6 +376,12 @@ def cohort_cache_key(
         "source": fingerprint,
         "catalog_item_ids_sha256": catalog_metadata["catalog_item_ids_sha256"],
         "required_filtered_events": config.required_events,
+        "context_hash_buckets": config.context_hash_buckets,
+        "cohort_length_basis": (
+            "all raw exposure events after prediction/context mapping"
+            if config.context_hash_buckets > 0
+            else "base-catalog events retained after filtering"
+        ),
         "fit_calibration_users": config.fit_calibration_users,
         "cohort_sizes": list(config.cohort_sizes),
         "hash_salt": config.hash_salt,
@@ -347,7 +398,12 @@ def build_cohort_cache(
     keep_items = np.zeros(int(item_ids.max()) + 1, dtype=np.bool_)
     keep_items[item_ids] = True
     filtered_counts = np.zeros(0, dtype=np.int32)
+    prediction_items_seen = np.zeros(len(keep_items), dtype=np.bool_)
+    context_items_seen = np.zeros(0, dtype=np.bool_)
     retained_rows = 0
+    prediction_rows = 0
+    context_rows = 0
+    dropped_rows = 0
     rows = 0
     started = time.perf_counter()
     for chunk_index, chunk in enumerate(
@@ -356,9 +412,21 @@ def build_cohort_cache(
     ):
         users = chunk["user_id"].to_numpy(dtype=np.int64, copy=False)
         items = chunk["item_id"].to_numpy(dtype=np.int64, copy=False)
-        in_range = items < len(keep_items)
-        selected = np.zeros(len(items), dtype=np.bool_)
-        selected[in_range] = keep_items[items[in_range]]
+        predicted = prediction_mask(items, keep_items)
+        out_of_catalog = ~predicted
+        if predicted.any():
+            prediction_items_seen[items[predicted]] = True
+        prediction_rows += int(np.count_nonzero(predicted))
+        if config.context_hash_buckets > 0:
+            selected = np.ones(len(items), dtype=np.bool_)
+            if out_of_catalog.any():
+                required = int(items[out_of_catalog].max()) + 1
+                context_items_seen = grow_vector(context_items_seen, required)
+                context_items_seen[items[out_of_catalog]] = True
+            context_rows += int(np.count_nonzero(out_of_catalog))
+        else:
+            selected = predicted
+            dropped_rows += int(np.count_nonzero(out_of_catalog))
         if selected.any():
             counts = np.bincount(users[selected])
             filtered_counts = grow_vector(filtered_counts, len(counts))
@@ -385,6 +453,14 @@ def build_cohort_cache(
         + config.benchmark_users
     ]
     selected = np.concatenate([fit_calibration, benchmark])
+    context_original_items = np.flatnonzero(context_items_seen)
+    if config.context_hash_buckets > 0:
+        touched_buckets = np.unique(
+            splitmix64(context_original_items)
+            % np.uint64(config.context_hash_buckets)
+        )
+    else:
+        touched_buckets = np.empty(0, dtype=np.uint64)
     arrays = {
         "eligible_user_ids": eligible.astype(np.int64),
         "eligible_filtered_lengths": filtered_counts[eligible].astype(np.int32),
@@ -396,6 +472,15 @@ def build_cohort_cache(
         **cohort_cache_key(config, fingerprint, catalog_metadata),
         "source_rows_scanned": rows,
         "retained_rows": retained_rows,
+        "prediction_rows": prediction_rows,
+        "context_rows": context_rows,
+        "dropped_out_of_catalog_rows": dropped_rows,
+        "unique_prediction_items_seen": int(np.count_nonzero(prediction_items_seen)),
+        "unique_context_original_items_seen": int(len(context_original_items)),
+        "context_buckets_touched": int(len(touched_buckets)),
+        "context_bucket_collisions": int(
+            len(context_original_items) - len(touched_buckets)
+        ),
         "eligible_users": int(len(eligible)),
         "selected_users": int(len(selected)),
         "fit_calibration_user_ids_sha256": array_sha256(fit_calibration),
@@ -445,6 +530,29 @@ def positive_values(chunk: pd.DataFrame, selected: np.ndarray) -> np.ndarray:
     return output.astype(np.int8)
 
 
+def map_item_ids(
+    items: np.ndarray,
+    item_map: np.ndarray,
+    config: BuildConfig,
+) -> tuple[np.ndarray, np.ndarray]:
+    in_range = (items >= 0) & (items < len(item_map))
+    predicted = np.zeros(len(items), dtype=np.bool_)
+    predicted[in_range] = item_map[items[in_range]] > 0
+    mapped = np.zeros(len(items), dtype=np.int32)
+    mapped[predicted] = item_map[items[predicted]]
+    if config.context_hash_buckets > 0:
+        context = ~predicted
+        mapped[context] = (
+            config.catalog_size
+            + 1
+            + (
+                splitmix64(items[context])
+                % np.uint64(config.context_hash_buckets)
+            ).astype(np.int64)
+        ).astype(np.int32)
+    return mapped, predicted
+
+
 def materialize_selected(
     config: BuildConfig,
     fingerprint: dict,
@@ -476,8 +584,15 @@ def materialize_selected(
             "raw_ordinal",
             "filtered_position",
             "window_index",
+            "is_prediction_item",
         )
     }
+    materialized_prediction_items = np.zeros(0, dtype=np.bool_)
+    materialized_context_items = np.zeros(0, dtype=np.bool_)
+    materialized_context_buckets = np.zeros(
+        config.context_hash_buckets,
+        dtype=np.bool_,
+    )
     rows = 0
     kept = 0
     started = time.perf_counter()
@@ -488,12 +603,12 @@ def materialize_selected(
         users = chunk["user_id"].to_numpy(dtype=np.int64, copy=False)
         items = chunk["item_id"].to_numpy(dtype=np.int64, copy=False)
         raw_positions, raw_seen = consume_user_positions(users, raw_seen)
-        user_in_range = users < len(user_map)
-        item_in_range = items < len(item_map)
-        selected = user_in_range & item_in_range
-        selected[user_in_range & item_in_range] &= (
-            user_map[users[user_in_range & item_in_range]] > 0
-        ) & (item_map[items[user_in_range & item_in_range]] > 0)
+        mapped_items, predicted = map_item_ids(items, item_map, config)
+        user_in_range = (users >= 0) & (users < len(user_map))
+        selected = np.zeros(len(users), dtype=np.bool_)
+        selected[user_in_range] = user_map[users[user_in_range]] > 0
+        if config.context_hash_buckets == 0:
+            selected &= predicted
         if selected.any():
             selected_users = users[selected]
             filtered_positions, filtered_seen = consume_user_positions(
@@ -508,10 +623,13 @@ def materialize_selected(
                 chosen_users = users[chosen]
                 chosen_items = items[chosen]
                 chosen_positions = filtered_positions[within_horizon]
+                chosen_prediction = predicted[chosen]
+                chosen_labels = positive_values(chunk, chosen)
+                chosen_labels[~chosen_prediction] = 0
                 columns["user_idx"].append(user_map[chosen_users])
-                columns["item_idx"].append(item_map[chosen_items])
+                columns["item_idx"].append(mapped_items[chosen])
                 columns["behavior"].append(behavior_values(chunk, chosen))
-                columns["label"].append(positive_values(chunk, chosen))
+                columns["label"].append(chosen_labels)
                 columns["time_ms"].append(
                     raw_positions[chosen].astype(np.int64, copy=False) * 1_000
                 )
@@ -519,7 +637,7 @@ def materialize_selected(
                     raw_positions[chosen].astype(np.int32, copy=False)
                 )
                 columns["filtered_position"].append(
-                    chosen_positions.astype(np.int16, copy=False)
+                    chosen_positions.astype(np.int32, copy=False)
                 )
                 columns["window_index"].append(
                     np.where(
@@ -528,6 +646,29 @@ def materialize_selected(
                         0,
                     ).astype(np.int8)
                 )
+                columns["is_prediction_item"].append(
+                    chosen_prediction.astype(np.int8, copy=False)
+                )
+                prediction_items = chosen_items[chosen_prediction]
+                if len(prediction_items):
+                    materialized_prediction_items = grow_vector(
+                        materialized_prediction_items,
+                        int(prediction_items.max()) + 1,
+                    )
+                    materialized_prediction_items[prediction_items] = True
+                context_items = chosen_items[~chosen_prediction]
+                if len(context_items):
+                    materialized_context_items = grow_vector(
+                        materialized_context_items,
+                        int(context_items.max()) + 1,
+                    )
+                    materialized_context_items[context_items] = True
+                    context_bucket_ids = (
+                        mapped_items[chosen][~chosen_prediction]
+                        - config.catalog_size
+                        - 1
+                    )
+                    materialized_context_buckets[context_bucket_ids] = True
                 kept += int(np.count_nonzero(within_horizon))
         rows += len(chunk)
         print(
@@ -556,6 +697,11 @@ def materialize_selected(
         raise ValueError("selected users do not have exactly the requested retained horizon")
     arrays["original_user_ids"] = selected_user_ids.astype(np.int64, copy=True)
     arrays["original_item_ids"] = item_ids.astype(np.int64, copy=True)
+    prediction_rows = int(arrays["is_prediction_item"].sum())
+    context_rows = int(len(arrays["is_prediction_item"]) - prediction_rows)
+    unique_prediction_items = int(np.count_nonzero(materialized_prediction_items))
+    unique_context_items = int(np.count_nonzero(materialized_context_items))
+    touched_context_buckets = int(np.count_nonzero(materialized_context_buckets))
     metadata = {
         "protocol": PROTOCOL,
         "scientific_result": False,
@@ -563,7 +709,10 @@ def materialize_selected(
         "source": fingerprint,
         "source_rows_scanned_until_complete": rows,
         "catalog_size": config.catalog_size,
-        "fitted_items": len(item_ids),
+        "num_prediction_items": len(item_ids),
+        "context_hash_buckets": config.context_hash_buckets,
+        "fitted_items": len(item_ids) + config.context_hash_buckets,
+        "context_rule": context_rule(config),
         "catalog_fit": f"top-{config.catalog_size} from each user's first {config.base_prefix} raw exposures",
         "catalog_item_ids_sha256": catalog_metadata["catalog_item_ids_sha256"],
         "selected_user_ids_sha256": cohort_metadata["selected_user_ids_sha256"],
@@ -594,8 +743,37 @@ def materialize_selected(
         },
         "rows": int(len(arrays["user_idx"])),
         "positive_rows": int(arrays["label"].sum()),
+        "prediction_rows": prediction_rows,
+        "context_rows": context_rows,
+        "unique_prediction_items_seen": unique_prediction_items,
+        "unique_context_original_items_seen": unique_context_items,
+        "context_buckets_touched": touched_context_buckets,
+        "context_bucket_collisions": unique_context_items - touched_context_buckets,
+        "source_mapping_stats": {
+            "rows": cohort_metadata["source_rows_scanned"],
+            "prediction_rows": cohort_metadata["prediction_rows"],
+            "context_rows": cohort_metadata["context_rows"],
+            "dropped_out_of_catalog_rows": cohort_metadata[
+                "dropped_out_of_catalog_rows"
+            ],
+            "unique_prediction_items_seen": cohort_metadata[
+                "unique_prediction_items_seen"
+            ],
+            "unique_context_original_items_seen": cohort_metadata[
+                "unique_context_original_items_seen"
+            ],
+            "context_buckets_touched": cohort_metadata[
+                "context_buckets_touched"
+            ],
+            "context_bucket_collisions": cohort_metadata[
+                "context_bucket_collisions"
+            ],
+        },
         "num_behaviors": 5,
-        "positive_rule": "click or follow or like or share",
+        "positive_rule": (
+            "click or follow or like or share for prediction-catalog rows; "
+            "context-only rows are forced to zero"
+        ),
         "ordering": "stable official within-user file order without calendar-time semantics",
     }
     config.output.parent.mkdir(parents=True, exist_ok=True)
@@ -631,6 +809,7 @@ def write_control_files(
     cohort_ids = {
         "protocol": PROTOCOL,
         "hash_salt": config.hash_salt,
+        "context_hash_buckets": config.context_hash_buckets,
         "selection": "fit/calibration prefix followed by one nested benchmark pool",
         "fit_calibration_user_ids": fit_calibration.tolist(),
         "benchmark_user_ids": benchmark.tolist(),
@@ -644,6 +823,10 @@ def write_control_files(
         "source": fingerprint,
         "catalog": {
             "size": config.catalog_size,
+            "num_prediction_items": config.catalog_size,
+            "context_hash_buckets": config.context_hash_buckets,
+            "fitted_items": config.catalog_size + config.context_hash_buckets,
+            "context_rule": context_rule(config),
             "base_prefix_raw_events": config.base_prefix,
             "item_ids_sha256": catalog_metadata["catalog_item_ids_sha256"],
             "cache": str(config.catalog_cache),
@@ -655,6 +838,7 @@ def write_control_files(
         },
         "cohorts": {
             "eligible_users": cohort_metadata["eligible_users"],
+            "length_basis": cohort_metadata["cohort_length_basis"],
             "fit_calibration_users": config.fit_calibration_users,
             "benchmark_users": config.benchmark_users,
             "nested_benchmark_prefixes": nested,
@@ -663,6 +847,25 @@ def write_control_files(
             ],
             "cache": str(config.cohort_cache),
             "ids": str(config.cohort_ids),
+        },
+        "source_mapping_stats": {
+            "prediction_rows": cohort_metadata["prediction_rows"],
+            "context_rows": cohort_metadata["context_rows"],
+            "dropped_out_of_catalog_rows": cohort_metadata[
+                "dropped_out_of_catalog_rows"
+            ],
+            "unique_prediction_items_seen": cohort_metadata[
+                "unique_prediction_items_seen"
+            ],
+            "unique_context_original_items_seen": cohort_metadata[
+                "unique_context_original_items_seen"
+            ],
+            "context_buckets_touched": cohort_metadata[
+                "context_buckets_touched"
+            ],
+            "context_bucket_collisions": cohort_metadata[
+                "context_bucket_collisions"
+            ],
         },
         "output": materialized,
         "scope": (

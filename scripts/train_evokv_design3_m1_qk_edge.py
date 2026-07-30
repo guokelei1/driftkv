@@ -30,11 +30,15 @@ from hstu_kvcache.streaming import (
 from hstu_kvcache.utils import save_json
 
 PROTOCOL = "evokv_design3_m1_qk_two_version_training_dev_v0"
-DEFAULT_PREPARED_DATA = "data/processed/evokv_design3_m1_qk_edge.npz"
-DEFAULT_CHECKPOINT_DIR = "checkpoints/evokv_design3_m1_qk_edge/seed0"
+DEFAULT_PREPARED_DATA = (
+    "data/processed/evokv_d3_m1_qk_ctx512144_8704.npz"
+)
+DEFAULT_CHECKPOINT_DIR = (
+    "checkpoints/evokv_design3_m1_qk_ctx512144/seed0"
+)
 DEFAULT_OUTPUT = (
     "results/system/evokv_design3_m1/"
-    "qk_two_version_training_seed0.json"
+    "qk_ctx512144_two_version_training_seed0.json"
 )
 
 
@@ -48,9 +52,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--micro-batch-size", type=int, default=1)
-    parser.add_argument("--base-epochs", type=int, default=6)
+    parser.add_argument("--base-epochs", type=int, default=1)
     parser.add_argument("--base-lr", type=float, default=3e-4)
-    parser.add_argument("--stream-epochs", type=int, default=2)
+    parser.add_argument("--stream-epochs", type=int, default=1)
     parser.add_argument("--stream-lr", type=float, default=1e-4)
     parser.add_argument("--ddp-bucket-cap-mb", type=int, default=64)
     parser.add_argument("--data-dry-run", action="store_true")
@@ -78,10 +82,11 @@ def artifact_sha256(path: str | Path) -> str:
 def qk_model_config(
     num_items: int,
     num_behaviors: int,
+    num_prediction_items: int | None = None,
 ) -> HSTUConfig:
     return HSTUConfig(
         num_items=num_items,
-        num_prediction_items=num_items,
+        num_prediction_items=num_prediction_items,
         num_behaviors=num_behaviors,
         hidden_size=512,
         num_layers=16,
@@ -141,6 +146,13 @@ def boundary_metadata(metadata: dict[str, object]) -> dict[str, object]:
         "ordering",
         "selected_users",
         "fitted_items",
+        "num_prediction_items",
+        "context_hash_buckets",
+        "context_hash_function",
+        "context_rule",
+        "prediction_catalog_rows",
+        "context_rows",
+        "unique_context_buckets_touched",
         "rows",
         "positive_rows",
         "split_rows",
@@ -217,7 +229,11 @@ def inspect_prepared_data(
     )
     update_coverage = batch_coverage(update_batches)
     del update_batches
-    cfg = qk_model_config(plan.num_items, plan.num_behaviors)
+    cfg = qk_model_config(
+        plan.num_items,
+        plan.num_behaviors,
+        plan.num_prediction_items,
+    )
     return {
         "protocol": PROTOCOL,
         "mode": "data_dry_run",
@@ -430,7 +446,11 @@ def run_training(args: argparse.Namespace) -> dict[str, object] | None:
         seed_everything(args.seed)
         torch.set_float32_matmul_precision("high")
         plan, metadata = load_qk_plan(args.prepared_data)
-        cfg = qk_model_config(plan.num_items, plan.num_behaviors)
+        cfg = qk_model_config(
+            plan.num_items,
+            plan.num_behaviors,
+            plan.num_prediction_items,
+        )
         plan.init_base()
         model = HSTU(cfg).to(runtime.device)
         training_model: torch.nn.Module = DistributedDataParallel(
