@@ -504,7 +504,8 @@ only.
    available; do not kill or oversubscribe an external GPU process.
 3. Freeze/check the Stage-B summary.
 4. Freeze a new formal D2 protocol.
-5. Run same-binary all-exact, naive sharded fixed-action mixed, and physical-sparse mixed through
+5. Run same-binary all-exact, the strongest owner-local contiguous fixed-action baseline
+   independently selected from staged/fused finalization, and physical-sparse mixed through
    post-append publication, commit, and reclaim.
 6. Complete paired 1/2/4-GPU, segmented-consumer, capacity, failure, and physical-communication
    evidence.
@@ -561,8 +562,11 @@ The complete evaluation portfolio and physical scale budget are now specified in
 2. producing edge-specific X1/X2 programs, action plans, and verified 1/2/4-way embedding shards;
 3. closing the resident/out-of-core timers, segmented consumer, NUMA-aware DRAM arena, and
    transaction/correctness boundary;
-4. running one exact/naive/full two-GPU canary per new protocol family;
-5. expanding only then to the 66-cell paper-core matrix.
+4. running hardware/independent-oracle canaries and applying baseline-first within each layer:
+   D2 foundation, complete D2/frozen stack, D3 foundation, then D3 proposed mechanisms;
+5. de-duplicating M3 S0 against each tuned D3 exact winner before freezing the final
+   \(64+k\)-cell count, where \(k\in\{0,1,2\}\), subject to the declared R-KR/2-GPU strict-COW
+   preflight.
 
 The blueprint plans new result families; it does not promote any W3 or D3 development artifact.
 
@@ -582,14 +586,17 @@ cannot manufacture the claim.
 D3 enters the paper only if it:
 
 1. passes full-payload correctness and per-rank bounded-memory admission;
-2. reports same-boundary sequential, strong double-buffer, proposed, and all-exact paths;
-3. shows an attributable gain over the action-oblivious double buffer;
+2. reports same-boundary sequential, strong whole-group double-buffer, generic fixed-FIFO
+   fine-grained segmented, proposed, and independently tuned all-exact paths;
+3. shows an attributable gain over the strongest action-oblivious generic pipeline, not merely
+   over whole-group double buffering;
 4. has at least one meaningful operating point relative to fastest same-boundary all-exact;
 5. reports the positive region and the exact-preferred crossover.
 
-If D3 only beats a sequential loop, it is an implementation path rather than a design. If the
-unavoidable direct-old-K/V input lower bound is already slower than same-boundary exact, stop
-scheduler tuning and revisit source representation.
+If D3 only beats a sequential loop or whole-group double buffer but not the generic segmented
+pipeline, it is an implementation path rather than a design. If the unavoidable direct-old-K/V
+input lower bound is already slower than same-boundary exact, stop scheduler tuning and revisit
+source representation.
 
 ## 9. Claims not supported
 

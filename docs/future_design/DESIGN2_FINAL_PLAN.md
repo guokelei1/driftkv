@@ -292,12 +292,18 @@ Formal D2 evaluation requires the same SPMD harness for:
 
 1. **one-shot all exact:** fastest independently tuned complete current-model recomputation;
 2. **two-stage all exact:** only when it reflects a meaningful execution decomposition;
-3. **naive sharded fixed-action mixed:** same D1 actions and row-sharded embeddings without D2
-   physical lowering;
-4. **owner-local but contiguous mixed:** isolates owner-compute from segmented output;
-5. **segmented mixed without shape-aware ordering;**
+3. **owner-local staged-contiguous fixed-action mixed:** the current executable strong control;
+4. **owner-local fused-contiguous fixed-action mixed:** isolates fused finalization before layout
+   changes;
+5. **segmented mixed without shape-aware ordering and with separate exact pools;**
 6. **shape-aware segmented mixed without merged exact pool;**
-7. **complete D2.**
+7. **complete D2 with merged physical exact pools.**
+
+The headline fixed-action denominator is independently selected between the two legal contiguous
+controls. The current W3 `naive` implementation is already owner-local, so formal evaluation does
+not relabel it as placement-oblivious or claim a standalone owner-compute speedup. A future
+placement-oblivious supporting control is legal only if it materializes and charges all old-K/V
+peer traffic; it is not the headline denominator.
 
 The current pre-SPMD record-DP Table-8 numbers cannot be used as a baseline. Every comparator must
 be rerun in the same process model, source boundary, target transaction, and timer.
@@ -339,20 +345,21 @@ D2 becomes paper evidence only after:
 2. a new frozen D2 protocol in `docs/eval_protocol.md`;
 3. paired 1/2/4-GPU runs using the same binary and endpoint;
 4. full 682-record post-append publication/commit/reclaim;
-5. strong all-exact and naive fixed-action mixed baselines;
+5. strong all-exact and independently tuned owner-local contiguous fixed-action baselines;
 6. physical communication and per-rank capacity ledgers;
 7. segmented consumer or next-wave support;
 8. complete full-payload, transaction, and failure checks.
 
-A positive D2 result must show that the physical-sparse path beats naive fixed-action mixed and has
-a meaningful region relative to the fastest same-boundary all-exact path. Synthetic lookup
-contention may support resource attribution but is neither a serving claim nor a gate.
+A positive D2 result must show that the physical-sparse path beats the strongest legal
+owner-local contiguous fixed-action baseline and has a meaningful region relative to the fastest
+same-boundary all-exact path. Synthetic lookup contention may support resource attribution but is
+neither a serving claim nor a gate.
 
 ## 11. Stop and fallback rules
 
 - If W4 fails, repair collective order, routing, capacity, or termination before formal evaluation.
-- If naive mixed remains slower but the complete D2 path wins, retain the logical-to-physical
-  motivation.
+- If the strong contiguous mixed baseline remains slower but the complete D2 path wins, retain the
+  logical-to-physical motivation.
 - If complete D2 loses after all overhead is included, do not change D1 actions to rescue it;
   attribute the loss and demote or remove the mechanism.
 - If the current real accessed embedding/cardinality scale is too small to expose the distributed

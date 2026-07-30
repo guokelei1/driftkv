@@ -34,8 +34,10 @@ model, and a synchronized per-rank capacity preflight. It is still a development
 exporter or formal result. Grouped development E0 now measures 44.639 seconds sequentially and
 33.549 seconds with the strong action-oblivious two-slot baseline; owner-local naive-staged
 D1-only is 57.597 seconds and the current-binary sequential D1+D2 rerun is 49.753 seconds.
-Independently tuned formal E0, held-out qualification, formal repeats, action/capacity mixes, and
-transaction closure still precede a frozen protocol.
+Formal evaluation promotes a same-stack fixed-FIFO bidirectionally segmented path to the strongest
+generic S2 baseline; route-aware D3 must beat it, not merely whole-group S1. Independently tuned
+formal E0/S2, held-out qualification, formal repeats, action/capacity mixes, and transaction
+closure still precede a frozen protocol.
 
 The H12 workload is the first semantic canary, not physical oversubscription evidence. The preferred
 D3 mechanism-selection route audits a larger real-history QK workload whose owner-local source

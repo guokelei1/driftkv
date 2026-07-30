@@ -36,11 +36,12 @@ EvoKV 当前按同一迁移任务分成三个层次：
 
 > 当完整 source 加 private target K/V 超过每卡可用 HBM 时，怎样在 GPU0/GPU1 上组织
 > DRAM↔HBM 与分布式计算流水，并在必要时联合调整上游执行组织，得到超过通用
-> double-buffer pipeline 的实际收益？
+> fixed-FIFO fine-grained pipeline 的实际收益？
 
 按显存容量顺序分组只是基础 baseline，不是贡献。普通 prefetch 或 double buffering 也不是
 贡献。D3 必须证明：在相同 source-byte multiset 和 DRAM endpoint 下，它相对强
-action-oblivious double buffer 仍有可归因收益。
+action-oblivious fixed-FIFO segmented pipeline 仍有可归因收益，而不只是把 whole-group
+buffer 切成 microbatches。
 
 当前不主动恢复 organic mixed-version program graph 或复杂 renewal controller。但若简单
 out-of-core profile 表明 action/owner/granularity 必须协同，允许先做小规模跨层候选，再根据
@@ -284,9 +285,11 @@ direct-old-K/V M1 pooling。
 
 1. fair sequential capacity groups；
 2. strong action-oblivious whole-group pipeline；
-3. fixed-order bidirectionally segmented D3；
+3. generic fixed-FIFO bidirectionally segmented pipeline：两条 route 共用一个独立调优的
+   global `(I,C,O)` triple，不读 route profile；
 4. route-aware ResidencyPlan；
-5. same-boundary grouped all-exact E0。
+5. independently tuned same-boundary all-exact E0，其候选同时包含 grouped 与 bounded
+   fine-grained exact pipeline。
 
 E0 现有开发态顺序/双 slot 时间为 44.639/33.549 秒。补充的 owner-local、naive-staged
 D1-only 路径为 57.597 秒，当前 binary 的 sequential D1+D2 rerun 为 49.753 秒。它们说明
@@ -298,6 +301,11 @@ placement-oblivious owner-compute ablation。
 Isolation-track variants 共享 source-byte multiset 和 `WorkManifest`。Co-design variants 记录
 不同的 action/owner/source bytes，并在同一新 revision 下重跑 baselines。所有 speedup 只在
 ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
+
+机制因果链中，route-specific control 为 compiled/exact 分别选择一个 `(I,C,O)` triple，
+但保持 route-major order；selected-order row 必须复用这两个 triples，只增加 stable
+interleave。headline ResidencyPlan 可以独立联合调优，但不能拿它与不同 cuts/resources 的
+control 做机制归因。
 
 ### 5.3 Metrics
 
@@ -314,16 +322,18 @@ ordinary-DRAM→GPU→ordinary-DRAM 同 endpoint 内形成。
 D3 最终进入论文结果时应满足：
 
 1. full-payload correctness 与 bounded-memory admission；
-2. ordinary-DRAM same-boundary sequential、double-buffer、D3 和 all-exact；
+2. ordinary-DRAM same-boundary sequential、whole-group double-buffer、generic segmented、
+   D3 和 all-exact；
 3. 以 GPU0/GPU1 为主点，并在机制稳定后补必要的 GPU-count evidence；
-4. 相对 action-oblivious double buffer 的可归因收益；
+4. 相对 independently tuned generic fixed-FIFO segmented baseline 的可归因收益；
 5. 至少一个相对 fastest same-boundary all-exact 有意义的 operating point；
 6. report positive region 和 exact-preferred crossover；
 7. 不把 development timing 写成 formal result，也不扩张到 serving、SSD 或 remote tier。
 
-若只胜过 sequential loop，不胜过 strong double buffer，D3 只是 implementation path。若
-unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 scheduler 没有意义，
-应停止并重新研究 source representation，而不是无限调参。
+若只胜过 sequential loop 或 whole-group double buffer，不胜过 generic segmented
+baseline，D3 只是 implementation path。若 unavoidable old-K/V input lower bound 已慢于
+same-boundary exact，继续调 scheduler 没有意义，应停止并重新研究 source
+representation，而不是无限调参。
 
 ## 7. 当前实现与正式化缺口
 
@@ -367,12 +377,12 @@ constraint exporter。当前开发态 E0 已完成，接下来进入独立调优
 1. 已从 H12/W2 导出最小 `WorkManifest` 并完成 M0；
 2. 已构造 QK M1 ordinary-DRAM source/target 和真实物理 oversubscription；
 3. 已完成 fair S0 与 strong S1；
-4. 已由 profile 构造并验证 bidirectionally segmented D3；
+4. 已构造并验证 generic fixed-FIFO bidirectionally segmented S2；
 5. 已实现 route-aware ResidencyPlan，并在同一 exact stack/hash 上完成 route-major 与
    selected-order 配对、full byte parity 和 capacity preflight；
 6. 已完成 same-boundary grouped E0 和 owner-local D1-only contribution diagnostics；
-7. 下一步完成 independently tuned formal E0、held-out qualification、正式重复和最小
-   capacity/action-mix qualification；
+7. 下一步完成 independently tuned formal E0/generic S2、held-out qualification、正式
+   重复和最小 capacity/action-mix qualification；
 8. 若通过，再补 normalized exporter、transaction、formal protocol 和扩展矩阵；
 9. GPU0/GPU1 的正式结论清楚前不跑 3/4 GPU。
 

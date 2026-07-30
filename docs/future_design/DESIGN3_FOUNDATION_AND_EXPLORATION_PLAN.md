@@ -406,15 +406,20 @@ endpoints 和 primary timer，使用两个非别名 slots、lookahead-1 和 sing
 makespan 为 32.703 秒，相对公平 S0 为 1.475x。两 rank 的 input-boundary wait 仍为
 6.795/6.195 秒，因此 S1 是可信的强基线，但不是 out-of-core 流水的终点。
 
-### 3.3 D3：bidirectionally segmented I/O
+### 3.3 S2：generic fixed-FIFO bidirectionally segmented I/O
 
-当前候选在 S1 的 bounded group pipeline 内再加入一级 microbatch pipeline：
+这个强通用 baseline 在 S1 的 bounded group pipeline 内再加入一级 microbatch pipeline：
 
 ```text
 input:  pageable pack j+1  || H2D j
 compute: unchanged D1/D2 group and collective order
 output: D2H j+1            || pageable publish j
 ```
+
+正式 S2 独立调优一个 global `(I,C,O)` triple，并让 compiled/exact 两条 route 共用，
+保持 fixed FIFO；它不读取 route profile。后续 route-specific causal row 才允许两条 route
+各用一个 triple但仍保持 route-major order；selected-order causal row 完全复用这两个
+triples，只增加 stable interleave。
 
 输入和输出各交替复用两个现有 pinned components。CUDA event 在 pinned storage 被 CPU
 读取或覆盖前建立生命周期边界；外层仍只有一个 prefetched group 和一个 outstanding drain。
@@ -532,8 +537,9 @@ pools 或 layout 的候选都是新的 `stack_revision`，必须重跑自己的 
 - formal failure matrix；
 - exhaustive parameter sweep。
 
-当前 proposed 已胜过 S1 和单次 development E0，但上述方向仍应等 formal E0 和最小资格
-验证完成后再决定。
+当前 proposed 已胜过 S1 和单次 development E0，但相对同 stack route-major control 只有
+1.2879% 的单次收益；它尚未通过 independently tuned generic S2、formal E0 和最小资格
+验证，因此不能据此冻结 paper claim。
 
 ## 5. 五个灵活 milestone
 
@@ -661,14 +667,15 @@ capacity/action sensitivity 或 replication 中保持。若资格验证失败，
 
 1. **能否运行？** 两卡 bounded-memory DRAM→GPU→DRAM 是否正确完成？
 2. **瓶颈是什么？** 搬运、compute、collective、rank wait 还是 writeback？
-3. **通用流水有多强？** S1 相对 S0 隐藏了多少？
-4. **场景特异机制是否有额外收益？** proposed 是否稳定胜过 S1，且能由 profile 解释？
+3. **通用流水有多强？** S1 相对 S0 隐藏了多少，generic fixed-FIFO S2 又能隐藏多少？
+4. **场景特异机制是否有额外收益？** proposed 是否稳定胜过 independently tuned S2，
+   且能由 profile 解释？
 
 当前四个问题在这一个 M1 point 上的回答分别是：能；双向 staging/writeback 加 route
-resource imbalance；S1 为 1.475x；selected D3 单次运行相对 S1 为 1.16186x。固定分段先解决
-组内串行 I/O，stable interleave 再用 compute-heavy exact 遮住 I/O-heavy compiled 阶段。
-它已经超过“只胜 sequential”的最低机制门槛，并在该单次 development point 上回答了 E0
-crossover；held-out generality、正式重复和论文证据仍未完成。
+resource imbalance；S1 为 1.475x，fixed-FIFO segmentation 已经贡献大部分后续收益；
+selected D3 相对同 stack route-major control 只有 1.013047x。它已经超过“只胜
+sequential”的最低开发门槛并在该单次 point 上回答了 E0 crossover，但尚未证明相对强
+generic S2 的稳定 paper-level 增益；held-out generality、正式重复和论文证据仍未完成。
 
 论文阶段仍需要严格可比性、correctness、physical capacity、independently tuned/repeated
 all-exact、failure 和扩展实验；但这些不阻塞当前两卡机制发现。
@@ -751,12 +758,13 @@ identity 或显式 reset，不能误把残留 coverage 当成新 run。
 7. 已物化 144-GiB complete old K/V，并完成 2,048-record、九组、288-GiB group-128 M1
    S0；
 8. 已补 fair group-64、17-group S0 和同 setting 的 M1 strong S1；
-9. 已完成 input-only causal probe 和 fixed-order bidirectionally segmented I/O D3；
+9. 已完成 input-only causal probe 和 generic fixed-FIFO bidirectionally segmented S2；
 10. 已实现 route-specific 三段解耦、bounded-flow planner、stable interleave、plan/stack
     hash，并以 28.514442098/28.147194647 秒完成同一 exact-stack route-major/selected pair
     与 full byte parity；
 11. 已补 grouped E0 与 owner-local D1-only contribution diagnostics；
-12. 下一步补 independently tuned formal E0、正式重复与最小 held-out sensitivity，再决定
+12. 下一步先补 independently tuned formal E0 与 generic S2、正式重复与最小 held-out
+    sensitivity，再决定
     是否冻结正式 D3。
 
 这个顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被设计

@@ -270,8 +270,9 @@ ledger fails, return to the D1→D2 adapter before debugging W4.
 ## 9. Formal D2 work after W4
 
 1. Freeze a new D2 protocol.
-2. Rerun one-shot/two-stage all-exact, naive sharded fixed-action mixed, and complete D2 in the same
-   SPMD binary.
+2. Rerun one-shot/two-stage all-exact, both owner-local staged/fused contiguous fixed-action
+   controls, and complete D2 in the same SPMD binary; independently freeze the faster contiguous
+   control as the headline fixed-action denominator.
 3. Include plan/history preparation, suffix append, private target, validation, publication,
    commit, and reclaim.
 4. Close full-682 strict COW and segmented consumer/next-wave compatibility.

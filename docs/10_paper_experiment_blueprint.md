@@ -31,10 +31,20 @@ config。
    144–720 GiB 真实 old/new K/V footprint，承担 Motivation 2、Motivation 3、D2 多卡、
    D3 DRAM↔HBM 和端到端结果。
 
-主论文新增 **66 个去重后的 formal timed cells**。每个 cell 做一次完整 correctness、
-一次 untimed warmup 和五次 measured complete job，因此是 330 次 measured jobs、
-462 次完整 executions。D1 已有的 36 条模型版本链与冻结系统结果不重跑；旧 W3/D3
-development 数字只用于选机制和估算预算，不进入论文结果表。
+主论文计划最多 **66 个 formal timed cells**。令 \(k\in\{0,1,2\}\) 表示两个 M3 容量点中
+tuned generic exact winner 与 S0 不同的点数；若 S0 本身获胜，同一个 cell 必须复用，不能
+既算 M3 S0 又算 D3 exact winner。因此 tuning 后真正去重的规模是
+\(64+k\) cells、\(320+5k\) 次 measured jobs 和 \(448+7k\) 次完整 executions，最大值才是
+66/330/462。D1 已有的 36 条模型版本链不重训；旧 W3/D3 development 数字只用于选机制和
+估算预算，不进入论文结果表。
+
+执行采用 **per-layer baseline first**。baseline/control accounting 是 \(45+k\) cells，
+proposed/ablation accounting 是 19 cells；但不能机械地先跑完所有 baseline 再碰任何
+proposed，因为 D3 的 mixed baseline 必须建立在已经冻结的 complete D2 stack 上。正确顺序
+是先冻结 D2 foundation，再完成 D2 并冻结 stack，随后冻结 D3 foundation，最后才运行 D3
+proposed。每一层都先验证数据、模型、分片、DRAM/HBM、timer、consumer endpoint 和独立
+数值 oracle。调优 screen、硬件 calibration、D1 同 SLA comparator pass 和已有 D1 证据
+不计入上述 system cells，但必须保留全部配置与结果，不能只公开赢家。
 
 主系统配置固定为 X2-QK：24L/H1536、2,859,836 行 entity embedding、T=512。两卡
 2,048 records 是约 300 GiB 的主点，四卡 4,096/5,120 records 是约 600/720 GiB 的
@@ -229,7 +239,7 @@ X2 direct-old-K/V program 约 0.422 GiB。按当前 EvoKV 实现，X2 的 HBM �
 R-KR/2-GPU strict-COW resident 点是一个必须先通过的硬 preflight：old+private target
 本身每 rank 约占 33.2 GiB，加上 fixed state 后只剩约 4.4 GiB transient headroom。
 preflight 必须运行完整 payload 与峰值 workspace，而不是只做静态 byte arithmetic。
-当前 66-cell 预算以它通过为前提；若 exact 或 complete D2 任一侧超过 38 GiB/rank，
+当前最多 66-cell 的预算以它通过为前提；若 exact 或 complete D2 任一侧超过 38 GiB/rank，
 则只能在冻结正式协议前删除这两个双卡 R-KR cells、重算总数并保留四卡点，不能回退成
 非 strict-COW 路径后仍把它画在同一 resident panel。
 
@@ -357,7 +367,9 @@ timer-external manifest reset 也单列，不能藏进 warmup。这样同时保�
 ### 5.3 Baseline tuning
 
 每个 baseline 在相同 38 GiB/rank cap 下独立调优，不能让 EvoKV 使用更大的 group 或更多
-buffer。调优只用独立 profile users：
+buffer。除 HBM 外，还必须冻结 CPU affinity、CPU thread count、每 rank pinned-byte cap、
+CUDA stream 上限、outer lookahead、outstanding drain credits 和 NUMA placement。
+不同方法可以少用资源，但不能获得更高上限。调优只用独立 profile users：
 
 - 先做 legality/correctness 与 capacity preflight；
 - 候选空间按机制最多保留约 12 个有意义点，不做无边界 Cartesian product；
@@ -366,14 +378,29 @@ buffer。调优只用独立 profile users：
 - 选定后冻结到 qualification 和 final benchmark。
 
 具体而言，D2 的 exact denominator 在 one-shot/two-stage candidates 中独立选最快者；
-D3 的 exact denominator 在合法 one-shot/S0/S1 中独立选最快者，action-oblivious mixed
-baseline 也在 S0/S1 中独立选择。M3 为解释机制而保留 exact S0 与 S1 两行，但 E1 使用
-二者更快值。不能因为 development 中 S1 曾获胜，就在所有容量上预设 double buffering
-一定最快。
+D2 的 fixed-action denominator 在 owner-local staged-contiguous 与
+owner-local fused-contiguous 中独立选最快者。D3 的 exact denominator 在合法
+one-shot、sequential S0、whole-group S1 和 bounded fine-grained exact pipeline 中独立
+选最快者；action-oblivious mixed baseline 则在 S0、S1 和 generic fixed-FIFO
+bidirectionally segmented S2 中独立选择。S2 只使用一套全局 segment 参数、固定 FIFO
+route order，不读取 route profile，也不生成 ResidencyPlan。这里“一套”明确指两条
+route 共用一个 independently tuned global \((I,C,O)\) triple，而不是只调一个 scalar。
+
+M3 为解释分组边界而保留 exact S0，并将上述 tuned generic exact winner 作为强对照；
+每个 exact candidate 的 screen 结果进入 appendix。不能因为 development 中 S1 曾获胜，
+就在所有容量上预设 whole-group double buffering 一定最快，也不能让 full D3 用
+microbatch pipeline 去比较一个只做 whole-group overlap 的弱 exact/mixed baseline。
 
 baseline 必须使用同一 source/target tier、GPU topology 和 timer。不同算法天然读取不同
 source representation 时，分别报告其 logical/physical bytes；不能通过假装 source bytes
 相同制造公平，也不能忽略多出来的状态。
+
+所有参与 timed comparison 的 rows 都必须结束在同一个 consumer-ready contract：相同
+target K/V/hidden dtype、layout、durability、coverage、publication 和 commit 语义。
+若一个 baseline 原生写 contiguous target，而正式 endpoint 是 segmented target，就必须
+在 timer 内执行并计量 adapter；不能把 layout conversion 留给读者想象。exact、mixed 与
+proposed 的 tuning 候选、赢家配置、淘汰原因和五次正式样本全部保存，appendix 至少报告
+每个候选的 median、peak HBM/pinned bytes 和 legality。
 
 ### 5.4 Append accounting
 
@@ -386,6 +413,50 @@ compiled retained repair 可以是 zero lookup/zero embedding collective；compi
 的新 token append 仍然必须查 embedding。任何“embedding-free”措辞都只能限定在
 retained-prefix phase。
 
+### 5.5 Per-layer baseline-first execution ledger
+
+baseline 不是“先随便跑一个能工作的版本”，而是对应设计层的正式 foundation。下面是
+accounting role；真正执行时按依赖分层冻结，而不是把所有 baseline 当成一个全局 barrier：
+
+| Family | Baseline/control foundation | New formal cells |
+|---|---|---:|
+| M1/D1 semantic | 已冻结的 frozen-training control、stale reuse、current projection、结构化 partial-replay controls 与 exact；同 SLA structural comparison 另计 comparison pass | 0 |
+| M2 | row-sharded partial-exact curve、same-rank replicated controls、1-GPU local ceiling | 14 |
+| M3 | 两个容量点的 exact S0；各点 tuned generic exact winner 复用 D3 capacity row | 2 |
+| D2 resident | tuned exact、owner-local staged/fused fixed-action controls，以及 X2 1/2/4-GPU 与 R-KR 双卡 exact foundation | 10 |
+| D3/E1 out-of-core | tuned exact、tuned D1-only diagnostic、S0/S1/S2 generic mixed winners，覆盖 capacity/GPU/action/model/held-edge | \(19+k\) |
+| C1 | 独立 semantic oracle、failure/transaction checks 和 hardware ceilings，不作为性能 cell | 0 |
+| **Baseline/control accounting** |  | **\(45+k\)** |
+
+D2 的 10 个 baseline cells 是 D2-A rows 1–3、X2 1/2/4 GPU 的 exact/strong-contiguous
+六行和 R-KR/2-GPU exact。D3-A rows 1/2/3/4/6 归 baseline/control，
+rows 5/7/8 归 proposed/causal；其余 capacity、GPU、action、model 和 held-edge cells 按
+exact/generic 对 D3 分类。两个 M3 S0 若同时也是 tuned winner 就只计一次，因此 D3
+baseline 是 \(19+k\)，不是无条件 21。
+
+执行顺序冻结为：
+
+1. 整理 M1/D1 既有 controls，并完成 M2 与 D2 baseline foundation；
+2. 运行 D2 rows 4–6、scaling 中的 complete D2，冻结同一 `stack_revision`；
+3. 在该 stack 上运行 M3、D3/E1 exact、D1-only、S0/S1/S2 foundations；
+4. 最后运行 D3 input-only、route-specific triples、ResidencyPlan 与 sensitivity
+   proposed rows。
+
+每个 baseline cell 同样执行 correctness、warmup 和五次 measured jobs，不能在它所对应的
+proposed row 跑完后才补一个较慢 comparator。每层 baseline 的完成 gate 是：
+
+1. 所有 target 都通过独立 semantic oracle，而不只是 baseline 之间互相 hash 相等；
+2. source、target、action/work manifest、model/embedding shard 和 endpoint hash 已冻结；
+3. formal timer 内无 major fault、swap、隐式 rematerialization 或未计量 layout adapter；
+4. 1/2/4-GPU shards、owner assignment、collective participation 和 exact counts 可重建；
+5. 每个 independently tuned winner 确实胜过或不劣于自己的合法候选，完整 screen 可查；
+6. paired methods 使用相同资源上限，运行波动能够由原始五次样本和 phase counters 解释。
+
+任一 gate 失败时先修 foundation 并重跑该 baseline family。不能先跑本层 proposed，再通过
+修改 baseline harness 让 speedup 出现。该拆分以 R-KR/2-GPU strict-COW preflight 通过为
+前提；若按第 4.1 节删除其 exact/full 两行，则相应变为
+\((44+k)\) baseline + 18 proposed = \(62+k\) cells，而不是用不同事务语义补足数字。
+
 ## 6. 具体实验矩阵
 
 ### M1：Reuse–Recompute dilemma
@@ -396,12 +467,21 @@ retained-prefix phase。
 |---|---|
 | RQ | streaming update 有价值时，stale reuse 是否仍留下可恢复的 version-consistency gap？ |
 | Data/model | Q-SEM 的 3 datasets × 3 tiers × 4 seeds，共 36 条模型版本链 |
-| Baselines | frozen model、current-model stale reuse、current-model exact recomputation |
-| Metrics | BestRank/MeanRank、rank utility、NDCG/Hit、streaming value、reuse value、maintenance gap、staleness tax |
+| Controls | frozen-training control、current-model stale reuse、current-model exact recomputation |
+| Metrics | BestRank/MeanRank、rank utility、NDCG/Hit、streaming value、reuse value、maintenance gap、staleness tax，以及 seed-0 resident full-prefix exact 的 absolute GPU time |
 | Output | 一张 3×3 grouped heatmap；完整 per-seed 数值放 appendix |
+
+三条 control 的语义必须写死。`frozen-training` 是 theta0 模型在同一完整 history/positives
+上的 fresh full forward，用来测 streaming training 本身的价值；它不是 cache-maintenance
+baseline。`stale reuse` 是 current checkpoint/scorer 加 old-version prefix K/V，并对同一
+latest token 使用 current model。`exact` 是 current checkpoint 对同一完整 prefix 的
+replay，再处理同一 latest token。
 
 它支持“问题存在且与 workload/regime 有关”。它不支持“模型越大 gap 必然越大”、
 “exact 是 ranking quality 上界”或“用 task labels 路由 cache”。
+四个 training seeds 是质量 replication；已有 seed-0 resident exact timing 只用于说明
+完整 prefix replay 的绝对计算代价，不能伪装成四个独立 cost samples。零维护 reuse 与
+full inference 的 timer 不同，因此不把二者 raw time 相除成 end-to-end speedup。
 
 ### M2：Logical sparsity is not physical sparsity
 
@@ -426,6 +506,11 @@ prefetch/writeback 混入 Motivation 2。
 | Replicated embedding control | 4 | 20%, 100% | 2 |
 | Total |  |  | **14** |
 
+2/4-GPU replicated controls 与对应 row-sharded rows 使用相同 SPMD process model、record
+owner、batch/order、exact set、target endpoint 和资源上限，唯一改变的是 embedding
+placement；它们才是隔离 sharding communication 的直接 denominator。1-GPU local 点改变了
+计算并行度，只作为 local ceiling/sanity reference，不能拿来声称多卡通信 speedup。
+
 必报指标：
 
 - exact/non-exact records、retained/append/complete lookup tokens；
@@ -444,12 +529,13 @@ prefetch/writeback 混入 Motivation 2。
 
 ### M3：HBM boundary 与顺序分组瓶颈
 
-**状态：新增两个 exact S0 cells；相同规模的 exact S1 cells 计入 D3 capacity matrix。**
+**状态：新增两个 exact S0 cells；相同规模的 tuned generic exact winners 计入 D3
+capacity matrix。**
 
 | Model/data | GPUs | Records | Host COW / exact target payload | Methods |
 |---|---:|---:|---:|---|
-| X2-QK | 2 | 1,024 | 144 / 72 GiB | exact S0、exact S1 |
-| X2-QK | 2 | 2,048 | 288 / 144 GiB | exact S0、exact S1 |
+| X2-QK | 2 | 1,024 | 144 / 72 GiB | exact S0、tuned generic exact winner |
+| X2-QK | 2 | 2,048 | 288 / 144 GiB | exact S0、tuned generic exact winner |
 
 顺序 baseline 是完整的 capacity group：
 
@@ -461,11 +547,12 @@ read/pack group → H2D → distributed exact → D2H → publish → next group
 output-credit wait 和 peak HBM。GPU/collective-only phase sum只是诊断下界，不是同 endpoint
 speedup denominator。
 
-这个实验用于说明 out-of-core execution 是独立且真实的问题，以及 whole-group buffering
-之后仍可能有 residual bubble；它不预先证明 D3 有效。
-在这两个规模上，S0/S1 都是 formal rows，E1 denominator 使用二者中更快者；不能预设
-double buffering 必胜。其他 capacity/GPU 点的 exact baseline 也要独立选择合法
-one-shot/S0/S1 中的最快实现。
+这个实验用于说明 out-of-core execution 是独立且真实的问题，以及最强通用 exact
+pipeline 之后还剩多少 residual movement/interference；它不预先证明 D3 有效。generic
+winner 从合法 one-shot、S0、whole-group S1 和 bounded fine-grained exact pipeline 中
+独立调优，并与 E1/D3-B 共用。S0 无论输赢都保留为可解释的顺序分组 control；如果它
+获胜，winner row 直接复用该 cell。所有 tuning rows 进入 appendix。其他 capacity/GPU
+点也独立选择合法候选中的最快 exact，不能预设 double buffering 必胜。
 
 ### E1：端到端性能
 
@@ -474,7 +561,8 @@ one-shot/S0/S1 中的最快实现。
 #### Resident panel
 
 1. X2-QK 每 rank 64 records 的 weak scaling，1/2/4 GPU：
-   fastest exact、naive fixed-action mixed、complete D2；九个点与 D2-B 共用。
+   fastest exact、strong owner-local fixed-action mixed、complete D2；九个点与 D2-B
+   共用。strong mixed 在 staged/fused contiguous candidates 中独立选快者。
 2. R-KR 682 records 的 resident comparison，2/4 GPU：
    exact 与 complete D2；四个点与 D2-A/B 共用。完整 old 与 private target 在
    38 GiB cap 下不能形成 1-GPU strict-COW resident point，因此不伪造该点。
@@ -483,51 +571,93 @@ one-shot/S0/S1 中的最快实现。
 
 X2/2,048 records/2 GPU 的四行来自 D3-A：
 
-1. independently tuned all-exact，在合法 S0/S1 中取更快者；
-2. fixed D1 actions + naive physical lowering，在 action-oblivious S0/S1 中取更快者；
-3. D1+D2，在 action-oblivious S0/S1 中取更快者；
+1. independently tuned all-exact，在合法 one-shot/S0/S1/fine-grained exact 中取快者；
+2. fixed D1 actions + owner-local contiguous execution，并给予其合法的 generic pipeline
+   tuning；若它仍不能输出 canonical target，则 adapter 必须计时；
+3. D1+D2，在 action-oblivious S0/S1/S2 中取快者；
 4. D1+D2+D3。
 
 X1/4,096 records/2 GPU 的三行来自 D3-B model sensitivity：
 
 1. independently tuned exact；
-2. tuned action-oblivious D1+D2；
+2. tuned generic D1+D2（S0/S1/S2 winner）；
 3. full EvoKV。
 
 报告 absolute makespan、records/s、valid tokens/s、speedup、peak HBM、pinned/DRAM bytes、
 phase breakdown、validation/commit/reclaim。主张是每层在自己的资源边界上贡献什么，而不是
-强迫所有 bar 单调下降。如果 D1 的 logical plan 在 naïve physical execution 下不比 exact
-快，这正是 D2 motivation，不应删除该结果。
+强迫所有 bar 单调下降。第二行已经包含 owner-local 语义，因此只能称为
+`owner-local contiguous fixed-action`，不能用它宣称完整 owner-compute 增量。如果 D1 的
+logical plan 在这一强物理执行下仍不比 exact 快，这正是 D2 motivation，不应删除该结果。
 
 ### D1-A：Cost–fidelity frontier
 
-**状态：复用 Q-SEM 已完成证据。**
+**状态：EvoKV primary replication 已冻结；同 SLA structural comparator 需要新的
+comparison protocol。**
 
 | Dimension | Configuration |
 |---|---|
-| Data | KuaiRand/QB/QK × S/M/L × seeds 0–3 |
-| Baselines | stale reuse、current projection、recent-token/closest selective baseline、progressive replay、compiled repair、exact |
+| Primary EvoKV/endpoints | KuaiRand/QB/QK × S/M/L × seeds 0–3 |
+| Structural controls | 九个预选 discovery checkpoints；不能赋予四-seed replication 含义 |
+| Endpoint references | stale reuse、current projection、exact |
+| Structural discovery baselines | fixed deep suffix、plain progressive-prefix replay、recent-token rectangles、arbitrary contiguous intervals |
+| EvoKV actions | compiled affine repair、residual-delta progressive tier、exact fallback |
 | Metrics | measured GPU cost/full-exact、K/V recovery、score recovery、Top-k overlap、paired ranking delta |
-| Output | 主文 aggregate Pareto；九个完整 cell 放 appendix |
+| Output | 主文同 SLA frontier 与 aggregate EvoKV result；九个 discovery cells 的完整 raw-action frontier 放 appendix |
 
 主张是 shared affine repair 在多个 workload/capacity 上形成稳定的 cost/fidelity interior
 point。严格 task-quality gate 只通过 6/9 cells 的事实必须保留；不能挑掉 negative endpoint，
 也不能把 task quality 变成 cache admission oracle。
 
+这里不能把不同 protocol 的“已选择点”直接画成一个 Pareto。plain prefix 与
+recent/interval discovery 使用过 20% recovery selector，而 D1 primary 是 50%，并以
+75/90% 为 secondary operating points，而且两族历史 artifact 的 split seeds/probe users
+也不同。正式同 SLA comparison 因此不是一次 JSON 重汇总：它必须先冻结一个新的
+comparison protocol，在九个 discovery model-version cells 的共同 probe users 上重新
+evaluate/timing structural actions，再用 50% recovery target 为每个 family 独立选择最低
+实测成本的合法 action；depth/rank/token rectangle/interval 不能看 final users 或 seeds
+1–3。这个 pass 不重训模型，也不改变 36 条 quality replication chains，但其 action-level
+runs 在 manifest 审计后单独预算，不计入 \(64+k\) 个 system cells。若不做这个新 pass，
+主文就不能声称已有同 SLA frontier，只能在 appendix 报 historical raw actions 的
+descriptive frontier。
+
+D1-A 仍然只是 resident-kernel frontier：current projection/compiled 需要 old
+`Norm(x)`，residual tier 需要 BF16 hidden suffix，reuse 读取 old K/V，exact 读取 raw
+history。每条线必须报告 auxiliary-state bytes、fit/compile cost 和 amortization；主文不能
+把 0.121× resident kernel cost 直接称为 end-to-end 系统 speedup。physical source 闭环由
+D1-B 单独回答。
+
 ### D1-B：Source representation 与 repeated renewal
 
 **状态：复用 R-KR frozen 结果。**
 
-- source path：normalized capsule、direct-old-K/V、exact；
-- source/operator：1/2/4 GPU，报告 program bytes、compile time、source bytes、preload 和
-  break-even；
-- lifecycle：682-record cohort 上 11 个连续 updates，下一步真正读取上一步输出；
-- control：all-exact、bounded exact renewal、被拒绝的 threshold refresh；
+- source panel A1：`/data` ext4 buffered-POSIX normalized capsule 对同 boundary exact，
+  保留 frozen no-transform/reuse-copy floor 与负结果；
+- source panel A2：decoded pinned-DRAM-resident normalized capsule economics 对 paired
+  pinned-DRAM exact；这是 1/4-GPU backup evidence，不冒充 ordinary pageable DRAM；
+- source panel B：hot-HBM direct-old-K/V 对 hot-HBM raw-history exact；现有冻结结果没有
+  hot-HBM no-transform control，若新增只能标 supporting measurement；
+- source/operator：A1/B 报告 1/2/4 GPU，A2 只报告已有 1/4 GPU；各自报告 program bytes、
+  compile time、source bytes、preload 和 break-even；
+- lifecycle primary：Stage 4.9 corrected growing-history same-device rollout，682-record
+  cohort 上 11 个 updates，下一步真正读取上一步输出；
+- Stage 4.9 primary controls：fresh paired all-exact 与简单的
+  `token_debt_total10` cost endpoint；`staggered_renewal_h12` 是 proposed；
+- lifecycle supporting：Stage 4.6 fixed-history accumulation isolation，其中
+  all-migrate/all-exact endpoints、matched-random、periodic/depth-only 与 fixed-quota
+  candidates 只按其 selection/diagnostic role 报告；threshold refresh 只保留为 negative
+  diagnostic，不作为唯一 comparator；
 - metrics：per-edge/cumulative GPU cost、exact fraction、migration depth、最低
   cache/score/top-100 fidelity、lineage。
 
-主图可将 source-path bar 与 11-edge lifecycle curve 合并成两个 panel。它不宣称 organic
-serving trace、在线最优 selector 或跨数据集 lifecycle generality。
+主图可将同边界 source-path bars 与 11-edge lifecycle curve 合并成两个 panel。
+Stage 4.6 与 Stage 4.9 的 history、append 和 denominator 不同，不能把 0.2134× 与
+0.100017× 拼成一条曲线。Stage 4.9 中 current-model append 在 retained migration 后执行，
+并从 migration numerator 与 paired exact denominator 对称排除。closest external
+`selective_contiguous` baseline 只放在 R-KR structural supporting panel：报告其
+`certificate_passed=false` 的 profiled action，以及真正可发布的 exact fallback；它不属于
+Q-SEM 3×3×4 aggregate。生命周期仍不宣称 organic serving trace、在线最优 selector 或
+跨数据集 generality。Stage 4.9 只有 11 个 updates，短于 H12 的 12-edge horizon，因此
+没有观察一个完整 renewal cycle，也不能宣称长期 deadline 已被完整验证。
 
 ### D2-A：Mechanism ablation
 
@@ -537,12 +667,30 @@ serving trace、在线最优 selector 或跨数据集 lifecycle generality。
 source/target endpoint 和 timer：
 
 1. independently tuned all-exact；
-2. naïve row-sharded fixed-action mixed；
-3. owner-local retained repair，但仍写 contiguous target；
-4. 再合并 `scheduled_exact` 与 `natural_exact` 的 physical exact pool，同时保留不同
-   provenance；
-5. 再加入 `(suffix, retained)` shape-aware lowering；
-6. 再使用 segmented suffix-only target，形成 complete D2。
+2. owner-local staged-finalization、contiguous-target fixed-action mixed；
+3. owner-local fused-finalization、contiguous-target fixed-action mixed；
+4. segmented target，但不使用 shape-aware order，且 exact pools 不合并；
+5. shape-aware segmented target，但 exact pools 仍不合并；
+6. 再合并 `scheduled_exact` 与 `natural_exact` 的 physical exact pool，形成 complete
+   D2，同时保留不同 provenance。
+
+Row 1 是不同 ActionPlan/source semantics 的 all-exact operating reference，不属于
+fixed-action cumulative chain；只有 rows 2–6 可以逐步归因。各行 factor 由下表冻结，
+避免 rows 2–6 的一个 bar 偷偷改变两个机制：
+
+| Row | Retained placement | Finalization | Target | Shape order | Exact pools |
+|---:|---|---|---|---|---|
+| 1 | exact reference | tuned exact | canonical | n/a | n/a |
+| 2 | owner-local | staged | contiguous + timed canonical adapter | off | separate |
+| 3 | owner-local | fused | contiguous + timed canonical adapter | off | separate |
+| 4 | owner-local | fused | segmented | off | separate |
+| 5 | owner-local | fused | segmented | on | separate |
+| 6 | owner-local | fused | segmented | on | merged physically, provenance preserved |
+
+现有 W3 所谓 `naive` 本身已经是 owner-local staged execution，因此正式论文不构造一个
+故意搬运逐记录 old K/V 的弱 placement-oblivious headline。owner-local 在这里作为所有
+fixed-action mixed rows 的强架构不变量，不单独声称 speedup；若以后实现
+placement-oblivious supporting control，必须完整支付 old-K/V P2P，并与主六行分开。
 
 atomic publication 是正确性语义，不包装成一个性能优化 bar。必报：
 
@@ -552,17 +700,19 @@ atomic publication 是正确性语义，不包装成一个性能优化 bar。必
 - padding、collective count/exposed time；
 - temporary HBM、segmented consumer time、complete wave time。
 
-主图使用 cumulative mechanism bar，加 traffic/collective breakdown。R-KR 负责 shape
-heterogeneity；大 embedding 与 shard-count 结论由下面 X2 scaling 提供。
-这些 bar 只解释该累积顺序下的 marginal effect；机制存在交互，不能把每段差值写成彼此
-独立、可任意相加的贡献。
+主图把 all-exact 画成独立 reference，再对 rows 2–6 使用 cumulative mechanism bars，
+并加 traffic/collective breakdown。R-KR 负责 shape heterogeneity；大 embedding 与
+shard-count 结论由下面 X2 scaling 提供。这些 bar 只解释 rows 2–6 既定累积顺序下的
+marginal effect；机制存在交互，不能把每段差值写成彼此独立、可任意相加的贡献，也不能
+把 row 1→2 的差值算给任何 D2 mechanism。
 
 ### D2-B：1/2/4-GPU scaling
 
 **状态：新必跑；与 D2-A 合计 17 个新 D2 timed cells。**
 
-1. X2 weak scaling：每 rank 64 real records，exact/naïve mixed/complete D2，
-   1/2/4 GPU，共九个 cells。
+1. X2 weak scaling：每 rank 64 real records，exact/strong contiguous mixed/complete D2，
+   1/2/4 GPU，共九个 cells。这里的 `strong contiguous mixed` 指在 staged/fused candidates
+   中独立选出的 strong owner-local fixed-action winner，不固定为较慢的 staged v1。
 2. R-KR resident comparison：固定 682 records，2-GPU exact/complete D2 新增两个
    cells；4-GPU exact/complete D2 复用 D2-A 两行。R-KR 不做不可容纳的 1-GPU
    strict-COW resident point。
@@ -571,7 +721,11 @@ heterogeneity；大 embedding 与 shard-count 结论由下面 X2 scaling 提供�
 off-rank vector bytes、collective count、rank imbalance 和 HBM。
 
 X2 weak-scaling cohort 在 ActionPlan 冻结后按 action 与 extent strata 分配到 rank，确保
-1/2/4 卡的 exact-token fraction 可比；不能让 owner hash 偶然改变 action mix。
+1/2/4 卡的 exact-token fraction 可比；不能让 owner hash 偶然改变 action mix。它处理的是
+每 rank 64 records，因此 1/2/4 GPU 对应 64/128/256 records，只支持 weak-scaling claim；
+不同 GPU 数的 global ActionPlan/hash 不同，不能称为 paired fixed-work strong scaling。
+R-KR 的固定 682 records 只提供 2→4 GPU comparison，1 GPU 明确标为
+`capacity-not-admitted`。
 
 X2 的 16.364 GiB embedding 本身仍能放入一张 A40，dense model 也能放入单卡。因此论文
 不能声称“模型本身无法放进单卡”。可支持的结论是：在真实 row-sharded placement 和受限
@@ -581,16 +735,26 @@ K/V working-set HBM 下，D2 减少了 fixed-action workload 的物理通信、p
 
 **状态：新必跑，X2/2,048 records/2 GPU 共 8 个 cells。**
 
-所有 mixed rows 使用同一 action/source/owner/target/timer：
+headline controls 与 causal rows 分开解释：
 
-1. all-exact S1 control；同规模 all-exact S0 由 M3 提供，E1 denominator 取两者更快者；
-2. D1-only naïve lowering，在 action-oblivious S0/S1 中取更快者；
+1. independently tuned all-exact winner，候选包含 one-shot/S0/S1/fine-grained exact；
+2. owner-local contiguous fixed-action D1-only diagnostic，给予其合法的 generic pipeline
+   tuning，并在 timer 内到达 canonical target；
 3. D1+D2 sequential groups；
 4. D1+D2 whole-group two-slot；
 5. input segmentation；
-6. bidirectional input/output segmentation；
-7. decoupled I/C/O granularity、route-major order；
-8. selected ResidencyPlan。
+6. generic fixed-FIFO bidirectional S2：独立调优一个 global \((I,C,O)\) triple，两条
+   route 共用，不使用 route profile；
+7. route-specific I/C/O granularity：compiled/exact 各有一个 triple，但保持
+   route-major order；
+8. selected ResidencyPlan：完全复用 row 7 的两个 triples，只增加 stable interleave。
+
+Rows 3–8 是因果链，不是六个各自独立调优的 headline 方法。它们必须固定完全相同的
+WorkManifest/source-byte multiset、capacity cuts、route-internal order、38 GiB HBM cap、
+pinned-byte cap、CPU/streams、outer slots、one-lookahead 和 one-drain credit，只逐项打开
+S1、input segmentation、global bidirectional triple、route-specific triples 和 route
+interleave。E1 与 D3-B 另外使用 independently tuned winner，不能把 group-size 差异算成
+某个机制的贡献。
 
 报告 makespan、input-boundary wait、output-credit wait、CPU packing、H2D/D2H、publish、
 GPU/collective、HBM/pinned footprint、planner prediction error。这个 causal chain 要分别
@@ -602,24 +766,27 @@ GPU/collective、HBM/pinned footprint、planner prediction error。这个 causal
 
 如果最终 route-specific triples 仍都选择 `(8,8,8)`，就只能声称 planner 可表达并安全执行
 不同 granularity，不能声称 asymmetric granularity 已带来收益。D3 的核心 bar 是完整
-hierarchical pipeline 相对 strong S1，而不是单独夸大当前约 1% 的 order-only improvement。
+hierarchical pipeline 相对 strongest generic S2 和 fastest same-boundary exact 的结果，
+而不是只相对 whole-group S1，或单独夸大当前约 1% 的 order-only improvement。若 D3
+不能稳定胜过 S2，它需要继续设计，不能靠较弱 baseline 获得第三个贡献。
 
 ### D3-B：Capacity、GPU、action mix、model 与 edge sensitivity
 
-**状态：新必跑。与 D3-A 合计 33 个新 D3/E2E timed cells。**
+**状态：新必跑。与 D3-A 合计 \(31+k\) 个新 D3/E2E timed cells，最多 33 个。**
 
 #### Capacity
 
 | GPUs | X2 records | Host COW footprint | Exact target payload | Methods |
 |---:|---:|---:|---:|---|
-| 2 | 1,024, 2,048 | 144, 288 GiB | 72, 144 GiB | tuned exact、tuned action-oblivious D1+D2、D3 |
-| 4 | 2,048, 4,096, 5,120 | 288, 576, 720 GiB | 144, 288, 360 GiB | tuned exact、tuned action-oblivious D1+D2、D3 |
+| 2 | 1,024, 2,048 | 144, 288 GiB | 72, 144 GiB | tuned exact、tuned generic D1+D2、D3 |
+| 4 | 2,048, 4,096, 5,120 | 288, 576, 720 GiB | 144, 288, 360 GiB | tuned exact、tuned generic D1+D2、D3 |
 
 2-GPU/2,048 的三行复用 D3-A；其余是 12 个新 cells。5,120-record 点必须使用两 NUMA
 node 的本地 ordinary-DRAM arena，不能落到 `/data`。
-在 2-GPU/1,024 和 2,048 两点，capacity matrix 的 exact row 对应 formal S1，M3 另计
-formal S0；最终 exact denominator 取两者更快值。其他点先独立调优 exact one-shot/S0/S1，
-只冻结赢家进入 formal matrix。
+在 2-GPU/1,024 和 2,048 两点，capacity matrix 的 exact row 是 independently tuned
+generic exact winner，M3 另计 formal S0；其他点采用相同 bounded tuning rule，只冻结
+赢家进入 formal matrix。`tuned generic D1+D2` 在 S0/S1/S2 中独立选快者，因此没有额外
+增加 capacity cells。
 
 表中的 COW footprint 对所有方法都保留：即使 all-exact 不读取 old K/V，committed old
 epoch 在新 target 原子发布前仍然 authoritative，不能为了省 host DRAM 提前释放。
@@ -631,7 +798,7 @@ published bytes，不能为了“字节相同”给 exact 人为添加无用 old
 #### Fixed-work GPU scaling
 
 固定 X2/2,048 records，比较 1/2/4 GPU 的 tuned exact、tuned action-oblivious D1+D2、
-D3。2/4-GPU 点从
+D3。这里 action-oblivious winner 同样从 S0/S1/S2 中选择。2/4-GPU 点从
 capacity matrix 复用，只新增 1-GPU 三个 cells。
 
 这张图是 strong scaling，同时 \(\rho_{\mathrm{KV}}\) 会从 14.29 降到 2.22，论文必须报告
@@ -643,7 +810,7 @@ capacity matrix 复用，只新增 1-GPU 三个 cells。
 | 2 | 2,048 | 288 GiB | 5.08 |
 | 4 | 4,608 | 648 GiB | 5.00 |
 
-capacity-matched plot 属于 supporting extension，不进入 66-cell paper core。
+capacity-matched plot 属于 supporting extension，不进入 \(64+k\)-cell paper core。
 
 #### Action mix
 
@@ -656,7 +823,7 @@ exact plans，目标 record counts 为 205/410/819，并报告实际 record 与 
 
 X1/4,096 records/2 GPU 的 transaction footprint 是 256 GiB，与 X2 主点的 288 GiB 接近。
 训练并冻结 X1 自己的 model edge、D1 program 和 ActionPlan，运行 tuned exact、
-tuned action-oblivious D1+D2、D3 三个 cells。不能复用 X2 的 program 或 action plan。
+tuned generic D1+D2、D3 三个 cells。不能复用 X2 的 program 或 action plan。
 
 #### Held-out update edge
 
@@ -664,7 +831,7 @@ tuned action-oblivious D1+D2、D3 三个 cells。不能复用 X2 的 program 或
 - qualification users、final benchmark users 与 calibration users互斥；
 - X2 增加一个 `theta1→theta2` edge；
 - 在该 edge 上重新生成 edge-specific joint profiles 与 ResidencyPlan，再运行 tuned exact、
-  tuned action-oblivious D1+D2、D3，共三个 cells。held-out edge 测的是机制在另一更新边
+  tuned generic D1+D2、D3，共三个 cells。held-out edge 测的是机制在另一更新边
   的可重复性，不是把 `theta0→theta1` plan 直接跨 checkpoint 复用。
 
 这组图回答 operating region 和 robustness，不支持 SSD、数据库、host-DRAM
@@ -676,10 +843,14 @@ oversubscription、online hotness 或 serving SLO。
 
 每个正式 cell 的 correctness pass 覆盖其完整 workload。总测试集还必须覆盖：
 
-- direct-old-K/V 对 reference operator；
-- replicated 对 row-sharded exact；
+- independent current-model full recomputation 对 exact runner 的逐 extent oracle；
+- independent resident/reference D1+D2 semantic operator 对 mixed runner 的逐 extent
+  tolerance oracle；
+- 在独立 oracle 通过后，再检查 S0/S1/S2/D3 同 runner 的 byte digest 一致；互相相等
+  本身不能排除 shared bug；
+- direct-old-K/V 对 reference D1 operator；
+- replicated 对 row-sharded exact lookup；
 - segmented consumer 对 contiguous reference；
-- S0/S1/D3 完整 payload 等价；
 - 1/2/4 ranks、uneven rank、zero-delta 和 empty collective participation；
 - 超过 \(2^{31}\) flattened offset 的 64-bit addressing；
 - complete/exactly-once coverage、lineage 和 checksum；
@@ -692,6 +863,16 @@ oversubscription、online hotness 或 serving SLO。
 private target，按第 5.1 节的 timer-external reset 恢复同一 old manifest，再运行
 candidate；任意时刻最多存在一个完整 private target。digest 比较、coverage 和抽样数值
 oracle 仍必须覆盖完整 record universe，不能因内存不足改成只跑 partial workload。
+独立 reference 可以逐 extent 生成 digest 后立即释放，因此不需要额外保留第二份完整
+target。
+
+另外重测两个不作为 speedup denominator 的 ceiling：
+
+- 同一 work 的 HBM-resident compute-only ceiling；
+- copy-only/isolated-stage perfect-overlap replay ceiling。
+
+它们只解释当前配置还剩多少 movement/overlap headroom，不能与 ordinary-DRAM
+consumer-ready end-to-end time 直接相除后宣称系统 speedup。
 
 overhead table 报告：
 
@@ -712,9 +893,15 @@ overhead table 报告：
 | Evidence | Existing units | Action |
 |---|---:|---|
 | Q-SEM motivation | 3 datasets × 3 tiers × 4 seeds = 36 model-version chains | 直接按现有 protocol 汇总 |
-| D1 cost/fidelity | 9 cells 的 discovery + frozen-seed replication | 直接复用；不因系统矩阵重训 |
-| R-KR source/operator/lifecycle | frozen single-configuration artifacts | 复用有效结果 |
+| D1 cost/fidelity | 9 cells 的 discovery + frozen-seed replication | primary replication 直接复用、不重训；同 SLA comparator 必须新建 comparison protocol 和共同 probe，另计 action-level runs |
+| R-KR source/operator/lifecycle | frozen single-configuration artifacts | 按同 source/timer boundary 与 Stage 4.6/4.9 protocol 重组，不跨边界合并 |
 | D2 W3、D3 M0/M1 development | 若干单次 development profiles | 只用于选机制和预算；不进入 paper table |
+
+D1 同 SLA baseline 工作按 **9 个 discovery-cell comparison bundles** 管理，不产生新模型
+training chains。每个 bundle 的结构 action 数取决于 3/6/9-layer action manifest；正式运行
+前必须先枚举并 hash 全部 depth/suffix/rectangle/interval candidates，届时冻结准确的
+action-level correctness/timing run count。这个数量尚未由当前 artifacts 闭合，所以不能
+塞进下面的 system-cell 总数假装已经精确。
 
 ### 7.2 新 paper-core timed cells
 
@@ -722,20 +909,29 @@ overhead table 报告：
 |---|---:|
 | M2 logical-to-physical | 14 |
 | M3 extra exact-S0 points | 2 |
-| D2 resident ablation and 1/2/4 strong/weak scaling | 17 |
-| D3 causal、E2E、capacity、GPU/action/model/edge sensitivity | 33 |
-| **Total** | **66** |
+| D2 resident ablation、X2 1/2/4 weak scaling 与 R-KR 2→4 fixed-work | 17 |
+| D3 causal、E2E、capacity、GPU/action/model/edge sensitivity | \(31+k\) |
+| **De-duplicated total after tuning** | **\(64+k\), \(k\in\{0,1,2\}\)** |
+
+按 accounting role 去重后（真实运行仍按第 5.5 节的层级依赖交错）：
+
+| Phase | Formal cells | Measured jobs | Complete executions |
+|---|---:|---:|---:|
+| Baseline/control accounting | \(45+k\) | \(225+5k\) | \(315+7k\) |
+| Proposed mechanisms and causal ablations | 19 | 95 | 133 |
+| **Total** | **\(64+k\)** | **\(320+5k\)** | **\(448+7k\)** |
 
 每个 cell 为一次 correctness、一次 warmup、五次 measured：
 
-- 66 correctness jobs；
-- 66 warmup jobs；
-- 330 measured jobs；
-- **这 66 个 timed-cell bundles 共 462 complete executions**。
+- \(64+k\) correctness jobs；
+- \(64+k\) warmup jobs；
+- \(320+5k\) measured jobs；
+- **这些 timed-cell bundles 共 \(448+7k\) complete executions，最大为 462**。
 
 调优/profile runs 不算 paper cells。它们使用小的 disjoint profile cohort，且每个 baseline
 有明确候选上限。C1 failure injection、额外 functional tests、训练、profile 和
-materialization 都在 462 之外，因此 462 不是整个项目的总命令数。
+materialization 都在上述公式之外；D1 同 SLA comparison 也按 action-level manifest 另计，
+因此 462 只是最大 system-cell execution 数，不是整个项目的总命令数。
 
 ### 7.3 时间和资源预估
 
@@ -743,7 +939,7 @@ materialization 都在 462 之外，因此 462 不是整个项目的总命令数
 
 - X1/X2 新 edge 与 artifact preparation：数十分钟到数小时；
 - profile/tuning：约 4–8 个独占 node-hours；
-- 462 次 formal execution：约 6–12 个独占 node-hours；
+- 最多 462 次 formal system-cell execution：约 6–12 个独占 node-hours；
 - 576/720 GiB arena first-touch、materialization、checksum 与失败重跑：额外约
   4–8 个 node-hours；
 - 整体预留 **2–3 个独占机器日**，分实验族 checkpoint，不作为一个长达数天的单命令。
@@ -763,7 +959,7 @@ page fault、swap、NUMA placement、allocator 或 store backend，不能直接�
 | Figure 1 | M1 reuse–recompute、M2 logical-to-physical、M3 HBM boundary 三个 motivation panels |
 | Figure 2 | E1 resident 与 out-of-core end-to-end 两个 panels |
 | Figure 3 | D1 cost–fidelity frontier 与 11-edge bounded renewal |
-| Figure 4 | D2 mechanism ablation 与 1/2/4 strong/weak scaling |
+| Figure 4 | D2 mechanism ablation、X2 1/2/4 weak scaling 与 R-KR 2→4 fixed-work |
 | Figure 5 | D3 causal mechanism chain 与 wait/bubble breakdown |
 | Figure 6 | capacity、GPU、action mix、X1/X2/held-edge operating region |
 | Table 2 | planning/compile/transaction overhead、memory footprint、correctness/failure coverage |
@@ -780,8 +976,12 @@ appendix，避免主文变成结果目录。
 - 如果 D2 只在 R-KR 有效而 X2 scaling 无收益，检查 large embedding 下的 collective
   fragmentation、owner balance 和 exact pool；必要时回到 D2 lowering，而不是扩大数据
   掩盖问题。
-- 如果 D3 只胜 sequential S0、不胜 independently tuned S1，它只是实现路径，不是第三个
-  design。优先研究 DMA/affine/collective interference、phase-aware pacing 和
+- 如果 complete D2 只胜 staged control、不胜 independently tuned fused-contiguous
+  fixed-action baseline，不能把 fused finalization 的收益算给 segmented/shape-aware
+  lowering。
+- 如果 D3 只胜 sequential S0 或 whole-group S1、不胜 independently tuned generic
+  fixed-FIFO segmented S2，它只是通用流水实现，不足以成为第三个 design。优先研究
+  DMA/affine/collective interference、phase-aware pacing 和
   collective-arrival-aware planning。
 - 如果 D3 在 288 GiB 有效、在 576/720 GiB 消失，先检查 NUMA/locality 与 publication
   serialization；这正是 capacity plot 要揭示的 operating boundary。
@@ -794,14 +994,19 @@ appendix，避免主文变成结果目录。
 
 paper-core 完成意味着：
 
-1. 66 个 timed cells 全部具备相同 revision 内的 correctness/warmup/5 repeats；
+1. 每层 baseline/control 先于本层 proposed 冻结，按第 5.5 节先完成 D2 stack 再建立 D3
+   foundation；全部 \(64+k\) 个去重 cells 均具备相同 revision 内的
+   correctness/warmup/5 repeats；
 2. M2 明确给出 logical tokens、physical bytes 与 wall time；
-3. D2 同时有 R-KR shape ablation 和 X2 large-embedding 1/2/4 scaling；
-4. D3 同时有 strong S1、causal chain、288/576/720 GiB capacity 和 held-out edge；
-5. full target 可被 segmented consumer 读取并进入下一 wave；
-6. plan、publication、commit、reclaim 与 failure semantics 都在 overhead/correctness 表中
+3. D1 comparator 不跨 recovery target、source tier 或 Stage 4.6/4.9 protocol 合并；
+4. D2 同时有可归因的六行 R-KR ablation 和 X2 large-embedding 1/2/4 weak scaling；
+5. D3 同时有 tuned exact、generic S2、causal chain、288/576/720 GiB capacity 和 held-out
+   edge，并相对 S2 报告结果；
+6. full target 可被 segmented consumer 读取并进入下一 wave；
+7. plan、publication、commit、reclaim 与 failure semantics 都在 overhead/correctness 表中
    闭合；
-7. 所有 paper claim 都能指向一个同边界、同 revision、可复现的 result family。
+8. exact 和 mixed 均通过独立 semantic oracle，而不只是互相 byte parity；
+9. 所有 paper claim 都能指向一个同边界、同 revision、可复现的 result family。
 
 核心稳定后才考虑：
 
@@ -814,10 +1019,14 @@ paper-core 完成意味着：
 - synthetic embedding contention，仅作为 resource characterization，不叫 serving
   workload。
 
-下一步不是直接启动 462 次 execution，而是依次生成：
+下一步不是直接启动最多 462 次 execution，而是依次生成：
 
 1. formal QK cohort split 与 nested workload manifests；
 2. X1/X2 model-edge、program 与 immutable ActionPlan artifacts；
 3. NUMA-aware DRAM arena 和 38 GiB/rank preflight；
 4. 四个新 protocol/config families：M2、D2、D3/E2E、correctness/transaction；
-5. 先各跑一个两卡主点的 exact/naïve/full canary，确认 timer 与 bytes，再展开完整矩阵。
+5. 补齐并验证 fine-grained exact、staged/fused owner-local contiguous 和 generic S2
+   baseline runners；
+6. 先跑 hardware calibration 与 independent oracle canary；
+7. 按第 5.5 节先跑 M2/D2 foundations，再完成并冻结 D2 stack；
+8. 在该 stack 上跑 M3/D3 foundations，最后才运行 D3 proposed/ablation cells。

@@ -19,9 +19,9 @@ When documents disagree, use this order:
 2. [eval_protocol.md](eval_protocol.md) — authoritative result-family, timer, workload, and
    comparability boundary.
 3. [10_paper_experiment_blueprint.md](10_paper_experiment_blueprint.md) — paper-wide benchmark
-   portfolio, exact experiment matrix, physical scale budget, run count, and figure/claim map. It
-   is authoritative only for the planned evaluation map; it neither overrides D2/D3 mechanism
-   definitions nor makes development artifacts scientific.
+   portfolio, baseline-first execution ledger, exact experiment matrix, physical scale budget,
+   run count, and figure/claim map. It is authoritative only for the planned evaluation map; it
+   neither overrides D2/D3 mechanism definitions nor makes development artifacts scientific.
 4. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
    mechanism and current D1→D2 starting interface.
 5. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
