@@ -1,6 +1,6 @@
 # EvoKV 论文实验总蓝图
 
-日期：2026-07-30
+日期：2026-07-31
 
 状态：**论文级 benchmark 与 evaluation 设计，尚不构成新的结果 protocol 或论文证据**。
 已有结果的有效性仍由 [eval_protocol.md](eval_protocol.md) 决定；D1/D2/D3 的当前事实与
@@ -263,7 +263,8 @@ formal artifact 使用实际 per-rank bytes 计算 max-rank value。该 \(\rho_{
 
 机器有两个约 504 GiB 的 NUMA node。formal run 必须：
 
-- 在独占机器上检查 total `MemAvailable` 与 per-node free memory；
+- 在独占机器上先释放或复用旧 development arena，再检查 total `MemAvailable` 与
+  per-node free memory；
 - source 与 target 按 rank 的 GPU NUMA first-touch；
 - primary timer 前 reserve backing，并用 rank-specific non-payload sentinel 对 committed
   source 与 private-target 的每个物理页做 dirty write-touch；只 read-touch、
@@ -274,11 +275,21 @@ formal artifact 使用实际 per-rank bytes 计算 max-rank value。该 \(\rho_{
   major-fault 与 swap 增量必须全部为零；
 - 报告普通 DRAM、pinned DRAM、HBM allocated/reserved 的 standing 与 peak bytes。
 
-当前 `/dev/shm` 只有约 504 GiB，因此 576/720/792 GiB 点不能继续使用现有单一
-`/dev/shm` file backend。它们需要 NUMA-aware anonymous pageable-DRAM arena，或明确扩容
-且按 NUMA 放置的 tmpfs。不能用 `/data` 上的 NVMe 文件冒充 ordinary-DRAM result。
-materialization 在 primary timer 外，但真实 physical pages、coverage、bytes 和 checksum
-必须存在并被记录。
+前一轮 D3 development 曾在 `/dev/shm` 使用约 292 GiB old/target arena；它们不是 formal
+matrix 必须与新 workload 并存的常驻资产，当前已经释放，准备快照中的
+`MemAvailable` 约为 939 GiB。后续实验仍可复用 `/dev/shm`：每个实验族开始前先确认旧
+arena 的 lineage 已冻结、所有 live mapping/file descriptor 已关闭，再释放或原地覆盖。
+因此独占机器的规划边界是扣除 OS 与运行时余量后约 **900 GiB 可用 DRAM**，不能把运行
+旧实验时的瞬时占用当成永久上限，也不能把旧 arena 与新事务重复计费；仅 `unlink`
+一个仍被 mmap/open 的文件不代表物理页已经释放。
+
+另一方面，单个 `/dev/shm` mount 的容量仍只有约 504 GiB。它可以继续承载 144/288 GiB
+主点及其他可容纳实验，但 576/720/792 GiB 点不能只依赖这个 file backend。大点需要
+NUMA-aware anonymous pageable-DRAM arena，或明确扩容且按 NUMA 放置的 tmpfs。不能用
+`/data` 上的 NVMe 文件冒充 ordinary-DRAM result。materialization 在 primary timer 外，
+但真实 physical pages、coverage、bytes 和 checksum 必须存在并被记录。tmpfs 与
+anonymous arena 消耗的是同一套物理 DRAM，504 GiB mount capacity 与约 900 GiB
+机器可用预算不能相加，二者必须进入同一个 total/per-node preflight。
 
 ### 4.3 1 TiB 边界
 
@@ -296,6 +307,97 @@ materialization 在 primary timer 外，但真实 physical pages、coverage、by
 incremental reclaim/segmented commit。后者改变事务机制，必须重新定义 protocol 和 baseline，
 不能作为一个隐藏的实验技巧。
 
+### 4.4 磁盘与产物生命周期
+
+磁盘是 formal matrix 的实际资源边界，但容量快照不是冻结 protocol。清理旧 source
+shards 与 DRAM arena 后，2026-07-31 的最新准备快照为：仓库所在 `/data` 分区总容量约
+3.5 TiB、可用约 **503 GiB**；仓库约 64 GiB，其中 checkpoints 约 53 GiB；根分区可用
+约 118 GiB。每个实验族开始前必须重新记录这些值，不能把本文快照当成未来运行时的
+事实。大型临时文件不得通过 `/tmp`、默认 Torch 临时目录或 core dump 意外写入根分区。
+
+若为每个 formal cell 只保留一份完整 consumer-ready FP16 target，当前矩阵也需要约
+5.85–6.06 TiB；保留五次 measured output 会达到约 29–30 TiB。最大 X2 点的一份
+360 GiB target 会吃掉当前约 72% 的空闲量，old+target 的 720 GiB 事务则已经超过当前
+全部空闲磁盘。因此 baseline-first 的“冻结结果”只指冻结 protocol、metadata、timing
+samples、digest 和小型数值证据，绝不指冻结完整 old K/V、reference target 或
+candidate target。
+
+长期模型资产采用单一 canonical 表示：
+
+| Asset | Per version | Three versions |
+|---|---:|---:|
+| X1 dense + global embedding | 11.226 GiB | 33.678 GiB |
+| X2 dense + global embedding | 17.428 GiB | 52.284 GiB |
+| **合计** | -- | **85.962 GiB** |
+
+当前 X2 `theta0/theta1` 已占约 35 GiB；补齐 X2 `theta2` 与 X1 三版本约新增
+51.1 GiB。加上 D1 programs、manifests、profiles、plans、correctness digests 和 compact
+logs，长期新增预算约 57–65 GiB。在当前 filesystem 下，1/2/4-GPU embedding layouts
+不应全部长期复制：三种 layouts 仅 checkpoint 就约 250–275 GiB；若再留独立 canonical
+副本则约 336–360 GiB，
+会占用当前大部分余量并挤压训练/reshard scratch。这里的 canonical 是具有全局 row-order
+digest 的唯一持久化内容，允许由一套已验证的 sharded physical layout 承载，不要求额外
+复制一个 global tensor 文件。当前默认做法是从它为当前
+`model edge × world size` 生成一个临时 layout，验证 global digest 与 lookup parity，
+完成该实验族后回收 payload，只保留 shard manifest 与 digest；增加专用实验盘后可以
+重新评估是否持久化这些可重建 layouts。
+
+统一 retention policy 为：
+
+- old K/V、private target、逐 extent oracle target、fit/profile K/V 和 staging buffers
+  只驻 ordinary/pinned DRAM 或 HBM，禁止落入 NVMe、`/tmp` 或 swap；
+- correctness reference 逐 extent 生成 digest 和固定 witness 后立即释放；correctness、
+  warmup、五次 measured jobs 复用同一 DRAM target arena；
+- 每个真实模型版本只长期保存 inference-only canonical checkpoint；optimizer state
+  最多保留一个最新恢复点，并在 inference checkpoint 验证后回收；
+- formal result bundle 只保存完整配置、source/code/environment hash、五个原始 timing
+  samples、per-rank phase/resource counters、per-extent digest/Merkle root、coverage、
+  lineage、失败位置和少量固定数值 witness；
+- 禁止保存完整 output tensor、逐 token/K/V arrays 和无上限 debug log。当前已有单个
+  JSON 接近 175 MB；若 462 次 execution 沿用该格式，日志本身可能接近 75 GiB。formal
+  schema 必须使用 compact counters、digest 和必要的压缩 per-record summary；
+- checkpoint 写入、reshard scratch 和 result bundle 都采用有配额的 experiment-local
+  目录；不允许把同一 checkpoint 复制进每个 cell 的结果目录。
+
+按上述生命周期，预计相对当前状态的磁盘峰值新增约 **110–160 GiB**：其中
+57–65 GiB 为长期资产，其余是一份 active derived layout、atomic checkpoint 临时副本和
+至多一个 optimizer recovery state；上界允许未来 shard 格式按 rank 复制 dense。
+当前空间可以容纳 paper-core，不要求在开始 baseline 前先扩盘。所有 builder/runner
+必须在物化前声明 `persistent_bytes` 与 `scratch_bytes`。准备阶段以物化长期资产之前的
+空闲量为基准：
+
+$$
+B_{\mathrm{available,initial}} -
+B_{\mathrm{persistent,new}} -
+B_{\mathrm{scratch,peak}}
+\ge 100\ \mathrm{GiB}.
+$$
+
+长期资产已经写入后，runner 只检查
+\(B_{\mathrm{current,free}}-B_{\mathrm{scratch,remaining}}\ge100\ \mathrm{GiB}\)，避免重复
+扣除 persistent bytes。100 GiB 是当前 filesystem 的运维 safety floor，不是论文机制；
+增加专用磁盘后可以在新 storage config 中重新设定，但必须保留明确余量与 atomic-save
+空间。不足时先回收已验证的临时 layout/optimizer state，或暂停等待扩盘；不能通过把 K/V
+spill 到 NVMe、减少 physical materialization 或删除仍未冻结 lineage 的唯一 checkpoint
+来绕过 admission gate。
+
+若后续增加一块约 1 TB 的专用实验盘，它不改变 paper-core 的语义，只改变哪些
+可重建资产值得长期保留。以下标记用于扩盘后重新审查实验计划：
+
+| Artifact | 当前 503 GiB free 下的策略 | 增加专用盘后的策略 | 标记 |
+|---|---|---|---|
+| X1/X2 六个 canonical inference checkpoints | 必须长期保留，约 85.962 GiB total | 原样保留并迁移到 content-addressed store | core，无需等扩盘 |
+| 当前 edge 的一个 derived shard layout | 临时生成并回收，峰值约 35–41 GiB | 仍可临时；频繁复用时允许持久化 | core，无需等扩盘 |
+| 六版本完整 1/2/4-GPU layouts | 不默认保留，约 250–275 GiB | 可持久化并消除重复 reshard | `EXPAND-P1` |
+| 多版本 optimizer/restart states | 只留一个最新恢复点，单个约 22–35 GiB | 训练需反复回退时可按 edge 保留 | `EXPAND-P1` |
+| 可选 X3 三版本及其 layouts | paper-core 前不生成 | 核心结果稳定后再预算 | `EXPAND-P2` |
+| 完整 formal K/V outputs 或无上限 raw logs | 不保留 | 仍不保留 | 非扩盘项 |
+
+`EXPAND-P1` 不是开始当前实验的 blocker；只有当重复 reshard/训练回退已经显著拖慢执行，
+或需要冻结这些 checkpoint 作为跨机器复现实物时，才优先安装新盘并更新 storage manifest。
+新增约 1 TB 原始容量通常能提供约 0.9 TiB 可用空间，足以容纳 P1 checkpoint families
+与 scratch，但仍远小于保存整套 formal K/V outputs 所需的 6–30 TiB。
+
 ## 5. 统一计时、统计和公平性规则
 
 ### 5.1 正式 cell
@@ -307,8 +409,9 @@ incremental reclaim/segmented commit。后者改变事务机制，必须重新�
 3. 五次 measured complete jobs。
 
 五个 timing samples 用于描述 runtime variation，不是五个模型样本。报告 median、五个原始
-样本或 min–max，并对同一 revision 的方法做 paired comparison。质量统计仍以 training
-seed 为 replication unit。
+样本或 min–max，并对同一 revision 的方法做 paired comparison。这里保留的是五条 compact
+timing/resource records，不是五份 K/V output。质量统计仍以 training seed 为 replication
+unit。
 
 每个 cell bundle 只物化一份 immutable old epoch 和一块可复用 private-target arena。
 correctness、warmup、五次 measured job 以及 paired methods 都从同一个 old manifest 和
@@ -938,6 +1041,8 @@ materialization 都在上述公式之外；D1 同 SLA comparison 也按 action-l
 现有 X2 development full job 约为几十秒量级。formal matrix 的合理规划是：
 
 - X1/X2 新 edge 与 artifact preparation：数十分钟到数小时；
+- canonical checkpoint、program、digest 与 compact result 的长期新增磁盘约
+  57–65 GiB，计入一次 active reshard/training scratch 后峰值新增约 110–160 GiB；
 - profile/tuning：约 4–8 个独占 node-hours；
 - 最多 462 次 formal system-cell execution：约 6–12 个独占 node-hours；
 - 576/720 GiB arena first-touch、materialization、checksum 与失败重跑：额外约
@@ -1023,10 +1128,12 @@ paper-core 完成意味着：
 
 1. formal QK cohort split 与 nested workload manifests；
 2. X1/X2 model-edge、program 与 immutable ActionPlan artifacts；
-3. NUMA-aware DRAM arena 和 38 GiB/rank preflight；
-4. 四个新 protocol/config families：M2、D2、D3/E2E、correctness/transaction；
-5. 补齐并验证 fine-grained exact、staged/fused owner-local contiguous 和 generic S2
+3. 带 storage-configured safety floor（当前为 100 GiB）、临时 reshard 回收和
+   compact-result schema 的磁盘 preflight；
+4. 释放或复用旧 `/dev/shm` arena，建立 NUMA-aware DRAM arena 和 38 GiB/rank preflight；
+5. 四个新 protocol/config families：M2、D2、D3/E2E、correctness/transaction；
+6. 补齐并验证 fine-grained exact、staged/fused owner-local contiguous 和 generic S2
    baseline runners；
-6. 先跑 hardware calibration 与 independent oracle canary；
-7. 按第 5.5 节先跑 M2/D2 foundations，再完成并冻结 D2 stack；
-8. 在该 stack 上跑 M3/D3 foundations，最后才运行 D3 proposed/ablation cells。
+7. 先跑 hardware calibration 与 independent oracle canary；
+8. 按第 5.5 节先跑 M2/D2 foundations，再完成并冻结 D2 stack；
+9. 在该 stack 上跑 M3/D3 foundations，最后才运行 D3 proposed/ablation cells。
