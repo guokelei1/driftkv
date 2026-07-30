@@ -370,12 +370,26 @@ def _synchronize(device: torch.device) -> None:
         torch.cuda.synchronize(device)
 
 
-def _timed_collective(device: torch.device, action) -> float:
-    _synchronize(device)
-    started = time.perf_counter()
+def _timed_collective(
+    device: torch.device,
+    action,
+    timing_mode: str,
+) -> float:
+    if timing_mode not in {"device", "current_stream"}:
+        raise ValueError("integrated collective timing mode differs")
+    if device.type != "cuda" or timing_mode == "device":
+        _synchronize(device)
+        started = time.perf_counter()
+        action()
+        _synchronize(device)
+        return time.perf_counter() - started
+    started = torch.cuda.Event(enable_timing=True)
+    finished = torch.cuda.Event(enable_timing=True)
+    started.record()
     action()
-    _synchronize(device)
-    return time.perf_counter() - started
+    finished.record()
+    finished.synchronize()
+    return started.elapsed_time(finished) / 1000.0
 
 
 @torch.inference_mode()
@@ -383,6 +397,7 @@ def fast_modulo_sharded_lookup(
     embedding: ModuloRowShardedEmbedding,
     item_ids: torch.Tensor,
     lengths: torch.Tensor,
+    collective_timing: str = "device",
 ) -> IntegratedLookupResult:
     embedding._validate_group()
     if (
@@ -469,6 +484,7 @@ def fast_modulo_sharded_lookup(
             send_counts,
             group=embedding.process_group,
         ),
+        collective_timing,
     )
     order = torch.argsort(owners[remote_mask], stable=True)
     ordered_ids = remote_ids.index_select(0, order)
@@ -493,6 +509,7 @@ def fast_modulo_sharded_lookup(
             input_split_sizes=send_splits,
             group=embedding.process_group,
         ),
+        collective_timing,
     )
     if received_local_ids.numel() and (
         bool(torch.any(received_local_ids < 0))
@@ -517,6 +534,7 @@ def fast_modulo_sharded_lookup(
             input_split_sizes=receive_splits,
             group=embedding.process_group,
         ),
+        collective_timing,
     )
     if ordered_positions.numel():
         vectors.index_copy_(0, ordered_positions, received_vectors)
@@ -573,11 +591,13 @@ def integrated_sharded_exact(
     batch: RawHistoryBatch,
     target_version: str,
     dtype: torch.dtype = torch.float16,
+    collective_timing: str = "device",
 ) -> IntegratedExactResult:
     lookup = fast_modulo_sharded_lookup(
         model.item_embedding,
         batch.item_ids,
         batch.lengths,
+        collective_timing=collective_timing,
     )
     if batch.batch_size == 0:
         return IntegratedExactResult(
@@ -974,11 +994,13 @@ def integrated_sharded_append_only(
     suffix: RawHistoryBatch,
     target_version: str,
     dtype: torch.dtype = torch.float16,
+    collective_timing: str = "device",
 ) -> IntegratedAppendOnlyResult:
     lookup = fast_modulo_sharded_lookup(
         model.item_embedding,
         suffix.item_ids,
         suffix.lengths,
+        collective_timing=collective_timing,
     )
     if suffix.batch_size == 0:
         if retained is not None:

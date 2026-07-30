@@ -247,3 +247,56 @@ def test_primary_runtime_defaults_select_large_entity_boundary() -> None:
     assert args.prepared_data.endswith("qk_entity_2560.npz")
     assert args.checkpoint_dir.endswith("qk_entity_h1536/seed0")
     assert args.run_id == "qk_entity_h1536_seed0"
+
+
+def _tiny_slot() -> MODULE.M1PinnedSlot:
+    values = [torch.empty(1) for _ in range(10)]
+    return MODULE.M1PinnedSlot(*values)
+
+
+def test_s1_mode_and_disjoint_slot_contract() -> None:
+    args = MODULE.parse_args(["--mode", "s1"])
+    first = _tiny_slot()
+    second = _tiny_slot()
+
+    MODULE._validate_s1_slots((first, second))
+    first.output_k = first.source_k
+    with pytest.raises(ValueError):
+        MODULE._validate_s1_slots((first, second))
+
+    assert args.mode == "s1"
+
+
+def test_s1_input_edge_reports_overlap_and_exposed_tail() -> None:
+    staged = MODULE.M1S1StagedGroup(
+        group=MODULE.M1Group(
+            ordinal=1,
+            route="compiled",
+            record_ids_by_rank=((0,), ()),
+        ),
+        actions=(),
+        local_microbatches=(),
+        micro_steps=0,
+        source=None,
+        device_histories=(),
+        oldkv_read_bytes=0,
+        h2d_bytes=0,
+        pageable_to_pinned_seconds=0.0,
+        h2d_seconds=0.0,
+        staging_started_at=2.0,
+        staging_finished_at=5.0,
+        slot_index=1,
+    )
+
+    edge = MODULE._s1_input_edge(
+        0,
+        1.0,
+        4.0,
+        staged,
+        0.75,
+    )
+
+    assert edge["overlap_interval_seconds"] == pytest.approx(2.0)
+    assert edge["staging_tail_after_producer_seconds"] == pytest.approx(1.0)
+    assert edge["measured_boundary_wait_seconds"] == pytest.approx(0.75)
+    assert edge["overlap_fraction"] == pytest.approx(2.0 / 3.0)

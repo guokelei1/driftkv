@@ -7,6 +7,7 @@ import math
 import os
 import time
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -49,6 +50,7 @@ from hstu_kvcache.models import HSTUConfig
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = "evokv_design3_m1_qk_pageable_s0_development_v0"
+S1_PROTOCOL = "evokv_design3_m1_qk_pageable_s1_development_v0"
 DEFAULT_PREPARED_DATA = (
     "data/processed/evokv_d3_m1_qk_entity_2560.npz"
 )
@@ -212,6 +214,42 @@ class M1Histories:
     target: dict[int, dict[str, np.ndarray]]
 
 
+@dataclass(frozen=True)
+class M1S1StagedGroup:
+    group: M1Group
+    actions: tuple[M1Action, ...]
+    local_microbatches: tuple[tuple[M1Action, ...], ...]
+    micro_steps: int
+    source: JaggedMigratedKVBatch | None
+    device_histories: tuple[RawHistoryBatch, ...]
+    oldkv_read_bytes: int
+    h2d_bytes: int
+    pageable_to_pinned_seconds: float
+    h2d_seconds: float
+    staging_started_at: float
+    staging_finished_at: float
+    slot_index: int
+
+    @property
+    def staging_wall_seconds(self) -> float:
+        return self.staging_finished_at - self.staging_started_at
+
+
+@dataclass(frozen=True)
+class M1S1ComputedGroup:
+    group: M1Group
+    actions: tuple[M1Action, ...]
+    target_retained: JaggedMigratedKVBatch | None
+    target_suffix: JaggedMigratedKVBatch | None
+    target_exact: JaggedMigratedKVBatch | None
+    report: dict[str, object]
+    lookup_metrics: dict[str, int | float]
+    execution_started_at: float
+    execution_finished_at: float
+    ready_event: torch.cuda.Event
+    slot_index: int
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepared-data", default=DEFAULT_PREPARED_DATA)
@@ -233,7 +271,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=("dry-run", "materialize", "s0"),
+        choices=("dry-run", "materialize", "s0", "s1"),
         default="dry-run",
     )
     parser.add_argument(
@@ -1218,6 +1256,17 @@ def _sum_lookup_metrics(
     ) + float(values["collective_seconds"])
 
 
+def _merge_lookup_metrics(
+    totals: dict[str, int | float],
+    values: Mapping[str, int | float],
+) -> None:
+    for name, value in values.items():
+        if isinstance(value, float):
+            totals[name] = float(totals.get(name, 0.0)) + value
+        else:
+            totals[name] = int(totals.get(name, 0)) + value
+
+
 def materialize_old_store(
     store: PageableDramExtentStore,
     batches: Sequence[Sequence[Sequence[int]]],
@@ -1805,8 +1854,6 @@ def run_s0(
             target_exact,
         )
         torch.cuda.synchronize(device)
-        gc.collect()
-        torch.cuda.empty_cache()
     torch.cuda.synchronize(device)
     target_ledger = target_store.ledger()
     expected_ids = set(target_store.record_ids)
@@ -1837,6 +1884,1106 @@ def run_s0(
             len(observed) == len(set(observed))
             and set(observed) == expected_ids
             and target_ledger.complete_records == len(expected_ids)
+            and target_ledger.partial_records == 0
+            and target_ledger.missing_records == 0
+        ),
+    }
+
+
+def _validate_s1_slots(
+    slots: Sequence[M1PinnedSlot],
+) -> None:
+    if len(slots) != 2:
+        raise ValueError("M1 S1 requires exactly two pinned slots")
+    input_names = {
+        "source_k",
+        "source_v",
+        "source_lengths",
+        "source_offsets",
+        "history_item_ids",
+        "history_behaviors",
+        "history_time_deltas",
+        "history_lengths",
+    }
+    output_names = {"output_k", "output_v"}
+    storages = [
+        {
+            value.untyped_storage().data_ptr()
+            for value in slot.__dict__.values()
+        }
+        for slot in slots
+    ]
+    if storages[0] & storages[1]:
+        raise ValueError("M1 S1 pinned slots alias")
+    for slot in slots:
+        inputs = {
+            getattr(slot, name).untyped_storage().data_ptr()
+            for name in input_names
+        }
+        outputs = {
+            getattr(slot, name).untyped_storage().data_ptr()
+            for name in output_names
+        }
+        if inputs & outputs:
+            raise ValueError(
+                "M1 S1 input and output slot components alias"
+            )
+
+
+def _interval_overlap_seconds(
+    left_start: float,
+    left_stop: float,
+    right_start: float,
+    right_stop: float,
+) -> float:
+    if (
+        left_stop < left_start
+        or right_stop < right_start
+    ):
+        raise ValueError("M1 S1 overlap interval is invalid")
+    return max(
+        min(left_stop, right_stop) - max(left_start, right_start),
+        0.0,
+    )
+
+
+def _stage_s1_group_input(
+    group: M1Group,
+    rank: int,
+    actions_by_id: Mapping[int, M1Action],
+    histories: M1Histories,
+    old_store: PageableDramExtentStore,
+    slot: M1PinnedSlot,
+    slot_index: int,
+    device: torch.device,
+    stream: torch.cuda.Stream,
+    micro_batch_records: int,
+) -> M1S1StagedGroup:
+    staging_started_at = time.perf_counter()
+    group_actions = _actions_for_ids(
+        group.record_ids_by_rank[rank],
+        actions_by_id,
+    )
+    microbatches_by_rank = tuple(
+        _chunks(
+            _actions_for_ids(
+                group.record_ids_by_rank[value],
+                actions_by_id,
+            ),
+            micro_batch_records,
+        )
+        for value in range(len(group.record_ids_by_rank))
+    )
+    micro_steps = max(
+        (len(value) for value in microbatches_by_rank),
+        default=0,
+    )
+    local_microbatches = microbatches_by_rank[rank]
+    pageable_seconds = 0.0
+    h2d_seconds = 0.0
+    h2d_bytes = 0
+    oldkv_read_bytes = 0
+    source_group = None
+    device_histories = []
+    with torch.cuda.device(device):
+        if group.route == "compiled" and group_actions:
+            retained_tokens = sum(
+                value.retained_tokens for value in group_actions
+            )
+            with torch.cuda.stream(stream):
+                source_k = torch.empty(
+                    (
+                        old_store.num_layers,
+                        retained_tokens,
+                        old_store.width,
+                    ),
+                    dtype=torch.float16,
+                    device=device,
+                )
+                source_v = torch.empty_like(source_k)
+            source_offset = 0
+            for actions in local_microbatches:
+                stage_started = time.perf_counter()
+                source, read_bytes = _source_batch_from_store(
+                    slot,
+                    old_store,
+                    actions,
+                    "theta0",
+                )
+                pageable_seconds += time.perf_counter() - stage_started
+                if source is None:
+                    raise RuntimeError(
+                        "M1 S1 compiled source is missing"
+                    )
+                stop = source_offset + source.token_count
+                h2d_start = torch.cuda.Event(enable_timing=True)
+                h2d_end = torch.cuda.Event(enable_timing=True)
+                with torch.cuda.stream(stream):
+                    h2d_start.record()
+                    source_k[:, source_offset:stop].copy_(
+                        source.k,
+                        non_blocking=True,
+                    )
+                    source_v[:, source_offset:stop].copy_(
+                        source.v,
+                        non_blocking=True,
+                    )
+                    h2d_end.record()
+                h2d_seconds += _event_seconds(
+                    h2d_start,
+                    h2d_end,
+                )
+                bytes_moved = _tensor_pair_nbytes(
+                    source.k,
+                    source.v,
+                )
+                h2d_bytes += bytes_moved
+                oldkv_read_bytes += read_bytes
+                source_offset = stop
+            if source_offset != retained_tokens:
+                raise RuntimeError(
+                    "M1 S1 compiled source extent differs"
+                )
+            with torch.cuda.stream(stream):
+                source_group = _device_jagged(
+                    group_actions,
+                    source_k,
+                    source_v,
+                    "retained_tokens",
+                    "theta0",
+                    "theta0",
+                )
+            del source_k, source_v
+        for step in range(micro_steps):
+            actions = (
+                local_microbatches[step]
+                if step < len(local_microbatches)
+                else ()
+            )
+            starts = (
+                tuple(value.delta_start for value in actions)
+                if group.route == "compiled"
+                else (0,) * len(actions)
+            )
+            stage_started = time.perf_counter()
+            history = _history_batch_into_slot(
+                slot,
+                actions,
+                histories.target,
+                starts,
+                tuple(value.final_tokens for value in actions),
+                "theta1",
+            )
+            pageable_seconds += time.perf_counter() - stage_started
+            h2d_bytes += history.nbytes
+            h2d_start = torch.cuda.Event(enable_timing=True)
+            h2d_end = torch.cuda.Event(enable_timing=True)
+            with torch.cuda.stream(stream):
+                h2d_start.record()
+                device_history = history.to(
+                    device,
+                    non_blocking=True,
+                )
+                h2d_end.record()
+            h2d_seconds += _event_seconds(
+                h2d_start,
+                h2d_end,
+            )
+            device_histories.append(device_history)
+            del history
+        stream.synchronize()
+    return M1S1StagedGroup(
+        group=group,
+        actions=group_actions,
+        local_microbatches=local_microbatches,
+        micro_steps=micro_steps,
+        source=source_group,
+        device_histories=tuple(device_histories),
+        oldkv_read_bytes=oldkv_read_bytes,
+        h2d_bytes=h2d_bytes,
+        pageable_to_pinned_seconds=pageable_seconds,
+        h2d_seconds=h2d_seconds,
+        staging_started_at=staging_started_at,
+        staging_finished_at=time.perf_counter(),
+        slot_index=slot_index,
+    )
+
+
+def _compute_s1_staged_group(
+    staged: M1S1StagedGroup,
+    model,
+    operator: DirectOldKVFusedOperator,
+    program,
+    device: torch.device,
+    micro_batch_records: int,
+) -> dict[str, object]:
+    group = staged.group
+    group_actions = staged.actions
+    local_microbatches = staged.local_microbatches
+    group_lookup: dict[str, int | float] = {}
+    group_d2d_seconds = 0.0
+    group_assemble_seconds = 0.0
+    group_lookup_seconds = 0.0
+    group_compute_seconds = 0.0
+    target_retained = None
+    target_suffix = None
+    target_exact = None
+    execution_started_at = time.perf_counter()
+    if group.route == "compiled" and group_actions:
+        if staged.source is None:
+            raise RuntimeError("M1 S1 staged source is absent")
+        retained_tokens = sum(
+            value.retained_tokens for value in group_actions
+        )
+        target_retained_k = torch.empty(
+            (
+                program.num_layers,
+                retained_tokens,
+                program.kv_width,
+            ),
+            dtype=torch.float16,
+            device=device,
+        )
+        target_retained_v = torch.empty_like(target_retained_k)
+        suffix_tokens = sum(
+            value.suffix_tokens for value in group_actions
+        )
+        target_suffix_k = torch.empty(
+            (
+                program.num_layers,
+                suffix_tokens,
+                program.kv_width,
+            ),
+            dtype=torch.float16,
+            device=device,
+        )
+        target_suffix_v = torch.empty_like(target_suffix_k)
+        target_retained = _device_jagged(
+            group_actions,
+            target_retained_k,
+            target_retained_v,
+            "retained_tokens",
+            "theta0",
+            "theta1",
+        )
+        target_suffix = _device_jagged(
+            group_actions,
+            target_suffix_k,
+            target_suffix_v,
+            "suffix_tokens",
+            "theta1",
+            "theta1",
+        )
+        del (
+            target_retained_k,
+            target_retained_v,
+            target_suffix_k,
+            target_suffix_v,
+        )
+        d2d_start = torch.cuda.Event(enable_timing=True)
+        d2d_end = torch.cuda.Event(enable_timing=True)
+        d2d_start.record()
+        operator.execute_into(
+            program,
+            staged.source,
+            target_retained,
+        )
+        d2d_end.record()
+        group_d2d_seconds = _event_seconds(
+            d2d_start,
+            d2d_end,
+        )
+    elif group.route == "exact" and group_actions:
+        exact_tokens = sum(
+            value.final_tokens for value in group_actions
+        )
+        exact_k = torch.empty(
+            (
+                model.dense_model.cfg.num_layers,
+                exact_tokens,
+                model.dense_model.cfg.hidden_size,
+            ),
+            dtype=torch.float16,
+            device=device,
+        )
+        exact_v = torch.empty_like(exact_k)
+        target_exact = _device_jagged(
+            group_actions,
+            exact_k,
+            exact_v,
+            "final_tokens",
+            "theta1",
+            "theta1",
+        )
+        del exact_k, exact_v
+    retained_offset = 0
+    suffix_offset = 0
+    exact_offset = 0
+    for step, device_history in enumerate(
+        staged.device_histories
+    ):
+        actions = (
+            local_microbatches[step]
+            if step < len(local_microbatches)
+            else ()
+        )
+        transformed = None
+        if actions and group.route == "compiled":
+            retained_stop = retained_offset + sum(
+                value.retained_tokens for value in actions
+            )
+            assert target_retained is not None
+            gather_start = torch.cuda.Event(enable_timing=True)
+            gather_end = torch.cuda.Event(enable_timing=True)
+            gather_start.record()
+            transformed_k = target_retained.k[
+                :, retained_offset:retained_stop
+            ].contiguous()
+            transformed_v = target_retained.v[
+                :, retained_offset:retained_stop
+            ].contiguous()
+            transformed = _device_jagged(
+                actions,
+                transformed_k,
+                transformed_v,
+                "retained_tokens",
+                "theta0",
+                "theta1",
+            )
+            gather_end.record()
+            group_assemble_seconds += _event_seconds(
+                gather_start,
+                gather_end,
+            )
+            del transformed_k, transformed_v
+        compute_started = time.perf_counter()
+        if group.route == "compiled":
+            result = integrated_sharded_append_only(
+                model,
+                transformed,
+                device_history,
+                "theta1",
+                collective_timing="current_stream",
+            )
+        else:
+            result = integrated_sharded_exact(
+                model,
+                device_history,
+                "theta1",
+                collective_timing="current_stream",
+            )
+        compute_end = torch.cuda.Event(enable_timing=True)
+        compute_end.record()
+        compute_end.synchronize()
+        compute_and_lookup_seconds = (
+            time.perf_counter() - compute_started
+        )
+        lookup_seconds = result.lookup_metrics.collective_seconds
+        compute_seconds = max(
+            compute_and_lookup_seconds - lookup_seconds,
+            0.0,
+        )
+        group_lookup_seconds += lookup_seconds
+        group_compute_seconds += compute_seconds
+        _sum_lookup_metrics(group_lookup, result.lookup_metrics)
+        if result.fragment is not None:
+            assemble_start = torch.cuda.Event(enable_timing=True)
+            assemble_end = torch.cuda.Event(enable_timing=True)
+            assemble_start.record()
+            if isinstance(
+                result.fragment,
+                IntegratedAppendOnlyKVBatch,
+            ):
+                suffix_stop = suffix_offset + (
+                    result.fragment.suffix.token_count
+                )
+                assert target_suffix is not None
+                target_suffix.k[:, suffix_offset:suffix_stop].copy_(
+                    result.fragment.suffix.k
+                )
+                target_suffix.v[:, suffix_offset:suffix_stop].copy_(
+                    result.fragment.suffix.v
+                )
+                suffix_offset = suffix_stop
+                retained_offset += (
+                    result.fragment.retained.token_count
+                )
+            else:
+                exact_stop = (
+                    exact_offset + result.fragment.token_count
+                )
+                assert target_exact is not None
+                target_exact.k[:, exact_offset:exact_stop].copy_(
+                    result.fragment.k
+                )
+                target_exact.v[:, exact_offset:exact_stop].copy_(
+                    result.fragment.v
+                )
+                exact_offset = exact_stop
+            assemble_end.record()
+            group_assemble_seconds += _event_seconds(
+                assemble_start,
+                assemble_end,
+            )
+        elif actions:
+            raise RuntimeError("M1 S1 lost local microbatch output")
+        del result, transformed
+    if group.route == "compiled" and group_actions:
+        assert target_retained is not None
+        assert target_suffix is not None
+        if (
+            retained_offset != target_retained.token_count
+            or suffix_offset != target_suffix.token_count
+        ):
+            raise RuntimeError("M1 S1 compiled assembly differs")
+    if group.route == "exact" and group_actions:
+        assert target_exact is not None
+        if exact_offset != target_exact.token_count:
+            raise RuntimeError("M1 S1 exact assembly differs")
+    ready_event = torch.cuda.Event()
+    ready_event.record()
+    execution_finished_at = time.perf_counter()
+    report = {
+        "ordinal": group.ordinal,
+        "route": group.route,
+        "capacity_group_records": len(group_actions),
+        "compute_microbatches": staged.micro_steps,
+        "micro_batch_records": micro_batch_records,
+        "resident_extent_logical_bytes": (
+            group_resident_extent_bytes(
+                group_actions,
+                model.dense_model.cfg,
+            )
+        ),
+        "resident_extent_allocated_bytes": None,
+        "oldkv_read_bytes": staged.oldkv_read_bytes,
+        "h2d_bytes": staged.h2d_bytes,
+        "d2h_bytes": 0,
+        "published_bytes": 0,
+        "pageable_to_pinned_seconds": (
+            staged.pageable_to_pinned_seconds
+        ),
+        "h2d_seconds": staged.h2d_seconds,
+        "input_staging_wall_seconds": staged.staging_wall_seconds,
+        "d2d_transform_seconds": group_d2d_seconds,
+        "d2d_assemble_seconds": group_assemble_seconds,
+        "lookup_exchange_seconds": group_lookup_seconds,
+        "compute_excluding_lookup_seconds": group_compute_seconds,
+        "d2h_seconds": 0.0,
+        "publish_seconds": 0.0,
+        "lookup_metrics": group_lookup,
+    }
+    return {
+        "computed_group": M1S1ComputedGroup(
+            group=group,
+            actions=group_actions,
+            target_retained=target_retained,
+            target_suffix=target_suffix,
+            target_exact=target_exact,
+            report=report,
+            lookup_metrics=group_lookup,
+            execution_started_at=execution_started_at,
+            execution_finished_at=execution_finished_at,
+            ready_event=ready_event,
+            slot_index=staged.slot_index,
+        )
+    }
+
+
+def _drain_s1_computed_group(
+    computed: M1S1ComputedGroup,
+    target_store: PageableDramExtentStore,
+    slot: M1PinnedSlot,
+    device: torch.device,
+    stream: torch.cuda.Stream,
+    micro_batch_records: int,
+) -> dict[str, object]:
+    drain_started_at = time.perf_counter()
+    group = computed.group
+    group_actions = computed.actions
+    target_retained = computed.target_retained
+    target_suffix = computed.target_suffix
+    target_exact = computed.target_exact
+    group_d2h_bytes = 0
+    group_published_bytes = 0
+    group_d2h_seconds = 0.0
+    group_publish_seconds = 0.0
+    observed = []
+    retained_offset = 0
+    suffix_offset = 0
+    exact_offset = 0
+    with torch.cuda.device(device):
+        with torch.cuda.stream(stream):
+            stream.wait_event(computed.ready_event)
+        for actions in _chunks(
+            group_actions,
+            micro_batch_records,
+        ):
+            segments: list[
+                tuple[torch.Tensor, torch.Tensor]
+            ] = []
+            d2h_start = torch.cuda.Event(enable_timing=True)
+            d2h_end = torch.cuda.Event(enable_timing=True)
+            with torch.cuda.stream(stream):
+                d2h_start.record()
+                token_offset = 0
+                if group.route == "compiled":
+                    retained_stop = retained_offset + sum(
+                        value.retained_tokens
+                        for value in actions
+                    )
+                    suffix_stop = suffix_offset + sum(
+                        value.suffix_tokens for value in actions
+                    )
+                    if (
+                        target_retained is None
+                        or target_suffix is None
+                    ):
+                        raise RuntimeError(
+                            "M1 S1 compiled drain output is absent"
+                        )
+                    retained_k, retained_v, token_offset = (
+                        _copy_values_to_output(
+                            slot,
+                            target_retained.k[
+                                :,
+                                retained_offset:retained_stop,
+                            ],
+                            target_retained.v[
+                                :,
+                                retained_offset:retained_stop,
+                            ],
+                            token_offset,
+                        )
+                    )
+                    suffix_k, suffix_v, token_offset = (
+                        _copy_values_to_output(
+                            slot,
+                            target_suffix.k[
+                                :,
+                                suffix_offset:suffix_stop,
+                            ],
+                            target_suffix.v[
+                                :,
+                                suffix_offset:suffix_stop,
+                            ],
+                            token_offset,
+                        )
+                    )
+                    segments = [
+                        (retained_k, retained_v),
+                        (suffix_k, suffix_v),
+                    ]
+                    retained_offset = retained_stop
+                    suffix_offset = suffix_stop
+                else:
+                    exact_stop = exact_offset + sum(
+                        value.final_tokens for value in actions
+                    )
+                    if target_exact is None:
+                        raise RuntimeError(
+                            "M1 S1 exact drain output is absent"
+                        )
+                    k, v, token_offset = _copy_values_to_output(
+                        slot,
+                        target_exact.k[
+                            :,
+                            exact_offset:exact_stop,
+                        ],
+                        target_exact.v[
+                            :,
+                            exact_offset:exact_stop,
+                        ],
+                        token_offset,
+                    )
+                    segments = [(k, v)]
+                    exact_offset = exact_stop
+                d2h_end.record()
+            group_d2h_seconds += _event_seconds(
+                d2h_start,
+                d2h_end,
+            )
+            bytes_moved = sum(
+                _tensor_pair_nbytes(k, v)
+                for k, v in segments
+            )
+            group_d2h_bytes += bytes_moved
+            if not _finite_sample(segments):
+                raise RuntimeError(
+                    "M1 S1 output K/V is nonfinite"
+                )
+            publish_started = time.perf_counter()
+            group_published_bytes += publish_output_segments(
+                target_store,
+                actions,
+                group.route,
+                segments,
+            )
+            group_publish_seconds += (
+                time.perf_counter() - publish_started
+            )
+            observed.extend(
+                value.record_id for value in actions
+            )
+    if group.route == "compiled" and group_actions:
+        if (
+            target_retained is None
+            or target_suffix is None
+            or retained_offset != target_retained.token_count
+            or suffix_offset != target_suffix.token_count
+        ):
+            raise RuntimeError(
+                "M1 S1 compiled drain extent differs"
+            )
+    if group.route == "exact" and group_actions:
+        if (
+            target_exact is None
+            or exact_offset != target_exact.token_count
+        ):
+            raise RuntimeError("M1 S1 exact drain extent differs")
+    drain_finished_at = time.perf_counter()
+    report = dict(computed.report)
+    report.update(
+        {
+            "d2h_bytes": group_d2h_bytes,
+            "published_bytes": group_published_bytes,
+            "d2h_seconds": group_d2h_seconds,
+            "publish_seconds": group_publish_seconds,
+            "drain_wall_seconds": (
+                drain_finished_at - drain_started_at
+            ),
+        }
+    )
+    return {
+        "group_report": report,
+        "observed_record_ids": tuple(observed),
+        "d2h_bytes": group_d2h_bytes,
+        "published_bytes": group_published_bytes,
+        "drain_started_at": drain_started_at,
+        "drain_finished_at": drain_finished_at,
+    }
+
+
+def _s1_input_edge(
+    producer_group_ordinal: int,
+    producer_execution_started_at: float,
+    producer_execution_finished_at: float,
+    prefetched: M1S1StagedGroup,
+    measured_wait_seconds: float,
+) -> dict[str, int | float]:
+    overlap = _interval_overlap_seconds(
+        prefetched.staging_started_at,
+        prefetched.staging_finished_at,
+        producer_execution_started_at,
+        producer_execution_finished_at,
+    )
+    tail = max(
+        prefetched.staging_finished_at
+        - producer_execution_finished_at,
+        0.0,
+    )
+    return {
+        "producer_group_ordinal": producer_group_ordinal,
+        "prefetched_group_ordinal": (
+            prefetched.group.ordinal
+        ),
+        "producer_execution_seconds": (
+            producer_execution_finished_at
+            - producer_execution_started_at
+        ),
+        "input_staging_wall_seconds": (
+            prefetched.staging_wall_seconds
+        ),
+        "overlap_interval_seconds": overlap,
+        "staging_tail_after_producer_seconds": tail,
+        "measured_boundary_wait_seconds": (
+            measured_wait_seconds
+        ),
+        "overlap_fraction": (
+            overlap / prefetched.staging_wall_seconds
+            if prefetched.staging_wall_seconds
+            else 0.0
+        ),
+    }
+
+
+def _s1_drain_edge(
+    drained: Mapping[str, object],
+    consumer: M1S1ComputedGroup,
+    measured_credit_wait_seconds: float,
+) -> dict[str, int | float]:
+    started = float(drained["drain_started_at"])
+    finished = float(drained["drain_finished_at"])
+    overlap = _interval_overlap_seconds(
+        started,
+        finished,
+        consumer.execution_started_at,
+        consumer.execution_finished_at,
+    )
+    wall = finished - started
+    report = drained["group_report"]
+    if not isinstance(report, Mapping):
+        raise RuntimeError("M1 S1 drain report differs")
+    return {
+        "drained_group_ordinal": int(report["ordinal"]),
+        "overlapped_compute_group_ordinal": (
+            consumer.group.ordinal
+        ),
+        "drain_wall_seconds": wall,
+        "compute_wall_seconds": (
+            consumer.execution_finished_at
+            - consumer.execution_started_at
+        ),
+        "overlap_interval_seconds": overlap,
+        "measured_output_credit_wait_seconds": (
+            measured_credit_wait_seconds
+        ),
+        "overlap_fraction": (
+            overlap / wall if wall else 0.0
+        ),
+    }
+
+
+def run_s1(
+    groups: Sequence[M1Group],
+    rank: int,
+    actions_by_id: Mapping[int, M1Action],
+    histories: M1Histories,
+    old_store: PageableDramExtentStore,
+    target_store: PageableDramExtentStore,
+    model,
+    operator: DirectOldKVFusedOperator,
+    program,
+    slots: Sequence[M1PinnedSlot],
+    device: torch.device,
+    micro_batch_records: int,
+) -> dict[str, object]:
+    if not groups:
+        raise ValueError("M1 S1 requires at least one group")
+    _validate_s1_slots(slots)
+    phases = {
+        "pageable_to_pinned_seconds": 0.0,
+        "h2d_seconds": 0.0,
+        "d2d_transform_seconds": 0.0,
+        "d2d_assemble_seconds": 0.0,
+        "lookup_exchange_seconds": 0.0,
+        "compute_excluding_lookup_seconds": 0.0,
+        "d2h_seconds": 0.0,
+        "publish_seconds": 0.0,
+    }
+    lookup_totals: dict[str, int | float] = {}
+    group_reports = []
+    input_edges = []
+    drain_edges = []
+    input_arrivals: dict[int, dict[str, int | float | str]] = {}
+    observed = []
+    h2d_bytes = 0
+    d2h_bytes = 0
+    published_bytes = 0
+    input_boundary_wait_seconds = 0.0
+    output_credit_wait_seconds = 0.0
+    prefetched_input_seconds = 0.0
+    overlapped_input_seconds = 0.0
+    overlapped_drain_seconds = 0.0
+    eligible_drain_seconds = 0.0
+    torch.cuda.reset_peak_memory_stats(device)
+    baseline_allocated = torch.cuda.memory_allocated(device)
+    wall_started = time.perf_counter()
+    prefetch_stream = torch.cuda.Stream(device=device)
+    drain_stream = torch.cuda.Stream(device=device)
+    current = _stage_s1_group_input(
+        groups[0],
+        rank,
+        actions_by_id,
+        histories,
+        old_store,
+        slots[0],
+        0,
+        device,
+        prefetch_stream,
+        micro_batch_records,
+    )
+    initial_fill_seconds = current.staging_wall_seconds
+    phases["pageable_to_pinned_seconds"] += (
+        current.pageable_to_pinned_seconds
+    )
+    phases["h2d_seconds"] += current.h2d_seconds
+    h2d_bytes += current.h2d_bytes
+    input_arrivals[current.group.ordinal] = {
+        "input_fill_class": "initial_unoverlapped_fill",
+        "input_overlap_seconds": 0.0,
+        "input_staging_tail_seconds": initial_fill_seconds,
+        "measured_input_boundary_wait_seconds": (
+            initial_fill_seconds
+        ),
+    }
+    drain_future = None
+    final_drain_wait_seconds = 0.0
+
+    def consume_drain(
+        drained: Mapping[str, object],
+    ) -> None:
+        nonlocal d2h_bytes, published_bytes
+        report_value = drained["group_report"]
+        if not isinstance(report_value, Mapping):
+            raise RuntimeError("M1 S1 group report differs")
+        report = dict(report_value)
+        report.update(
+            input_arrivals[int(report["ordinal"])]
+        )
+        group_reports.append(report)
+        phases["d2h_seconds"] += float(
+            report["d2h_seconds"]
+        )
+        phases["publish_seconds"] += float(
+            report["publish_seconds"]
+        )
+        d2h_bytes += int(drained["d2h_bytes"])
+        published_bytes += int(drained["published_bytes"])
+        observed.extend(drained["observed_record_ids"])
+
+    with (
+        ThreadPoolExecutor(
+            max_workers=1,
+            thread_name_prefix="evokv-s1-prefetch",
+        ) as prefetch_executor,
+        ThreadPoolExecutor(
+            max_workers=1,
+            thread_name_prefix="evokv-s1-drain",
+        ) as drain_executor,
+    ):
+        for index, group in enumerate(groups):
+            if current.group != group:
+                raise RuntimeError("M1 S1 group order changed")
+            prefetch_future = None
+            if index + 1 < len(groups):
+                next_index = index + 1
+                prefetch_future = prefetch_executor.submit(
+                    _stage_s1_group_input,
+                    groups[next_index],
+                    rank,
+                    actions_by_id,
+                    histories,
+                    old_store,
+                    slots[next_index % 2],
+                    next_index % 2,
+                    device,
+                    prefetch_stream,
+                    micro_batch_records,
+                )
+            computed_value = _compute_s1_staged_group(
+                current,
+                model,
+                operator,
+                program,
+                device,
+                micro_batch_records,
+            )
+            computed = computed_value.get("computed_group")
+            if not isinstance(computed, M1S1ComputedGroup):
+                raise RuntimeError("M1 S1 computed group differs")
+            compute_report = computed.report
+            for name in (
+                "d2d_transform_seconds",
+                "d2d_assemble_seconds",
+                "lookup_exchange_seconds",
+                "compute_excluding_lookup_seconds",
+            ):
+                phases[name] += float(compute_report[name])
+            _merge_lookup_metrics(
+                lookup_totals,
+                computed.lookup_metrics,
+            )
+            if drain_future is not None:
+                wait_started = time.perf_counter()
+                drained = drain_future.result()
+                credit_wait = time.perf_counter() - wait_started
+                output_credit_wait_seconds += credit_wait
+                drain_edge = _s1_drain_edge(
+                    drained,
+                    computed,
+                    credit_wait,
+                )
+                drain_edges.append(drain_edge)
+                overlapped_drain_seconds += float(
+                    drain_edge["overlap_interval_seconds"]
+                )
+                eligible_drain_seconds += float(
+                    drain_edge["drain_wall_seconds"]
+                )
+                consume_drain(drained)
+            drain_future = drain_executor.submit(
+                _drain_s1_computed_group,
+                computed,
+                target_store,
+                slots[computed.slot_index],
+                device,
+                drain_stream,
+                micro_batch_records,
+            )
+            producer_group_ordinal = computed.group.ordinal
+            producer_execution_started_at = (
+                computed.execution_started_at
+            )
+            producer_execution_finished_at = (
+                computed.execution_finished_at
+            )
+            del computed_value, computed
+            if prefetch_future is None:
+                continue
+            wait_started = time.perf_counter()
+            next_group = prefetch_future.result()
+            input_wait = time.perf_counter() - wait_started
+            input_boundary_wait_seconds += input_wait
+            edge = _s1_input_edge(
+                producer_group_ordinal,
+                producer_execution_started_at,
+                producer_execution_finished_at,
+                next_group,
+                input_wait,
+            )
+            input_edges.append(edge)
+            prefetched_input_seconds += (
+                next_group.staging_wall_seconds
+            )
+            overlapped_input_seconds += float(
+                edge["overlap_interval_seconds"]
+            )
+            phases["pageable_to_pinned_seconds"] += (
+                next_group.pageable_to_pinned_seconds
+            )
+            phases["h2d_seconds"] += next_group.h2d_seconds
+            h2d_bytes += next_group.h2d_bytes
+            input_arrivals[next_group.group.ordinal] = {
+                "input_fill_class": "prefetched",
+                "input_overlap_seconds": edge[
+                    "overlap_interval_seconds"
+                ],
+                "input_staging_tail_seconds": edge[
+                    "staging_tail_after_producer_seconds"
+                ],
+                "measured_input_boundary_wait_seconds": (
+                    input_wait
+                ),
+            }
+            previous = current
+            current = next_group
+            del previous
+        if drain_future is None:
+            raise RuntimeError("M1 S1 final drain is absent")
+        wait_started = time.perf_counter()
+        drained = drain_future.result()
+        final_drain_wait_seconds = (
+            time.perf_counter() - wait_started
+        )
+        consume_drain(drained)
+    torch.cuda.synchronize(device)
+    target_ledger = target_store.ledger()
+    expected_ids = set(target_store.record_ids)
+    wall_seconds = time.perf_counter() - wall_started
+    group_reports.sort(key=lambda value: int(value["ordinal"]))
+    exposed_wait_seconds = (
+        initial_fill_seconds
+        + input_boundary_wait_seconds
+        + output_credit_wait_seconds
+        + final_drain_wait_seconds
+    )
+    return {
+        "wall_seconds": wall_seconds,
+        "phase_seconds": phases,
+        "raw_phase_sum_seconds": sum(phases.values()),
+        "lookup_metrics": lookup_totals,
+        "records": len(observed),
+        "record_ids_sha256": canonical_sha256(
+            {"record_ids": sorted(observed)}
+        ),
+        "h2d_bytes": h2d_bytes,
+        "d2h_bytes": d2h_bytes,
+        "published_bytes": published_bytes,
+        "baseline_hbm_allocated_bytes": baseline_allocated,
+        "peak_hbm_allocated_bytes": (
+            torch.cuda.max_memory_allocated(device)
+        ),
+        "peak_hbm_reserved_bytes": (
+            torch.cuda.max_memory_reserved(device)
+        ),
+        "pinned_slot_bytes": sum(
+            slot.nbytes for slot in slots
+        ),
+        "old_store_ledger": old_store.ledger().to_dict(),
+        "target_store_ledger": target_ledger.to_dict(),
+        "group_reports": group_reports,
+        "input_pipeline_edges": input_edges,
+        "drain_pipeline_edges": drain_edges,
+        "overlap_metrics": {
+            "buffer_depth": 2,
+            "initial_fill_seconds": initial_fill_seconds,
+            "prefetched_input_staging_seconds": (
+                prefetched_input_seconds
+            ),
+            "overlapped_input_staging_seconds": (
+                overlapped_input_seconds
+            ),
+            "input_boundary_wait_seconds": (
+                input_boundary_wait_seconds
+            ),
+            "output_credit_wait_seconds": (
+                output_credit_wait_seconds
+            ),
+            "final_drain_wait_seconds": (
+                final_drain_wait_seconds
+            ),
+            "eligible_drain_wall_seconds": (
+                eligible_drain_seconds
+            ),
+            "drain_compute_overlap_seconds": (
+                overlapped_drain_seconds
+            ),
+            "prefetch_overlap_ratio": (
+                overlapped_input_seconds
+                / prefetched_input_seconds
+                if prefetched_input_seconds
+                else 0.0
+            ),
+            "drain_compute_overlap_ratio": (
+                overlapped_drain_seconds
+                / eligible_drain_seconds
+                if eligible_drain_seconds
+                else 0.0
+            ),
+            "exposed_pipeline_wait_seconds": (
+                exposed_wait_seconds
+            ),
+            "pipeline_exposure_fraction": (
+                exposed_wait_seconds / wall_seconds
+                if wall_seconds
+                else 0.0
+            ),
+        },
+        "overlap_contract": {
+            "overlapped": (
+                "prefetch group i+1, execute group i, and "
+                "D2H plus CPU publication for group i-1 run "
+                "concurrently on disjoint slot components"
+            ),
+            "collective_order": (
+                "only the main thread issues D2 collectives in "
+                "unchanged group, microbatch, counts, ids, vectors order"
+            ),
+            "collective_timing": (
+                "S1 uses current-compute-stream CUDA events so "
+                "collective accounting does not fence copy streams"
+            ),
+            "non_overlappable": (
+                "initial input fill, input-ready tails, bounded "
+                "one-drain output-credit waits, and final drain"
+            ),
+        },
+        "exactly_once_pass": (
+            len(observed) == len(set(observed))
+            and set(observed) == expected_ids
+            and target_ledger.complete_records
+            == len(expected_ids)
             and target_ledger.partial_records == 0
             and target_ledger.missing_records == 0
         ),
@@ -2153,6 +3300,29 @@ def run_distributed(
             ),
             max_final_tokens,
         )
+        execution_slots = (
+            (
+                slot,
+                _allocate_slot(
+                    cfg,
+                    max_rows,
+                    max(
+                        args.micro_batch_records
+                        * max_retained_tokens,
+                        1,
+                    ),
+                    max(
+                        args.micro_batch_records
+                        * max_final_tokens,
+                        args.materialize_records_per_rank
+                        * max_old_tokens,
+                    ),
+                    max_final_tokens,
+                ),
+            )
+            if args.mode == "s1"
+            else (slot,)
+        )
         old_path, target_path = _store_paths(args, runtime.rank)
         source_checkpoint = resolve_version_checkpoint(
             training,
@@ -2275,19 +3445,36 @@ def run_distributed(
                 runtime.device,
             )
             dist.barrier()
-            s0 = run_s0(
-                groups,
-                runtime.rank,
-                actions_by_id,
-                histories,
-                old_store,
-                target_store,
-                target_model,
-                operator,
-                program,
-                slot,
-                runtime.device,
-                args.micro_batch_records,
+            execution_result = (
+                run_s1(
+                    groups,
+                    runtime.rank,
+                    actions_by_id,
+                    histories,
+                    old_store,
+                    target_store,
+                    target_model,
+                    operator,
+                    program,
+                    execution_slots,
+                    runtime.device,
+                    args.micro_batch_records,
+                )
+                if args.mode == "s1"
+                else run_s0(
+                    groups,
+                    runtime.rank,
+                    actions_by_id,
+                    histories,
+                    old_store,
+                    target_store,
+                    target_model,
+                    operator,
+                    program,
+                    slot,
+                    runtime.device,
+                    args.micro_batch_records,
+                )
             )
             local_report = {
                 "rank": runtime.rank,
@@ -2319,7 +3506,7 @@ def run_distributed(
                 "target_prefault_pages": prefault_pages,
                 "loaded_program": loaded_program,
                 "operator_warmup_seconds": operator_warmup_seconds,
-                "s0": s0,
+                args.mode: execution_result,
             }
             del target_model, program
         gathered: list[object] = [None] * runtime.world_size
@@ -2332,7 +3519,7 @@ def run_distributed(
                 value["old_store_ledger"]["complete_records"]
                 == value["records"]
                 if args.mode == "materialize"
-                else value["s0"]["exactly_once_pass"]
+                else value[args.mode]["exactly_once_pass"]
             )
             for value in rank_reports
         )
@@ -2348,7 +3535,9 @@ def run_distributed(
             cfg,
         )
         report = {
-            "protocol": PROTOCOL,
+            "protocol": (
+                S1_PROTOCOL if args.mode == "s1" else PROTOCOL
+            ),
             "status": "complete" if complete else "failed",
             "scientific_result": False,
             "formal_design3": False,
@@ -2357,7 +3546,11 @@ def run_distributed(
             "benchmark_role": (
                 "two_gpu_qk_pageable_dram_group_at_a_time_s0_foundation"
                 if args.mode == "s0"
-                else "two_gpu_qk_complete_oldkv_materialization_foundation"
+                else (
+                    "two_gpu_qk_strong_group_double_buffer_s1_baseline"
+                    if args.mode == "s1"
+                    else "two_gpu_qk_complete_oldkv_materialization_foundation"
+                )
             ),
             "embedding_scale_role": (
                 "functional_canary_not_primary_d2_partition_evidence"
@@ -2369,12 +3562,12 @@ def run_distributed(
                 "physical_visible_devices": list(visible_tokens),
                 "owner_policy": "stable_record_modulo",
                 "group_order": "sequential_route_pure",
-                "buffer_depth": 1,
+                "buffer_depth": 2 if args.mode == "s1" else 1,
                 "bounded_pinned_staging": True,
                 "source_store": "complete_theta0_oldkv_fp16",
                 "timed_source_read": (
                     "compiled_retained_extent_only"
-                    if args.mode == "s0"
+                    if args.mode in {"s0", "s1"}
                     else None
                 ),
                 "target_store": "complete_private_theta1_kv_fp16",
@@ -2415,10 +3608,10 @@ def run_distributed(
             "rank_reports": rank_reports,
             "makespan_seconds": (
                 max(
-                    value["s0"]["wall_seconds"]
+                    value[args.mode]["wall_seconds"]
                     for value in rank_reports
                 )
-                if args.mode == "s0"
+                if args.mode in {"s0", "s1"}
                 else max(
                     value["source_materialization"]["wall_seconds"]
                     for value in rank_reports
@@ -2428,8 +3621,12 @@ def run_distributed(
             "next": (
                 "measure the full same-revision S0 movement fraction"
                 if args.scope == "canary"
-                else "test a same-revision double buffer only after "
-                "confirming the movement bottleneck"
+                else (
+                    "compare S1 against the same-revision S0 boundary"
+                    if args.mode == "s1"
+                    else "test a same-revision double buffer only after "
+                    "confirming the movement bottleneck"
+                )
             ),
         }
         output = _path(args.output)
