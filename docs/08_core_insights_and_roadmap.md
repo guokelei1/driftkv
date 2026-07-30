@@ -147,10 +147,11 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | two-card M0 S0 plus QK M1 data foundation implemented; development only | flexible M0 WorkManifest/grouping and GPU0/GPU1 pageable-DRAM sequential path; base-only QK entity table, fixed 2,048-record cohort, and two-rank sharded edge trainer | train and validate `theta0→theta1`, rebuild the corresponding D1/D2 boundary, materialize M1 old/private-target K/V, run M1 S0/S1, discover a mechanism, then freeze interfaces/protocol/evidence |
+| D3 | real QK M1 sequential foundation complete; development only | M0 path; 2,560-user QK boundary; two-rank `theta0→theta1`; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V materialization; group-128 and S1-paired group-64 S0 over a 288-GiB old/private-target working set | implement same-revision S1 double buffering, add E0, discover a mechanism beyond a strong S1, then freeze interfaces/protocol/evidence |
 
-D3 development begins from the current D1 plan and implemented D2 runtime using a minimal
-two-rank `WorkManifest`; a normalized exporter is not a prerequisite for the first benchmark.
+D3 development uses the current D1 plan and implemented D2 runtime. M0 uses a minimal two-rank
+`WorkManifest`; the QK M1 revision binds its action snapshot, owner map, group plan, checkpoints,
+and source store directly. A normalized exporter is not a prerequisite for mechanism discovery.
 Within one `stack_revision`, baselines and candidates share the recorded work snapshot. Cross-layer
 revisions are allowed during discovery but must rerun their own baselines. All early outputs remain
 non-scientific until a D3 protocol is frozen. D2 paper claims remain blocked independently;
@@ -166,19 +167,49 @@ measured component leaves a 6.15–6.30-second non-collective estimate. Peak all
 18.53/13.90 GB and the one-slot pinned footprint is 1.53/1.56 GB. This supports proceeding to
 overlap exploration; it is not a speedup, capacity, or paper claim.
 
-The separate QK M1 data foundation is now materialized under
-`evokv_design3_m1_qk_base_entity_data_development_v0`, also with
-`scientific_result=false` and `formal_design3=false`. The first 64 raw exposures per QK user
-produce 2,859,835 base-active item entities: the base-frequency top 250,000 are prediction rows,
-the other 2,609,835 are lossless context rows, and items first observed later hash only into those
-existing context rows. Including padding, the planned 24L/H1536 model has 2,859,836 FP32
-embedding rows (17,570,832,384 bytes, 16.364 GiB). The materialized input contains 512
-fit/calibration users and one nested 2,048-user benchmark pool, with `[512,544)` as the `theta1`
-training window and `[544,576)` as held-out evaluation. For 2,048 records, complete FP16
-source plus private-target K/V is 288 GiB. These are checked data and planned-capacity facts only:
-the sharded trainer is implemented, but no H1536 training, checkpoint edge, regenerated D1/D2
-snapshot, M1 K/V store, M1 S0/S1, or D3 mechanism result exists yet. The earlier H512 QK
-canary and M0 remain functional development evidence and cannot substitute for M1.
+The QK M1 boundary is now a completed and frozen development snapshot, not merely a planned
+capacity point. Its 2,560 users comprise 512 fit/calibration users and one disjoint 2,048-record
+benchmark pool. The first 64 raw exposures per QK user produce 2,859,835 base-active item
+entities: the base-frequency top 250,000 are prediction rows, the other 2,609,835 are lossless
+context rows, and items first observed later hash only into those existing context rows. Including
+padding, the 24L/H1536 model has 2,859,836 FP32 embedding rows (17,570,832,384 bytes,
+16.364 GiB) and 285,571,584 dense parameters.
+
+Two-rank row-sharded training completed one `theta0→theta1` edge. On the fixed held-out
+`[544,576)` window with 13,426 positive targets, `theta1` improves NDCG@10 from 0.371468 to
+0.380294 and Hit@10 from 0.520259 to 0.547073 while reducing sampled cross entropy from
+3.707804 to 3.653369. This is the required positive recommendation signal for mechanism
+development, not a replicated quality claim. The edge-specific D1 snapshot fixes 410 exact and
+1,638 compiled records, or 20.0195% exact. The corresponding read-only D2 characterizer reports
+262,336 mixed lookup tokens versus 1,048,576 for all-exact, and 805,380,096 versus
+3,216,408,576 bytes of off-rank FP32 return vectors. Those ratios characterize the fixed work;
+they are not runtime speedups.
+
+The complete exact `theta0` old-K/V store has also been physically materialized in ordinary DRAM:
+144 GiB total, 72 GiB per rank, with complete coverage. The full GPU0/GPU1 S0 then processed all
+2,048 records in nine sequential groups and wrote a complete 144-GiB private `theta1` target, so
+old plus target is 288 GiB. It completed exactly once with a 53.497-second makespan. On rank 0,
+which determines the makespan, the measured phase sum is 50.017 seconds; pageable→pinned, H2D,
+D2H, and ordinary-DRAM publication contribute 26.397 seconds, or 52.8%. This is direct evidence
+that sequential grouping exposes a strong DRAM staging/publication bottleneck and justifies S1
+double buffering.
+
+S1 needs a smaller resident group to admit two bounded slots, so the same revision also has a
+paired group-64 S0 rather than comparing S1 only with the faster group-128 run. It processes the
+same 2,048 records in 17 groups with a 54.577-second makespan, 2.019% slower than group-128.
+Rank 0 spends 29.000/52.619 phase seconds in the same four movement/publication phases (55.1%);
+rank 1 spends 29.368/52.637 seconds (55.8%). Peak allocated HBM is 20.146 GiB on both ranks.
+Shrinking groups therefore does not remove the bottleneck: it increases fragmentation and observed
+movement/publication time. This group-64 result is the capacity-paired sequential baseline for S1.
+
+The first large compiled group also exposed an implementation-scale boundary hidden by the small
+benchmarks: 128 records per rank at 480 retained tokens create 61,440-token extents whose
+layer-23 flattened source offset is 2,170,552,320 elements, beyond signed 32-bit indexing. The
+direct-old-K/V Triton kernel now performs pointer arithmetic in 64 bits, and a cold-cache rerun
+crossing \(2^{31}\) completed. This is a correctness fix and scale validation, not a separate
+design claim. All QK M1 artifacts above remain `scientific_result=false` and
+`formal_design3=false`; S0 is one development profile, not a speedup, final D3 mechanism, or paper
+result.
 
 ## 4. Supported findings
 
@@ -379,22 +410,21 @@ only.
 
 ### D3 mechanism entry
 
-The benchmark-first route is active. The M0 reference and QK M1 data foundation are implemented;
-the large model edge and all M1 execution remain next:
+The benchmark-first route has reached a real physical M1 S0 boundary:
 
-1. keep the implemented GPU0/GPU1 H12/W2 `WorkManifest` and S0 as the same-revision reference;
-2. retain its ordinary-DRAM source/target, byte-bounded groups, and exactly-once checks;
-3. add a basic double buffer, event-based phase timing, and bounded pinned/HBM memory;
-4. use the materialized QK entity input and implemented two-rank sharded trainer to produce and
-   held-out-check one `theta0→theta1` edge;
-5. regenerate the edge-specific D1 program/action plan and D2 execution snapshot, then materialize
-   the complete 288-GiB old/private-target K/V working set;
-6. reproduce sequential/double-buffer/all-exact on that real workload;
-7. use the measured profile to explore both an isolated D3 scheduler and, when useful, globally
-   replanned D1/D2/D3 co-design revisions;
-8. only after a mechanism is clear, normalize interfaces, close transaction semantics, and freeze
+1. the two-rank 24L/H1536 `theta0→theta1` edge and positive held-out signal are complete;
+2. the 2,048-record D1 snapshot is fixed at 410 exact and 1,638 compiled actions, and its D2
+   request/communication characterizer is complete;
+3. the 144-GiB old store is materialized; group-128 S0 completes the boundary in nine groups, and
+   the S1-paired group-64 S0 completes the same work in 17 groups;
+4. next, implement a same-revision S1 with bounded double-buffered input/output staging,
+   event-based dependencies, and explicit wait/bubble accounting;
+5. compare S1 against S0 on the same work/source snapshot, then add same-boundary all-exact E0;
+6. use the measured S0/S1/E0 profile to explore both an isolated D3 scheduler and, when useful,
+   globally replanned D1/D2/D3 co-design revisions;
+7. only after a mechanism is clear, normalize interfaces, close transaction semantics, and freeze
    a D3 protocol;
-9. defer 3/4-GPU and broader matrices until the GPU0/GPU1 result is understood.
+8. defer 3/4-GPU and broader matrices until the GPU0/GPU1 result is understood.
 
 The capacity coordinate is
 
@@ -455,8 +485,9 @@ Do not claim that:
 - the current dense model requires tensor parallelism;
 - synthetic lookup contention is a serving trace or SLO result;
 - normalized-capsule DRAM, destination-v4 correctness, or hot-HBM Stage 4.5 is D3 evidence;
-- the materialized QK M1 data foundation means the H1536 model edge, 288-GiB K/V store, or M1
-  runtime has already executed;
+- the QK M1 S0 profile is a speedup, a final D3 mechanism, a frozen protocol, or paper evidence;
+- its 52.8% rank-0 movement fraction is entirely PCIe time rather than the declared combination of
+  ordinary-memory staging, H2D, D2H, and publication;
 - D3 has a final/paper-ready mechanism implementation, frozen protocol, or performance result;
 - SSD, database, remote object storage, RDMA, GDS, or host-DRAM oversubscription is evaluated.
 

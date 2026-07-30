@@ -45,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | GPU0/GPU1 M0 S0 and the QK M1 data foundation are implemented; large-edge training, M1 S0/S1, and mechanism discovery remain open |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | initially a capacity-specific schedule; final interface open | real QK M1 training, fixed D1/D2 work, 144-GiB old-store materialization, and group-128/group-64 288-GiB S0 controls are complete; S1 and mechanism discovery remain open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -66,8 +66,9 @@ ResidencyPlan-only ablation.
 - D3 has a non-scientific M0 development family, not a frozen result family. Destination-v4
   correctness, normalized-capsule DRAM results, and hot-HBM D1 results cannot be renamed as D3
   evidence.
-- The materialized QK M1 entity input is also non-scientific foundation state: it does not mean
-  the H1536 model, new D1/D2 edge, 288-GiB K/V store, or M1 runtime has executed.
+- The QK M1 training, D1/D2 snapshot/characterizer, 144-GiB old-store materialization, and
+  288-GiB S0 are real development executions, but all remain `scientific_result=false` and cannot
+  be used as paper evidence or a D3 speedup.
 - The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
   current EvoKV manuscript or design source of truth.
 
@@ -91,13 +92,14 @@ The active implementation uses GPU0/GPU1 only:
 
 1. keep the completed minimal H12/W2 `WorkManifest`;
 2. use the completed pageable-DRAM two-rank S0 as the reference;
-3. add a basic double buffer and wait/bubble metrics;
-4. use the materialized QK base-entity input and implemented sharded trainer to produce one
-   H1536/24L `theta0→theta1` edge with an independent held-out window;
-5. regenerate its D1/D2 snapshot, materialize the planned 288-GiB K/V working set, and run M1
-   S0/S1/all-exact;
-6. use its profile to decide whether the best design is an isolated D3 scheduler or a cross-layer
-   revision.
+3. retain the completed H1536/24L `theta0→theta1` edge and its positive held-out signal as the
+   frozen M1 development boundary;
+4. retain its 410-exact/1,638-compiled D1 snapshot, D2 characterizer, complete 144-GiB old store,
+   nine-group group-128 S0, and S1-paired 17-group group-64 S0;
+5. add same-revision group-64 M1 S1 double buffering and wait/bubble metrics, then add all-exact
+   E0;
+6. use the S0/S1/E0 profile to decide whether the best design is an isolated D3 scheduler or a
+   cross-layer revision.
 
 A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
 paper-evidence tasks, not prerequisites for the first benchmark. Within one isolation revision,
@@ -112,12 +114,26 @@ slot, the real D2 mixed compute path, and private pageable writeback. It is a si
 profile under emulated capacity, not a paper result. D3 development artifacts remain
 non-scientific until a new protocol is frozen.
 
-The QK M1 input now contains 512 fit/calibration users plus a nested 2,048-user benchmark pool.
+The QK M1 boundary contains 512 fit/calibration users plus a disjoint 2,048-user benchmark pool.
 Its first-64 base-only entity table has 2,859,836 rows including padding; at H1536 the FP32
-embedding is 16.364 GiB, and a 24-layer 2,048-record complete old/private-target FP16 K/V working
-set is 288 GiB. `window_0` is the only update and `window_1` is held out. This is a materialized
-data/capacity foundation, not a trained model or system measurement; the old H512 QK canary remains
-only a functional diagnostic.
+embedding is 16.364 GiB. Two-rank training completed one `theta0→theta1` edge, and fixed held-out
+NDCG@10 improves from 0.371468 to 0.380294. D1 fixes 410/2,048 records as exact; the D2
+characterizer reports mixed lookup tokens and off-rank FP32 return bytes at about 25.0% of
+all-exact.
+
+The complete old K/V store is physically materialized in ordinary DRAM at 144 GiB. Full S0
+processes all 2,048 records in nine sequential groups and writes a 144-GiB private target, for a
+288-GiB old/target footprint. Its makespan is 53.497 seconds. On the makespan rank, ordinary-memory
+staging, H2D, D2H, and publication total 26.397 of 50.017 phase seconds, or 52.8%, exposing the
+DRAM staging/publication bottleneck that S1 should overlap. The first large group also required a
+Triton int32→int64 pointer-index fix; a cold-cache execution crossing \(2^{31}\) completed. These
+are non-scientific development diagnostics, not speedup or paper claims.
+
+The capacity-paired group-64 S0 processes the same records in 17 groups. It takes 54.577 seconds,
+2.019% longer than group-128; movement/publication is 29.000/52.619 seconds (55.1%) on rank 0 and
+29.368/52.637 seconds (55.8%) on rank 1, with 20.146-GiB peak allocated HBM on both. Smaller
+groups therefore do not solve the bottleneck. This is the direct sequential control for
+group-64 S1; group-128 remains a separate sequential characterization point.
 
 ## Removed material
 

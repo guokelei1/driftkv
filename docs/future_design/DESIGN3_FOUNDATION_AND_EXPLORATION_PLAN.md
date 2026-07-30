@@ -15,14 +15,35 @@ host/device movement 与 writeback 合计 9.93–10.01 秒。该单次 profile �
 同量级瓶颈，仍是
 `scientific_result=false` 的容量模拟，不是 speedup 或物理 out-of-core 证据。
 
-M1 的非科学数据 foundation 也已物化，但尚未执行大模型或 K/V runtime。QK 全体用户的
-first-64 raw exposures 产生 2,859,835 个 base-active item entities；top-250k 是 prediction
-rows，其余 2,609,835 行是 lossless context entities，stream-only item 只 hash 到已有 context
-rows。含 padding 的 H1536 FP32 embedding 有 2,859,836 行、16.364 GiB。输入包含 512 个
-fit/calibration users 和一个 2,048-user benchmark pool，`window_0=[512,544)` 用于更新，
-`window_1=[544,576)` 独立 held out。24L/H1536 下，2,048 records 的完整 old 加 private
-target FP16 K/V 几何为 288 GiB。双卡 sharded trainer 已实现；正式训练、`theta0→theta1`、
-新 D1/D2 边界、M1 K/V 物化、M1 S0/S1 和 D3 候选都尚未运行。
+M1 已推进到真实物理 out-of-core 的 sequential S0，并冻结为当前 D3 开发边界。QK 全体用户
+的 first-64 raw exposures 产生 2,859,835 个 base-active item entities；top-250k 是
+prediction rows，其余 2,609,835 行是 lossless context entities，stream-only item 只 hash
+到已有 context rows。含 padding 的 H1536 FP32 embedding 有 2,859,836 行、16.364 GiB。
+2,560-user 输入包含 512 个 fit/calibration users 和一个 2,048-user benchmark pool。
+双卡 24L/H1536 sharded trainer 已完成 `theta0→theta1`；独立
+`window_1=[544,576)` 上，NDCG@10 从 0.371468 升至 0.380294，Hit@10 从 0.520259 升至
+0.547073，得到进入系统机制探索所需的正推荐信号。
+
+该 edge 的 D1 snapshot 固定 410 exact、1,638 compiled，即 20.0195% exact。D2
+characterizer 已在相同 records 上完成：mixed/all-exact request tokens 为
+262,336/1,048,576，off-rank FP32 return-vector bytes 为
+805,380,096/3,216,408,576。完整 exact old K/V 已实际物化到 ordinary DRAM，共 144 GiB。
+随后 GPU0/GPU1 full S0 以九个 sequential groups 处理全部 2,048 records，并写出完整
+144-GiB private target；old+target 为 288 GiB。S0 makespan 为 53.497 秒。决定 makespan 的
+rank 0 phase sum 为 50.017 秒，其中 pageable→pinned、H2D、D2H、publish 合计
+26.397 秒，占 52.8%。因此“顺序分组存在强 DRAM staging/publication 瓶颈”已经测到，下一步
+不再是继续构造 M1，而是实现同 revision 的 S1 double buffer。
+
+为给需要两个 resident slots 的 S1 建立同容量 baseline，同一 revision 又完成了
+`group_records_per_rank=64` 的 paired S0：17 groups、makespan 54.577 秒，比 group-128
+慢 2.019%。rank 0 movement/publication 为 29.000/52.619 秒（55.1%），rank 1 为
+29.368/52.637 秒（55.8%），两 rank peak allocated HBM 都是 20.146 GiB。缩组没有消除
+瓶颈，反而增加了 movement 与 fragmentation；后续 S1 必须与这个 group-64 S0 配对，同时把
+group-128 保留为顺序执行的较快 characterization 点。
+
+以上 training、D1/D2 snapshot、materialization 和 S0 全部仍是
+`scientific_result=false`、`formal_design3=false` 的单次开发工件；它们冻结 benchmark
+边界，不冻结论文 protocol，也不构成 speedup 或最终 D3 机制。
 
 当本文档与 [../08_core_insights_and_roadmap.md](../08_core_insights_and_roadmap.md) 或
 [../eval_protocol.md](../eval_protocol.md) 冲突时，以后二者记录的已有证据边界为准；尚未形成
@@ -145,9 +166,9 @@ M0 跑通后，使用 Tenrec QK 的真实大 workload 替换软件容量 cap。�
 
 该表有 2,859,835 个语义行和一个 padding row。按 H1536 FP32，它占
 17,570,832,384 bytes（16.364 GiB）。24L/H1536 的一条 512-token FP16 K/V、单版本为
-72 MiB；2,048 records 的 complete old 与 private target 合计 288 GiB。这个值是由已物化
-records 和固定模型形状得到的工作集几何，不是已经完成的 DRAM/HBM runtime 测量。旧 H512
-QK 小 canary 继续用于接口 smoke test，但不能成为 M1 证据。
+72 MiB；2,048 records 的 complete old 与 private target 合计 288 GiB。这个几何现在已由
+实际 ordinary-DRAM store 兑现：144-GiB complete old store 已完整物化，S0 又写出
+144-GiB private target。旧 H512 QK 小 canary 继续只用于接口 smoke test，不能替代 M1。
 
 ### 1.3 M1 最小模型版本
 
@@ -164,9 +185,15 @@ QK 小 canary 继续用于接口 smoke test，但不能成为 M1 证据。
 - D1 在 `theta0→theta1` 上产生一份当前 action plan；
 - D2 在两卡上产生一份当前执行快照。
 
-双卡 row-sharded trainer 及其分片 checkpoint 路径已实现，但正式训练尚未启动，因此上述
-checkpoint、推荐正收益、D1 program/action、D2 snapshot 都还不是结果。第二个 update、
-recursive migrated source、多 seed 和完整质量复现继续推迟到候选 D3 机制出现以后。
+双卡 row-sharded trainer 已完成 seed-0 的 base/update 各一轮训练并写出分片 checkpoint。
+固定 held-out window 含 13,426 个 positive targets；`theta1` 相对 `theta0` 的
+NDCG@10 为 0.380294 对 0.371468，Hit@10 为 0.547073 对 0.520259，sampled cross entropy
+为 3.653369 对 3.707804。该正信号只用于确认这个短 edge 没有退化，并冻结为当前 D3
+development boundary；它不是多 seed 的算法质量结论。
+
+edge-specific direct-old-K/V program、20.0195%-exact D1 action snapshot 和 D2 request
+characterization 都已完成并绑定相同 checkpoint/data identity。第二个 update、recursive
+migrated source、多 seed 和完整质量复现继续推迟到候选 D3 机制出现以后。
 
 ## 2. 最小两卡执行骨架
 
@@ -226,6 +253,9 @@ ranges；同时报告：
 
 当前 M0 为缩短机制调试，只实际物化 compiled action 会读取的 retained old-K/V，并用 manifest
 记录完整 committed store 的容量；这不构成物理容量证据。M1 必须实际物化完整 old-K/V store。
+这一 M1 要求现在已经完成：两 rank 各持有 72 GiB、1,024 records 的 complete exact
+`theta0` old store，总计 144 GiB，coverage 无 partial/missing。S0 的 source
+materialization 独立于 primary timer，随后复用绑定后的 old store。
 
 ### 2.3 容量控制
 
@@ -256,6 +286,18 @@ M0 的第一版结束条件是：
 第一版不要求完整 atomic epoch switch 和所有 fault injection。private target 不对外发布即可。
 在 D3 候选机制确定后，再补 global commit/abort/reclaim，避免事务实现挡住数据流水探索。
 
+### 2.5 大 extent 的索引边界
+
+M1 的第一批大 compiled groups 暴露了小 benchmark 看不到的 Triton 指针索引错误。每 rank
+的一个 full group 含 128 records，每条 retained prefix 为 480 tokens，因此一个 extent 有
+61,440 tokens；在 H1536 下，layer 23 的 flattened source start 是
+2,170,552,320 elements，已经超过 signed int32 的 \(2^{31}\)。
+
+直接 old-K/V affine kernel 现已在地址计算前将 program ID、token count、token/output/reduction
+offset 全部提升为 int64。修复后，cold-cache 路径首次执行同一个跨 \(2^{31}\) 大组并完成 full
+S0。该事件应保留为“大规模 extent 需要 64-bit indexing”的实现教训和 correctness
+validation；不能把 bug 修复本身包装成 D3 性能设计。
+
 ## 3. 基线按最短路径建立
 
 ### 3.1 S0：sequential groups
@@ -270,6 +312,32 @@ for each group:
 ```
 
 group 之间不 overlap。S0 首先证明两卡、分组、真实 payload 和计时骨架正确。
+
+M1 S0 已完成这一目标。固定 D1/D2 work 被划为九个 route-pure groups：七个 compiled
+groups 和两个 exact groups。两 rank 各处理 1,024 records，最终 2,048 records exactly
+once，complete target coverage 无 partial/missing。完整 ordinary-DRAM old/private-target
+footprint 为 288 GiB，makespan 为 53.497 秒。
+
+rank 0 决定 makespan。其 phase sum 为 50.017 秒：
+
+- pageable→pinned：10.861 秒；
+- H2D：2.648 秒；
+- D2H：3.244 秒；
+- pinned/pageable target publication：9.643 秒。
+
+四项合计 26.397 秒，占 phase sum 的 52.8%。这不是把 52.8% 都称为 PCIe；它包含两端
+ordinary-memory copy。当前可以下的结论只有：顺序分组使 DRAM staging/publication 成为强
+瓶颈，值得马上验证 S1 是否能把它与 D2 compute/collective 重叠。
+
+S1 的双 slots 不能直接与 group-128 单 slot 比容量，因此已经补跑 group-64 paired S0：
+
+- 2,048 records、17 groups、makespan 54.577 秒；
+- rank 0 movement/publication 29.000/52.619 秒（55.1%）；
+- rank 1 movement/publication 29.368/52.637 秒（55.8%）；
+- 两 rank peak allocated HBM 均为 20.146 GiB。
+
+它比 group-128 S0 慢 2.019%，且 movement time/fraction 都更高。这排除了“只把 group
+缩小就能解决搬运瓶颈”的简单解释，也冻结了第一版 group-64 S1 的直接 S0 control。
 
 ### 3.2 S1：strong double buffer
 
@@ -287,11 +355,15 @@ drain i-1
 第一版只搜索少量 group-size/buffer-depth 组合，目的是得到可信通用流水基线，不做大规模
 tuning。
 
+当前下一步直接在 M1 的同一 work/source revision 和 group-64 capacity setting 上实现 S1，
+以 group-64 paired S0 为直接 control。group-128 S0 继续报告为 sequential
+characterization；M0 S1 可以作为小型调试入口，但不再是启动真实 S1 的前置条件。
+
 ### 3.3 E0：same-boundary all-exact
 
-E0 对最终系统叙事重要，但不阻塞第一版 M0/S0/S1。M0 流水稳定后，再让 all-exact 使用相同
-两卡、DRAM endpoint、target layout、capacity budget 和 timer。E0 可以独立选择适合 exact 的
-group size/order。
+E0 对最终系统叙事重要，但不阻塞第一版 M1 S1。S1 流水稳定后，再让 all-exact 使用相同
+两卡、DRAM endpoint、target layout、capacity budget 和 timer。E0 可以独立选择适合 exact
+的 group size/order。
 
 ### 3.4 初始 timer
 
@@ -310,6 +382,12 @@ exactly-once；full checksum/numerical parity 是 S1 对比前的补充检查。
 
 Plan construction、atomic commit 和 reclaim 先单独计量；最终论文 protocol 再决定哪些合入
 primary timer。开发阶段优先保证各变体使用同一计时方式。
+
+当前 M1 S0 还将 complete old-store materialization、model/program load、operator warmup 和
+target prefault 放在 primary timer 外。53.497 秒是 `run_s0` 的两 rank makespan；50.017 秒
+是 makespan rank 的分项 phase sum。52.8% 搬运比例以 phase sum 为分母，不能与 wall time
+混写。group-64 S0 也使用相同边界，其 54.577 秒与未来 group-64 S1 才是直接配对。
+S1 必须保持这一 revision 和边界，新增的 overlap/wait/bubble 指标再单独说明。
 
 ## 4. D3 探索方向，而不是预先指定唯一算法
 
@@ -403,47 +481,51 @@ full-payload development validation 的路径。独立的端到端数值 parity 
 **最大风险。** 现有 W3 路径硬编码三卡并预载全部 GPU payload。处理方式是新建轻量两卡
 D3 executor，复用算子而不是直接改造 W3 benchmark。
 
-### B：两卡 M0 strong pipeline
+### B：真实 QK M1 边界与 sequential foundation
+
+**状态：完成开发态 foundation。**
+
+**目标。** 用真实用户、真实历史、真实 model edge 和物理超 HBM 的 K/V 替换 M0 软件容量
+cap，并先测出顺序分组的问题。
+
+**已完成输出。**
+
+- 已冻结的 512 fit/calibration + 2,048 benchmark QK cohort；
+- 双卡 24L/H1536 `theta0→theta1` 及独立 `window_1` 正推荐信号；
+- 410 exact + 1,638 compiled 的 D1 development snapshot；
+- D2 embedding request/traffic characterizer 和 edge-specific direct-old-K/V program；
+- 144-GiB complete ordinary-DRAM old K/V；
+- 288-GiB old/private-target、九组 group-128、2,048-record M1 S0；
+- 同 revision 的 17-group group-64 paired S0；
+- makespan 53.497 秒，以及 rank-0 movement/publication 26.397/50.017 秒的瓶颈归因。
+
+**实际遇到的最大风险。** 大 extent 使 Triton 的 int32 flattened index 跨越 \(2^{31}\)。
+该问题已改为 64-bit pointer arithmetic，并通过 cold-cache 大组执行。这个回看说明：后续若
+S1 在大组上异常，先检查 A/M0 从未覆盖的规模边界，再判断是流水逻辑错误。
+
+### C：两卡 M1 strong pipeline
 
 **状态：当前下一步。**
 
-**目标。** 得到 S1，并知道普通流水已经能隐藏多少搬运。
+**目标。** 在 B 的同一 development revision 上得到 S1，并知道普通 double buffering 能隐藏
+多少已经测到的 52.8% DRAM staging/publication 开销。
 
-**输入。** A 的 S0。
-
-**输出。**
-
-- double-buffer streams/events；
-- bounded pinned slots；
-- basic backpressure；
-- S0/S1 同 revision 对比；
-- 暴露 H2D/D2H、rank wait 和 bubbles。
-
-**最大风险。** 当前 hot path 的全局 synchronize 破坏 overlap。若出现这种情况，先换成
-event-based timing，不要求先重构全部 D2 runtime。
-
-### C：真实 QK 物理容量 benchmark
-
-**状态：数据 foundation 和 sharded trainer 已完成；大模型训练与执行未开始。**
-
-**目标。** 用真实用户、真实历史和真实 model edge 替换 M0 的软件容量 cap。
-
-**输入。** 已物化的 QK base-entity input、固定 24L/H1536 形状、双卡 sharded trainer 和
-已经跑通的 M0 executor。
+**输入。** B 的固定 checkpoints、D1/D2 work snapshot、完整 144-GiB old store、相同
+ordinary-DRAM private-target endpoint、S0 timer 和 group-64 capacity setting。
 
 **输出。**
 
-- 已冻结的 512 fit/calibration + 2,048 benchmark QK cohort；
-- `theta0→theta1`；
-- 独立 `window_1` held-out 推荐检查；
-- D1/D2 当前工作快照；
-- 完整 ordinary-DRAM old K/V；
-- 288-GiB、物理超出两卡 HBM 的 M1；
-- M1 上的 S0/S1，随后补 E0。
+- bounded input/output double buffers；
+- CUDA streams/events 与 basic backpressure；
+- group-64 S0/S1 同 revision、同 capacity 对比；
+- H2D/D2H、ordinary-copy、rank wait 和 bubbles；
+- S1 稳定后补 same-boundary E0。
 
-**最大风险。** 大分片 checkpoint 的训练/装载、edge-specific D1 program 编译或 288-GiB
-source/target materialization 迟迟无法完成。若 C 卡住，先区分 trainer、checkpoint、D1/D2
-adapter 和 writer 哪一层失败；不能退回 H512 canary 后仍把结果称为 M1。
+**最大风险。** 当前 hot path 的全局 synchronize 可能破坏 overlap；双缓冲本身也会占用更多
+pinned/HBM credits，迫使 group 变小并增加 collective/launch 碎片。若 S1 迟迟没有收益，先
+分别检查 event 依赖、CPU copy 并发、group capacity 和双 rank arrival，而不是立刻否定 B
+测到的瓶颈。允许在同一 work snapshot 内调整物理 group size，但每个 S0/S1 pair 必须共享
+相同设置。
 
 ### D：D3 与跨层机制探索
 
@@ -512,7 +594,22 @@ h12_w2_m0_candidate_*.json
 
 M1 数据身份单独由 `configs/evokv_d3/m1/qk_entity_manifest.json` 和
 `configs/evokv_d3/m1/qk_entity_cohorts.json` 绑定；大 NPZ、checkpoints 和 K/V payload
-保持 local/ignored。它们当前只证明输入已物化，不证明训练或 runtime 已执行。
+保持 local/ignored。当前 development snapshot 还包括：
+
+```text
+configs/evokv_d3/m1/qk_entity_adjacent_action_snapshot.json
+configs/evokv_d3/m1/qk_entity_request_characterization.json
+results/system/evokv_design3_m1/qk_entity_h1536_sharded_two_version_training_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_adjacent_compiler_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_materialize_full_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_s0_full_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_s0_group64_seed0.json
+results/system/evokv_design3_m1/qk_entity_h1536_s1_group64_dry_run_seed0.json
+```
+
+materialize、group-128 S0 和 group-64 paired S0 分别证明 144-GiB old store 与两种
+288-GiB sequential boundaries 已执行；S1 文件当前只是 dry-run schedule，不是 S1 timing。
+这些工件仍不证明正式 protocol、speedup 或最终 D3 机制。
 
 每个 run 至少记录：
 
@@ -526,7 +623,10 @@ M1 数据身份单独由 `configs/evokv_d3/m1/qk_entity_manifest.json` 和
 - correctness；
 - 当前结论、失败原因和下一步。
 
-大 K/V payload 只存在进程内 pageable DRAM 或 `/dev/shm` 等临时路径，不进入 Git。
+大 K/V payload 只存在进程内 pageable DRAM 或 `/dev/shm` 等临时路径，不进入 Git。当前
+M1 old store 可以在同一 run-id 下通过完整 coverage 和 model/data/plan/owner binding
+复用；失败后的 partial target 不能自动覆盖，进入 S1 前应使用独立 target identity 或显式
+reset，不能误把残留 coverage 当成新 run。
 
 ## 8. 立即执行顺序
 
@@ -535,12 +635,14 @@ M1 数据身份单独由 `configs/evokv_d3/m1/qk_entity_manifest.json` 和
 1. 已从 H12/W2 导出最小 `WorkManifest`；
 2. 已新建 pageable-DRAM source/target 与 byte-bounded grouping；
 3. 已跑通 two-rank S0 canary 和 full682；
-4. 当前加入 S1 double buffer、rank-wait/bubble metrics，并重跑同 revision 对比；
-5. 已完成 QK base-entity audit、512+2,048 cohort 和 two-window input 物化；
-6. 已实现 H1536/24L 两卡 sharded trainer，但尚未运行正式 `theta0→theta1`；
-7. 运行训练与 held-out 检查，随后生成新的 D1 program/action 和 D2 execution snapshot；
-8. 物化 288-GiB complete old/private-target K/V，并跑 M1 S0/S1/E0；
-9. 在 M1 profile 上决定第一个真正的 D3 候选。
+4. 已完成 QK base-entity audit、512+2,048 cohort 和 two-window input 物化；
+5. 已完成 H1536/24L 两卡 `theta0→theta1` 与 held-out 正推荐检查；
+6. 已生成 20.0195%-exact D1 snapshot、D2 characterizer 和 direct-old-K/V program；
+7. 已物化 144-GiB complete old K/V，并完成 2,048-record、九组、288-GiB group-128 M1
+   S0；
+8. 已补 group-64、17-group paired S0；当前实现同 setting 的 M1 S1 double buffer、
+   rank-wait/bubble metrics；
+9. S1 稳定后补 E0，再根据 M1 profile 决定第一个真正的 D3 候选。
 
 这个顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被设计
 推翻的正式接口。
