@@ -38,6 +38,10 @@ from hstu_kvcache.migration.design3_checkpoint import (
     resolve_version_checkpoint,
     training_model_config,
 )
+from hstu_kvcache.migration.design3_residency import (
+    D3ResidencyPlan,
+    d3_stack_revision_sha256,
+)
 from hstu_kvcache.migration.design3_store import (
     PageableDramExtentStore,
 )
@@ -51,7 +55,13 @@ from hstu_kvcache.models import HSTUConfig
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = "evokv_design3_m1_qk_pageable_s0_development_v0"
 S1_PROTOCOL = "evokv_design3_m1_qk_pageable_s1_development_v0"
-D3_PROTOCOL = "evokv_design3_m1_qk_segmented_io_d3_development_v1"
+D3_PROTOCOL = "evokv_design3_m1_qk_decoupled_io_d3_development_v2"
+D3_RESIDENCY_PROTOCOL = (
+    "evokv_design3_m1_qk_route_aware_residency_d3_development_v3"
+)
+D3_RUNNER_PROTOCOL = (
+    "evokv_design3_m1_qk_decoupled_residency_runner_development_v2"
+)
 DEFAULT_PREPARED_DATA = (
     "data/processed/evokv_d3_m1_qk_entity_2560.npz"
 )
@@ -231,6 +241,7 @@ class M1S1StagedGroup:
     staging_finished_at: float
     slot_index: int
     input_pipeline: str = "serial_microbatch"
+    input_segment_records: int = 0
     input_segments: int = 0
     input_slot_reuse_wait_seconds: float = 0.0
     input_final_tail_wait_seconds: float = 0.0
@@ -274,6 +285,72 @@ class M1D3OutputTransfer:
     started: torch.cuda.Event
     finished: torch.cuda.Event
     bytes_moved: int
+
+
+@dataclass(frozen=True)
+class M1RouteExecutionGranularity:
+    input_segment_records: int
+    compute_batch_records: int
+    output_segment_records: int
+
+    def __post_init__(self) -> None:
+        if min(
+            self.input_segment_records,
+            self.compute_batch_records,
+            self.output_segment_records,
+        ) < 1:
+            raise ValueError("M1 route execution granularity is invalid")
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "input_segment_records": self.input_segment_records,
+            "compute_batch_records": self.compute_batch_records,
+            "output_segment_records": self.output_segment_records,
+        }
+
+
+@dataclass(frozen=True)
+class M1ExecutionGranularity:
+    compiled: M1RouteExecutionGranularity
+    exact: M1RouteExecutionGranularity
+
+    def for_route(self, route: str) -> M1RouteExecutionGranularity:
+        if route == "compiled":
+            return self.compiled
+        if route == "exact":
+            return self.exact
+        raise ValueError("M1 execution route differs")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "compiled": self.compiled.to_dict(),
+            "exact": self.exact.to_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class M1PinnedSlotCapacity:
+    max_rows: int
+    max_source_tokens: int
+    max_output_tokens: int
+    max_history_tokens: int
+
+    def __post_init__(self) -> None:
+        if min(
+            self.max_rows,
+            self.max_source_tokens,
+            self.max_output_tokens,
+            self.max_history_tokens,
+        ) < 1:
+            raise ValueError("M1 pinned slot capacity is invalid")
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "max_rows": self.max_rows,
+            "max_source_tokens": self.max_source_tokens,
+            "max_output_tokens": self.max_output_tokens,
+            "max_history_tokens": self.max_history_tokens,
+        }
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -320,6 +397,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=8,
     )
+    parser.add_argument("--input-segment-records", type=int)
+    parser.add_argument("--compute-batch-records", type=int)
+    parser.add_argument("--output-segment-records", type=int)
+    parser.add_argument("--compiled-input-segment-records", type=int)
+    parser.add_argument("--compiled-compute-batch-records", type=int)
+    parser.add_argument("--compiled-output-segment-records", type=int)
+    parser.add_argument("--exact-input-segment-records", type=int)
+    parser.add_argument("--exact-compute-batch-records", type=int)
+    parser.add_argument("--exact-output-segment-records", type=int)
+    parser.add_argument("--residency-plan")
     parser.add_argument(
         "--materialize-records-per-rank",
         type=int,
@@ -348,6 +435,62 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def resolve_execution_granularity(
+    args: argparse.Namespace,
+    residency_plan: D3ResidencyPlan | None = None,
+) -> M1ExecutionGranularity:
+    if residency_plan is not None:
+        return M1ExecutionGranularity(
+            compiled=M1RouteExecutionGranularity(
+                **residency_plan.compiled.to_dict()
+            ),
+            exact=M1RouteExecutionGranularity(
+                **residency_plan.exact.to_dict()
+            ),
+        )
+    legacy = int(args.micro_batch_records)
+
+    def value(route: str, name: str) -> int:
+        route_value = getattr(args, f"{route}_{name}")
+        global_value = getattr(args, name)
+        if route_value is not None:
+            return int(route_value)
+        if global_value is not None:
+            return int(global_value)
+        return legacy
+
+    return M1ExecutionGranularity(
+        compiled=M1RouteExecutionGranularity(
+            input_segment_records=value(
+                "compiled",
+                "input_segment_records",
+            ),
+            compute_batch_records=value(
+                "compiled",
+                "compute_batch_records",
+            ),
+            output_segment_records=value(
+                "compiled",
+                "output_segment_records",
+            ),
+        ),
+        exact=M1RouteExecutionGranularity(
+            input_segment_records=value(
+                "exact",
+                "input_segment_records",
+            ),
+            compute_batch_records=value(
+                "exact",
+                "compute_batch_records",
+            ),
+            output_segment_records=value(
+                "exact",
+                "output_segment_records",
+            ),
+        ),
+    )
+
+
 def validate_args(args: argparse.Namespace) -> None:
     if (
         args.canary_records_per_route_per_rank < 1
@@ -361,6 +504,47 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("M1 runtime arguments are invalid")
     if args.micro_batch_records > args.group_records_per_rank:
         raise ValueError("M1 microbatch exceeds its capacity group")
+    granularity = resolve_execution_granularity(args)
+    route_granularities = (
+        granularity.compiled,
+        granularity.exact,
+    )
+    if max(
+        value
+        for route in route_granularities
+        for value in route.to_dict().values()
+    ) > args.group_records_per_rank:
+        raise ValueError("M1 execution granularity exceeds its capacity group")
+    if args.mode != "d3" and (
+        any(
+            value != args.micro_batch_records
+            for route in route_granularities
+            for value in route.to_dict().values()
+        )
+    ):
+        raise ValueError(
+            "independent M1 execution granularities require D3 mode"
+        )
+    explicit_granularity = any(
+        getattr(args, name) is not None
+        for name in (
+            "input_segment_records",
+            "compute_batch_records",
+            "output_segment_records",
+            "compiled_input_segment_records",
+            "compiled_compute_batch_records",
+            "compiled_output_segment_records",
+            "exact_input_segment_records",
+            "exact_compute_batch_records",
+            "exact_output_segment_records",
+        )
+    )
+    if args.residency_plan is not None and (
+        args.mode != "d3" or explicit_granularity
+    ):
+        raise ValueError(
+            "M1 residency plan requires D3 mode and owns its granularities"
+        )
     if (
         args.mode == "materialize"
         and args.reuse_complete_old_store
@@ -373,12 +557,92 @@ def _path(value: str | Path) -> Path:
     return path if path.is_absolute() else ROOT / path
 
 
+def _load_distributed_residency_plan(
+    path: str | Path | None,
+    runtime,
+) -> tuple[D3ResidencyPlan | None, str | None]:
+    if path is None:
+        return None, None
+    envelope: list[object] = [None]
+    if runtime.is_primary:
+        try:
+            resolved = _path(path)
+            plan = D3ResidencyPlan.load(resolved)
+            envelope[0] = {
+                "plan": plan.to_dict(),
+                "file_sha256": file_sha256(resolved),
+            }
+        except Exception as error:
+            envelope[0] = {"error": f"{type(error).__name__}: {error}"}
+    dist.broadcast_object_list(envelope, src=0)
+    value = envelope[0]
+    if not isinstance(value, Mapping):
+        raise RuntimeError("M1 residency plan broadcast differs")
+    if "error" in value:
+        raise ValueError(f"M1 residency plan load failed: {value['error']}")
+    plan_value = value.get("plan")
+    if not isinstance(plan_value, Mapping):
+        raise ValueError("M1 residency plan payload differs")
+    plan = D3ResidencyPlan.from_dict(plan_value)
+    hashes: list[object] = [None] * runtime.world_size
+    dist.all_gather_object(hashes, plan.content_sha256)
+    if len(set(str(item) for item in hashes)) != 1:
+        raise RuntimeError("M1 residency plan differs across ranks")
+    return plan, str(value["file_sha256"])
+
+
 def _load_json(path: str | Path) -> dict[str, object]:
     with Path(path).open() as source:
         value = json.load(source)
     if not isinstance(value, dict):
         raise ValueError(f"JSON object required: {path}")
     return value
+
+
+def _d3_execution_identity(
+    args: argparse.Namespace,
+    visible_tokens: Sequence[str],
+) -> dict[str, object]:
+    compiler_path = _path(args.compiler_result)
+    compiler = _load_json(compiler_path)
+    program = compiler.get("program")
+    if (
+        compiler.get("status") != "complete"
+        or not isinstance(program, Mapping)
+        or len(str(program.get("sha256", ""))) != 64
+    ):
+        raise ValueError("M1 compiler identity differs")
+    source_paths = (
+        Path(__file__).resolve(),
+        ROOT / "scripts/plan_evokv_design3_residency.py",
+        ROOT / "src/hstu_kvcache/migration/design3_residency.py",
+        ROOT / "src/hstu_kvcache/migration/design3_store.py",
+        ROOT / "src/hstu_kvcache/migration/design2_integrated.py",
+        ROOT / "src/hstu_kvcache/migration/stage45_oldkv.py",
+    )
+    return {
+        "runner_protocol": D3_RUNNER_PROTOCOL,
+        "source_sha256": {
+            str(path.relative_to(ROOT)): file_sha256(path)
+            for path in source_paths
+        },
+        "compiler_result": str(compiler_path),
+        "compiler_result_sha256": file_sha256(compiler_path),
+        "program_path": str(_path(str(program["path"]))),
+        "program_sha256": str(program["sha256"]),
+        "torch_version": str(torch.__version__),
+        "torch_cuda_version": str(torch.version.cuda),
+        "cudnn_version": torch.backends.cudnn.version(),
+        "source_store_tier": "tmpfs_pageable_dram",
+        "source_store_protocol": "complete_theta0_oldkv_fp16",
+        "target_store_protocol": "complete_private_theta1_kv_fp16",
+        "store_dir": str(_path(args.store_dir)),
+        "target_prefaulted": bool(args.prefault_target_store),
+        "physical_visible_devices": list(visible_tokens),
+        "buffer_depth": 2,
+        "input_lookahead_groups": 1,
+        "output_drain_credit": 1,
+    }
 
 
 def load_action_snapshot(
@@ -526,6 +790,36 @@ def build_s0_groups(
     return tuple(groups)
 
 
+def reorder_groups(
+    groups: Sequence[M1Group],
+    launch_ordinals: Sequence[int],
+) -> tuple[M1Group, ...]:
+    original = tuple(groups)
+    original_ordinals = tuple(value.ordinal for value in original)
+    requested = tuple(launch_ordinals)
+    if len(original_ordinals) != len(set(original_ordinals)):
+        raise ValueError("M1 original group ordinals are not unique")
+    if len(requested) != len(set(requested)):
+        raise ValueError("M1 launch group ordinals contain duplicates")
+    if (
+        len(requested) != len(original_ordinals)
+        or set(requested) != set(original_ordinals)
+    ):
+        raise ValueError("M1 launch group ordinals do not cover the plan")
+    by_ordinal = {value.ordinal: value for value in original}
+    reordered = tuple(by_ordinal[value] for value in requested)
+    for route in ("compiled", "exact"):
+        original_route = tuple(
+            value.ordinal for value in original if value.route == route
+        )
+        reordered_route = tuple(
+            value.ordinal for value in reordered if value.route == route
+        )
+        if reordered_route != original_route:
+            raise ValueError("M1 launch order changes a route dependency")
+    return reordered
+
+
 def group_plan_sha256(groups: Sequence[M1Group]) -> str:
     return canonical_sha256(
         {"groups": [value.to_dict() for value in groups]}
@@ -651,6 +945,7 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
         args.group_records_per_rank,
     )
     projection = capacity_projection(actions, owners, 2, cfg)
+    execution_granularity = resolve_execution_granularity(args)
     actions_by_id = {
         value.record_id: value for value in actions
     }
@@ -680,6 +975,7 @@ def build_dry_run_report(args: argparse.Namespace) -> dict[str, object]:
         "groups": len(groups),
         "group_records_per_rank": args.group_records_per_rank,
         "micro_batch_records": args.micro_batch_records,
+        "execution_granularity": execution_granularity.to_dict(),
         "owner_policy": "stable_record_modulo",
         "owner_map_sha256": owner_map_sha256(
             {
@@ -800,6 +1096,68 @@ def load_histories(
             ):
                 raise ValueError("M1 retained history identity differs")
     return M1Histories(old=old, target=target)
+
+
+def _execution_slot_capacity(
+    granularity: M1ExecutionGranularity,
+    materialize_records_per_rank: int,
+    max_old_tokens: int,
+    max_final_tokens: int,
+    max_retained_tokens: int,
+) -> M1PinnedSlotCapacity:
+    return M1PinnedSlotCapacity(
+        max_rows=max(
+            granularity.compiled.input_segment_records,
+            granularity.exact.input_segment_records,
+            materialize_records_per_rank,
+        ),
+        max_source_tokens=max(
+            granularity.compiled.input_segment_records
+            * max_retained_tokens,
+            1,
+        ),
+        max_output_tokens=max(
+            max(
+                granularity.compiled.output_segment_records,
+                granularity.exact.output_segment_records,
+            )
+            * max_final_tokens,
+            materialize_records_per_rank * max_old_tokens,
+            1,
+        ),
+        max_history_tokens=max(max_final_tokens, 1),
+    )
+
+
+def _pinned_slot_nbytes(
+    cfg: HSTUConfig,
+    capacity: M1PinnedSlotCapacity,
+) -> int:
+    source = (
+        2
+        * cfg.num_layers
+        * capacity.max_source_tokens
+        * cfg.hidden_size
+        * torch.float16.itemsize
+    )
+    output = (
+        2
+        * cfg.num_layers
+        * capacity.max_output_tokens
+        * cfg.hidden_size
+        * torch.float16.itemsize
+    )
+    rows = capacity.max_rows
+    history = capacity.max_history_tokens
+    metadata = (
+        rows * torch.int64.itemsize
+        + (rows + 1) * torch.int64.itemsize
+        + rows * history * torch.int64.itemsize
+        + rows * history * torch.int64.itemsize
+        + rows * history * torch.float32.itemsize
+        + rows * torch.int64.itemsize
+    )
+    return source + output + metadata
 
 
 def _allocate_slot(
@@ -1141,6 +1499,93 @@ def _chunks(
         tuple(values[start : start + size])
         for start in range(0, len(values), size)
     )
+
+
+def _allocate_device_history_group(
+    actions: Sequence[M1Action],
+    route: str,
+    device: torch.device,
+    stream: torch.cuda.Stream,
+) -> RawHistoryBatch:
+    widths = tuple(
+        (
+            value.final_tokens - value.delta_start
+            if route == "compiled"
+            else value.final_tokens
+        )
+        for value in actions
+    )
+    width = max(max(widths, default=0), 1)
+    rows = len(actions)
+    with torch.cuda.stream(stream):
+        item_ids = torch.zeros(
+            (rows, width),
+            dtype=torch.long,
+            device=device,
+        )
+        behaviors = torch.zeros_like(item_ids)
+        time_deltas = torch.zeros(
+            (rows, width),
+            dtype=torch.float32,
+            device=device,
+        )
+        lengths = torch.empty(
+            rows,
+            dtype=torch.long,
+            device=device,
+        )
+    return RawHistoryBatch(
+        record_ids=tuple(value.record_id for value in actions),
+        migration_anchor_version="theta1",
+        item_ids=item_ids,
+        behaviors=behaviors,
+        time_deltas=time_deltas,
+        lengths=lengths,
+    )
+
+
+def _device_history_views(
+    history: RawHistoryBatch,
+    local_batches: Sequence[Sequence[M1Action]],
+    steps: int,
+) -> tuple[RawHistoryBatch, ...]:
+    flattened_ids = tuple(
+        value.record_id
+        for batch in local_batches
+        for value in batch
+    )
+    if flattened_ids != history.record_ids or steps < len(local_batches):
+        raise ValueError("M1 compute history partition differs")
+    output = []
+    row_offset = 0
+    for step in range(steps):
+        actions = (
+            local_batches[step]
+            if step < len(local_batches)
+            else ()
+        )
+        row_stop = row_offset + len(actions)
+        record_ids = tuple(value.record_id for value in actions)
+        if history.record_ids[row_offset:row_stop] != record_ids:
+            raise RuntimeError("M1 compute history order differs")
+        output.append(
+            RawHistoryBatch(
+                record_ids=record_ids,
+                migration_anchor_version=(
+                    history.migration_anchor_version
+                ),
+                item_ids=history.item_ids[row_offset:row_stop],
+                behaviors=history.behaviors[row_offset:row_stop],
+                time_deltas=history.time_deltas[
+                    row_offset:row_stop
+                ],
+                lengths=history.lengths[row_offset:row_stop],
+            )
+        )
+        row_offset = row_stop
+    if row_offset != history.batch_size:
+        raise RuntimeError("M1 compute history coverage differs")
+    return tuple(output)
 
 
 def _device_jagged(
@@ -1921,39 +2366,21 @@ def _validate_s1_slots(
 ) -> None:
     if len(slots) != 2:
         raise ValueError("M1 S1 requires exactly two pinned slots")
-    input_names = {
-        "source_k",
-        "source_v",
-        "source_lengths",
-        "source_offsets",
-        "history_item_ids",
-        "history_behaviors",
-        "history_time_deltas",
-        "history_lengths",
-    }
-    output_names = {"output_k", "output_v"}
-    storages = [
-        {
+    storage_lists = [
+        [
             value.untyped_storage().data_ptr()
             for value in slot.__dict__.values()
-        }
+        ]
         for slot in slots
     ]
+    if any(
+        len(values) != len(set(values))
+        for values in storage_lists
+    ):
+        raise ValueError("M1 S1 pinned slot components alias")
+    storages = [set(values) for values in storage_lists]
     if storages[0] & storages[1]:
         raise ValueError("M1 S1 pinned slots alias")
-    for slot in slots:
-        inputs = {
-            getattr(slot, name).untyped_storage().data_ptr()
-            for name in input_names
-        }
-        outputs = {
-            getattr(slot, name).untyped_storage().data_ptr()
-            for name in output_names
-        }
-        if inputs & outputs:
-            raise ValueError(
-                "M1 S1 input and output slot components alias"
-            )
 
 
 def _interval_overlap_seconds(
@@ -2132,6 +2559,7 @@ def _stage_s1_group_input(
         staging_started_at=staging_started_at,
         staging_finished_at=time.perf_counter(),
         slot_index=slot_index,
+        input_segment_records=micro_batch_records,
         input_segments=micro_steps,
     )
 
@@ -2146,7 +2574,8 @@ def _stage_d3_group_input(
     slot_index: int,
     device: torch.device,
     stream: torch.cuda.Stream,
-    micro_batch_records: int,
+    input_segment_records: int,
+    compute_batch_records: int,
 ) -> M1S1StagedGroup:
     _validate_s1_slots(slots)
     staging_started_at = time.perf_counter()
@@ -2154,21 +2583,36 @@ def _stage_d3_group_input(
         group.record_ids_by_rank[rank],
         actions_by_id,
     )
-    microbatches_by_rank = tuple(
+    input_batches_by_rank = tuple(
         _chunks(
             _actions_for_ids(
                 group.record_ids_by_rank[value],
                 actions_by_id,
             ),
-            micro_batch_records,
+            input_segment_records,
         )
         for value in range(len(group.record_ids_by_rank))
     )
-    micro_steps = max(
-        (len(value) for value in microbatches_by_rank),
+    input_steps = max(
+        (len(value) for value in input_batches_by_rank),
         default=0,
     )
-    local_microbatches = microbatches_by_rank[rank]
+    compute_batches_by_rank = tuple(
+        _chunks(
+            _actions_for_ids(
+                group.record_ids_by_rank[value],
+                actions_by_id,
+            ),
+            compute_batch_records,
+        )
+        for value in range(len(group.record_ids_by_rank))
+    )
+    compute_steps = max(
+        (len(value) for value in compute_batches_by_rank),
+        default=0,
+    )
+    local_input_batches = input_batches_by_rank[rank]
+    local_compute_batches = compute_batches_by_rank[rank]
     pageable_seconds = 0.0
     h2d_bytes = 0
     oldkv_read_bytes = 0
@@ -2176,7 +2620,7 @@ def _stage_d3_group_input(
     source_offset = 0
     source_k = None
     source_v = None
-    device_histories = []
+    history_row_offset = 0
     h2d_events: list[
         tuple[torch.cuda.Event, torch.cuda.Event]
     ] = []
@@ -2187,6 +2631,12 @@ def _stage_d3_group_input(
     slot_reuse_wait_seconds = 0.0
     final_tail_wait_seconds = 0.0
     with torch.cuda.device(device):
+        device_history_group = _allocate_device_history_group(
+            group_actions,
+            group.route,
+            device,
+            stream,
+        )
         if group.route == "compiled" and group_actions:
             retained_tokens = sum(
                 value.retained_tokens for value in group_actions
@@ -2202,7 +2652,7 @@ def _stage_d3_group_input(
                     device=device,
                 )
                 source_v = torch.empty_like(source_k)
-        for step in range(micro_steps):
+        for step in range(input_steps):
             component = step % 2
             ready = component_ready[component]
             if ready is not None:
@@ -2213,8 +2663,8 @@ def _stage_d3_group_input(
                 )
             slot = slots[component]
             actions = (
-                local_microbatches[step]
-                if step < len(local_microbatches)
+                local_input_batches[step]
+                if step < len(local_input_batches)
                 else ()
             )
             if group.route == "compiled" and actions:
@@ -2281,14 +2731,38 @@ def _stage_d3_group_input(
                 time.perf_counter() - stage_started
             )
             h2d_bytes += history.nbytes
+            history_row_stop = history_row_offset + len(actions)
             history_start = torch.cuda.Event(
                 enable_timing=True
             )
             history_end = torch.cuda.Event(enable_timing=True)
             with torch.cuda.stream(stream):
                 history_start.record()
-                device_history = history.to(
-                    device,
+                device_history_group.item_ids[
+                    history_row_offset:history_row_stop,
+                    : history.seq_len,
+                ].copy_(
+                    history.item_ids,
+                    non_blocking=True,
+                )
+                device_history_group.behaviors[
+                    history_row_offset:history_row_stop,
+                    : history.seq_len,
+                ].copy_(
+                    history.behaviors,
+                    non_blocking=True,
+                )
+                device_history_group.time_deltas[
+                    history_row_offset:history_row_stop,
+                    : history.seq_len,
+                ].copy_(
+                    history.time_deltas,
+                    non_blocking=True,
+                )
+                device_history_group.lengths[
+                    history_row_offset:history_row_stop
+                ].copy_(
+                    history.lengths,
                     non_blocking=True,
                 )
                 history_end.record()
@@ -2296,7 +2770,7 @@ def _stage_d3_group_input(
                 (history_start, history_end)
             )
             component_ready[component] = history_end
-            device_histories.append(device_history)
+            history_row_offset = history_row_stop
             del history
         tail_started = time.perf_counter()
         for ready in component_ready:
@@ -2309,6 +2783,8 @@ def _stage_d3_group_input(
             started.elapsed_time(finished) / 1000.0
             for started, finished in h2d_events
         )
+        if history_row_offset != len(group_actions):
+            raise RuntimeError("M1 D3 input history coverage differs")
         if group.route == "compiled" and group_actions:
             retained_tokens = sum(
                 value.retained_tokens for value in group_actions
@@ -2331,13 +2807,20 @@ def _stage_d3_group_input(
                     "theta0",
                 )
             stream.synchronize()
+        else:
+            stream.synchronize()
+        device_histories = _device_history_views(
+            device_history_group,
+            local_compute_batches,
+            compute_steps,
+        )
     return M1S1StagedGroup(
         group=group,
         actions=group_actions,
-        local_microbatches=local_microbatches,
-        micro_steps=micro_steps,
+        local_microbatches=local_compute_batches,
+        micro_steps=compute_steps,
         source=source_group,
-        device_histories=tuple(device_histories),
+        device_histories=device_histories,
         oldkv_read_bytes=oldkv_read_bytes,
         h2d_bytes=h2d_bytes,
         pageable_to_pinned_seconds=pageable_seconds,
@@ -2346,7 +2829,8 @@ def _stage_d3_group_input(
         staging_finished_at=time.perf_counter(),
         slot_index=slot_index,
         input_pipeline="segmented_microbatch_pingpong",
-        input_segments=micro_steps,
+        input_segment_records=input_segment_records,
+        input_segments=input_steps,
         input_slot_reuse_wait_seconds=(
             slot_reuse_wait_seconds
         ),
@@ -2362,7 +2846,7 @@ def _compute_s1_staged_group(
     operator: DirectOldKVFusedOperator,
     program,
     device: torch.device,
-    micro_batch_records: int,
+    compute_batch_records: int,
 ) -> dict[str, object]:
     group = staged.group
     group_actions = staged.actions
@@ -2595,7 +3079,8 @@ def _compute_s1_staged_group(
         "route": group.route,
         "capacity_group_records": len(group_actions),
         "compute_microbatches": staged.micro_steps,
-        "micro_batch_records": micro_batch_records,
+        "micro_batch_records": compute_batch_records,
+        "compute_batch_records": compute_batch_records,
         "resident_extent_logical_bytes": (
             group_resident_extent_bytes(
                 group_actions,
@@ -2613,6 +3098,7 @@ def _compute_s1_staged_group(
         "h2d_seconds": staged.h2d_seconds,
         "input_staging_wall_seconds": staged.staging_wall_seconds,
         "input_pipeline": staged.input_pipeline,
+        "input_segment_records": staged.input_segment_records,
         "input_segments": staged.input_segments,
         "input_slot_reuse_wait_seconds": (
             staged.input_slot_reuse_wait_seconds
@@ -2627,6 +3113,9 @@ def _compute_s1_staged_group(
         "d2d_assemble_seconds": group_assemble_seconds,
         "lookup_exchange_seconds": group_lookup_seconds,
         "compute_excluding_lookup_seconds": group_compute_seconds,
+        "execution_wall_seconds": (
+            execution_finished_at - execution_started_at
+        ),
         "d2h_seconds": 0.0,
         "publish_seconds": 0.0,
         "lookup_metrics": group_lookup,
@@ -2654,7 +3143,7 @@ def _drain_s1_computed_group(
     slot: M1PinnedSlot,
     device: torch.device,
     stream: torch.cuda.Stream,
-    micro_batch_records: int,
+    output_segment_records: int,
 ) -> dict[str, object]:
     drain_started_at = time.perf_counter()
     group = computed.group
@@ -2675,7 +3164,7 @@ def _drain_s1_computed_group(
             stream.wait_event(computed.ready_event)
         for actions in _chunks(
             group_actions,
-            micro_batch_records,
+            output_segment_records,
         ):
             segments: list[
                 tuple[torch.Tensor, torch.Tensor]
@@ -2957,7 +3446,7 @@ def _drain_d3_computed_group(
     slots: Sequence[M1PinnedSlot],
     device: torch.device,
     stream: torch.cuda.Stream,
-    micro_batch_records: int,
+    output_segment_records: int,
 ) -> dict[str, object]:
     _validate_s1_slots(slots)
     drain_started_at = time.perf_counter()
@@ -2978,7 +3467,7 @@ def _drain_d3_computed_group(
         with torch.cuda.stream(stream):
             stream.wait_event(computed.ready_event)
         for index, actions in enumerate(
-            _chunks(group_actions, micro_batch_records)
+            _chunks(group_actions, output_segment_records)
         ):
             transfer, retained_offset, suffix_offset, exact_offset = (
                 _enqueue_d3_output_transfer(
@@ -3074,6 +3563,7 @@ def _drain_d3_computed_group(
                 "segmented_microbatch_pingpong"
             ),
             "output_segments": output_segments,
+            "output_segment_records": output_segment_records,
             "output_d2h_ready_wait_seconds": (
                 d2h_ready_wait_seconds
             ),
@@ -3187,7 +3677,7 @@ def run_s1(
     program,
     slots: Sequence[M1PinnedSlot],
     device: torch.device,
-    micro_batch_records: int,
+    granularity: M1ExecutionGranularity,
     segmented_input: bool = False,
 ) -> dict[str, object]:
     if not groups:
@@ -3236,6 +3726,7 @@ def run_s1(
         group_index: int,
     ) -> M1S1StagedGroup:
         slot_index = group_index % 2
+        route_granularity = granularity.for_route(group.route)
         if segmented_input:
             return _stage_d3_group_input(
                 group,
@@ -3247,7 +3738,8 @@ def run_s1(
                 slot_index,
                 device,
                 prefetch_stream,
-                micro_batch_records,
+                route_granularity.input_segment_records,
+                route_granularity.compute_batch_records,
             )
         return _stage_s1_group_input(
             group,
@@ -3259,7 +3751,7 @@ def run_s1(
             slot_index,
             device,
             prefetch_stream,
-            micro_batch_records,
+            route_granularity.compute_batch_records,
         )
 
     current = stage_group_input(groups[0], 0)
@@ -3357,7 +3849,9 @@ def run_s1(
                 operator,
                 program,
                 device,
-                micro_batch_records,
+                granularity.for_route(
+                    current.group.route
+                ).compute_batch_records,
             )
             computed = computed_value.get("computed_group")
             if not isinstance(computed, M1S1ComputedGroup):
@@ -3400,7 +3894,9 @@ def run_s1(
                     slots,
                     device,
                     drain_stream,
-                    micro_batch_records,
+                    granularity.for_route(
+                        computed.group.route
+                    ).output_segment_records,
                 )
             else:
                 drain_future = drain_executor.submit(
@@ -3410,7 +3906,9 @@ def run_s1(
                     slots[computed.slot_index],
                     device,
                     drain_stream,
-                    micro_batch_records,
+                    granularity.for_route(
+                        computed.group.route
+                    ).compute_batch_records,
                 )
             producer_group_ordinal = computed.group.ordinal
             producer_execution_started_at = (
@@ -3518,6 +4016,7 @@ def run_s1(
         "drain_pipeline_edges": drain_edges,
         "overlap_metrics": {
             "buffer_depth": 2,
+            "execution_granularity": granularity.to_dict(),
             "input_pipeline": (
                 "segmented_microbatch_pingpong"
                 if segmented_input
@@ -3835,6 +4334,17 @@ def run_distributed(
         visible_tokens = _validate_visible_devices(
             args.expected_visible_devices
         )
+        d3_execution_identity = (
+            _d3_execution_identity(args, visible_tokens)
+            if args.mode == "d3"
+            else None
+        )
+        residency_plan, residency_plan_file_sha256 = (
+            _load_distributed_residency_plan(
+                args.residency_plan,
+                runtime,
+            )
+        )
         prepared_path = _path(args.prepared_data)
         action_path = _path(args.action_snapshot)
         training_path = _path(args.training_result)
@@ -3848,6 +4358,21 @@ def run_distributed(
         ):
             raise ValueError("M1 data/training boundary differs")
         cfg = training_model_config(training)
+        execution_granularity = resolve_execution_granularity(
+            args,
+            residency_plan,
+        )
+        if max(
+            value
+            for route in (
+                execution_granularity.compiled,
+                execution_granularity.exact,
+            )
+            for value in route.to_dict().values()
+        ) > args.group_records_per_rank:
+            raise ValueError(
+                "M1 residency execution granularity exceeds its group"
+            )
         layout = snapshot.get("layout")
         if (
             not isinstance(layout, Mapping)
@@ -3882,12 +4407,55 @@ def run_distributed(
                 for value in actions
             }
         )
-        groups = build_s0_groups(
+        original_groups = build_s0_groups(
             actions,
             owners,
             runtime.world_size,
             args.group_records_per_rank,
         )
+        original_group_sha256 = group_plan_sha256(original_groups)
+        stack_bindings = {
+            "prepared_data": str(prepared_path),
+            "prepared_data_sha256": file_sha256(prepared_path),
+            "action_snapshot": str(action_path),
+            "action_snapshot_sha256": file_sha256(action_path),
+            "owner_independent_plan_sha256": snapshot[
+                "owner_independent_plan_sha256"
+            ],
+            "owner_map_sha256": selected_owner_sha256,
+            "group_plan_sha256": original_group_sha256,
+            "training_result": str(training_path),
+            "training_result_sha256": file_sha256(training_path),
+        }
+        if d3_execution_identity is not None:
+            stack_bindings.update(
+                {
+                    "compiler_result": d3_execution_identity[
+                        "compiler_result"
+                    ],
+                    "compiler_result_sha256": d3_execution_identity[
+                        "compiler_result_sha256"
+                    ],
+                    "program_path": d3_execution_identity["program_path"],
+                    "program_sha256": d3_execution_identity[
+                        "program_sha256"
+                    ],
+                }
+            )
+        if residency_plan is not None:
+            if (
+                residency_plan.group_plan_sha256
+                != original_group_sha256
+                or residency_plan.original_group_order
+                != tuple(value.ordinal for value in original_groups)
+            ):
+                raise ValueError("M1 residency plan group boundary differs")
+            groups = reorder_groups(
+                original_groups,
+                residency_plan.launch_order,
+            )
+        else:
+            groups = original_groups
         local_actions = tuple(
             value
             for value in actions
@@ -3916,49 +4484,108 @@ def run_distributed(
         max_final_tokens = max(
             value.final_tokens for value in local_actions
         )
-        max_retained_tokens = max(
-            value.retained_tokens for value in local_actions
+        max_compiled_retained_tokens = max(
+            (
+                value.retained_tokens
+                for value in local_actions
+                if value.route == "compiled"
+            ),
+            default=1,
         )
-        max_rows = max(
-            args.micro_batch_records,
+        slot_capacity = _execution_slot_capacity(
+            execution_granularity,
             args.materialize_records_per_rank,
+            max_old_tokens,
+            max_final_tokens,
+            max_compiled_retained_tokens,
         )
+        if residency_plan is not None:
+            rank = runtime.rank
+            total_hbm = torch.cuda.get_device_properties(
+                runtime.device
+            ).total_memory
+            required_pinned = 2 * _pinned_slot_nbytes(
+                cfg,
+                slot_capacity,
+            )
+            capacity_errors = []
+            if (
+                len(
+                    residency_plan.projected_peak_hbm_reserved_bytes_by_rank
+                )
+                != runtime.world_size
+                or len(residency_plan.projected_pinned_bytes_by_rank)
+                != runtime.world_size
+                or len(residency_plan.hbm_total_bytes_by_rank)
+                != runtime.world_size
+                or len(residency_plan.pinned_limit_bytes_by_rank)
+                != runtime.world_size
+            ):
+                capacity_errors.append("rank_count")
+            else:
+                if residency_plan.hbm_total_bytes_by_rank[rank] != total_hbm:
+                    capacity_errors.append("hbm_total")
+                if (
+                    residency_plan.projected_peak_hbm_reserved_bytes_by_rank[
+                        rank
+                    ]
+                    + residency_plan.hbm_margin_bytes
+                    > total_hbm
+                ):
+                    capacity_errors.append("hbm_projection")
+                if (
+                    required_pinned
+                    > residency_plan.projected_pinned_bytes_by_rank[rank]
+                ):
+                    capacity_errors.append("pinned_projection")
+                if (
+                    residency_plan.projected_pinned_bytes_by_rank[rank]
+                    > residency_plan.pinned_limit_bytes_by_rank[rank]
+                ):
+                    capacity_errors.append("pinned_limit")
+            local_capacity = {
+                "rank": rank,
+                "errors": capacity_errors,
+                "total_hbm_bytes": total_hbm,
+                "required_pinned_bytes": required_pinned,
+            }
+            gathered_capacity: list[object] = [
+                None
+            ] * runtime.world_size
+            dist.all_gather_object(gathered_capacity, local_capacity)
+            if any(
+                bool(dict(value)["errors"])
+                for value in gathered_capacity
+            ):
+                raise ValueError(
+                    "M1 residency plan exceeds runtime capacity: "
+                    + json.dumps(gathered_capacity, sort_keys=True)
+                )
         slot = _allocate_slot(
             cfg,
-            max_rows,
-            max(
-                args.micro_batch_records * max_retained_tokens,
-                1,
-            ),
-            max(
-                args.micro_batch_records * max_final_tokens,
-                args.materialize_records_per_rank * max_old_tokens,
-            ),
-            max_final_tokens,
+            slot_capacity.max_rows,
+            slot_capacity.max_source_tokens,
+            slot_capacity.max_output_tokens,
+            slot_capacity.max_history_tokens,
         )
         execution_slots = (
             (
                 slot,
                 _allocate_slot(
                     cfg,
-                    max_rows,
-                    max(
-                        args.micro_batch_records
-                        * max_retained_tokens,
-                        1,
-                    ),
-                    max(
-                        args.micro_batch_records
-                        * max_final_tokens,
-                        args.materialize_records_per_rank
-                        * max_old_tokens,
-                    ),
-                    max_final_tokens,
+                    slot_capacity.max_rows,
+                    slot_capacity.max_source_tokens,
+                    slot_capacity.max_output_tokens,
+                    slot_capacity.max_history_tokens,
                 ),
             )
             if args.mode in {"s1", "d3"}
             else (slot,)
         )
+        if residency_plan is not None and sum(
+            value.nbytes for value in execution_slots
+        ) != required_pinned:
+            raise RuntimeError("M1 pinned-slot capacity accounting differs")
         old_path, target_path = _store_paths(args, runtime.rank)
         source_checkpoint = resolve_version_checkpoint(
             training,
@@ -3966,6 +4593,91 @@ def run_distributed(
             0,
             verify_shard_ranks=(runtime.rank,),
         )
+        target_checkpoint = resolve_version_checkpoint(
+            training,
+            checkpoint_dir,
+            1,
+            verify_shard_ranks=(runtime.rank,),
+        )
+        properties = torch.cuda.get_device_properties(runtime.device)
+        local_device_identity = {
+            "device_name": torch.cuda.get_device_name(runtime.device),
+            "device_uuid": str(properties.uuid),
+            "pci_domain_id": properties.pci_domain_id,
+            "pci_bus_id": properties.pci_bus_id,
+            "pci_device_id": properties.pci_device_id,
+            "compute_capability": [
+                properties.major,
+                properties.minor,
+            ],
+            "total_memory": properties.total_memory,
+            "physical_visible_token": visible_tokens[runtime.rank],
+        }
+        if residency_plan is not None:
+            if d3_execution_identity is None:
+                raise RuntimeError("M1 D3 execution identity is missing")
+            local_stack_identity = {
+                **local_device_identity,
+                "source_checkpoint_sha256": source_checkpoint.descriptor()[
+                    "sha256"
+                ],
+                "target_checkpoint_sha256": target_checkpoint.descriptor()[
+                    "sha256"
+                ],
+            }
+            gathered_stack_identities: list[object] = [
+                None
+            ] * runtime.world_size
+            dist.all_gather_object(
+                gathered_stack_identities,
+                local_stack_identity,
+            )
+            stack_identities = [
+                dict(value) for value in gathered_stack_identities
+            ]
+            observed_stack_sha256 = d3_stack_revision_sha256(
+                bindings=stack_bindings,
+                world_size=runtime.world_size,
+                group_records_per_rank=args.group_records_per_rank,
+                records=len(actions),
+                counts={
+                    route: sum(
+                        value.route == route for value in actions
+                    )
+                    for route in ("compiled", "exact")
+                },
+                embedding_scale_role=(
+                    "functional_canary_not_primary_d2_partition_evidence"
+                    if cfg.num_items == 512144
+                    else "large_qk_entity_primary_m1_candidate"
+                ),
+                device_names=tuple(
+                    str(value["device_name"])
+                    for value in stack_identities
+                ),
+                source_checkpoint_sha256=tuple(
+                    str(value["source_checkpoint_sha256"])
+                    for value in stack_identities
+                ),
+                target_checkpoint_sha256=tuple(
+                    str(value["target_checkpoint_sha256"])
+                    for value in stack_identities
+                ),
+                capacity_groups=capacity_group_projection(
+                    original_groups,
+                    actions_by_id,
+                    cfg,
+                ),
+                execution_identity={
+                    **d3_execution_identity,
+                    "devices": stack_identities,
+                },
+            )
+            if (
+                observed_stack_sha256
+                != residency_plan.stack_revision_sha256
+            ):
+                raise ValueError("M1 residency stack revision differs")
         old_store, reused_old = _open_or_create_old_store(
             old_path,
             local_actions,
@@ -4050,12 +4762,6 @@ def run_distributed(
                 if args.prefault_target_store
                 else 0
             )
-            target_checkpoint = resolve_version_checkpoint(
-                training,
-                checkpoint_dir,
-                1,
-                verify_shard_ranks=(runtime.rank,),
-            )
             target_model = load_runtime_sharded_hstu(
                 cfg,
                 target_checkpoint,
@@ -4094,7 +4800,7 @@ def run_distributed(
                     program,
                     execution_slots,
                     runtime.device,
-                    args.micro_batch_records,
+                    execution_granularity,
                     segmented_input=args.mode == "d3",
                 )
                 if args.mode in {"s1", "d3"}
@@ -4122,6 +4828,7 @@ def run_distributed(
                 "device_name": torch.cuda.get_device_name(
                     runtime.device
                 ),
+                "device_identity": local_device_identity,
                 "records": len(local_actions),
                 "source_checkpoint": source_checkpoint.descriptor(),
                 "target_checkpoint": target_checkpoint.descriptor(),
@@ -4143,6 +4850,7 @@ def run_distributed(
                 "target_prefault_pages": prefault_pages,
                 "loaded_program": loaded_program,
                 "operator_warmup_seconds": operator_warmup_seconds,
+                "pinned_slot_capacity": slot_capacity.to_dict(),
                 args.mode: execution_result,
             }
             del target_model, program
@@ -4167,13 +4875,15 @@ def run_distributed(
             cfg,
         )
         projection["capacity_groups"] = capacity_group_projection(
-            groups,
+            original_groups,
             actions_by_id,
             cfg,
         )
         report = {
             "protocol": (
-                D3_PROTOCOL
+                D3_RESIDENCY_PROTOCOL
+                if residency_plan is not None
+                else D3_PROTOCOL
                 if args.mode == "d3"
                 else S1_PROTOCOL if args.mode == "s1" else PROTOCOL
             ),
@@ -4186,7 +4896,11 @@ def run_distributed(
                 "two_gpu_qk_pageable_dram_group_at_a_time_s0_foundation"
                 if args.mode == "s0"
                 else (
-                    "two_gpu_qk_segmented_io_pingpong_d3_proposed"
+                    (
+                        "two_gpu_qk_route_aware_residency_d3_proposed"
+                        if residency_plan is not None
+                        else "two_gpu_qk_segmented_io_pingpong_d3_proposed"
+                    )
                     if args.mode == "d3"
                     else "two_gpu_qk_strong_group_double_buffer_s1_baseline"
                     if args.mode == "s1"
@@ -4202,7 +4916,14 @@ def run_distributed(
                 "world_size": runtime.world_size,
                 "physical_visible_devices": list(visible_tokens),
                 "owner_policy": "stable_record_modulo",
-                "group_order": "sequential_route_pure",
+                "group_order": (
+                    "residency_plan_stable_route_interleave"
+                    if residency_plan is not None
+                    else "sequential_route_pure"
+                ),
+                "group_launch_ordinals": [
+                    value.ordinal for value in groups
+                ],
                 "buffer_depth": (
                     2 if args.mode in {"s1", "d3"} else 1
                 ),
@@ -4244,23 +4965,36 @@ def run_distributed(
             "groups": len(groups),
             "group_records_per_rank": args.group_records_per_rank,
             "micro_batch_records": args.micro_batch_records,
+            "execution_granularity": (
+                execution_granularity.to_dict()
+            ),
+            "development_identity": d3_execution_identity,
+            "residency_plan": (
+                None
+                if residency_plan is None
+                else {
+                    "path": str(_path(args.residency_plan)),
+                    "file_sha256": residency_plan_file_sha256,
+                    "content_sha256": residency_plan.content_sha256,
+                    "stack_revision_sha256": (
+                        residency_plan.stack_revision_sha256
+                    ),
+                    "predicted_makespan_seconds": (
+                        residency_plan.predicted_makespan_seconds
+                    ),
+                    "original_group_order": list(
+                        residency_plan.original_group_order
+                    ),
+                    "launch_order": list(
+                        residency_plan.launch_order
+                    ),
+                }
+            ),
             "materialize_records_per_rank": (
                 args.materialize_records_per_rank
             ),
             "capacity": projection,
-            "bindings": {
-                "prepared_data": str(prepared_path),
-                "prepared_data_sha256": file_sha256(prepared_path),
-                "action_snapshot": str(action_path),
-                "action_snapshot_sha256": file_sha256(action_path),
-                "owner_independent_plan_sha256": snapshot[
-                    "owner_independent_plan_sha256"
-                ],
-                "owner_map_sha256": selected_owner_sha256,
-                "group_plan_sha256": group_plan_sha256(groups),
-                "training_result": str(training_path),
-                "training_result_sha256": file_sha256(training_path),
-            },
+            "bindings": stack_bindings,
             "rank_reports": rank_reports,
             "makespan_seconds": (
                 max(

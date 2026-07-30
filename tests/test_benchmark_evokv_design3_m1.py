@@ -10,6 +10,11 @@ import pytest
 import torch
 
 from hstu_kvcache.migration.design2_plan import canonical_sha256
+from hstu_kvcache.migration.design3_residency import (
+    D3ResidencyPlan,
+    D3RouteGranularity,
+    D3RouteStageProfile,
+)
 from hstu_kvcache.migration.design3_store import (
     PageableDramExtentStore,
 )
@@ -112,6 +117,64 @@ def test_action_snapshot_owner_and_group_plan_are_stable(
     assert MODULE.group_plan_sha256(groups) == (
         MODULE.group_plan_sha256(groups)
     )
+
+
+def _reorder_groups() -> tuple[MODULE.M1Group, ...]:
+    return (
+        MODULE.M1Group(10, "compiled", ((0,), (1,))),
+        MODULE.M1Group(20, "compiled", ((2,), (3,))),
+        MODULE.M1Group(30, "exact", ((4,), (5,))),
+        MODULE.M1Group(40, "exact", ((6,), (7,))),
+    )
+
+
+def test_reorder_groups_allows_only_stable_route_interleave() -> None:
+    groups = _reorder_groups()
+
+    reordered = MODULE.reorder_groups(
+        groups,
+        (10, 30, 20, 40),
+    )
+
+    assert tuple(value.ordinal for value in reordered) == (
+        10,
+        30,
+        20,
+        40,
+    )
+    assert reordered == (
+        groups[0],
+        groups[2],
+        groups[1],
+        groups[3],
+    )
+    assert all(
+        value is groups[index]
+        for value, index in zip(
+            reordered,
+            (0, 2, 1, 3),
+            strict=True,
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "launch_ordinals",
+    (
+        (10, 30, 20),
+        (10, 30, 30, 40),
+        (20, 30, 10, 40),
+        (10, 40, 20, 30),
+    ),
+)
+def test_reorder_groups_rejects_invalid_launch_order(
+    launch_ordinals: tuple[int, ...],
+) -> None:
+    with pytest.raises(ValueError):
+        MODULE.reorder_groups(
+            _reorder_groups(),
+            launch_ordinals,
+        )
 
 
 def test_capacity_projection_counts_full_old_and_private_target() -> None:
@@ -244,10 +307,199 @@ def test_old_store_reuse_is_bound_to_model_data_plan_and_owner(
 
 def test_primary_runtime_defaults_select_large_entity_boundary() -> None:
     args = MODULE.parse_args([])
+    granularity = MODULE.resolve_execution_granularity(args)
 
     assert args.prepared_data.endswith("qk_entity_2560.npz")
     assert args.checkpoint_dir.endswith("qk_entity_h1536/seed0")
     assert args.run_id == "qk_entity_h1536_seed0"
+    assert granularity.compiled.to_dict() == {
+        "input_segment_records": 8,
+        "compute_batch_records": 8,
+        "output_segment_records": 8,
+    }
+    assert granularity.exact == granularity.compiled
+
+
+def test_d3_execution_granularity_decouples_with_legacy_fallback() -> None:
+    args = MODULE.parse_args(
+        [
+            "--mode",
+            "d3",
+            "--micro-batch-records",
+            "8",
+            "--input-segment-records",
+            "2",
+            "--compute-batch-records",
+            "4",
+            "--output-segment-records",
+            "6",
+        ]
+    )
+
+    MODULE.validate_args(args)
+    granularity = MODULE.resolve_execution_granularity(args)
+
+    assert granularity.for_route("compiled").to_dict() == {
+        "input_segment_records": 2,
+        "compute_batch_records": 4,
+        "output_segment_records": 6,
+    }
+    assert granularity.for_route("exact") == granularity.compiled
+    with pytest.raises(ValueError):
+        MODULE.validate_args(
+            MODULE.parse_args(
+                ["--mode", "s1", "--input-segment-records", "2"]
+            )
+        )
+
+
+def test_d3_route_overrides_precede_global_granularity() -> None:
+    args = MODULE.parse_args(
+        [
+            "--mode",
+            "d3",
+            "--micro-batch-records",
+            "8",
+            "--input-segment-records",
+            "2",
+            "--compute-batch-records",
+            "4",
+            "--output-segment-records",
+            "6",
+            "--compiled-input-segment-records",
+            "3",
+            "--compiled-compute-batch-records",
+            "5",
+            "--compiled-output-segment-records",
+            "7",
+            "--exact-input-segment-records",
+            "64",
+            "--exact-compute-batch-records",
+            "16",
+            "--exact-output-segment-records",
+            "12",
+        ]
+    )
+
+    MODULE.validate_args(args)
+    granularity = MODULE.resolve_execution_granularity(args)
+    capacity = MODULE._execution_slot_capacity(
+        granularity,
+        materialize_records_per_rank=8,
+        max_old_tokens=4,
+        max_final_tokens=4,
+        max_retained_tokens=3,
+    )
+
+    assert granularity.compiled.to_dict() == {
+        "input_segment_records": 3,
+        "compute_batch_records": 5,
+        "output_segment_records": 7,
+    }
+    assert granularity.exact.to_dict() == {
+        "input_segment_records": 64,
+        "compute_batch_records": 16,
+        "output_segment_records": 12,
+    }
+    assert capacity.to_dict() == {
+        "max_rows": 64,
+        "max_source_tokens": 9,
+        "max_output_tokens": 48,
+        "max_history_tokens": 4,
+    }
+
+
+@pytest.mark.skipif(
+    not torch.cuda.is_available(),
+    reason="CUDA is required for pinned allocation",
+)
+def test_pinned_slot_accounting_matches_allocation() -> None:
+    cfg = HSTUConfig(
+        num_items=100,
+        num_prediction_items=80,
+        num_behaviors=5,
+        hidden_size=8,
+        num_layers=2,
+        num_heads=2,
+        head_dim=4,
+        max_seq_len=4,
+    )
+    capacity = MODULE.M1PinnedSlotCapacity(3, 7, 11, 4)
+    slot = MODULE._allocate_slot(
+        cfg,
+        capacity.max_rows,
+        capacity.max_source_tokens,
+        capacity.max_output_tokens,
+        capacity.max_history_tokens,
+    )
+
+    assert MODULE._pinned_slot_nbytes(cfg, capacity) == slot.nbytes
+
+
+def test_residency_plan_owns_route_granularity() -> None:
+    compiled_granularity = D3RouteGranularity(16, 8, 4)
+    exact_granularity = D3RouteGranularity(64, 8, 16)
+
+    def profile(
+        route: str,
+        granularity: D3RouteGranularity,
+    ) -> D3RouteStageProfile:
+        return D3RouteStageProfile(
+            route=route,
+            granularity=granularity,
+            reference_records=64,
+            input_seconds_by_rank=(1.0, 1.0),
+            compute_seconds_by_rank=(1.0, 1.0),
+            output_seconds_by_rank=(1.0, 1.0),
+            peak_hbm_reserved_bytes_by_rank=(1, 1),
+            pinned_bytes_by_rank=(1, 1),
+            sample_groups=1,
+            source_sha256="e" * 64,
+        )
+
+    compiled_profile = profile("compiled", compiled_granularity)
+    exact_profile = profile("exact", exact_granularity)
+    plan = D3ResidencyPlan(
+        group_plan_sha256="a" * 64,
+        stack_revision_sha256="b" * 64,
+        compiled=compiled_granularity,
+        exact=exact_granularity,
+        compiled_profile_sha256=compiled_profile.content_sha256,
+        exact_profile_sha256=exact_profile.content_sha256,
+        compiled_profile=compiled_profile,
+        exact_profile=exact_profile,
+        original_group_order=(0, 1),
+        launch_order=(1, 0),
+        predicted_makespan_seconds=1.0,
+        projected_peak_hbm_reserved_bytes_by_rank=(1, 1),
+        projected_pinned_bytes_by_rank=(1, 1),
+        hbm_total_bytes_by_rank=(2, 2),
+        pinned_limit_bytes_by_rank=(2, 2),
+        hbm_margin_bytes=0,
+        selector_tie_fraction=0.03,
+    )
+    args = MODULE.parse_args(
+        ["--mode", "d3", "--residency-plan", "plan.json"]
+    )
+
+    MODULE.validate_args(args)
+    granularity = MODULE.resolve_execution_granularity(args, plan)
+
+    assert granularity.compiled.to_dict() == plan.compiled.to_dict()
+    assert granularity.exact.to_dict() == plan.exact.to_dict()
+    with pytest.raises(ValueError, match="owns its granularities"):
+        MODULE.validate_args(
+            MODULE.parse_args(
+                [
+                    "--mode",
+                    "d3",
+                    "--residency-plan",
+                    "plan.json",
+                    "--compiled-input-segment-records",
+                    "4",
+                ]
+            )
+        )
 
 
 def _tiny_slot() -> MODULE.M1PinnedSlot:
@@ -268,6 +520,29 @@ def test_s1_mode_and_disjoint_slot_contract() -> None:
 
     assert args.mode == "s1"
     assert proposed.mode == "d3"
+
+
+@pytest.mark.parametrize(
+    ("source_name", "target_name"),
+    (
+        ("source_k", "source_v"),
+        ("history_item_ids", "history_behaviors"),
+        ("output_k", "output_v"),
+    ),
+)
+def test_s1_slot_rejects_internal_component_storage_alias(
+    source_name: str,
+    target_name: str,
+) -> None:
+    first = _tiny_slot()
+    second = _tiny_slot()
+    setattr(first, target_name, getattr(first, source_name))
+
+    with pytest.raises(
+        ValueError,
+        match="pinned slot components alias",
+    ):
+        MODULE._validate_s1_slots((first, second))
 
 
 def test_s1_input_edge_reports_overlap_and_exposed_tail() -> None:
@@ -373,19 +648,42 @@ def test_d3_segmented_input_preserves_source_and_history(
             device,
             stream,
             1,
+            2,
+        )
+        empty_rank = MODULE._stage_d3_group_input(
+            group,
+            1,
+            {value.record_id: value for value in actions},
+            MODULE.M1Histories(old={}, target=target),
+            store,
+            slots,
+            0,
+            device,
+            stream,
+            1,
+            2,
         )
 
     assert staged.input_pipeline == "segmented_microbatch_pingpong"
     assert staged.input_segments == 3
+    assert staged.micro_steps == 2
     assert staged.source is not None
     assert torch.equal(
         staged.source.k.cpu(),
         torch.cat(expected, dim=1),
     )
-    assert [
-        int(value.item_ids[0, 0].item())
-        for value in staged.device_histories
-    ] == [3, 13, 23]
+    assert staged.device_histories[0].record_ids == (0, 1)
+    assert staged.device_histories[1].record_ids == (2,)
+    assert staged.device_histories[0].item_ids[:, 0].tolist() == [
+        3,
+        13,
+    ]
+    assert int(staged.device_histories[1].item_ids[0, 0]) == 23
+    assert len(empty_rank.device_histories) == 2
+    assert all(
+        value.batch_size == 0
+        for value in empty_rank.device_histories
+    )
 
 
 @pytest.mark.skipif(
@@ -462,8 +760,8 @@ def test_d3_segmented_output_preserves_order_and_lifetime(
         slot_index=0,
     )
     slots = (
-        MODULE._allocate_slot(cfg, 1, 3, 4, 4),
-        MODULE._allocate_slot(cfg, 1, 3, 4, 4),
+        MODULE._allocate_slot(cfg, 1, 3, 8, 4),
+        MODULE._allocate_slot(cfg, 1, 3, 8, 4),
     )
     with PageableDramExtentStore.create(
         tmp_path / "target.bin",
@@ -478,7 +776,7 @@ def test_d3_segmented_output_preserves_order_and_lifetime(
             slots,
             device,
             torch.cuda.Stream(device=device),
-            1,
+            2,
         )
         observed = []
         for index in range(3):
@@ -492,7 +790,8 @@ def test_d3_segmented_output_preserves_order_and_lifetime(
     assert report["output_pipeline"] == (
         "segmented_microbatch_pingpong"
     )
-    assert report["output_segments"] == 3
+    assert report["output_segments"] == 2
+    assert report["output_segment_records"] == 2
     assert result["observed_record_ids"] == (0, 1, 2)
     assert ledger.complete_records == 3
     assert all(

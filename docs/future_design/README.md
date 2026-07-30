@@ -26,10 +26,13 @@ globally regenerate actions, owners, pools, or layout before execution, record a
 Current D2 code has a single-rank wave adapter and capacity-specific W3 resident extents. D3 now
 has both the minimal H12/W2 adapter and a real-capacity two-rank QK M1 chain. On the fixed 288-GiB
 old/private-target boundary, fair S0 is 48.238 seconds, strong S1 is 32.703 seconds, and the
-bidirectionally segmented I/O candidate is 28.885 seconds with full byte parity. It is still a
-development mechanism, not a general exporter or formal result. Same-boundary E0 and the smallest
-useful sensitivity/replication set come before normalization, stable hashes, and transaction
-closure.
+historical v1 fixed-order bidirectionally segmented I/O precursor is 28.885 seconds. Under the
+current exact stack/hash, route-major `(8,8,8)` takes 28.514442098 seconds and the hashed
+ResidencyPlan order takes 28.147194647 seconds (1.013047x; 1.2879% lower wall time) with complete
+exactly-once byte parity. The plan uses same-source joint profiles, a one-lookahead/one-drain flow
+model, and a synchronized per-rank capacity preflight. It is still a development mechanism, not a general
+exporter or formal result. Same-boundary E0, held-out qualification, formal repeats,
+action/capacity mixes, and transaction closure precede a frozen protocol.
 
 The H12 workload is the first semantic canary, not physical oversubscription evidence. The preferred
 D3 mechanism-selection route audits a larger real-history QK workload whose owner-local source

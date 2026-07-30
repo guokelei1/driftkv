@@ -41,7 +41,8 @@ profiles under an emulated logical-payload cap. The real QK M1 family now contai
 out-of-core S0/S1/D3 mechanism sequence, but every member remains `scientific_result=false` and
 `formal_design3=false`.
 
-The real QK M1 development boundary is now complete through the first segmented-I/O candidate. Its input protocol
+The real QK M1 development boundary is now complete through the first route-aware
+`ResidencyPlan` candidate. Its input protocol
 `evokv_design3_m1_qk_base_entity_data_development_v0` fits the entity address space only from
 every QK user's first 64 raw exposures: 250,000 prediction rows plus 2,609,835 exact base-context
 rows, or 2,859,836 physical rows including padding. Stream-only item identities map into existing
@@ -101,7 +102,7 @@ completes in 31.096282832 seconds, but output-credit wait rises to 4.8651/3.7060
 input-only artifact is retained as causal evidence that the bottleneck moved; it is not the
 selected mechanism.
 
-`evokv_design3_m1_qk_segmented_io_d3_development_v1` is the current candidate. It retains the
+`evokv_design3_m1_qk_segmented_io_d3_development_v1` is the fixed-order precursor. It retains the
 input pipeline and also alternates the existing two pinned output components so D2H for
 microbatch \(j+1\) overlaps publication of \(j\) into ordinary DRAM. It adds no HBM group,
 pinned slot, collective issuer, or output credit. At group-64/microbatch-8 it completes in
@@ -110,9 +111,60 @@ falls to 1.7348/0.7378 seconds; peak allocated HBM is 29.27/29.09 GiB and peak r
 39.42 GiB on both ranks. A microbatch-16 development check is slower at 29.336641804 seconds and
 raises reserved HBM to 41.54 GiB, so it is not the selected point.
 
-The S1 and segmented-I/O D3 full target files were compared independently for both ranks:
-each 77,309,939,712-byte target is byte-identical. Canary parity, real-CUDA three-segment slot-reuse
-tests, full coverage, and exactly-once checks also pass. The conservative
+The current no-plan calibration/control protocol is
+`evokv_design3_m1_qk_decoupled_io_d3_development_v2`; the plan-execution protocol is
+`evokv_design3_m1_qk_route_aware_residency_d3_development_v3`. Serialized route profiles use
+`evokv_d3_residency_profile_v0`, and the embedded-profile plan schema uses
+`evokv_d3_residency_plan_v1`. Profile and plan construction occur before the primary runtime timer
+and must be reported separately.
+
+The v3 development runtime stages each complete capacity group on GPU, while independently
+controlling input-segment, D2 compute/collective-batch, and output-segment sizes for compiled and
+exact routes. A candidate pair is legal only when its route profiles came from the same complete
+no-plan source result. Stage time is the maximum across ranks; tail groups use discrete segment
+counts rather than a continuous byte fraction. The selector applies the runtime's actual
+one-group-input-lookahead/one-drain-credit recurrence and preserves the internal order of both
+routes. It exhaustively searches small interleaving spaces and uses Pareto-frontier beam dynamic
+programming for larger spaces. After finding the global predicted minimum, a 3% tie region prefers
+lower maximum HBM, total pinned memory, and segment count; the tie is anchored to the global
+minimum rather than to traversal order.
+
+The serialized plan embeds both selected profiles and binds the D1/D2 group plan, compiler result
+and program, relevant runner/planner/operator source hashes, source and target checkpoints,
+Torch/CUDA/cuDNN versions, GPU UUID/PCI/compute-capability/visible-device identities, store tier and
+protocol, source/target directories, capacity groups, HBM totals and margin, pinned-memory limit,
+granularities, launch order, and content hash. Rank 0 broadcasts the loaded plan; both ranks agree
+on the plan hash and independently repeat HBM and pinned-memory preflight before target creation
+and D2 collectives. This is the implemented binding scope; it must not be summarized merely as a
+claim to hash an unspecified “complete stack.”
+
+On one exact stack/hash, the route-major no-plan control and selected plan both use
+`(input,compute,output)=(8,8,8)` for compiled and exact. The control takes 28.514442098 seconds.
+The selected stable order
+`[13,0,1,2,3,4,5,6,7,8,9,10,11,14,12,15,16]` takes 28.147194647 seconds:
+1.013047x faster, or a 1.2879% wall-time reduction. It is 1.16186x faster than S1
+(32.703160657 seconds) and 1.71379x faster than fair S0 (48.238327569 seconds). Its analytic
+prediction is 29.244944224 seconds, 3.90% above observation. Each rank writes
+77,309,939,712 bytes; both targets are byte-identical to S1 with complete and exactly-once
+coverage.
+
+An adjacent identity-only revision observed 29.7169 seconds for route-major order and 28.0497
+seconds for the selected order, a 5.61% reduction. Because that pair is not the final exact
+stack/hash control and exposes run-to-run/revision sensitivity, it is retained only as a
+development diagnostic and must not be quoted as the frozen scheduler benefit. The old
+28.884778045-second fixed-order result belongs to the historical v1 runner and likewise cannot
+serve as the v3 order-only control.
+
+The implementation supports route-specific triples, but the selected point uses `(8,8,8)` for
+both routes and therefore does not establish route-asymmetric granularity benefit. Compiled
+input-16 and output-4 did not improve their observed development points; they do not generally
+reject those granularities, and no full Cartesian-product sensitivity was run.
+
+The S1 and exact-stack selected-plan full target files were compared independently for both ranks:
+each 77,309,939,712-byte candidate target is byte-identical to S1. Canary parity,
+route-asymmetric real-CUDA execution, slot-reuse tests, full coverage, and exactly-once checks also
+pass as implementation checks, not evidence that asymmetric selection is beneficial. The
+conservative
 `estimated_hidden_input_seconds` and `estimated_hidden_output_seconds` fields are diagnostics, not
 exact attribution; wall time, boundary/credit wait, CUDA transfer time, bytes, and ledger coverage
 are the primary measurements.
@@ -125,9 +177,12 @@ an implementation correctness/scale validation only; it creates no independent p
 
 Every QK M1 artifact in this section remains `scientific_result=false` and
 `formal_design3=false`. The 2,560-user edge, action snapshot, characterizer, materialized store,
-fair S0, S1, and selected development candidate freeze only the current mechanism-discovery
-revision. They do not freeze a paper protocol or establish E0 crossover, replication, or
-generality. The earlier H512 QK canary and H12 M0 profile remain functional development
+fair S0, S1, and selected development candidate define only the current mechanism-discovery
+revision. They do not freeze a paper protocol or establish E0 crossover, formal replication, or
+generality. The current profile selection and evaluation reuse the same M1 revision, so a formal
+result still needs held-out qualification, formal repeats, at least one additional action/capacity
+mix, and transaction closure. The
+earlier H512 QK canary and H12 M0 profile remain functional development
 diagnostics and cannot be pooled with M1.
 
 An isolation-track result compares sequential, double-buffer, and proposed schedulers within one
@@ -193,7 +248,14 @@ protocol strings:
 - `evokv_design3_m1_qk_pageable_s0_development_v0`;
 - `evokv_design3_m1_qk_pageable_s1_development_v0`;
 - `evokv_design3_m1_qk_segmented_input_d3_development_v0`;
-- `evokv_design3_m1_qk_segmented_io_d3_development_v1`.
+- `evokv_design3_m1_qk_segmented_io_d3_development_v1`;
+- `evokv_design3_m1_qk_decoupled_io_d3_development_v2`;
+- `evokv_design3_m1_qk_route_aware_residency_d3_development_v3`;
+- `evokv_design3_m1_qk_residency_same_runner_validation_development_v0`.
+
+Serialized calibration profiles and plans use
+`evokv_d3_residency_profile_v0` and `evokv_d3_residency_plan_v1`; these are artifact schemas, not
+paper-result protocols.
 
 The S0 protocol contains `dry-run`, `materialize`, and `s0` modes plus different group settings.
 Those fields are part of the identity and boundary; sharing a protocol string does not permit
@@ -1954,10 +2016,19 @@ D3 mechanism-development diagnostics, also ineligible for paper tables:
   whole-group pipeline;
 - `results/system/evokv_design3_m1/qk_entity_h1536_d3_group64_seed0.json` — input-only segmented
   causal probe;
-- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_seed0.json` — current
-  bidirectionally segmented I/O candidate;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_seed0.json` — historical
+  bidirectionally segmented I/O precursor;
 - `results/system/evokv_design3_m1/qk_entity_h1536_d3_v1_group64_mb16_seed0.json` —
-  non-selected microbatch-16 sensitivity.
+  non-selected microbatch-16 sensitivity;
+- `configs/evokv_d3/m1/qk_entity_residency_plan_development_v2.json` and
+  `configs/evokv_d3/m1/residency_profiles_development_v2/` — replayable exact-stack development
+  plan and its committed compact profiles;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v3b_route_major_control_seed0.json` —
+  exact-stack route-major control;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v3b_residency_selected_seed0.json` —
+  exact-stack selected-order run;
+- `results/system/evokv_design3_m1/qk_entity_h1536_d3_v3b_same_runner_validation_seed0.json` —
+  compact paired timing and full-payload validation record.
 
 Motivation:
 

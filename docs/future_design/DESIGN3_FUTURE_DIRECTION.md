@@ -2,7 +2,8 @@
 
 日期：2026-07-30
 
-状态：**核心问题与首个两卡机制已确定；开发结果已存在，正式协议和论文结果尚不存在**。
+状态：**route-aware ResidencyPlan 已实现并完成 exact-stack 两卡 paired 开发运行；正式重复、
+协议和论文结果尚不存在**。
 本文档描述当前最可能的 D3 形态，不是阻塞机制发现的接口合同，也不能作为 paper claim 的
 证据。D1/D2 的已有证据仍按各自冻结协议解释，但新的 D3 development 可以从轻量 adapter
 开始，并允许根据 DRAM/HBM 实测形成新的跨层 `stack_revision`。
@@ -64,7 +65,7 @@ ordinary host DRAM source manifest
 
 - CPU source→pinned 和 pinned→target copies；
 - H2D/D2H；
-- `ResidencyPlan` construction；
+- `ResidencyPlan` construction 与 qualification（当前单独计量、在 primary timer 外）；
 - D2 lookup、collective、compiled/exact/append compute；
 - private target writeback、validation、commit、staging reclaim。
 
@@ -139,9 +140,9 @@ D3 只决定：
 
 - legal bin/pool slices；
 - per-rank capacity admission；
-- micro-wave packing；
-- capacity group 内的 microbatch segmentation；
-- prefetch/execute/writeback launch order；
+- route-specific input/compute/output segmentation；
+- 保持各 route 内部顺序的跨 route stable interleave；
+- one-lookahead/one-drain prefetch/execute/writeback launch order；
 - pinned-buffer credits、backpressure 和 NUMA/PCIe staging placement。
 
 Isolation track 的 scheduler/baseline 共享同一 `WorkManifest`。Co-design track 可以生成新的
@@ -175,7 +176,7 @@ dtype/layout/durability、GPU topology、per-rank HBM budget、timer 和 manifes
 17 个 group-64 cuts。顺序执行是 S0，whole-group lookahead-1 是 strong S1；二者共享完全
 相同的 D1/D2 work。
 
-### 4.2 Active mechanism: two-level bidirectional pipeline
+### 4.2 Active mechanism: rate-matched route-aware pipeline
 
 Strong S1 的外层流水为：
 
@@ -192,14 +193,39 @@ unchanged D2 compute/collective
 D2H j+1           || ordinary-DRAM publish j
 ```
 
-两级流水共同构成 `ResidencyPlan`。输入和输出各交替复用两个已有 pinned components；
+这两级流水构成固定顺序的 precursor。输入和输出各交替复用两个已有 pinned components；
 CUDA events 在 CPU 读取或覆盖 pinned storage 前建立生命周期边界。外层仍只有一个
 prefetched group、一个 outstanding drain 和一个 main-thread collective issuer，因此收益
 不是来自第三个 resident group、无界队列或改变 D1/D2 work。
 
 Input-only segmentation 是必要的因果 probe：它把 makespan 降到 31.096 秒，同时将瓶颈转移
-为 3.71--4.87 秒 output-credit wait。双向 segmentation 再将 makespan 降到 28.885 秒，
-相对 S1 为 1.133x；full outputs 与 S1 逐字节一致。
+为 3.71--4.87 秒 output-credit wait。历史 v1 双向 segmentation 再将 makespan 降到
+28.885 秒，相对 S1 为 1.133x；full outputs 与 S1 逐字节一致。由于 runner identity
+不同，28.885 秒不能作为当前 plan 的 order-only control。
+
+当前 `ResidencyPlan` 在这个 precursor 上再加入两个互相依赖的决定：
+
+1. compiled/exact 各自独立的 input-segment、compute-batch、output-segment；
+2. compiled 与 exact 两条内部有序序列之间的 stable interleave。
+
+Planner 只组合来自同一个 no-plan source 的 compiled/exact profile；每个 stage 先取最慢
+rank，尾组按离散 segment 数缩放，再使用与运行时一致的 one-lookahead/one-drain
+bounded-flow recurrence。小搜索空间穷举所有保持两条 route 内部顺序的 interleave，大空间
+使用 Pareto-beam DP。预测全局最优点 3% 内再按 HBM、pinned memory 和 segment 数选择，
+该 tie 区间锚定全局最小值，不依赖遍历顺序。
+
+当前选择仍为两 route `(8,8,8)`，但 launch order 变为
+`[13,0,1,2,3,4,5,6,7,8,9,10,11,14,12,15,16]`。在同一 exact stack/hash 下，route-major
+control 为 28.514442098 秒，selected order 为 28.147194647 秒，即 1.013047x、wall time
+降低 1.2879%；相对 S1/fair S0 为 1.16186x/1.71379x。预测 29.244944224 秒，比实测高
+3.90%。两 rank 各 77,309,939,712-byte target 均与 S1 逐字节一致，coverage
+complete/exactly-once。
+
+Plan 内嵌 profile，并绑定 compiler/program/source code、Torch/CUDA、GPU UUID/PCI、store
+tier、groups、checkpoints、HBM 和 pinned limit；两 rank 在 target creation 和 collective
+前统一执行 capacity preflight。Plan/profile construction 在 primary timer 外。当前 triple
+仍对称，不能声称 route-asymmetric granularity 收益已验证；input-16/output-4 仅在各自观察点
+没有提升。相邻 identity-only revision 的 29.7169→28.0497（5.61%）只作为波动诊断。
 
 ### 4.3 Per-rank concurrent-buffer admission
 
@@ -222,6 +248,8 @@ rho = max_r(work_bytes_r / usable_HBM_r)
 当前真实主点已经是 \(\rho>1\)：144-GiB old 与 144-GiB private target 无法驻留两张 A40。
 group-64/microbatch-8 的 peak allocated HBM 为 29.27/29.09 GiB，reserved 为
 39.42 GiB。microbatch-16 更慢且把 reserved 提高到 41.54 GiB，所以不选。
+当前 exact-stack pair 中，route-major/selected 的 observed reserved 为
+39.42/35.25 GiB；这是一条开发态伴随观察，尚不能独立宣称为普遍的调度 memory saving。
 
 ### 4.4 Fallback, not the active mechanism
 
@@ -240,7 +268,9 @@ D1/D2 work、17 groups 和 ordinary-DRAM endpoints 下，当前链路是：
 fair sequential S0        48.238 s
 strong whole-group S1     32.703 s
 input-only causal probe   31.096 s
-bidirectional D3          28.885 s
+historical v1 segmented   28.885 s
+v3 route-major control    28.514442098 s
+v3 route-aware plan       28.147194647 s
 ```
 
 这条链同时报告 CPU staging、H2D/D2H、GPU compute、collective、pipeline waits、peak HBM
@@ -253,8 +283,9 @@ direct-old-K/V M1 pooling。
 
 1. fair sequential capacity groups；
 2. strong action-oblivious whole-group pipeline；
-3. bidirectionally segmented D3；
-4. same-boundary all-exact E0（尚未执行）。
+3. fixed-order bidirectionally segmented D3；
+4. route-aware ResidencyPlan；
+5. same-boundary all-exact E0（尚未执行）。
 
 Isolation-track variants 共享 source-byte multiset 和 `WorkManifest`。Co-design variants 记录
 不同的 action/owner/source bytes，并在同一新 revision 下重跑 baselines。所有 speedup 只在
@@ -288,7 +319,8 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 
 ## 7. 当前实现与正式化缺口
 
-当前两卡 adapter、M1 store 和双向流水已经存在。它们依赖的上游事实是：
+当前两卡 adapter、M1 store、独立 route-specific segmentation、stable interleave、
+plan/stack hash 和双向流水已经存在。它们依赖的上游事实是：
 
 - immutable H12 `ActionPlan` 及其 hash；
 - deterministic owner/embedding rules；
@@ -299,12 +331,13 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 - D2 private-target、coverage、lineage、commit/abort semantics；
 - real-history source extents 和现有 D1 exact/compiled operators。
 
-正式 isolation evaluation 仍可能需要：
+正式 isolation evaluation 仍需要：
 
 - 一个 normalized、capacity-independent 的 D3-facing constraint schema；
 - owner/operator/program/membership/collective/layout/transaction 的完整序列化；
 - 对当前 runtime 的 record-coverage/parity 检查；
-- stable content hash，供所有 D3 variants 共同绑定。
+- held-out calibration/evaluation boundary 或第二个 action/capacity mix；
+- same-boundary all-exact E0 与 transaction closure。
 
 此外，正式 evaluation 不能依赖：
 
@@ -317,7 +350,8 @@ unavoidable old-K/V input lower bound 已慢于 same-boundary exact，继续调 
 
 这些正式工件没有阻塞 M0/M1 mechanism discovery。当前 artifact 记录
 `scientific_result=false`、`formal_design3=false`、`stack_revision`、per-rank capacity ledger
-和 timer components。当前机制已经清楚到可以进入 E0 与最小资格验证；通过后才决定最终
+和 timer components。当前 plan/profile 自身已有 stable content hash，但它不是正式 D2
+constraint exporter。当前机制已经清楚到可以进入 E0 与最小资格验证；通过后才决定最终
 exporter/interface，并在 `docs/eval_protocol.md` 冻结正式 family。
 
 ## 8. 实施顺序
@@ -326,9 +360,12 @@ exporter/interface，并在 `docs/eval_protocol.md` 冻结正式 family。
 2. 已构造 QK M1 ordinary-DRAM source/target 和真实物理 oversubscription；
 3. 已完成 fair S0 与 strong S1；
 4. 已由 profile 构造并验证 bidirectionally segmented D3；
-5. 下一步完成 same-boundary E0 和最小 capacity/action/replication qualification；
-6. 若通过，再补 normalized exporter、transaction、formal protocol 和扩展矩阵；
-7. GPU0/GPU1 的 E0 结论清楚前不跑 3/4 GPU。
+5. 已实现 route-aware ResidencyPlan，并在同一 exact stack/hash 上完成 route-major 与
+   selected-order 配对、full byte parity 和 capacity preflight；
+6. 下一步完成 same-boundary E0、held-out qualification、正式重复和最小
+   capacity/action-mix qualification；
+7. 若通过，再补 normalized exporter、transaction、formal protocol 和扩展矩阵；
+8. GPU0/GPU1 的 E0 结论清楚前不跑 3/4 GPU。
 
 ## 9. 更远期反馈层
 

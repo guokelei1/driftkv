@@ -45,7 +45,7 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 |---|---|---|---|
 | D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | bounded hierarchical `ResidencyPlan`; final interface open | real QK M1 boundary, fair S0, strong S1, and a bidirectionally segmented I/O candidate are complete in development; E0, formal protocol, and replication remain open |
+| D3 | How should an out-of-core two-GPU stack move and execute K/V? | hashed, rate-matched `ResidencyPlan`; final interface open | real QK M1 boundary, fair S0, strong S1, full-group GPU staging, independent route-specific I/C/O granularity, same-source joint profiles, stable route interleaving, exact-stack paired execution, and byte parity are complete in development; E0, held-out qualification, formal repeats, action/capacity mixes, transaction closure, and a formal protocol remain open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -67,7 +67,8 @@ ResidencyPlan-only ablation.
   correctness, normalized-capsule DRAM results, and hot-HBM D1 results cannot be renamed as D3
   evidence.
 - The QK M1 training, D1/D2 snapshot/characterizer, 144-GiB old-store materialization, fair S0,
-  strong S1, and segmented-I/O D3 runs are real development executions. They remain
+  strong S1, fixed segmented-I/O, and route-aware ResidencyPlan runs are real development
+  executions. They remain
   `scientific_result=false` and are mechanism-discovery evidence, not paper results.
 - The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
   current EvoKV manuscript or design source of truth.
@@ -97,9 +98,11 @@ The active implementation uses GPU0/GPU1 only:
 4. retain its 410-exact/1,638-compiled D1 snapshot, D2 characterizer, complete 144-GiB old store,
    nine-group group-128 S0, and S1-paired 17-group group-64 S0;
 5. retain the completed same-revision group-64 strong S1 and its wait/bubble profile;
-6. retain the first isolated D3 candidate: microbatch-level ping-pong on both
-   pageable→pinned→HBM input and HBM→pinned→pageable output;
-7. add same-boundary all-exact E0, then freeze or revise the mechanism before formal evaluation.
+6. retain the fixed-order segmented-I/O candidate as the causal predecessor;
+7. use the implemented planner to bind route-specific I/C/O granularity, capacity, and a stable
+   compiled/exact interleaving into one replayable plan;
+8. add same-boundary all-exact E0 plus held-out action/capacity sensitivity before formal
+   evaluation.
 
 A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
 paper-evidence tasks, not prerequisites for the first benchmark. Within one isolation revision,
@@ -137,13 +140,32 @@ the fair sequential S0: 48.238 seconds, complete coverage, and 20.146-GiB peak a
 Strong group-64 S1 overlaps whole-group prefetch, execution, and drain with two bounded slots. It
 finishes in 32.703 seconds, a 1.475x speedup over fair S0, but still exposes 6.20--6.79 seconds of
 input-boundary wait. Segmenting only the input cuts that wait to 0.24--0.28 seconds yet moves the
-bottleneck to output credits and reaches only 31.096 seconds. The current D3 candidate therefore
+bottleneck to output credits and reaches only 31.096 seconds. The historical v1 precursor
 segments both directions: within each capacity group, pinned input components overlap CPU packing
 with H2D, while pinned output components overlap D2H with ordinary-DRAM publication. It completes
 in 28.885 seconds, 1.133x faster than strong S1 and 1.670x faster than fair S0. Both 77.3-GB/rank
 targets are byte-identical to S1, and peak allocated/reserved HBM remains about
 29.27/39.42 GiB. These are development results under
-`evokv_design3_m1_qk_segmented_io_d3_development_v1`, not a frozen paper protocol.
+`evokv_design3_m1_qk_segmented_io_d3_development_v1`, not the current order-only control or a
+frozen paper protocol.
+
+The current planner independently represents per-route input, compute, and output granularity
+around full-group GPU staging. It accepts only jointly measured same-source profiles, uses
+max-rank stage service, discrete tail scaling, and the actual one-lookahead/one-drain recurrence.
+Small stable-interleaving spaces are exhaustive; large spaces use Pareto-beam DP. A
+global-min-anchored 3% resource tie chooses among near-equal predictions. The embedded-profile
+plan binds code/compiler/program, Torch/CUDA, GPU UUID/PCI identity, store tier, groups,
+checkpoints, HBM, and pinned capacity; both ranks preflight it.
+
+Under one exact stack/hash, route-major `(8,8,8)` takes 28.514442098 seconds and selected order
+`[13,0..11,14,12,15,16]` takes 28.147194647 seconds: 1.013047x, or 1.2879% lower wall time. The
+selected result is 1.16186x over S1 and 1.71379x over fair S0; its 29.244944224-second prediction
+is 3.90% high. Both 77,309,939,712-byte/rank targets are byte-identical to S1 with complete,
+exactly-once coverage. The selected triple remains `(8,8,8)` for both routes, so asymmetric
+granularity benefit is not established; input-16 and output-4 merely did not improve their
+observed points. Plan/profile construction is outside the timer. These results use
+`evokv_design3_m1_qk_route_aware_residency_d3_development_v3` and remain
+`scientific_result=false`, `formal_design3=false`.
 
 ## Removed material
 

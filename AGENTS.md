@@ -85,22 +85,32 @@
   a new D2 protocol, 1/2/4-GPU same-boundary results, publication/commit/reclaim timing, and a
   segmented consumer remain open. Synthetic lookup contention is supporting characterization,
   not a serving trace or D2 gate.
-- D3 now has a working non-scientific M0 foundation, not a frozen protocol or paper result. The
-  H12/W2 WorkManifest contains 682 records in 26 logical-payload-bounded groups. GPU0/GPU1 S0 moves
-  pageable DRAM through one reusable pinned slot, executes the real compiled/exact D2 paths, and
-  writes private segmented targets back to pageable DRAM. The full pass covers all 682 records and
-  30.64 GB of output exactly once; its latest 17.73-second single-pass profile records
-  7.02–7.79 seconds of D2 execution including embedding collectives/rank wait and
-  9.93–10.01 seconds of host/device movement and writeback across the two ranks. Lookup
-  collectives account for 0.72–1.64 seconds of the D2 execution measurement.
-  These numbers are mechanism diagnostics only. The immediate task is a same-revision S1 double
-  buffer and the larger real QK M1. A normalized
-  exporter, atomic publication/failure closure, and 1/2/4-GPU matrix are later formalization tasks,
-  not mechanism-discovery prerequisites. Within one isolation revision, baselines share the work
-  and source-byte snapshot; co-design revisions report changed actions/owners/source bytes and
-  rerun baselines. SSD/database ingress, serving traces, host-DRAM oversubscription, and online
-  hotness are out of scope. H12 capacity caps are development emulation because H12 fits two A40s.
-  The preferred physical route audits a larger real-history QK workload.
+- D3 has a real two-A40 QK M1 out-of-core development chain, not a frozen protocol or paper result.
+  Its 24L/H1536 model has a 16.364-GiB global FP32 embedding, and its fixed 2,048-record D1/D2
+  snapshot contains 1,638 compiled and 410 exact actions. Complete old plus private target K/V is
+  288 GiB in ordinary DRAM. On the shared 17-group boundary, fair S0 is 48.238 seconds, strong S1
+  is 32.703 seconds, and the historical v1 fixed-order bidirectional runner is 28.885 seconds.
+  The active development `ResidencyPlan` independently controls per-route input, compute, and
+  output granularity over full-group GPU staging. It admits only compiled/exact profiles measured
+  jointly from the same source, uses max-rank stage times with discrete tail scaling, and optimizes
+  a stable route interleave under the runtime's one-group-input-lookahead/one-drain-credit flow
+  model. Small order spaces are exhaustive; larger spaces use Pareto-beam dynamic programming. A
+  global-min-anchored 3% tie prefers lower HBM, pinned memory, and segmentation cost. The plan
+  embeds its profiles and binds compiler/program/source code, Torch/CUDA, GPU UUID/PCI identity,
+  store tier, groups, and checkpoints; both ranks repeat HBM and pinned-capacity preflight.
+  Under one exact stack/hash, the route-major `(8,8,8)` control takes 28.514442098 seconds and the
+  selected stable order `[13,0..11,14,12,15,16]` takes 28.147194647 seconds: 1.013047x, or a
+  1.2879% wall-time reduction. The selected result is 1.16186x over S1 and 1.71379x over fair S0;
+  its 29.244944224-second prediction is 3.90% above observation. Both 77,309,939,712-byte rank
+  targets are byte-identical to S1 with complete, exactly-once coverage. The chosen granularity is
+  `(8,8,8)` for both routes, so route-asymmetric granularity benefit is not established. Compiled
+  input-16 and output-4 only failed to improve their observed development points. Plan/profile
+  construction is outside the timer. An adjacent identity-only revision observed 29.7169→28.0497
+  (5.61%), but it is a variability diagnostic, not a frozen benefit. All results remain
+  `scientific_result=false` and `formal_design3=false`; same-boundary E0, held-out qualification,
+  formal repeats, action/capacity mixes, transaction closure, and a frozen protocol remain open.
+  H12 is only a capacity-emulated semantic canary. SSD/database ingress, serving traces, host-DRAM
+  oversubscription, and online hotness remain out of scope.
 
 ## Code layout
 
@@ -140,6 +150,11 @@
   `scripts/build_evokv_design3_m0_work.py`, and
   `scripts/benchmark_evokv_design3_m0.py` are the active flexible D3 M0 manifest/grouping and
   GPU0/GPU1 pageable-DRAM S0 entry points. Their artifacts are development diagnostics.
+- `src/hstu_kvcache/migration/design3_residency.py`,
+  `scripts/plan_evokv_design3_residency.py`, and
+  `scripts/benchmark_evokv_design3_m1.py` implement the active hashed D3 planner and the real QK
+  M1 route-aware out-of-core runtime. Their current artifacts are non-scientific development
+  evidence.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

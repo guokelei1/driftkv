@@ -104,12 +104,24 @@ ordinary host DRAM committed source
   → validation and atomic target-manifest publication
 ```
 
-D3 initially owns per-rank admission, legal bin/pool slices, micro-wave packing,
-prefetch/execute/writeback order, pinned-buffer credits, backpressure, and NUMA/PCIe staging
-placement. This narrow path is the isolation track. If measurement shows that owner placement,
-action granularity, pool construction, or target layout must change to exploit out-of-core
-execution, the project may explore a global cross-layer revision and assign final ownership only
-after the mechanism is understood.
+D3 owns per-rank admission, legal bin/pool slices, independent route-specific
+input/compute/output granularity, prefetch/execute/writeback order, pinned-buffer credits,
+backpressure, and NUMA/PCIe staging placement. Its current development runtime stages a complete
+capacity group on GPU, then executes D2 with an independently chosen compute batch and drains the
+result with an independently chosen output segment. The planner accepts only compiled and exact
+profiles obtained jointly from the same source execution, takes each stage's maximum across ranks,
+and applies discrete segment-count scaling to tail groups. It then searches stable interleavings
+under the runtime's one-group input lookahead and one-drain-credit recurrence: exhaustive search
+for small spaces and Pareto-beam dynamic programming for large spaces. A global-min-anchored 3%
+tie prefers lower HBM, pinned memory, and segment count.
+
+The replayable plan embeds its selected profiles and binds the group plan, checkpoints,
+compiler/program, relevant source code, Torch/CUDA versions, GPU UUID/PCI identities, store tier,
+capacity limits, and launch order. Both ranks independently repeat the HBM and pinned-memory
+preflight before creating the target and issuing collectives. This narrow path is the isolation
+track. If measurement shows that owner placement, action granularity, pool construction, or target
+layout must change to exploit out-of-core execution, the project may explore a global cross-layer
+revision and assign final ownership only after the mechanism is understood.
 
 ## 2. Scope
 
@@ -147,7 +159,7 @@ fit on one GPU.
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | hierarchical out-of-core mechanism discovered; development only | M0 path; real two-rank QK M1 boundary; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V; fair group-64 S0; strong S1; bidirectionally segmented input/output pipeline; full-payload parity | same-boundary E0, sensitivity/replication, final interface and transaction boundary, frozen protocol, and paper evidence |
+| D3 | route-aware out-of-core mechanism implemented; development only | M0 path; real two-rank QK M1 boundary; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V; fair group-64 S0; strong S1; full-group GPU staging with independent route I/C/O granularity; hashed same-source-profile `ResidencyPlan`; stable-route interleaving; exact-stack paired control/candidate and full-payload parity | same-boundary E0, held-out qualification, formal repeats, action/capacity sensitivity, final transaction boundary, frozen protocol, and paper evidence |
 
 D3 development uses the current D1 plan and implemented D2 runtime. M0 uses a minimal two-rank
 `WorkManifest`; the QK M1 revision binds its action snapshot, owner map, group plan, checkpoints,
@@ -208,16 +220,41 @@ input-boundary wait. A first D3 probe segments only pageable packing and H2D ins
 group. It lowers those waits to 0.275/0.243 seconds, but the faster producer exposes
 4.865/3.706 seconds of output-credit wait, so makespan reaches only 31.096 seconds.
 
-The current D3 candidate is therefore a bounded hierarchical pipeline rather than another
-whole-group buffer. It alternates two pinned input components so CPU packing for segment \(j+1\)
-overlaps H2D for \(j\), and alternates the existing two pinned output components so D2H for
-segment \(j+1\) overlaps ordinary-DRAM publication for \(j\). D1 actions, D2 owner/collective
-order, capacity groups, target layout, and one-drain backpressure are unchanged. At group-64 and
-microbatch-8 it completes in 28.885 seconds: 1.133x over strong S1 and 1.670x over fair S0.
-Output-credit wait falls to 1.735/0.738 seconds. Peak allocated HBM is 29.27/29.09 GiB and peak
-reserved HBM is 39.42 GiB on both ranks. A microbatch-16 check is slower at 29.337 seconds and
-raises reserved HBM to 41.54 GiB, so microbatch-8 is the current development point rather than an
-open-ended sweep. Both complete 77.3-GB/rank D3 targets are byte-identical to S1.
+The historical v1 D3 candidate is a bounded hierarchical pipeline rather than another whole-group
+buffer.
+It alternates two pinned input components so CPU packing for segment \(j+1\) overlaps H2D for
+\(j\), and alternates two pinned output components so D2H for segment \(j+1\) overlaps
+ordinary-DRAM publication for \(j\). D1 actions, D2 owner membership, capacity cuts, target layout,
+and one-drain backpressure are unchanged. At group-64 and globally fixed microbatch-8 it completes
+in 28.885 seconds: 1.133x over strong S1 and 1.670x over fair S0. A coupled microbatch-16 check is
+slower at 29.337 seconds and raises reserved HBM from 39.42 to 41.54 GiB. Because this result uses
+the older v1 runner, it is historical mechanism evidence and cannot be used as an order-only
+control for the current planner.
+
+The current development mechanism turns this fixed pipeline into a route-aware `ResidencyPlan`.
+Input H2D segmentation, D2 compute/collective batching, and output D2H/publication segmentation are
+physically independent for each route, while each complete capacity group is still staged on GPU
+before its D2 execution. The planner admits only compiled/exact profiles measured jointly in the
+same no-plan run, takes max-rank service times, and scales tail groups by discrete segment counts.
+It evaluates the actual one-lookahead/one-drain recurrence, searches small stable-interleaving
+spaces exhaustively and larger ones with Pareto-beam dynamic programming, and uses a
+global-min-anchored 3% resource tie.
+
+The selected plan keeps `(8,8,8)` for both routes but launches
+`[13,0,1,2,3,4,5,6,7,8,9,10,11,14,12,15,16]`. On one exact stack and identity hash, the route-major
+control takes 28.514442098 seconds and the selected order takes 28.147194647 seconds. This is a
+1.013047x speedup, or a 1.2879% wall-time reduction, attributable to the selected order within
+that development pair. The selected run is 1.16186x over strong S1 and 1.71379x over fair S0.
+Its analytic prediction is 29.244944224 seconds, 3.90% above observation. Both
+77,309,939,712-byte rank targets are byte-identical to S1 with complete, exactly-once coverage.
+Profile and plan construction are outside the runtime timer.
+
+The selected triple is symmetric, so the implementation supports route-specific granularity but
+this point does not establish a route-asymmetric granularity benefit. Compiled input-16 and
+output-4 did not improve their observed development points; they do not reject those choices
+generally. An adjacent identity-only revision observed 29.7169→28.0497 (5.61%), but it is retained
+only as a variability and mechanism-development diagnostic, not a frozen benefit. These runtime
+executions share one trained seed and action/capacity mix.
 
 The first large compiled group also exposed an implementation-scale boundary hidden by the small
 benchmarks: 128 records per rank at 480 retained tokens create 61,440-token extents whose
@@ -354,19 +391,32 @@ boundary are clear.
 
 ### 5.3 `ResidencyPlan`
 
-D3 will fix:
+The development `ResidencyPlan` now fixes:
 
 - legal bin/pool slices;
 - per-rank admission;
-- micro-wave packing;
-- prefetch/execute/writeback order;
+- route-specific input-segment, compute-batch, and output-segment sizes;
+- full-capacity-group GPU staging around independently batched D2 compute;
+- a stable interleaving of route-internal group sequences;
+- one-lookahead/one-drain prefetch/execute/writeback order;
 - input/output pinned-buffer credits;
-- backpressure and NUMA/PCIe staging placement.
+- backpressure;
+- embedded same-source route profiles and their hashes;
+- physical HBM totals, pinned-memory limits, and a global-min-anchored 3% resource tie;
+- compiler/program, relevant source code, Torch/CUDA, GPU UUID/PCI, store-tier, group, checkpoint,
+  capacity, and selected-plan identities.
+
+Stage service is the maximum across ranks and tail work is scaled by integer segment counts. Small
+stable-interleaving spaces are searched exhaustively; larger spaces use Pareto-beam dynamic
+programming. Both ranks repeat capacity and identity preflight before target creation and D2
+collectives. Profile and plan construction are recorded but remain outside the current runtime
+timer.
 
 Within one isolation-track `stack_revision`, sequential grouping, action-oblivious double
 buffering, and the proposed scheduler consume the same `WorkManifest`. A co-design track may
 regenerate actions, owners, pools, or layout before the run; its corresponding baselines use that
-same regenerated stack.
+same regenerated stack. NUMA placement, atomic publication, and a normalized capacity-independent
+D2 constraint artifact remain outside the current development plan.
 
 ## 6. Evaluation rules
 
@@ -437,12 +487,18 @@ The benchmark-first route has reached a real physical M1 mechanism boundary:
 4. same-revision strong S1 completes in 32.703 seconds and identifies residual input-boundary
    stalls;
 5. input-only segmentation removes those stalls but exposes serialized output drain;
-6. the bidirectionally segmented D3 candidate overlaps packing/H2D and D2H/publication within each
-   capacity group, completing in 28.885 seconds with byte-identical full outputs;
-7. next, add same-boundary all-exact E0 and the smallest sensitivity/replication set needed to
-   decide whether this mechanism is the final isolation design;
-8. only then normalize interfaces, close transaction semantics, freeze a D3 protocol, and expand
-   beyond GPU0/GPU1.
+6. the historical v1 bidirectionally segmented fixed-order candidate completes in 28.885 seconds,
+   but its runner differs and it is not the current order-only control;
+7. under the current v3 runner and one exact stack/hash, route-major `(8,8,8)` completes in
+   28.514442098 seconds and the selected stable order completes in 28.147194647 seconds
+   (1.013047x; 1.2879% wall reduction), with full byte parity and complete exactly-once coverage;
+8. the selected point retains `(8,8,8)` on both routes; input-16 and output-4 did not improve their
+   observed probes, but route-asymmetric granularity benefit and general rejection of alternatives
+   are not established;
+9. next, add same-boundary all-exact E0, held-out qualification, formal repeats, and the smallest
+   action/capacity sensitivity needed to test whether the planner selects meaningfully different
+   plans;
+10. only then close transaction semantics, freeze a D3 protocol, and expand beyond GPU0/GPU1.
 
 The capacity coordinate is
 
@@ -504,6 +560,10 @@ Do not claim that:
 - synthetic lookup contention is a serving trace or SLO result;
 - normalized-capsule DRAM, destination-v4 correctness, or hot-HBM Stage 4.5 is D3 evidence;
 - the QK M1 S0/S1/D3 development profiles are a frozen protocol or paper evidence;
+- the historical 28.885-second v1 result is an order-only control for the current runner;
+- the adjacent-revision 5.61% scheduler reduction is a frozen benefit or independent replication;
+- the selected plan demonstrates route-asymmetric granularity benefit;
+- the current primary timer includes profile acquisition or plan construction;
 - its 52.8% rank-0 movement fraction is entirely PCIe time rather than the declared combination of
   ordinary-memory staging, H2D, D2H, and publication;
 - D3 has a final/paper-ready implementation, frozen protocol, replicated performance result, or
