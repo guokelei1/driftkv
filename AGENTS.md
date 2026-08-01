@@ -3,6 +3,8 @@
 ## Environment
 
 - 4x NVIDIA A40 (46GB each), CUDA 13.1, torch 2.12.1
+- Current experiment availability is restricted to GPU0/GPU1. Do not schedule work on GPU2/GPU3
+  or launch four-rank jobs until the user explicitly restores their availability.
 - Python 3.13.12, numpy/pandas/scipy installed
 
 ## Commands
@@ -12,22 +14,96 @@
 - Lint: `ruff check src tests scripts`
 - Type check: `mypy src` only when explicitly requested; it is not installed by default
 
+## Long-running experiment handoff
+
+- Before starting any experiment expected to take five minutes or longer, first create and validate
+  a user-runnable script. Do not start that experiment unless the user explicitly asks the agent to
+  run it.
+- Treat one handoff as one executable experiment round, not as one isolated command. Bundle all
+  currently ready and mutually compatible training, baseline, evaluation, and validation jobs into
+  one orchestration script, run them sequentially in dependency order, and avoid making the user
+  invoke each job separately.
+- The handoff script must freeze or record its configuration, perform relevant resource
+  preflights, write logs and machine-readable results to explicit paths, fail without overwriting a
+  valid result, and support safe resume or an unambiguous fresh run when practical.
+- Reuse valid prerequisites within the round. After each job has produced and passed validation of
+  its durable artifacts, release its transient GPU state, worker processes, shared-memory or mmap
+  stores, and other regenerable large intermediates before starting the next job. Preserve
+  only checkpoints likely to be reused, plus compact programs, plans, ledgers, logs,
+  configurations, and result summaries needed for analysis or resume. Never retain full K/V
+  payloads across stages; discard large intermediates that can be reconstructed from retained
+  checkpoints and bindings.
+- Give the user the exact command, estimated wall time and resource use, output paths, and the
+  artifacts to return for analysis. End the turn and let the user run it; do not repeatedly poll a
+  long experiment.
+- Stop a round at a real result-dependent boundary: if later code, configuration, or experiment
+  choice depends on interpreting this round's measurements, do not guess and append it. Analyze the
+  returned artifacts, make the next implementation changes, and then provide the next round's
+  orchestration script.
+- The agent may directly run short canaries, unit tests, formatting checks, and experiments expected
+  to finish in under five minutes. If a supposedly short run reveals that the remaining work will
+  exceed five minutes, preserve the completed state and hand off the remainder through a script.
+
 ## Sources of truth
 
 - `docs/08_core_insights_and_roadmap.md` is the authoritative research state and roadmap.
 - `docs/eval_protocol.md` defines which experimental results are valid and comparable.
+- `docs/10_paper_experiment_blueprint.md` defines the planned paper matrix, resource envelope,
+  baseline-first ledger, and claim/figure map; it does not create evidence.
+- `docs/11_benchmark_qualification.md` registers checks required before protocol freeze, formal
+  repeats, or paper promotion; it is not a current design/implementation blocker.
 - `docs/future_design/DESIGN2_FINAL_PLAN.md` defines the D2 mechanism and D1→D2→D3 interface.
 - `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md` is the only live D2 status ledger.
 - `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the flexible D3 problem/direction entry; it
   is not a frozen interface, protocol, or result.
-- `docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md` is the live two-card D3
-  foundation, baseline, candidate-search, and backtracking plan; it is not a protocol or result.
+- `docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md` preserves the historical
+  two-card M0/M1 ledger and defines the flexible HET/XP/rolling successor foundation,
+  baseline-first search, and backtracking path; it is not a protocol or result.
 - When documents conflict, follow the roadmap and evaluation protocol. Do not recover claims from
   deleted early documents or old result paths.
 
 ## Current research route
 
 - The object is model-version-stale HSTU prefix K/V under streaming training.
+- The successor integrated ActionPlan uses `compiled|exact`. Progressive residual replay remains a
+  D1-only supporting extension and is not a D2/D3 headline route.
+- `X-QK-HET` is the primary D1→D2→D3 workload and preserves natural valid extents;
+  `X-QK-HOM` reuses the same records and valid histories in a masked 512-slot physical layout.
+  Capacity and grouping use valid K/V bytes, not padded records.
+- XP fixes 2,859,835 base-period semantic rows plus one padding row in a
+  2,859,836×4,096 physical FP32 table (43.638 GiB), owner-side
+  E4096→H1536 projection and a 24L/H1536 core. Freeze the hardware HBM cap first; qualification
+  validates this geometry without consulting EvoKV performance. Only optimizer-updated rows count
+  toward forced sharding: the request union across both formal edges, all headline manifests,
+  all-exact, and every frozen fixed-action exact/append/fallback path must be active and hashed.
+  Active embedding bytes plus dense/projection bytes must exceed the single-card allocatable
+  budget. The common-upstream base builder may use later-role users' base-period histories, but
+  post-base roles remain user-disjoint.
+- Foundation Review 0 is complete as development evidence. The full QK scan freezes disjoint
+  roles and a 65,536-record HET/HOM universe; natural target length is median 153, p95 404, and
+  only 2.1835% saturated. Full HET old/target valid K/V is 1.498/1.801 TB, with nested
+  36/72/144/288/576/720-GiB cohorts. The two-rank physical E4096 owner-projection canary and
+  HET/HOM rolling transaction canaries pass. The all-exact request union is 929,554 rows, but the
+  optimizer-active forced-sharding gate remains pending and requires at least 2,840,105 active
+  semantic rows. These artifacts are `scientific_result=false`; the rolling lifecycle canary does
+  not yet execute D1/D2 numerics.
+- The selected two-rank XP quality foundation is
+  `quality_chain_stream_aligned_train16384_round1`: one warm-up edge followed by three ordinary
+  stream edges, 16,384 training users, 4,096 disjoint qualification users, one epoch/update,
+  dense/projection LR 1e-5, embedding LR 1e-4, 999 frozen negatives, and a common FP16-storage /
+  FP32-consumption cache endpoint. Exact-over-Reuse CE gaps are 0.01846/0.01068/0.01340 with all
+  record-cluster 95% intervals positive. This is development-selected, not formal replication.
+  `selected_d1_bridge_round1` reproduces those endpoints and observes compiled gap recovery of
+  63.9%/55.3%/70.0% at 0.162x/0.152x/0.146x Exact maintenance components; approximately 20%
+  Exact mixed repair recovers 68.9%/62.3%/74.3%, while naive mixed component bounds remain
+  0.764x/0.781x/0.731x Exact. This is D1→D2 causal development evidence, not end-to-end D2 timing.
+  Keep the selected four checkpoints and compact programs/plans/results; the two rejected
+  8,192-user checkpoint trees have been deleted and no full K/V payload is retained.
+- D3 keeps one live cache plus bounded group shadow/staging and executes
+  writeback→validation→group commit→old-group reclaim. Complete old+private-target COW remains a
+  historical M1 endpoint, not the formal capacity definition.
+- The successor runner is 1/2/4-rank-capable. XP 2/4-rank points are headline; X2/R-KR provide
+  1-rank sanity. Qualification blocks only formal promotion, not foundation or mechanism work.
 - The active method is version-cohort tiered cache migration:
   - fast tier: fit a shared `fresh - cheap` K/V residual and compile it into one affine projection
     over cached old `Norm(x)`;
@@ -42,16 +118,16 @@
   over KuaiRand, QB, and QK. The compiled operator scales in kernel cost and K/V fidelity, but the
   strict task-quality gate passes 6/9 cells because some full-maintenance endpoints are near zero
   or negative. Task quality is not an admission oracle: every stale cohort receives unconditional
-  compiled repair, then progressive residual replay and exact recomputation under budget. Version
-  cohorts are used for compilation, not to predict whether reuse is safe. This frozen D1 determines
-  what is compiled or exactly recomputed and exports an immutable action plan. Active D2 determines
-  how that fixed work moves and executes: `(suffix, retained)` extent compilation, owner-local
-  retained repair, row-sharded exact/append, segmented suffix-only destination, merged physical
-  exact pools, collective dependencies, and atomic publication. The current D2→D3 paper
-  decomposition suggests a global, capacity-independent WavePlan constraint view, but this
-  normalized artifact is neither implemented nor a prerequisite for the first D3 benchmark. D3
-  now starts benchmark-first on GPU0/GPU1 with a minimal H12/W2 `WorkManifest`, ordinary host
-  DRAM, bounded staging, and HBM. Isolation-track runs keep one D1/D2 snapshot fixed. Mechanism
+  compiled repair, with exact recomputation under budget in the integrated path. Progressive
+  residual replay remains a separately evaluated D1 extension. Version cohorts are used for
+  compilation, not to predict whether reuse is safe. This frozen D1 determines what is compiled or
+  exactly recomputed and exports an immutable action plan. Active D2 determines how that fixed work
+  moves and executes: `(suffix, retained)` extent compilation, owner-local retained repair,
+  row-sharded exact/append, segmented suffix-only destination, merged physical exact pools,
+  collective dependencies, and group-valid output. The current D2→D3 paper decomposition uses a
+  global, capacity-independent WavePlan constraint view. The historical GPU0/GPU1 H12/QK paths
+  remain development ledgers; the successor builds HET/HOM, XP, rolling groups, and a
+  rank-parameterized runner. Isolation-track runs keep one D1/D2 snapshot fixed. Mechanism
   discovery may also create a globally replanned D1/D2/D3 `stack_revision`; it must rerun its own
   baselines rather than compare against an older stack. Complex organic mixed versions remain a
   later feedback layer.
@@ -81,11 +157,13 @@
   action-count statistic, while the full mixed wave still performs `347,062/934,917 = 37.1%` of
   all-exact lookup tokens. A three-A40 W3 development chain shows naive mixed losing to exact and
   the segmented/shape-aware/merged-exact lowering producing a positive full682 point; full payload
-  correctness also passes. These are `scientific_result=false`, not paper evidence. Formal W4,
-  a new D2 protocol, 1/2/4-GPU same-boundary results, publication/commit/reclaim timing, and a
-  segmented consumer remain open. Synthetic lookup contention is supporting characterization,
-  not a serving trace or D2 gate.
-- D3 has a real two-A40 QK M1 out-of-core development chain, not a frozen protocol or paper result.
+  correctness also passes. These are `scientific_result=false`, not paper evidence. W4 is only
+  the unfinished gate of the old family. The successor still needs XP/HET/HOM, a new D2 protocol,
+  capacity-admitted 1/2/4-rank results, group validation/commit/reclaim timing, and a segmented
+  consumer. Synthetic lookup contention is supporting characterization, not a serving trace or
+  D2 gate.
+- D3 has a real but historical two-A40 fixed-512 QK M1 out-of-core development chain, not a frozen
+  protocol or paper result.
   Its 24L/H1536 model has a 16.364-GiB global FP32 embedding, and its fixed 2,048-record D1/D2
   snapshot contains 1,638 compiled and 410 exact actions. Complete old plus private target K/V is
   288 GiB in ordinary DRAM. On the shared 17-group boundary, fair S0 is 48.238 seconds, strong S1
@@ -113,7 +191,8 @@
   sequential D1+D2 rerun is 49.752669533 seconds. D1-only and D2 request the same 262,336 global
   lookup tokens but issue 852 versus 387 collectives/rank. These are contribution diagnostics,
   not a placement-oblivious owner-compute ablation or formal waterfall. Independently tuned E0,
-  held-out qualification, formal repeats, action/capacity mixes, transaction closure, and a
+  held-out qualification, formal repeats, HET/HOM and XP foundations, strongest generic
+  baselines, rolling group lifecycle, segmented consumer, 1/2/4-rank successor runner, and a
   frozen protocol remain open.
   H12 is only a capacity-emulated semantic canary. SSD/database ingress, serving traces, host-DRAM
   oversubscription, and online hotness remain out of scope.
@@ -161,6 +240,11 @@
   `scripts/benchmark_evokv_design3_m1.py` implement the active hashed D3 planner and the real QK
   M1 route-aware out-of-core runtime. Their current artifacts are non-scientific development
   evidence.
+- `src/hstu_kvcache/migration/foundation_{workload,projection,lifecycle}.py` and the matching
+  `scripts/*evokv_foundation*.py` entry points implement the successor HET/HOM builder, physical
+  owner-projection canary, and rolling transaction canary. The workload is real; the lifecycle
+  payload is deterministic and does not yet execute D1/D2 numerics. All current artifacts are
+  non-scientific Foundation Review evidence.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.
@@ -171,6 +255,15 @@
 - Train only on targets from the current stream date and use engaged items as evaluation positives.
 - Fit the item vocabulary on the base period only.
 - Respect sequence lengths and zero padding in hidden-state and K/V computation.
+- For HET workloads, preserve valid old/retained/evicted/append/target extents end to end; HET
+  capacity/throughput axes exclude padding. Physical admission always uses actual allocated bytes,
+  including masked padding in the same-record HOM control.
+- Formal out-of-core capacity is single-version valid K/V bytes plus bounded group shadow/staging,
+  not complete old plus complete private target.
+- Every rolling group carries explicit old/new version and lineage state. Validate before commit,
+  reclaim only after commit, and make resume idempotent.
+- QK HET is a trace-grounded heterogeneous cache snapshot under one fixed model edge; its
+  per-user ordinal boundaries are not a cross-user co-temporal or calendar-time trace.
 - Evaluate stale serving as an old-version prefix cache plus the latest token under the current
   model; fresh is a complete current-model forward on the same history.
 - Measure GPU cost; never substitute a hand-written cost constant.

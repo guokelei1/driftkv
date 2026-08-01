@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-30. This document replaces earlier project-wide problem
+> Status: authoritative as of 2026-07-31. This document replaces earlier project-wide problem
 > statements, contribution layouts, and execution roadmaps. Experimental semantics remain
 > subordinate to [eval_protocol.md](eval_protocol.md).
 
@@ -27,13 +27,13 @@ The paper currently organizes one task into three successive system layers:
 
 ```text
 D1: semantic ActionPlan
-    decide what must be translated, progressively repaired, or exactly recomputed
+    primary integrated path decides compiled migration or exact recomputation
 
 D2: distributed WavePlan constraints
     decide owner, operator, physical compatibility, communication dependencies, and output layout
 
 D3: capacity-bounded ResidencyPlan
-    decide legal capacity cuts, packing, and ordinary-DRAM↔GPU launch order
+    decide legal capacity cuts, ordinary-DRAM↔GPU launch order, group commit, and reclaim
 ```
 
 This is the current paper decomposition, not a permanent implementation firewall. For an isolated
@@ -47,15 +47,18 @@ D1 and D2 evidence is not retroactively changed.
 > Can a version cohort share a migration program that closes a useful portion of the stale-to-fresh
 > K/V gap at materially lower GPU cost than exact history replay?
 
-D1 emits a per-record `ActionPlan` that is immutable within one execution/revision. The active
-action library is:
+D1 emits a per-record `ActionPlan` that is immutable within one execution/revision. The
+paper-core integrated action domain is:
 
 - **compiled repair:** fit the shared `fresh - cheap` residual for a source/target version cohort
   and compile it into one affine transform over cached source-version state; the selected hot path
   composes this transform directly over existing old K/V;
-- **progressive repair:** replay a current-model prefix and transport the boundary residual to
-  deeper current `Norm + Wk/Wv` projections when that declared state is available;
 - **exact:** recompute current-model K/V and reset approximation depth.
+
+The already implemented **progressive residual repair** remains valid D1-only supporting evidence:
+it replays a current-model prefix and transports a boundary residual when its auxiliary state is
+available. It is not a primary D2/D3 route or headline end-to-end action. Adding it to a future
+full-stack runtime requires a separately versioned action/source contract and new baselines.
 
 Every stale cohort receives the declared repair. Version is a compilation, artifact, and batching
 key, not a claim that all records at an age are safe to reuse. Recommendation labels and realized
@@ -63,9 +66,9 @@ task gain never route caches.
 
 ### 1.2 D2 question: logical versus physical sparsity
 
-> In a row-sharded multi-GPU setting, can D1's fixed logical reduction survive embedding lookup,
-> padding, suffix append, collectives, destination movement, synchronization, and atomic
-> publication?
+> In a capacity-forced row-sharded multi-GPU setting, can D1's fixed logical reduction survive
+> embedding lookup, padding, suffix append, collectives, destination movement, synchronization,
+> and group-valid publication?
 
 The target D2 lowering is captured by global `WavePlan` constraints:
 
@@ -75,33 +78,33 @@ The target D2 lowering is captured by global `WavePlan` constraints:
 - semantically distinct but physically identical exact reasons retain provenance while sharing one
   execution pool;
 - retained and suffix output remain segmented instead of rewriting the retained prefix;
-- collective order, coverage, lineage, private target state, commit, abort, and reclaim are
+- collective order, coverage, lineage, group-valid output, commit, abort, and reclaim are
   explicit.
 
 D2 may choose owner placement, batching, physical pool construction, execution order within its
 dependency rules, and segmented layout. The current D2 design does not change
-`compiled|progressive|exact`. A later cross-layer revision may regenerate both the D1 plan and D2
+`compiled|exact`. A later cross-layer revision may regenerate both the D1 plan and D2
 lowering before a run; it is then a new stack rather than a D2-only ablation. The mechanisms are
 implemented in the current runtime, but their capacity-independent D3-facing constraint view has
 not yet been separately serialized and hashed.
 
 ### 1.3 D3 question: working set versus HBM capacity
 
-> When complete source plus complete private target K/V exceeds per-rank usable HBM, can the
-> current D1/D2 work execute from ordinary host DRAM without losing its gains to
+> When one live cache version exceeds per-rank usable HBM, can the current D1/D2 work execute from
+> ordinary host DRAM with bounded in-flight replacement state, without losing its gains to
 > capacity cuts, CPU staging, PCIe movement, collective stalls, or pipeline bubbles?
 
 D3 derives a separate `ResidencyPlan`:
 
 ```text
-ordinary host DRAM committed source
+ordinary host DRAM live versioned cache
   → bounded pinned input staging
   → H2D
   → D2-constrained GPU execution
   → D2H
   → bounded pinned output staging
-  → ordinary host DRAM private target
-  → validation and atomic target-manifest publication
+  → ordinary host DRAM group shadow/replacement extent
+  → validation → group commit → old-group reclaim
 ```
 
 D3 owns per-rank admission, legal bin/pool slices, independent route-specific
@@ -126,16 +129,17 @@ revision and assign final ownership only after the mechanism is understood.
 ## 2. Scope
 
 The primary object is model-version-stale HSTU prefix K/V produced by streaming training. The
-current system boundary begins after target-model checkpoint publication and ends when one complete
-target-version cache manifest becomes visible.
+current system boundary begins after target-model checkpoint publication and ends when every
+selected group has reached a consumer-readable target-version extent. During the wave, each group
+has an explicit old/new version and lineage; no global blue-green epoch switch is required.
 
 In scope:
 
 - HSTU models with pointwise unnormalized attention and first-class per-layer K/V;
-- model-version cohorts, compiled programs, progressive state where explicitly declared, and exact
-  replay;
+- model-version cohorts, compiled programs and exact replay in the integrated path; progressive
+  state only in the declared D1 supporting extension;
 - row-sharded embedding lookup and multi-GPU execution;
-- committed source state, private target state, validation, atomic publication, abort, and reclaim;
+- live group-version state, bounded replacement state, validation, group commit, abort, and reclaim;
 - ordinary host DRAM, bounded pinned staging, PCIe/NVLink/NCCL, and GPU HBM for D3.
 
 Out of scope for the current three designs:
@@ -149,17 +153,64 @@ Out of scope for the current three designs:
 - a dense HSTU trunk that itself requires tensor parallelism;
 - durable cross-host transactions.
 
-The current local model fits on one A40. D2's distributed problem comes from row-sharded embeddings,
-large cache state, strict copy-on-write, and communication—not from claiming the dense model cannot
-fit on one GPU.
+The existing X2 development model fits on one A40 and remains a mechanism/quality bridge. The
+paper-scale XP configuration fixes 2,859,835 base-period semantic item rows plus one padding row
+in a 2,859,836×4,096 physical FP32 table (43.638 GiB), an owner-side E4096→H1536 projection,
+and the 24L/H1536 core. Table plus
+dense/projection state is about 44.725 GiB and exceeds single-A40 Torch allocatable bytes before
+program/runtime state; qualification validates capacity,
+trainability, and 2/4-rank execution before any EvoKV timing rather than selecting geometry from
+performance. D2's formal distributed problem therefore comes from a capacity-forced placement
+rather than an asserted industrial convention. The capacity claim counts only embedding rows that
+received a real base-period optimizer update: the semantic-request union across both formal edges,
+all headline manifests, all-exact, and every frozen fixed-action exact/append/fallback path must be
+active and hashed, and
+active embedding bytes plus dense/projection bytes must already exceed the frozen single-card
+allocatable budget. XP uses a separately frozen 4-rank row-sharded sparse checkpoint builder with
+row-wise/offloaded optimizer state. This common-upstream \(\theta_0\) builder may consume
+base-period histories from later-role users but no update/final windows; post-base roles remain
+user-disjoint. Cold allocation cannot manufacture the boundary.
 
 ## 3. Current status
+
+Current execution availability (2026-08-01): development rounds are restricted to the GPU0/GPU1
+NVLink pair. Four-rank and GPU2/GPU3 experiments are deferred until the user explicitly restores
+those devices; this changes scheduling only, not the planned paper matrix.
 
 | Layer | State | What is closed | What remains |
 |---|---|---|---|
 | D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
-| D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness | D3-facing constraint exporter/hash, independent W4, frozen formal protocol, 1/2/4-GPU same-boundary evaluation, segmented consumer, full publication/commit/reclaim |
-| D3 | route-aware out-of-core mechanism implemented; development only | M0 path; real two-rank QK M1 boundary; fixed 2,048-record D1/D2 snapshot; 144-GiB old-K/V; grouped all-exact and D1-only diagnostics; fair group-64 S0; strong S1; full-group GPU staging with independent route I/C/O granularity; hashed same-source-profile `ResidencyPlan`; stable-route interleaving; exact-stack paired control/candidate and full-payload parity | independently tuned and repeated formal E0, held-out qualification, formal repeats, action/capacity sensitivity, final transaction boundary, frozen protocol, and paper evidence |
+| D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness; XP owner-side E4096→H1536 two-rank physical canary | optimizer-active XP checkpoint, D3-facing constraints, 1/2/4-rank runner, strong placement/exact baselines, segmented consumer, full integrated group timing, frozen formal protocol |
+| D3 | successor foundation running; mechanism and paper evidence open | historical M0/M1 chain; real 65,536-record HET/HOM manifests and capacity ledger; minimal rolling validate/commit/reclaim/failure/replay canary; fixed-512 D1/D2 environment regression | real HET ActionPlan overlay and numeric rolling runner, active-row XP edge, 36/72-GiB problem-existence baselines, strongest generic scheduler, held-out qualification/repeats, frozen formal protocol and paper evidence |
+
+The two-A40 XP quality foundation is complete as development evidence. After one explicit
+bootstrap-to-streaming-objective warm-up edge, the selected chain trains 16,384 user-disjoint
+update records for one epoch on each of four contiguous eight-exposure windows and evaluates the
+ordinary `theta1→theta2`, `theta2→theta3`, and `theta3→theta4` edges on 4,096 fixed qualification
+users and the next unseen window. The model remains 24L/H1536 with a 43.638-GiB global FP32
+embedding table. All cache endpoints use FP16 storage followed by FP32 consumption, and every
+edge uses the same frozen 999-negative candidate binding. The selected learning rates are
+`1e-5` for dense/projection and `1e-4` for embedding. Checkpoint admission reads no ranking
+metric.
+
+The resulting Exact-over-Reuse sampled-CE gaps are 0.01846, 0.01068, and 0.01340; record-cluster
+95% intervals are `[0.01520, 0.02167]`, `[0.00917, 0.01223]`, and
+`[0.01073, 0.01603]`. All three current-model Exact endpoints also improve over the frozen-model
+control in CE. This configuration was selected from three development candidates; it is not a
+formal replication or untouched-test result. Its four checkpoints are retained under
+`quality_chain_stream_aligned_train16384_round1`; the two rejected candidate checkpoint trees
+were deleted after their compact results and hashes were preserved.
+
+The follow-on `evokv_xp_d1_quality_development_v1` bridge is also complete on the three edges.
+The analytic direct-old-K/V compiled path closes 63.9%, 55.3%, and 70.0% of the paired CE gap;
+adding a label-free approximately 20% retained-token Exact route closes 68.9%, 62.3%, and 74.3%.
+The compiled maintenance component is 0.162x, 0.152x, and 0.146x Exact. Conversely, the naive
+mixed batches still pay component bounds of 0.764x, 0.781x, and 0.731x Exact because many batches
+execute both routes. This is development evidence for the D1→D2 causal boundary, not an
+end-to-end mixed-runtime speedup and not a replacement for the cross-dataset fitted-residual D1
+headline. The bound artifacts and summary are in
+`results/baseline_rounds/quality_chain/selected_d1_bridge_round1/`; no full K/V payload is
+retained.
 
 D3 development uses the current D1 plan and implemented D2 runtime. M0 uses a minimal two-rank
 `WorkManifest`; the QK M1 revision binds its action snapshot, owner map, group plan, checkpoints,
@@ -168,6 +219,33 @@ Within one `stack_revision`, baselines and candidates share the recorded work sn
 revisions are allowed during discovery but must rerun their own baselines. All early outputs remain
 non-scientific until a D3 protocol is frozen. D2 paper claims remain blocked independently;
 starting D3 does not promote W3 evidence.
+
+The new paper workload is `X-QK-HET`, which preserves natural
+old/retained/evicted/append/target lengths
+from D1 through D3 and defines capacity by valid K/V bytes. `X-QK-HOM` uses the same HET record IDs
+and valid histories but materializes a masked 512-slot physical layout; it is a shape-regularity
+control, not a different user population or an alternative chosen after seeing performance.
+Existing fixed-512 QK M1 artifacts remain immutable historical development evidence and do not
+define the successor formal endpoint.
+
+Foundation Review 0 has now materially constructed the successor input. A complete QK scan
+freezes 65,536 mutually isolated final records plus separate model-edge, fit, profile, and
+qualification roles. Their natural target length has median 153 and p95 404; only 2.1835% reach
+512. The full HET old/target valid K/V inventories are 1.498/1.801 TB, and the frozen
+36/72/144/288/576/720-GiB target points require
+1,416/2,815/5,625/11,272/22,544/28,192 records. The same-record HOM allocation is much larger
+and is retained only where independently capacity-admitted.
+
+The all-exact valid-target request union contains 929,554 mapped rows and is entirely inside the
+base catalog, but optimizer activity remains unmeasured. The actual XP forced-sharding threshold
+is 2,840,105 optimizer-updated semantic rows (99.3101%): global FP32 embedding plus the dense core
+is 48,023,005,184 bytes versus 47,699,722,240 single-card Torch allocatable bytes. A real
+GPU0/GPU1 physical canary successfully allocates the modulo shards and performs owner-side
+E4096→H1536 lookup/projection with a numerical oracle, but it intentionally does not claim a
+trained checkpoint. HET and HOM short/mid/long/saturated lifecycle canaries pass full-payload
+length/hash validation, commit-before-reclaim, failure isolation, idempotent replay, and
+exactly-once coverage; they do not yet execute D1/D2 numerics. All of these are development
+artifacts, not a protocol or performance result.
 
 The current M0 full pass is `scientific_result=false`, `formal_design3=false`, and uses a logical
 payload cap rather than physical oversubscription. It partitions H12 into 26 groups and writes
@@ -394,8 +472,9 @@ record, the current v1 artifact fixes:
 - history and extent-identity hashes.
 
 Compiled-program identity/hash is a separate D1 artifact bound by the D2 adapter. The canonical
-H12 v1 action plan contains only `compiled` and `exact`; any future progressive action requires an
-explicitly versioned schema and declared auxiliary state.
+H12 v1 action plan contains only `compiled` and `exact`; the successor paper-core system keeps this
+two-route domain. Progressive remains a D1-only supporting action; any future full-stack use
+requires an explicitly versioned schema, declared auxiliary state, and new D2/D3 baselines.
 
 An `ActionPlan` is immutable within one recorded execution revision. An isolation-track D3
 ablation keeps it unchanged. A co-design candidate may create a new plan before execution, but it
@@ -411,7 +490,7 @@ D2 fixes:
 - `(S,R)` compiled-bin or `F`-keyed exact-pool membership;
 - collective dependency and ordering constraints;
 - segmented target layout;
-- coverage, lineage, validation, and publication contract.
+- coverage, lineage, validation, group-version commit, and reclaim contract.
 
 For a formal isolation experiment, this object should be global and capacity-independent. It does
 not freeze D3 micro-wave cuts or launch order. Within that track, D3 only slices current pools and
@@ -446,11 +525,13 @@ programming. Both ranks repeat capacity and identity preflight before target cre
 collectives. Profile and plan construction are recorded but remain outside the current runtime
 timer.
 
-Within one isolation-track `stack_revision`, sequential grouping, action-oblivious double
-buffering, and the proposed scheduler consume the same `WorkManifest`. A co-design track may
+Within one isolation-track `stack_revision`, sequential grouping, fixed-FIFO double buffering,
+profile-aware generic scheduling, and the proposed scheduler consume the same `WorkManifest`. A co-design track may
 regenerate actions, owners, pools, or layout before the run; its corresponding baselines use that
-same regenerated stack. NUMA placement, atomic publication, and a normalized capacity-independent
-D2 constraint artifact remain outside the current development plan.
+same regenerated stack. The historical M1 implementation still uses a complete private target;
+the successor endpoint instead commits and reclaims capacity groups. NUMA/store qualification and
+a normalized capacity-independent D2 constraint artifact remain outside the old development
+result, but are recorded for the new formal runner.
 
 ## 6. Evaluation rules
 
@@ -477,8 +558,10 @@ bytes:
 - compiled reads valid retained old K/V;
 - exact reads raw history IDs and no unused old K/V;
 - append reads suffix IDs;
-- progressive reads its declared BF16 hidden suffix;
 - output follows the D2 segmented layout.
+
+Progressive residual repair is evaluated only in its D1 supporting protocol and is not part of the
+paper-core D3 `WorkManifest`.
 
 All-exact necessarily has a different action/source multiset. It must share records, target model,
 ordinary-host source tier, target dtype/layout/durability, topology, per-rank HBM budget, timer, and
@@ -488,27 +571,33 @@ A cross-layer candidate may also have different action/source bytes, but it must
 differences and rerun baselines under its new `stack_revision`.
 
 The initial M0 development timer covers ordinary-DRAM↔pinned copies, H2D/D2H, GPU compute,
-collectives, and private-target writes. Per-group sampled finite/metadata checks currently occur
+collectives, and historical private-target writes. Per-group sampled finite/metadata checks currently occur
 inside the wall timer; global exactly-once coverage is checked after it. Full checksum/numerical
 parity, plan, commit, and reclaim are outside this first profile. The later paper-facing timer must
-explicitly close and include its selected complete boundary. A no-I/O chunk sum is characterization
-only.
+include every group writeback, validation, versioned commit and old-group reclaim through the final
+job manifest. A no-I/O chunk sum is characterization only.
+
+Successor mechanism figures use the execution-only timer. E1 end-to-end uses first-wave
+update-inclusive cost after model-checkpoint publication, including edge-specific D1 fit/compile,
+D2 lowering/plan, D3 profile/plan, and rolling execution; model training is reported separately.
+Formal methods are measured in randomized/interleaved blocks. Every uncommitted group writes to a
+bounded replacement shadow and preserves its old extent until validation and commit.
 
 ## 7. Current execution order
 
 ### D2 closure
 
-1. Export and hash the capacity-independent D2→D3 constraint view, with parity checks against the
-   current integrated runtime.
-2. Run the independent physical W4 normal and hard-failure cases when all four A40s are safely
-   available; do not kill or oversubscribe an external GPU process.
-3. Freeze/check the Stage-B summary.
-4. Freeze a new formal D2 protocol.
-5. Run same-binary all-exact, the strongest owner-local contiguous fixed-action baseline
-   independently selected from staged/fused finalization, and physical-sparse mixed through
-   post-append publication, commit, and reclaim.
-6. Complete paired 1/2/4-GPU, segmented-consumer, capacity, failure, and physical-communication
-   evidence.
+1. Build the natural-length HET primary manifest and matched HOM control, and freeze the
+   paper-core `compiled|exact` ActionPlan domain.
+2. Freeze the hardware HBM cap, then qualify the fixed XP embedding/model geometry without
+   consulting EvoKV speedup; generate verified 1/2/4-way shards.
+3. Generalize the runner to 1/2/4 ranks and export/hash the capacity-independent D2→D3 constraints.
+4. Implement same-binary all-exact, strongest placement/exact controls, staged/fused owner-local
+   contiguous baselines, segmented consumer, and group validation/commit/reclaim.
+5. Record Benchmark Qualification separately; it blocks paper-result promotion, not current
+   benchmark design or baseline implementation.
+6. Freeze a successor D2 protocol only after the above foundation and independently tuned
+   baselines are fixed.
 
 ### D3 mechanism entry
 
@@ -530,20 +619,23 @@ The benchmark-first route has reached a real physical M1 mechanism boundary:
 8. the selected point retains `(8,8,8)` on both routes; input-16 and output-4 did not improve their
    observed probes, but route-asymmetric granularity benefit and general rejection of alternatives
    are not established;
-9. grouped same-boundary all-exact and D1-only contribution diagnostics now complete the
-   development waterfall; next add independently tuned formal E0, held-out qualification, formal
-   repeats, and the smallest action/capacity sensitivity needed to test whether the planner
-   selects meaningfully different plans;
-10. only then close transaction semantics, freeze a D3 protocol, and expand beyond GPU0/GPU1.
+9. grouped same-boundary all-exact and D1-only contribution diagnostics complete the historical
+   development waterfall; a same-binary, independently tuned formal E0→D3 crossover was not
+   established;
+10. these ten items describe the immutable fixed-512/full-private-target development family; the
+    successor benchmark switches to HET, rolling group replacement, XP, and a 1/2/4-rank-capable
+    runner rather than promoting this family.
 
-The capacity coordinate is
+The successor capacity coordinate is
 
 $$
-\rho=\max_r\frac{\text{work bytes}_r}{\text{usable HBM}_r},
+\rho_{\mathrm{KV}}=\max_r
+\frac{\text{single-live-version valid K/V bytes}_r}
+{\text{usable HBM}_r-\text{fixed model/embedding/program bytes}_r},
 $$
 
-The first real benchmark needs only the smallest useful \(\rho>1\) point. A later characterization
-may cover \(\rho \in \{0.5,1,2,4\}\). Every admitted micro-wave must satisfy, per rank,
+and the formal matrix uses manifest-derived 36–720-GiB single-version points rather than an
+old+complete-target footprint. Every admitted micro-wave must satisfy, per rank,
 
 ```text
 fixed(model + embedding shard + program + context)
@@ -558,15 +650,14 @@ fixed(model + embedding shard + program + context)
 The complete evaluation portfolio and physical scale budget are now specified in
 [`10_paper_experiment_blueprint.md`](10_paper_experiment_blueprint.md). Execution proceeds by:
 
-1. materializing the formal QK role split and nested real-user manifests;
-2. producing edge-specific X1/X2 programs, action plans, and verified 1/2/4-way embedding shards;
-3. closing the resident/out-of-core timers, segmented consumer, NUMA-aware DRAM arena, and
-   transaction/correctness boundary;
-4. running hardware/independent-oracle canaries and applying baseline-first within each layer:
-   D2 foundation, complete D2/frozen stack, D3 foundation, then D3 proposed mechanisms;
-5. de-duplicating M3 S0 against each tuned D3 exact winner before freezing the final
-   \(64+k\)-cell count, where \(k\in\{0,1,2\}\), subject to the declared R-KR/2-GPU strict-COW
-   preflight.
+1. materializing the formal QK role split, HET primary and HOM control manifests;
+2. freezing XP and producing edge-specific X1/X2/XP programs, two-route action plans, and verified
+   1/2/4-way embedding shards;
+3. closing the resident/out-of-core timers, segmented consumer and rolling group lifecycle;
+4. applying baseline-first within each layer: D2 foundation, complete D2/frozen stack, D3
+   foundation including fixed-FIFO and profile-aware generic schedulers, then D3 mechanisms;
+5. executing the separate Benchmark Qualification registry before formal result promotion, then
+   de-duplicating the current 70–80-cell envelope into an exact ledger.
 
 The blueprint plans new result families; it does not promote any W3 or D3 development artifact.
 
@@ -575,26 +666,31 @@ The blueprint plans new result families; it does not promote any W3 or D3 develo
 D2 should not be promoted as a paper design unless fixed-action physical lowering survives the
 formal same-boundary timer and strong all-exact baseline. If the W3 benefit disappears, first
 attribute the loss to preparation, layout materialization, segmented consumption, communication,
-or transaction overhead. Do not repair the result by changing D1 actions.
+or group-lifecycle overhead. Do not repair the result by changing D1 actions.
 
-If the current embedding/cardinality scale cannot expose D2 communication after formal
-measurement, construct a larger but semantically valid setting from an accepted dataset: train one
-base model and one or two short streaming updates, regenerate exact old K/V, compiled programs,
-certificates, and the immutable action plan, then repeat mechanism discovery. Cold unused rows
-cannot manufacture the claim.
+The paper-scale D2 foundation proactively uses XP rather than waiting for X2 to fail. XP fixes
+2,859,835 base-period semantic rows plus one padding row in a 43.638-GiB physical table and uses
+owner-side E4096→H1536 projection; fixed model state already exceeds physical Torch allocatable
+bytes. The hardware HBM cap is frozen before XP
+qualification, and all methods may project at the owner before returning
+H1536 vectors. Cold unused rows or raw-E4096 cross-rank vectors cannot manufacture the claim.
+The exact denominator evaluates a bounded joint grid over legal placement/transport,
+routing/coalescing, and pipeline combinations rather than pruning on placement alone. X2 remains
+the development/quality bridge and 1-rank sanity.
 
 D3 enters the paper only if it:
 
 1. passes full-payload correctness and per-rank bounded-memory admission;
 2. reports same-boundary sequential, strong whole-group double-buffer, generic fixed-FIFO
-   fine-grained segmented, proposed, and independently tuned all-exact paths;
-3. shows an attributable gain over the strongest action-oblivious generic pipeline, not merely
-   over whole-group double buffering;
+   fine-grained segmented, profile-aware work-conserving generic, proposed, and independently tuned
+   all-exact paths;
+3. shows an attributable gain over the strongest generic pipeline, not merely over whole-group
+   double buffering;
 4. has at least one meaningful operating point relative to fastest same-boundary all-exact;
 5. reports the positive region and the exact-preferred crossover.
 
-If D3 only beats a sequential loop or whole-group double buffer but not the generic segmented
-pipeline, it is an implementation path rather than a design. If the unavoidable direct-old-K/V
+If D3 only beats a sequential loop or whole-group double buffer but not the strongest fixed-FIFO
+or profile-aware generic pipeline, it is an implementation path rather than a design. If the unavoidable direct-old-K/V
 input lower bound is already slower than same-boundary exact, stop scheduler tuning and revisit
 source representation.
 
@@ -613,6 +709,7 @@ Do not claim that:
 - a standalone capacity-independent D2→D3 constraint artifact already exists;
 - segmented output is already consumed without hidden materialization;
 - the current dense model requires tensor parallelism;
+- every recommendation deployment requires full-epoch atomic cache publication;
 - synthetic lookup contention is a serving trace or SLO result;
 - normalized-capsule DRAM, destination-v4 correctness, or hot-HBM Stage 4.5 is D3 evidence;
 - the QK M1 S0/S1/D3 development profiles are a frozen protocol or paper evidence;
@@ -630,6 +727,8 @@ Do not claim that:
 
 - Paper-wide experiment blueprint:
   [10_paper_experiment_blueprint.md](10_paper_experiment_blueprint.md)
+- Benchmark qualification registry:
+  [11_benchmark_qualification.md](11_benchmark_qualification.md)
 - Current D2 design:
   [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md)
 - D2 implementation/evidence status:

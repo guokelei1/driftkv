@@ -26,6 +26,100 @@ claim, `target_epoch_published=false`, and no capacity evidence; its development
 is not a formal epoch publication. These artifacts are categorically ineligible for the Stage-B
 summary.
 
+The W4/Stage-C gate above applies to promotion of the existing D2 family; it does not prohibit
+designing the successor benchmark, implementing baselines, or generalizing a new runner to
+1/2/4 ranks. A successor paper family is now planned in
+[`10_paper_experiment_blueprint.md`](10_paper_experiment_blueprint.md), with preparation questions
+registered in [`11_benchmark_qualification.md`](11_benchmark_qualification.md). Neither document
+creates evidence or a protocol.
+
+The planned successor boundary differs materially from the immutable development families below:
+
+- primary integrated actions are `compiled|exact`; progressive residual repair remains a
+  separately evaluated D1-only supporting extension;
+- `X-QK-HET` preserves natural old/retained/evicted/append/target extents from D1 through D3, while
+  `X-QK-HOM` uses the same record IDs and valid histories in a masked 512-slot physical layout;
+  padding changes physical shape/cost but not valid tokens, semantic lookup, actions, or quality.
+  The shared nominal cohort is frozen by HET valid bytes, but each layout performs physical
+  micro-wave admission with its actual input+shadow+workspace allocation, including HOM padding;
+- QK HET is a trace-grounded heterogeneous cache snapshot under one fixed model edge, not a
+  cross-user co-temporal or calendar-time arrival trace;
+- XP fixes 2,859,835 base-period semantic rows plus one padding row in a
+  2,859,836×4,096 physical FP32 table (43.638 GiB), an owner-side
+  E4096→H1536 projection, and a 24L/H1536 core. The hardware HBM cap is frozen first, and
+  qualification validates capacity/trainability before any EvoKV timing. A row counts toward the
+  forced-sharding claim only after a real base-period optimizer update. Across both formal edges
+  and all headline manifests, the union of all-exact valid targets and every frozen fixed-action
+  exact/append/fallback request must be active and hashed; HOM masked padding is excluded.
+  Active embedding bytes plus dense/projection bytes must exceed the frozen single-card allocatable
+  budget. The separately frozen checkpoint builder uses 4-rank row-sharded sparse updates and
+  row-wise/offloaded embedding optimizer state. It may consume common-upstream base-period
+  histories from later-role users, but no update/final windows; post-base roles remain
+  user-disjoint;
+- formal capacity is single-version valid K/V bytes. Each group writes, validates, commits a
+  versioned replacement, and reclaims its old extent; host peak is one live cache plus bounded
+  in-flight shadow/staging, not a complete old+private-target epoch pair;
+- the formal runner is parameterized for 1/2/4 ranks. Benchmark Qualification blocks later result
+  promotion, not current benchmark/base-runner design.
+
+These changes require new protocol strings, configs, manifests and result directories. They do not
+rename, recalculate, or invalidate the fixed-512, two-rank, full-private-target QK M1 development
+records documented below.
+
+### Selected XP prequential quality foundation
+
+`evokv_xp_prequential_stream_training_development_v1` remains the training protocol, but the
+active development configuration is now the selected
+`xp_qk_stream_aligned_warmup_train16384_qual4096_e1_fixed010_development_v1` stack. It is
+non-scientific and must not be mixed with the failed v0 learning-rate screen, historical
+`baseline_round3`, or fixed-512 QK M1 families.
+
+- The sequence has four training edges. `theta0 --[64,72)--> theta1` is a mandatory
+  bootstrap-to-streaming-objective warm-up and is excluded from D1 evidence. Ordinary edges are
+  `theta1 --[72,80)--> theta2`, `theta2 --[80,88)--> theta3`, and
+  `theta3 --[88,96)--> theta4`.
+- Same-history cache comparisons occur at history ends 80, 88, and 96, and score the next unseen
+  windows `[80,88)`, `[88,96)`, and `[96,104)` respectively.
+- Training uses 16,384 users, one epoch per update, continuous optimizer state, dense/projection
+  LR `1e-5`, and embedding LR `1e-4`. Checkpoint admission uses only numerical stability, a
+  nonzero optimizer update, and complete publication. Ranking metrics never gate a version.
+- Qualification uses 4,096 disjoint users and 999 frozen negatives. Frozen-model, current-model
+  Reuse, and current-model Exact controls use the same records, candidates, and physical endpoint:
+  FP16 cache storage followed by FP32 consumption. Exact is the cache-fidelity reference, not a
+  ranking-quality upper bound.
+- The selected Exact-over-Reuse sampled-CE gaps are 0.01846, 0.01068, and 0.01340. These values
+  were used in development configuration selection and therefore are not untouched formal test
+  evidence.
+- The model-quality windows are eight tokens, whereas the independently bound natural HET
+  ActionPlan uses a 32-token append. Neither extent may be substituted into the other family.
+
+The selected checkpoints and baseline controls are under
+`quality_chain_stream_aligned_train16384_round1`. The two rejected 8,192-user checkpoint trees
+were deleted after compact results and bindings were retained. No full K/V payload is durable.
+
+### XP D1 bridge v1
+
+`evokv_xp_d1_quality_development_v1` is a separate development protocol. All four D1 endpoints use
+FP16 cache storage and FP32 consumption, and the Reuse/Exact values must reproduce the selected
+baseline before any recovery ratio is reported. It evaluates:
+
+- all Reuse;
+- one analytic direct-old-K/V compiled affine;
+- a label-free retained-token budget with approximately 20% Exact and the remaining records
+  compiled;
+- all Exact.
+
+Across the three ordinary edges, compiled repair closes 63.9%, 55.3%, and 70.0% of the paired CE
+gap at measured maintenance components of 0.162x, 0.152x, and 0.146x Exact. The mixed quality
+point closes 68.9%, 62.3%, and 74.3%, but naive mixed batching has component bounds of 0.764x,
+0.781x, and 0.731x Exact. Those component bounds are not end-to-end times; they expose why the
+fixed logical plan still needs a physical D2 lowering.
+
+This protocol is a large-XP system bridge, not the cross-dataset fitted-residual headline. It may
+support D1→D2 causality and freeze inputs for mechanism development. It may not be promoted as a
+formal D1 replication, a complete D2 speedup, or a proof that Exact maximizes NDCG/Hit. Bound
+artifacts live under `selected_d1_bridge_round1`.
+
 Separate W3 mechanism-development families now include the integrated v1–v5 pilot/full682 runs,
 full-payload validation, wave-embedding characterization, and the synthetic lookup contention
 probe recorded in `DESIGN2_DEVELOPMENT_STATUS.md`. They may contain real full-cohort timings, but
@@ -34,8 +128,8 @@ formal D2 protocol, publish a formal target epoch, close the segmented consumer/
 or include the final plan/history preparation plus publication/commit/reclaim boundary. Their
 valid use is mechanism discovery and protocol design, not Motivation-2 numbers or paper tables.
 
-Design 3 has no frozen paper protocol or paper result. Mechanism discovery is active on GPU0/GPU1
-and does not wait for a normalized D2 exporter or full transaction closure. The
+Design 3 has no frozen paper protocol or paper result. The historical M0/M1 mechanism discovery
+ran on GPU0/GPU1 and did not wait for a normalized D2 exporter or full transaction closure. The
 `evokv_design3_m0_pageable_s0_development_v0` canary/full artifacts remain development-only
 profiles under an emulated logical-payload cap. The real QK M1 family now contains a physical
 out-of-core S0/S1/D3 mechanism sequence, but every member remains `scientific_result=false` and
@@ -208,10 +302,12 @@ an implementation correctness/scale validation only; it creates no independent p
 Every QK M1 artifact in this section remains `scientific_result=false` and
 `formal_design3=false`. The 2,560-user edge, action snapshot, characterizer, materialized store,
 grouped E0/D1-only diagnostics, fair S0, S1, and selected development candidate define only the
-current mechanism-discovery revision. They establish a development E0 crossover but do not freeze
-a paper protocol or establish formal replication or generality. The current profile selection and
-evaluation reuse the same M1 revision, so a formal result still needs held-out qualification,
-formal repeats, at least one additional action/capacity mix, and transaction closure. The earlier
+historical mechanism-discovery revision. Adjacent artifacts suggest a possible E0 crossover, but
+they do not form a same-binary, independently tuned and repeated E0→D3 comparison and therefore
+do not establish that crossover. The profile selection and evaluation also reuse the same M1
+revision. The successor formal family needs HET/HOM and XP foundations, strongest generic
+baselines, rolling group lifecycle, held-out qualification, formal repeats, and
+action/capacity/model sensitivity. The earlier
 H512 QK canary and H12 M0 profile remain functional development
 diagnostics and cannot be pooled with M1.
 
@@ -255,15 +351,22 @@ Every artifact must retain its exact serialized protocol string and negative cla
 Different families and versions record implementation discovery and must not be pooled into a
 confirmatory timing distribution.
 
-The formal paper-facing families are not yet frozen. They will require separate names for:
+The formal paper-facing successor families are not yet frozen. They will require separate names
+for:
 
 1. a design-independent logical-to-physical Motivation-2 experiment; and
-2. a fixed-action D2 physical-wave evaluation.
+2. a fixed-action D2 physical-wave evaluation; and
+3. a rolling-group D3 cache-maintenance evaluation.
 
 The first varies predeclared exact volume and shard count without using D1 outcomes as its
-observation. The second fixes the D1 action hash and compares strong all-exact, naive sharded
-fixed-action mixed, and D2 physical-sparse mixed. Neither family exists merely because this plan is
-written; final names, hashes, timer, artifact schema, and run matrix must be frozen after W4.
+observation. The second fixes a `compiled|exact` D1 action hash and compares strong all-exact,
+capacity-admitted placement/exact controls, owner-local contiguous fixed-action mixed, and D2
+physical-sparse mixed. The third keeps one HET work/source snapshot and compares independently
+tuned exact, sequential/whole-group/fixed-FIFO/profile-aware generic pipelines, and the selected D3
+mechanism through per-group commit/reclaim. None exists merely because the blueprint is written;
+final names, hashes, timer, artifact schema and run matrix require Benchmark Qualification and a
+new freeze. The old W4 remains a requirement only for promoting the old Stage-B/Stage-C family,
+not a reason to write the successor runner around full-epoch publication.
 
 ### D3 development families
 
@@ -1999,20 +2102,46 @@ substituted for one another.
 - Plan-only coordinator output is architecture metadata, not a timing or correctness result. If a
   later end-to-end protocol includes coordinator or source-reader overhead, that boundary must be
   declared symmetrically for compiled migration and exact recomputation.
-- The formal D2 primary timer begins with an immutable ActionPlan, owner-resident old K/V, loaded
-  model/program/embedding shards, and the declared raw-history tier ready. It includes any
-  non-persisted wave lowering, row-sharded lookup/collectives, compiled/exact/suffix compute,
-  target staging, segmented-manifest construction, validation, commit, reclaim, and any required
-  synchronous contiguous materialization. It ends only when one complete post-append target epoch
-  is visible.
-- If a serialized WavePlan legitimately moves lowering outside the execution timer, report both
-  execution-only and plan-inclusive single-wave cost plus reuse count/break-even.
-- Formal D2 compares the same action hash and endpoint across strong all-exact, naive sharded
-  fixed-action mixed, and D2 physical-sparse mixed. The integrated all-exact denominator is the
-  faster measured one-shot/two-stage implementation; exact cannot be forced through a slower
-  decomposed path.
+- The successor formal D2/D3 **mechanism/execution timer** begins with an immutable
+  `compiled|exact` ActionPlan,
+  a live versioned K/V arena, loaded model/program/embedding shards, and the declared raw-history
+  tier ready. It includes any non-persisted wave lowering, row-sharded lookup/collectives,
+  compiled/exact/suffix compute, group staging/writeback, segmented metadata, per-group validation,
+  versioned commit, old-group reclaim, and any required synchronous consumer adapter. It ends only
+  after the final group is consumer-readable. It does not require a complete private target or a
+  global atomic epoch switch.
+- Every method preserves the current group's old extent until its bounded replacement shadow has
+  been validated and committed; unvalidated in-place overwrite is not a legal formal endpoint.
+- E1 end-to-end primary is first-wave update-inclusive: after target-model checkpoint publication,
+  it includes edge-specific D1 target collection/fit/compile, D2 lowering/routing plan, D3
+  profiling/plan construction, and rolling execution. Model training is common upstream work and
+  is reported separately. Report execution-only, update-inclusive, amortized reuse and
+  break-even; use “end-to-end speedup” only when the update-inclusive comparison wins.
+- Formal measured jobs use a predeclared randomized/interleaved method order. Two-method blocks
+  alternate AB/BA and larger blocks rotate order; a throttle, external contention, major fault or
+  asymmetric page state invalidates the whole block rather than one method's sample.
+- Formal D2 compares the same action hash and endpoint across strong all-exact, capacity-admitted
+  placement/exact controls, owner-local contiguous fixed-action mixed, and D2 physical-sparse
+  mixed. The integrated all-exact denominator is the fastest legal independently tuned
+  implementation. Exact jointly screens a predeclared bounded grid of capacity-admitted
+  placement/transport, routing/coalescing, and pipeline combinations; it cannot first prune on
+  placement alone, nor be forced through a slower decomposed path or raw E4096 cross-rank return.
+  Formal D3 additionally
+  compares fixed-FIFO segmented and profile-aware work-conserving generic schedulers under the
+  same opaque group profiles, capacity credits, and bounded-flow recurrence before attributing a
+  gain to ResidencyPlan; the generic scheduler cannot read compiled/exact labels or EvoKV's
+  route-specific objective.
 
 ## 8. Current artifacts
+
+The paths below record protocol identity and evidence provenance; they do not require every large
+ignored local input to remain on disk. The experiment-preparation cleanup retains the blueprint
+inputs for Q-SEM, R-KR 4+12, and X-QK, plus the current D1/D2/D3 configurations and result records.
+Historical validity, scaling, exposure, and 8+8 checkpoint/data caches were removed from the
+workspace because their measurements are already represented by result JSON, summaries, and
+experiment notes. The pre-materialized R-KR source shards and old search/runtime candidates were
+also removed; the 4+12 theta chain, current direct-old-K/V program, prepared data, and protocol
+configs remain. This does not change protocol status or permit mixing result families.
 
 D2 mechanism-development diagnostics, ineligible for paper tables:
 
@@ -2071,14 +2200,12 @@ Motivation:
 
 - `results/validity/core_seed{0,1,2,3}.json`
 - `results/validity/multiseed_summary.json`
-- `checkpoints/validity/core_seed{0,1,2,3}/theta_*.pt`
 
 Six-layer method:
 
 - `results/validity/core6l_seed{0,1,2,3}.json`
 - `results/validity/layerwise6l_seed{0,1,2,3}.json`
 - `results/validity/layerwise6l_multiseed_summary.json`
-- `checkpoints/validity/core6l_seed{0,1,2,3}/theta_*.pt`
 
 Three-layer sanity:
 
@@ -2112,11 +2239,6 @@ Scaling-v1:
 - `results/scaling/kuairand_data_utilization_summary.json`
 - `results/scaling/top50k_all_chunks_large_{core,method}_seed0.json`
 - `results/scaling/top50k_all_chunks_large_streaming_control_seed0.json`
-- `checkpoints/scaling/depth{3,9}_seed{0,1,2,3}/theta_*.pt`
-- `checkpoints/scaling/movielens_seed{0,1,2,3}/theta_*.pt`
-- `checkpoints/scaling/factorial_*_seed{0,1,2,3}/theta_*.pt`
-- `checkpoints/scaling/top50k_{latest,all_chunks}_seed{0,1,2,3}/theta_*.pt`
-- `checkpoints/scaling/top50k_all_chunks_large_seed0/theta_*.pt`
 
 Dataset audits:
 
@@ -2142,7 +2264,6 @@ Ordered-exposure reproduction:
 - `results/exposure/long_context_opportunity_summary.json`
 - `results/exposure/{qb_horizon256,long_context}_operator_cost_seed0.json`
 - local `results/exposure/*cache_version_matrix_seed*.json`
-- local `checkpoints/exposure/`
 
 Compiled low-rank migration:
 
@@ -2163,9 +2284,7 @@ Capacity-tiered migration:
 
 KuaiRand 8+8 long-context bring-up:
 
-- local `data/processed/kuairand_long_context_8plus8_v2.npz`
 - `experiments/motivation/LONG_CONTEXT_8PLUS8_V2.md`
-- local `checkpoints/kuairand_long_context_8plus8/seed0/theta_{0..8}.pt`
 - local `results/motivation_scale/long_context_8plus8_training_seed0.json`
 - local `results/motivation_scale/long_context_8plus8_motivation_seed0.json`
 - local `results/motivation_scale/long_context_8plus8_motivation_all_pairs_seed0.json`
@@ -2217,8 +2336,6 @@ KuaiRand temporal-split exploration:
 - `experiments/system/COHORTKV_STAGE1_FRONTIER_V1.md`
 - local
   `results/system/cohortkv_single_config_full_chain_v1/stage2_compiler_seed0.json`
-- local
-  `checkpoints/kuairand_long_context_4plus12_exploration/seed0/single_config_v1/stage2_runtime/*.pt`
 - `configs/cohortkv_single_config_v1/stage2_compiler_summary.json`
 - `configs/cohortkv_single_config_v1/stage2_plans/*.json`
 - `experiments/system/COHORTKV_STAGE2_COMPILER_V1.md`
@@ -2230,5 +2347,6 @@ KuaiRand temporal-split exploration:
 - `experiments/system/COHORTKV_SINGLE_CONFIG_FULL_CHAIN_V1.md`
 
 `smoke.json` files, old `results/phase0`, and old `results/streaming` are not research artifacts.
-Per-seed exposure JSON and all checkpoints are current local artifacts but ignored by Git. Taobao
-UserBehavior is an action-only semantic boundary rather than the selected next stream.
+Per-seed exposure JSON remains available as historical evidence, while its training checkpoints
+are intentionally not retained. Taobao UserBehavior is an action-only semantic boundary rather
+than the selected next stream.

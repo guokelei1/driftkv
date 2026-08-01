@@ -1,0 +1,238 @@
+{
+  "benchmark_id": "x_qk_xp_two_gpu_baseline_v0",
+  "date": "2026-07-31",
+  "purpose": "freeze one large successor configuration before proposed D1/D2/D3 execution",
+  "status": "foundation_and_theta0_complete_theta1_theta2_and_baselines_pending",
+  "scientific_result": false,
+  "formal_result": false,
+  "fairness_contract": {
+    "rule": "every baseline and later EvoKV method uses the same model checkpoints, record IDs, HET extents, owner map, capacity cuts, endpoint, timer, and per-rank resource ceilings",
+    "benchmark_revision_changes": "a data, model, endpoint, or capacity change creates a new benchmark_id and requires rerunning its baselines",
+    "result_selection": "no record, window, capacity, or baseline may be changed after observing EvoKV performance"
+  },
+  "data": {
+    "dataset": "Tenrec QK",
+    "time_semantics": "within-user ordinal exposure order, not calendar time",
+    "catalog": {
+      "semantic_rows": 2859835,
+      "padding_rows": 1,
+      "physical_rows": 2859836,
+      "fit": "all items observed in each user's first 64 exposures",
+      "base_rows_scanned": 262654269
+    },
+    "roles": {
+      "path": "configs/evokv_foundation/qk_post_base_roles.json",
+      "sha256": "64c7734e1cab6b4b0a2898fb71c15d905253a29e57e50d5dbadfb4fdc896b531",
+      "theta01_users": 2560,
+      "theta12_users": 2048,
+      "fit_users": 512,
+      "profile_users": 512,
+      "qualification_users": 512,
+      "final_users": 65536,
+      "upstream_training_users_excluded": 2560,
+      "upstream_training_user_ids_sha256": "72f818b5bbf8867bad167ac9361dfbdd6e186c60161c96b4e01c25dfbb387bf8",
+      "upstream_training_overlap": 0,
+      "theta12_preferred_users_at_least_1024_events": 2000,
+      "theta12_backfill_users_at_least_576_events": 48
+    },
+    "het_workload": {
+      "path": "data/processed/evokv_foundation/x_qk_het_foundation.npz",
+      "sha256": "1ed2e2a6ce03ae606f069c09dd854dc3e5730b620608c9d0f17c27423c90f929",
+      "summary_path": "configs/evokv_foundation/qk_foundation_summary.json",
+      "summary_sha256": "027b3223e6fdfc4f6cc9e50c7e065e2db2da64ad28920cdc2bcfb841f1ad83b9",
+      "records": 65536,
+      "length_mode": "natural variable length",
+      "behavior_semantics": "all HET efficiency records are exposure events with behavior id 1",
+      "time_delta_semantics": "within-user ordinal-derived inter-event delta seconds; the first global event is 0, later contiguous events are 1, and a cropped endpoint preserves the delta to its preceding original event",
+      "target_length": {
+        "minimum": 96,
+        "median": 153,
+        "p95": 402,
+        "p99": 512,
+        "maximum": 512
+      }
+    },
+    "fixed_edge_inputs": {
+      "path": "data/processed/evokv_foundation/qk_xp_fixed_edge_inputs.npz",
+      "sha256": "ede184238c22200e3f1faf4d99ad5e76716d4817cead9dc4b5db4f2da8a3de63",
+      "summary_path": "configs/evokv_foundation/qk_xp_fixed_edge_inputs_summary.json",
+      "summary_sha256": "82d21636ed0e457b245986f7d5b4656f60ffc53e6e1ed03f61a936410038a05e",
+      "rows": 1474560
+    },
+    "base_cooccurrence": {
+      "path": "data/processed/evokv_foundation/qk_xp_base_row_cooccurrence.npz",
+      "sha256": "9a2deb87b75491cee174126abb02b50eb2b86964b84452972b23da5773aa0cd4",
+      "summary_path": "configs/evokv_foundation/qk_xp_base_row_cooccurrence_summary.json",
+      "summary_sha256": "8ea18938d9e4b85914a78a31bcbaae29f47ac0314f251073e00402e3c9fbb5ba",
+      "semantic_rows_covered": 2859835,
+      "rows_with_real_same_user_neighbor": 2859736,
+      "isolated_rows_excluded_from_cooccurrence_training": 99
+    }
+  },
+  "model": {
+    "id": "XP",
+    "layers": 24,
+    "hidden_size": 1536,
+    "heads": 24,
+    "head_dim": 64,
+    "maximum_context": 512,
+    "num_behaviors": 5,
+    "num_prediction_items": 250000,
+    "embedding_width": 4096,
+    "embedding_dtype": "FP32",
+    "global_embedding_bytes": 46855553024,
+    "owner_projection": "bias-free E4096-to-H1536",
+    "dense_parameters_including_projection": 291863040,
+    "dense_fp32_bytes_including_projection": 1167452160,
+    "global_fixed_fp32_bytes": 48023005184,
+    "single_a40_torch_allocatable_bytes": 47699722240,
+    "minimum_optimizer_active_rows_for_forced_sharding": 2840105,
+    "checkpoint_versions": [
+      "theta0",
+      "theta1",
+      "theta2"
+    ],
+    "theta0_checkpoint": {
+      "root": "checkpoints/evokv_xp_qk_e4096_h1536/seed0",
+      "manifest_path": "checkpoints/evokv_xp_qk_e4096_h1536/seed0/theta_0/manifest.json",
+      "manifest_sha256": "4ec72fea8d790f53ff6f9b27f64b8d0b59616876a7a4e3d1bae4ccfbdada2ae0",
+      "result_path": "results/system/evokv_design3_foundation/xp_theta0_cooccurrence_training_development.json",
+      "result_sha256": "198f983106f6bee7ef370d5fc17c4826369066a67ba02cd65448eaf69fcd3b0f",
+      "optimizer_active_rows": 2859736,
+      "optimizer_active_fraction": 0.999965382618228,
+      "request_union_rows": 927840,
+      "request_union_missing_active_rows": 4
+    }
+  },
+  "model_edges": {
+    "theta0_to_theta1": {
+      "users": 2560,
+      "history_positions": [
+        0,
+        64
+      ],
+      "update_positions": [
+        64,
+        96
+      ]
+    },
+    "theta1_to_theta2": {
+      "users": 2048,
+      "history_positions": [
+        0,
+        544
+      ],
+      "update_positions": [
+        544,
+        576
+      ]
+    },
+    "qualification": {
+      "users": 512,
+      "history_positions": [
+        0,
+        64
+      ],
+      "heldout_positions": [
+        64,
+        96
+      ]
+    }
+  },
+  "hardware": {
+    "primary_gpu_count": 2,
+    "physical_gpu_indices": [
+      0,
+      1
+    ],
+    "gpu_model": "NVIDIA A40",
+    "embedding_placement": "modulo row sharding",
+    "record_owner": "frozen stable hash from the HET workload",
+    "host_store": "ordinary DRAM",
+    "world_sizes_supported_by_code": [
+      1,
+      2,
+      4
+    ]
+  },
+  "capacity_points": {
+    "resident_m2": {
+      "single_version_target_gib_nominal": 12,
+      "prefix_records": 474,
+      "target_valid_bytes": 12913311744,
+      "old_valid_bytes": 10714595328,
+      "role": "large embedding communication baseline without out-of-core capacity pressure"
+    },
+    "out_of_core_primary": [
+      {
+        "single_version_target_gib_nominal": 144,
+        "prefix_records": 5623,
+        "target_valid_bytes": 154674413568,
+        "role": "first complete large rolling baseline"
+      },
+      {
+        "single_version_target_gib_nominal": 288,
+        "prefix_records": 11287,
+        "target_valid_bytes": 309248704512,
+        "role": "primary large out-of-core baseline"
+      }
+    ]
+  },
+  "baseline_execution_order": [
+    {
+      "family": "semantic_edges",
+      "methods": [
+        "stale_reuse",
+        "all_exact"
+      ],
+      "dependency": "theta0/theta1/theta2 checkpoints"
+    },
+    {
+      "family": "m2_partial_exact",
+      "methods": [
+        "row_sharded_exact_fraction_0",
+        "row_sharded_exact_fraction_20",
+        "row_sharded_exact_fraction_50",
+        "row_sharded_exact_fraction_100"
+      ],
+      "dependency": "12-GiB resident HBM admission and exact oracle"
+    },
+    {
+      "family": "out_of_core_exact",
+      "methods": [
+        "sequential_grouped_s0",
+        "whole_group_two_slot_s1",
+        "bounded_fine_grained_exact"
+      ],
+      "dependency": "144/288-GiB rolling exact runner"
+    }
+  ],
+  "measurement": {
+    "correctness_jobs_per_cell": 1,
+    "warmup_jobs_per_cell": 1,
+    "measured_jobs_per_cell": 5,
+    "primary_statistic": "median max-rank wall time",
+    "raw_samples_retained": true,
+    "preparation_outside_execution_timer": [
+      "checkpoint training",
+      "old-cache first materialization",
+      "arena reservation and symmetric first touch"
+    ],
+    "execution_timer_endpoint": "source state to validated consumer-ready target with commit and old-group reclaim"
+  },
+  "gates": {
+    "xp_theta0_checkpoint": "pass",
+    "optimizer_active_rows": "pass_2859736_of_2859835_semantic_rows",
+    "request_union_optimizer_active_coverage": "qualification_caveat_4_of_927840_rows_missing",
+    "theta0_to_theta1_positive_signal": "pending",
+    "theta1_to_theta2_positive_signal": "pending",
+    "two_rank_exact_oracle": "pending",
+    "resident_12gib_hbm_admission": "pending",
+    "rolling_144_288gib_exact": "pending"
+  },
+  "deferred_until_baselines_complete": [
+    "EvoKV compiled D1 execution on XP",
+    "D2 mixed owner-local lowering",
+    "D3 ResidencyPlan or any proposed scheduler"
+  ]
+}

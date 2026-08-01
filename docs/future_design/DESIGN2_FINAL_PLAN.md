@@ -1,6 +1,6 @@
 # EvoKV Design 2: Wave-Compiled Segmented Execution
 
-Date: 2026-07-30
+Date: 2026-07-31
 
 Status: **current mechanism fixed; D3-facing constraint exporter, formal Stage-B freeze, paper
 protocol, and results remain open**. Historical code and artifact names retain `cohortkv_*` so
@@ -8,10 +8,36 @@ existing hashes and result families remain stable.
 
 This document defines D2 only. Current execution state is in
 [DESIGN2_DEVELOPMENT_STATUS.md](DESIGN2_DEVELOPMENT_STATUS.md). The interface below remains the
-target for a formal fixed-D2 isolation experiment. D3 mechanism discovery may begin earlier from a
-minimal two-rank `WorkManifest`; a cross-layer candidate that changes D1/D2 is a new
+target for a formal fixed-D2 isolation experiment. Historical D3 discovery began from a minimal
+two-rank `WorkManifest`; the successor runner is rank-parameterized. A cross-layer candidate that changes D1/D2 is a new
 `stack_revision`, not a D2 physical-lowering ablation. D3 is specified by
 [DESIGN3_FUTURE_DIRECTION.md](DESIGN3_FUTURE_DIRECTION.md).
+
+## 0. Paper-core successor boundary
+
+The fixed H12/W3 mechanisms and numbers below remain immutable development evidence. The successor
+paper workload changes four future-facing contracts without relabeling those artifacts:
+
+- the integrated action domain is `compiled|exact`; progressive residual repair remains a D1-only
+  supporting extension;
+- natural-length `X-QK-HET` extents are primary from D1 through D3; `X-QK-HOM` reuses the same
+  records and valid histories in a masked 512-slot physical layout, rather than selecting a
+  different max-context population or a better result after observation;
+- XP fixes 2,859,835 base-period semantic rows plus one padding row in a
+  2,859,836×4,096 physical FP32 embedding table (43.638 GiB), an
+  owner-side E4096→H1536 projection and the 24L/H1536 core; table + dense/projection is about
+  44.725 GiB before program/runtime state. Its frozen row-sharded sparse checkpoint builder must
+  activate and hash the semantic-request union across both formal edges, all headline manifests,
+  all-exact, and every frozen fixed-action exact/append/fallback path, and make optimizer-updated
+  embedding bytes plus dense/projection bytes exceed the hardware cap; only then is full
+  single-card placement capacity-inadmissible;
+- D2 exports group-valid fragments, dependencies, coverage and lineage. D3 chooses capacity groups
+  and owns `writeback → validation → group commit → old-group reclaim`; a complete private target
+  and global atomic epoch switch are no longer the formal endpoint.
+
+The successor runner is parameterized for 1/2/4 ranks. Benchmark Qualification is recorded
+separately and blocks only paper-result promotion, not current benchmark design or baseline
+implementation.
 
 ## 1. Problem
 
@@ -19,8 +45,8 @@ D1 has already chosen each record's semantic action. In the frozen H12 wave, onl
 records take an exact route, but that logical sparsity is not automatically a multi-GPU speedup.
 Exact and append still access row-sharded embeddings; variable-length incremental work creates
 padding; naive phase separation launches many collectives; rewriting a complete target cache can
-copy an already repaired retained prefix again; and one target epoch must remain private until all
-ranks agree on coverage and lineage.
+copy an already repaired retained prefix again; and every replacement group needs explicit
+coverage, lineage and versioned commit before its old extent can be reclaimed.
 
 D2 asks:
 
@@ -38,30 +64,33 @@ D1 ActionPlan
   semantic action, reason, extents, identity, provenance
         ↓
 D2 D3-facing WavePlan constraints
-  owner, operator, compatible physical pools, collectives, segmented layout, publication contract
+  owner, operator, compatible physical pools, collectives, segmented layout, group-valid contract
         ↓
 D3 ResidencyPlan
-  capacity cuts, packing, prefetch/execute/writeback order, pinned credits, NUMA placement
+  capacity cuts, prefetch/execute/writeback, group commit/reclaim, pinned credits, NUMA placement
 ```
 
 The responsibility boundary is:
 
 | Decision | Owner |
 |---|---|
-| `compiled|progressive|exact` and reason | D1 |
+| primary `compiled|exact` and reason | D1 |
+| progressive residual repair as a supporting-only action | D1-only protocol |
 | retained/suffix/final semantic extents | D1 |
 | old-K/V owner and embedding shard routing | D2 |
 | operator and physical compatibility bin/pool | D2 |
 | collective dependencies and participation | D2 |
 | segmented target layout and lineage/coverage contract | D2 |
 | capacity-specific slices and micro-wave packing | D3 |
-| DRAM/HBM launch order and pinned-buffer credits | D3 |
+| DRAM/HBM launch order, group commit/reclaim and pinned-buffer credits | D3 |
 
 The current D2 runtime exposes a resident execution order. That order is not a D3-facing
 invariant. The target interface is a separately serialized, capacity-independent constraint
 view—owner/operator/compatibility/dependency/layout—which D3 may cut into capacity-safe slices and
 legally reorder. That normalized view has not yet been materialized and hashed; producing it is the
-first D3-readiness task.
+formal-isolation foundation item that must close before protocol freeze. It does not precede
+HET/HOM construction, fixed-XP qualification, or rank-runner/baseline foundation, and it does not block
+ongoing mechanism exploration.
 
 ## 3. Immutable input
 
@@ -119,7 +148,7 @@ exact final-length compatibility-pool membership
 collective dependency and ordinal constraints
 segmented target extent schema
 coverage and lineage requirements
-validation, commit, abort, and reclaim contract
+validation, group commit, abort, and reclaim contract
 ```
 
 The repository does not yet contain this normalized artifact. The existing
@@ -136,7 +165,7 @@ serialize, and hash the required constraint view from:
 - operator/program and source bindings;
 - the implemented shape-aware ordering and merged-exact membership;
 - collective templates;
-- segmented layout and transaction requirements.
+- segmented layout and group-lifecycle requirements.
 
 The exported view must exclude `extent_size`, HBM capacity cuts, resident launch order, pinned
 credits, and prefetch/writeback decisions. It does not promise that one compatible pool fits in
@@ -165,7 +194,7 @@ owner rather than moving old K/V to a central worker. Retained repair:
 
 - reads local exact source-version old K/V;
 - applies the D1 direct affine program;
-- writes a private retained target segment;
+- writes a group-local retained replacement segment;
 - performs zero item lookup;
 - performs zero embedding collective;
 - performs zero old-K/V peer transfer.
@@ -230,19 +259,21 @@ measured.
 full current-model final cache. D2 merges compatible records into a common `F`-keyed physical exact
 pool. It thereby avoids collective and launch fragmentation created only by semantic labels.
 
-### 5.6 Private publication
+### 5.6 Group-valid publication contract
 
-All outputs are private until the target epoch passes:
+D2 declares the fragments and checks required before one capacity group can replace its source:
 
-- complete and duplicate-free record coverage;
-- expected source/target lineage;
+- complete and duplicate-free group coverage;
+- expected source/target lineage and explicit group version;
 - shape, dtype, valid-length, and component checks;
-- collective completion on every rank;
+- collective completion on every participating rank;
 - target-layout and fragment-set consistency.
 
-Only then may the target manifest become visible. Abort preserves the source manifest and releases
-private target references. D2 owns this semantic transaction; D3 later decides when individual
-buffers reside in HBM without weakening the transaction.
+D3 chooses the capacity cut and physical shadow/replacement extent. After the checks pass it
+atomically switches the group pointer to the target and reclaims the old group; abort preserves the
+old pointer and releases only bounded in-flight state. A wave finishes after every selected group
+has committed. This permits an explicitly versioned old/new mixture during maintenance without
+requiring a complete private epoch.
 
 ## 6. Why the mechanisms form one design
 
@@ -254,7 +285,8 @@ The mechanisms are not an unrelated optimization list:
 4. `(S,R)`-aware ordering exposes the true incremental shape;
 5. segmented output removes retained-prefix rewrite;
 6. merged exact pools remove semantic-only fragmentation;
-7. atomic publication turns all physical fragments back into one valid target epoch.
+7. versioned group commit/reclaim turns each physical group into valid target state without a
+   2× whole-epoch footprint.
 
 Together they compile a semantic wave into a physical multi-GPU wave. The defining claim is
 logical-to-physical sparsity, not owner-compute, batching, dedup, or COW in isolation.
@@ -284,7 +316,7 @@ All formal reports must keep separate:
 - padded/transient elements;
 - retained rewrite bytes;
 - launch and collective counts;
-- plan, prepare, execute, validate, publish, commit, and reclaim time.
+- plan, prepare, execute, validate, group commit, and reclaim time.
 
 ## 8. Baselines
 
@@ -299,6 +331,16 @@ Formal D2 evaluation requires the same SPMD harness for:
 6. **shape-aware segmented mixed without merged exact pool;**
 7. **complete D2 with merged physical exact pools.**
 
+The XP placement screen additionally includes capacity-admitted hot-row replication+cold-row
+sharding, wave-scope dedup/coalescing, and BF16/FP16 transport sensitivity. Full replication is
+executed only when it fits the same usable-HBM budget; otherwise its result is
+`capacity-not-admitted`. All methods may apply the same E4096→H1536 projection at the embedding
+owner before returning H1536 vectors; no baseline is forced to communicate raw E4096 vectors.
+Exact jointly tunes a predeclared bounded grid of placement/transport, routing/coalescing, and
+pipeline combinations on independent profile users; it cannot prune to the top placements before
+observing routing/pipeline interactions. Timed paths must remove diagnostic SHA/CPU round trips,
+and exact may use the strongest legal fused/compiled implementation.
+
 The headline fixed-action denominator is independently selected between the two legal contiguous
 controls. The current W3 `naive` implementation is already owner-local, so formal evaluation does
 not relabel it as placement-oblivious or claim a standalone owner-compute speedup. A future
@@ -306,7 +348,7 @@ placement-oblivious supporting control is legal only if it materializes and char
 peer traffic; it is not the headline denominator.
 
 The current pre-SPMD record-DP Table-8 numbers cannot be used as a baseline. Every comparator must
-be rerun in the same process model, source boundary, target transaction, and timer.
+be rerun in the same process model, source boundary, group lifecycle, and timer.
 
 ## 9. Timer and correctness boundary
 
@@ -317,13 +359,12 @@ and includes:
 - item-ID routing and embedding collectives;
 - compiled, exact, and append compute;
 - transient padding/materialization;
-- private target writes;
-- validation;
-- atomic publication;
-- commit and reclaim.
+- group target writeback;
+- group validation, versioned commit and old-group reclaim;
+- final job manifest.
 
 Report a secondary retained-prefix-only boundary to preserve continuity with D1, but do not compare
-that number directly to D2's post-append target-epoch time.
+that number directly to D2's post-append rolling-job time.
 
 Correctness requires:
 
@@ -341,14 +382,20 @@ Correctness requires:
 
 D2 becomes paper evidence only after:
 
-1. independent four-A40 W4 normal and hard-failure closure;
-2. a new frozen D2 protocol in `docs/eval_protocol.md`;
-3. paired 1/2/4-GPU runs using the same binary and endpoint;
-4. full 682-record post-append publication/commit/reclaim;
-5. strong all-exact and independently tuned owner-local contiguous fixed-action baselines;
-6. physical communication and per-rank capacity ledgers;
-7. segmented consumer or next-wave support;
-8. complete full-payload, transaction, and failure checks.
+1. XP/HET/HOM identities and primary `compiled|exact` ActionPlan are frozen;
+2. a new D2 protocol is frozen in `docs/eval_protocol.md`;
+3. the runner supports 1/2/4 ranks, with each formal cell honestly capacity-admitted;
+4. rolling post-append group validation/commit/reclaim completes;
+5. strong all-exact, placement and owner-local contiguous fixed-action baselines are independently
+   tuned;
+6. physical communication and per-rank capacity ledgers close;
+7. segmented consumer or next-wave support closes;
+8. complete full-payload, group-lifecycle and failure checks close.
+
+The historical independent W4/Stage-B gate remains required only to promote that old result
+family. It does not block successor benchmark design or baseline implementation. The separate
+Benchmark Qualification registry must close before any successor timing is promoted to paper
+evidence.
 
 A positive D2 result must show that the physical-sparse path beats the strongest legal
 owner-local contiguous fixed-action baseline and has a meaningful region relative to the fastest
@@ -357,15 +404,15 @@ neither a serving claim nor a gate.
 
 ## 11. Stop and fallback rules
 
-- If W4 fails, repair collective order, routing, capacity, or termination before formal evaluation.
+- If a 1/2/4-rank qualification point fails, repair collective order, routing, capacity, or
+  termination before promoting that point.
 - If the strong contiguous mixed baseline remains slower but the complete D2 path wins, retain the
   logical-to-physical motivation.
 - If complete D2 loses after all overhead is included, do not change D1 actions to rescue it;
   attribute the loss and demote or remove the mechanism.
-- If the current real accessed embedding/cardinality scale is too small to expose the distributed
-  problem, construct one larger semantically valid base plus one or two streaming updates from an
-  accepted dataset. Rebuild D1 artifacts and the immutable plan. Do not manufacture the claim with
-  unused cold rows.
+- XP proactively constructs the larger semantically valid embedding foundation; it is not a
+  fallback triggered only after X2 fails. Rebuild its D1 artifacts and immutable plan, and do not
+  manufacture the claim with unused cold rows.
 - Do not introduce SSD tiering, serving hotness, or a D3 scheduler to hide an unresolved D2
   bottleneck.
 
@@ -394,19 +441,20 @@ must not be mechanically renamed from CohortKV to EvoKV.
 
 ## 13. D3 handoff
 
-The immediate handoff is a minimal H12/W2 `WorkManifest` containing record, action, owner, extents,
-source/target locators, bytes, and operator/pool keys. This is sufficient to build GPU0/GPU1
-sequential and double-buffer development paths.
+The historical immediate handoff was a minimal H12/W2 `WorkManifest` and was sufficient for the
+GPU0/GPU1 M0/M1 development paths. The successor handoff uses HET valid extents and primary
+`compiled|exact` actions, contains record/action/owner/source/target bytes and operator/pool keys,
+and is consumable by a 1/2/4-rank-capable runner.
 
 For a later formal isolation track, implement the capacity-independent exporter described in
 Section 4 and verify its record coverage, owner/operator bindings, physical membership,
-collective templates, layout/transaction contract, and content hash. That track may assume:
+collective templates, layout/group-lifecycle contract, and content hash. That track may assume:
 
 - the D1 action hash is immutable;
 - owners, operators, compatible bins/pools, collective dependencies, segmented layout, coverage,
-  and lineage are D2 constraints;
+  lineage and group-validation requirements are D2 constraints;
 - a compatible D2 pool may be cut into smaller slices;
-- private publication remains mandatory.
+- each slice must commit a versioned replacement before its old extent is reclaimed.
 
 D3 may not assume:
 
@@ -418,5 +466,6 @@ D3 may not assume:
 
 Cross-layer discovery may also change actions, owners, pools, or layout before execution. It must
 record a new `stack_revision` and rerun baselines, so it is not presented as a fixed-D2 ablation.
-A normalized exporter, full transaction closure, and broader GPU matrix are later formalization
-tasks rather than prerequisites for the first two-card scheduler comparison.
+A normalized exporter, group-lifecycle closure and formal GPU matrix remain paper-result tasks,
+not prerequisites for continuing two-card mechanism exploration. They cannot be skipped when the
+successor protocol is frozen.

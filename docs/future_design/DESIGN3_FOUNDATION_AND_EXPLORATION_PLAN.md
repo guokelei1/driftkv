@@ -1,12 +1,117 @@
 # EvoKV Design 3 Foundation Benchmark and Exploration Plan
 
-日期：2026-07-30
+日期：2026-07-31
 
-状态：**面向快速机制探索的工作计划，不是冻结接口、正式 protocol 或论文结果**。本文档只
-固定 D3 的主方向和第一套两卡 benchmark 路径。D1/D2/D3 的具体接口、责任边界和候选机制都
-可以在实测后调整。
+状态：**历史 M0/M1 机制发现账本 + successor benchmark 的灵活执行入口，不是冻结
+protocol 或论文结果**。本文档完整保留 fixed-512、GPU0/GPU1、complete-private-target
+开发链，但它不再定义正式 benchmark endpoint。未来 formal matrix、资源边界和执行顺序以
+[../10_paper_experiment_blueprint.md](../10_paper_experiment_blueprint.md) 为准；promotion
+前的检查登记在 [../11_benchmark_qualification.md](../11_benchmark_qualification.md)。
+Qualification 不阻止 workload、runner、baselines 或机制设计，只阻止未合格结果晋升为
+paper evidence。
 
-当前 checkpoint：Milestone D 已完成 route-aware ResidencyPlan 的开发态实现、同一
+## Successor benchmark boundary
+
+下一轮 foundation 从一开始采用同一个现实场景，而不是在 D3 才临时引入异质性：
+
+1. `X-QK-HET` 是 D1→D2→D3 的 primary workload。它保留自然
+   old/retained/evicted/append/target 长度，容量、分组和吞吐按 valid K/V bytes 定义，
+   owner 使用冻结 stable hash 并保留自然 rank imbalance。
+2. `X-QK-HOM` 与 HET 共享模型、edge、base-only entity table、用户选择 salt、record
+   IDs、valid histories 和 D1 action 语义，只将同一记录 masked-pad 到 512-slot physical
+   layout 作 matched causal control。不得根据最终 speedup 在 HET/HOM 中择优，也不为
+   HOM 复制全部实验矩阵。同一 nominal cohort 由 HET valid bytes 冻结，但 HET/HOM 的
+   micro-wave admission 分别使用实际 input+shadow+workspace allocation，HOM padding
+   完整计入。
+3. 集成主路径只使用 `compiled|exact`。Progressive residual replay 是 D1-only supporting
+   extension；若扩入完整 stack，必须建立独立 source/action contract 和重跑 baselines。
+4. XP 固定为 2,859,835 个 base-period semantic rows 加一个 padding row，即
+   2,859,836×4,096 physical FP32 table（43.638 GiB）、
+   owner-side E4096→H1536 projection 和 24L/H1536 core。硬件 HBM cap 先独立冻结，
+   qualification 再验证单卡不可复制、2/4-rank admission 和短 edge；不能查看 EvoKV
+   speedup 后换 geometry。只有真实 optimizer-updated active rows 计入强制分片；
+   两个 formal edges 上 all-exact 与所有冻结 fixed-action exact/append/fallback 的
+   semantic-request union 必须全部 active 并记录 hash，且 active embedding 加
+   dense/projection bytes 自身超过单卡可分配量。
+5. 正式 runner 从实现上参数化为 1/2/4 rank。XP 以 capacity-admitted 2/4 rank 为
+   headline；X2/R-KR 提供 1-rank path 和 rank-count sanity。三卡不属于预声明矩阵。
+6. D3 维护一份 live cache 与 bounded group shadow/staging。每组执行
+   `stage → compute → writeback → validate → group commit → old-group reclaim`；host
+   peak 不再包含完整第二版本。
+7. Baseline-first 顺序为 tuned exact、S0、S1、independently tuned fixed-FIFO S2 和
+   profile-aware work-conserving generic scheduler，再运行 D3。Profile-aware generic
+   把 group 当作 opaque jobs，可以读取相同 stage profile/capacity/credits 和 bounded-flow
+   recurrence，但不能读取 compiled/exact 标签、route-specific parameter sharing 或
+   EvoKV stable-interleave objective。
+
+首批 foundation 输出不是固定接口，而是 HET/HOM manifests、XP capacity ledger、
+rank-parameterized runner、rolling group store、共同 timer/correctness ledger 和上述强
+baselines。中间实现允许根据 profile 调整；只要 `stack_revision` 改变，就为新 revision
+重跑自己的 baselines。
+
+## Foundation Review 0：successor 已开始实际构建
+
+2026-07-31 的首轮实际构建已经完成 workload、两卡 embedding 物理 canary 和 rolling
+lifecycle canary。它回答“successor foundation 能否建立”，不回答 D3 候选是否有效，也不
+晋升任何 timing 为论文证据。
+
+QK Pass A 完整扫描 493,458,970 行、5,022,750 个用户。按新的 stable salt，1,715,916 个
+用户具有至少 96 条 exposure，2,219 个用户具有至少 1,024 条。已冻结互斥 post-base
+roles：2,048 个 `theta1→theta2` 长用户、2,560 个 `theta0→theta1` 用户、各 512 个
+fit/profile/qualification 用户和 65,536 个 final records。Pass B 为 final records
+物化 12,257,432 个实际历史 token；压缩工件约 37.7 MB。角色、长度、owner、capacity 和
+历史身份位于：
+
+```text
+configs/evokv_foundation/foundation_review_development_v0.json
+configs/evokv_foundation/qk_post_base_roles.json
+configs/evokv_foundation/qk_foundation_summary.json
+data/processed/evokv_foundation/qk_full_user_lengths.npz
+data/processed/evokv_foundation/x_qk_het_foundation.npz
+```
+
+自然 HET target 长度的 min/median/p95/max 为 96/153/404/512，只有 2.1835% records
+达到 512。完整 65,536-record universe 的 old/target valid K/V 分别为
+1,498,194,247,680/1,801,465,380,864 bytes；同记录 HOM 的单版本 allocated K/V 为
+4,947,802,324,992 bytes。由 HET target valid bytes 冻结的
+36/72/144/288/576/720-GiB points 分别需要
+1,416/2,815/5,625/11,272/22,544/28,192 records。720-GiB point 的 HET old live
+K/V 为 642,565,177,344 bytes，仍可在一份 live cache 加 bounded shadow 的边界内进入
+后续 host qualification；同 nominal point 的 HOM live allocation 超出当前主机，因此
+HOM 只运行 capacity-admitted matched controls，不能强行复制完整矩阵。
+
+all-exact valid targets 在两个预声明 edge 上各包含 12,216,969 个 token，union 为
+929,554 个真实 mapped rows，hash 已写入 summary；这些 rows 全部属于 base catalog，但
+catalog frequency 不是 optimizer activity。XP 的 2,859,836×4,096 FP32 物理表已在
+GPU0/GPU1 实际按 modulo 分片：全局 46,855,553,024 bytes、每 rank
+23,427,776,512 bytes，两个 rank 的实测 peak allocated 均为 23,478,130,688 bytes。
+16 requests/rank 的 canary 中每 rank 有 8 个 remote requests；owner 在 FP32
+E4096 上查表并投影后，只返回 H1536 FP16，数值 oracle 通过。该 canary 只证明容量和
+通信实现，不证明 checkpoint 已训练。
+
+XP 的 dense core（含 4,096×1,536 projection）为 291,863,040 个 FP32 parameters；
+global embedding 加 dense 为 48,023,005,184 bytes，超过本机单卡 Torch allocatable
+47,699,722,240 bytes。但 forced-sharding 只能按真正 optimizer-updated rows 计算：
+当前精确门槛为 2,840,105 个 semantic rows，即 99.3101%。该 gate 仍是
+**pending**，也是进入正式 XP timing 前最重要的 Foundation Review 风险；冷分配和
+929,554-row request union 都不能代替它。
+
+真实 HET/HOM 工件上的四组 short/mid/long/saturated full-payload lifecycle canary 均
+完成 validate-before-commit、old reclaim、一次故障不发布、一次幂等 replay 和
+exactly-once coverage。它当前使用 deterministic full-extent payload 验证容量/事务语义，
+明确 `executes_d1_d2_numeric=false`。历史 fixed-512 X2 双卡 D1/D2 回归另以 8 条
+compiled/exact records 跑通，makespan 0.3271 秒、exactly-once 通过、单 rank peak
+allocated HBM 11.157 GB；它只证明旧数值栈和 collective 环境可用。
+
+因此本轮结论是：**workload、真实 XP 两卡分片投影和 rolling 事务骨架已经可运行；正式
+ActionPlan overlay、active-row checkpoint、byte-bounded D1/D2 rolling runner 和
+36/72-GiB problem-existence baselines 尚未开始。** 下一次系统 review 应在
+active-row gate 与第一条真实 HET `compiled|exact` rolling canary 闭合后进行，而不是在
+当前组件 canary 上判断 D3 机制成败。上述结果全部保持
+`scientific_result=false`、`formal_design3=false`。
+
+以下 checkpoint 是**历史 fixed-512/full-private-target M0/M1 开发账本**。Milestone D
+已完成 route-aware ResidencyPlan 的开发态实现、同一
 stack/hash 下的 route-major/selected paired full 运行，以及完整 payload 校验。早期
 Milestone A 的 H12/W2 682 records 被划为 26 个
 logical-payload-bounded groups；GPU0/GPU1 使用一个可复用 pinned slot，跑通 ordinary
@@ -17,7 +122,7 @@ host/device movement 与 writeback 合计 9.93–10.01 秒。该单次 profile �
 同量级瓶颈，仍是
 `scientific_result=false` 的容量模拟，不是 speedup 或物理 out-of-core 证据。
 
-M1 已推进到真实物理 out-of-core 的首个 D3 候选，并冻结为当前 D3 开发边界。QK 全体用户
+M1 已推进到真实物理 out-of-core 的首个 D3 候选，并冻结为历史 D3 开发边界。QK 全体用户
 的 first-64 raw exposures 产生 2,859,835 个 base-active item entities；top-250k 是
 prediction rows，其余 2,609,835 行是 lossless context entities，stream-only item 只 hash
 到已有 context rows。含 padding 的 H1536 FP32 embedding 有 2,859,836 行、16.364 GiB。
@@ -90,20 +195,21 @@ compiled compute-batch 轴。
 [../eval_protocol.md](../eval_protocol.md) 冲突时，以后二者记录的已有证据边界为准；尚未形成
 证据的 D3 实现路线以本文档为当前工作入口。
 
-## 0. 核心原则：先把两卡 DRAM↔HBM benchmark 跑起来
+## 0. 历史 M0/M1 原则：先把两卡 DRAM↔HBM benchmark 跑起来
 
-D3 当前最需要弄清楚的不是一个完美接口，而是：
+这一原则描述已经完成的 M0/M1 mechanism-discovery 阶段。当时最需要弄清楚的不是一个
+完美接口，而是：
 
 > 当大量旧 K/V 位于 host DRAM、两张 GPU 无法同时容纳完整 source 和 target 时，怎样把
 > DRAM→HBM、两卡 D2 计算、HBM→DRAM 组织成高效流水？
 
-第一优先级固定为 GPU0+GPU1：
+该阶段第一优先级固定为 GPU0+GPU1：
 
 - 两张 A40；
 - one process per GPU；
 - NCCL；
 - 同一 NVLink/NUMA0 island；
-- 暂不做 3/4-GPU、跨 island 或多节点。
+- 当时暂不做 3/4-GPU、跨 island 或多节点。
 
 两张卡已经足以暴露分布式 embedding、collective、rank imbalance、PCIe 搬运和流水同步问题。
 在两卡上没有得到清楚机制前，扩到更多卡只会增加调试变量。
@@ -132,8 +238,10 @@ D3 当前最需要弄清楚的不是一个完美接口，而是：
 - 1/2/4-GPU 正式矩阵；
 - 多 seed、第二数据集或第二 model-update edge。
 
-这些能力在候选设计稳定后再补。早期 benchmark 可以使用轻量 `WorkManifest`、private target
-和 coverage/checksum 结束，不必等完整论文级事务实现。
+这种延期只适用于已经完成的 M0/M1 机制发现。Successor paper-core 现在明确要求
+1/2/4-rank runner、rolling group lifecycle、segmented consumer、reproducible identity 和
+formal protocol；早期 benchmark 使用轻量 `WorkManifest`、private target 和
+coverage/checksum 的做法只能继续作为历史回归。
 
 ### 0.3 允许跨层回头调整
 
@@ -141,7 +249,7 @@ D3 当前最需要弄清楚的不是一个完美接口，而是：
 
 ```text
 D1：给出当前 planning 决策
-D2：给出当前两卡执行方法
+D2：给出当前分布式执行方法
 D3：组织 DRAM↔HBM residency 与流水
 ```
 
@@ -158,7 +266,7 @@ revision 下重新跑对应 baseline。不能把修改前的 baseline 与修改�
 最终论文可以重新决定某个机制属于 D1、D2 还是 D3。当前优先理解问题和找到有效机制，而
 不是先证明接口划分永远正确。
 
-## 1. 两层 benchmark
+## 1. 历史两层 benchmark
 
 ### 1.1 M0：H12 两卡快速开发 benchmark
 
@@ -197,6 +305,10 @@ dummy K/V、冷 embedding rows 或人为 owner 倾斜制造容量。
 M0 跑通后，使用 Tenrec QK 的真实大 workload 替换软件容量 cap。当前开发态 foundation 已
 固定并物化：
 
+> 这里的 M1 是冻结的 fixed-512 development workload，不是 formal X-QK role split。
+> 它的 users、action snapshot、model edge、complete-private-target endpoint 和 timings
+> 都不能直接晋升或汇入 successor paper evidence。
+
 1. 每个用户的 first-64 raw exposures 拟合完整 base entity address space；
 2. base-frequency top-250k 为 prediction rows，其余 base-seen items 一一对应 context rows；
 3. 仅在 base 后首次出现的 item 通过 SplitMix64 映射到已有 context rows，不扩展冷行；
@@ -229,15 +341,15 @@ M0 跑通后，使用 Tenrec QK 的真实大 workload 替换软件容量 cap。�
 双卡 row-sharded trainer 已完成 seed-0 的 base/update 各一轮训练并写出分片 checkpoint。
 固定 held-out window 含 13,426 个 positive targets；`theta1` 相对 `theta0` 的
 NDCG@10 为 0.380294 对 0.371468，Hit@10 为 0.547073 对 0.520259，sampled cross entropy
-为 3.653369 对 3.707804。该正信号只用于确认这个短 edge 没有退化，并冻结为当前 D3
+为 3.653369 对 3.707804。该正信号只用于确认这个短 edge 没有退化，并冻结为历史 D3
 development boundary；它不是多 seed 的算法质量结论。
 
 edge-specific direct-old-K/V program、20.0195%-exact D1 action snapshot 和 D2 request
 characterization 都已完成并绑定相同 checkpoint/data identity。第二个 update、recursive
-migrated source、多 seed 和完整质量复现继续推迟到 formal E0、重复与当前候选的最小
-资格验证以后。
+migrated source、多 seed 和完整质量复现当时被推迟；successor 现在按实验蓝图重新建立
+独立 role split、held edge 和 formal replication。
 
-## 2. 最小两卡执行骨架
+## 2. 历史最小两卡执行骨架
 
 ### 2.1 轻量 `WorkManifest`
 
@@ -252,8 +364,8 @@ migrated source、多 seed 和完整质量复现继续推迟到 formal E0、重�
 - 当前 operator/pool key；
 - target locator。
 
-`WorkManifest` 可以先绑定当前 H12/W2 实现，后续再泛化。它的作用是让 sequential、double
-buffer 和 proposed scheduler 读取同一份工作清单，而不是定义永久架构。
+`WorkManifest` 当时可以先绑定 H12/W2 实现。它的作用是让 sequential、double buffer 和
+proposed scheduler 读取同一份工作清单，而不是定义永久架构。
 
 每次 D1/D2 adapter 发生变化，更新：
 
@@ -263,8 +375,9 @@ work_manifest_hash
 change_reason
 ```
 
-然后在新 revision 下重跑 baselines。正式 capacity-independent exporter 和完整 parity checker
-在最终机制稳定后再决定是否必要。
+然后在新 revision 下重跑 baselines。正式 capacity-independent exporter、完整 stack
+identity 和 parity checker 不是历史 M1 mechanism discovery 的前置条件，但在任何 formal
+D2/D3 paper claim 前都是必需项。
 
 ### 2.2 DRAM source/target
 
@@ -325,9 +438,9 @@ M0 的第一版结束条件是：
 - 每个 group 的 coverage/checksum 可审计；
 - peak HBM 不越过配置预算。
 
-第一版不要求完整 atomic epoch switch 和所有 fault injection。private target 不对外发布即可。
-在 D3 候选通过 formal E0、重复和最小 sensitivity 并最终选定后，再补
-global commit/abort/reclaim，避免事务实现挡住机制资格验证。
+历史第一版不要求完整 atomic epoch switch 和所有 fault injection；private target 不对外
+发布即可。Successor 不再补 global epoch COW，而是要求每个 rolling group 在 timed path
+中完成 writeback、validation、versioned commit 和 old-group reclaim，并验证幂等恢复。
 
 ### 2.5 大 extent 的索引边界
 
@@ -406,7 +519,7 @@ endpoints 和 primary timer，使用两个非别名 slots、lookahead-1 和 sing
 makespan 为 32.703 秒，相对公平 S0 为 1.475x。两 rank 的 input-boundary wait 仍为
 6.795/6.195 秒，因此 S1 是可信的强基线，但不是 out-of-core 流水的终点。
 
-### 3.3 S2：generic fixed-FIFO bidirectionally segmented I/O
+### 3.3 S2 specification 与历史 bidirectional precursor
 
 这个强通用 baseline 在 S1 的 bounded group pipeline 内再加入一级 microbatch pipeline：
 
@@ -425,11 +538,13 @@ triples，只增加 stable interleave。
 读取或覆盖前建立生命周期边界；外层仍只有一个 prefetched group 和一个 outstanding drain。
 因此该机制不靠增加 resident group 或无界队列获取收益。
 
-只分段输入的中间版本为 31.096 秒，并把 input wait 转移成 4.865/3.706 秒 output-credit
-wait。双向版本进一步降到 28.885 秒，output-credit wait 降至 1.735/0.738 秒。相对 strong
-S1 的额外收益为 1.133x。full S1/D3 两 rank 的 target 均逐字节一致，ledger 为
-complete/no-partial/no-missing/exactly-once。当前最佳为 microbatch-8；microbatch-16
-29.337 秒且 reserved HBM 更高。
+只分段输入的历史中间版本为 31.096 秒，并把 input wait 转移成 4.865/3.706 秒
+output-credit wait。旧 runner 的双向 precursor 进一步降到 28.885 秒，output-credit
+wait 降至 1.735/0.738 秒，相对 strong S1 的诊断比值为 1.133x。full S1/D3 两 rank 的
+target 均逐字节一致，ledger 为 complete/no-partial/no-missing/exactly-once；microbatch-16
+为 29.337 秒且 reserved HBM 更高。由于 28.885 秒不属于 current exact-stack runner，
+它不是已完成的 independently tuned formal S2，也不能作为当前 planner 的 order-only
+分母。
 
 ### 3.4 D3：route-aware ResidencyPlan
 
@@ -459,7 +574,7 @@ budget 和 timer；16 个 group-64 的 sequential/S1 时间为 44.639/33.549 秒
 group/microbatch、重复运行并冻结 source hash，不能把这两个单次 development artifact
 直接当作论文分母。
 
-### 3.6 初始 timer
+### 3.6 历史 M1 timer 与 successor timer
 
 目标 wall boundary 从第一个 ordinary→pinned copy 前开始，到最后一个 target extent 写回
 普通 DRAM 为止。当前 S0 在 timer 内做 sampled finite/metadata 检查，在 timer 后做 global
@@ -474,8 +589,13 @@ exactly-once；full checksum/numerical parity 是 S1 对比前的补充检查。
 - rank wait 和 pipeline bubble；
 - peak HBM/pinned memory。
 
-Plan construction、atomic commit 和 reclaim 先单独计量；最终论文 protocol 再决定哪些合入
-primary timer。开发阶段优先保证各变体使用同一计时方式。
+历史 M1 将 plan construction、atomic commit 和 reclaim 单独计量。Successor D2/D3
+mechanism 图使用 execution-only timer：从首个 ordinary-DRAM stage 开始，到最后一个
+group 完成 writeback、validation、commit 和 old-group reclaim 为止；plan/profile
+construction 单列，同时报告 plan-inclusive single-wave cost 与 break-even。E1 不沿用这个
+execution-only 边界：其 end-to-end primary 从 model checkpoint publication 后开始，计入
+该 edge 的 D1 fit/compile、D2 lowering/routing、D3 profile/plan construction 和完整
+rolling execution。
 
 当前 M1 S0 还将 complete old-store materialization、model/program load、operator warmup 和
 target prefault 放在 primary timer 外。53.497 秒是 `run_s0` 的两 rank makespan；50.017 秒
@@ -487,7 +607,7 @@ speedup 分母；28.885 秒也不能作为当前 plan 的 order-only 分母。ov
 指标用于因果分析，其中
 `estimated_hidden_{input,output}_seconds` 只是保守估计，不能替代 wall/credit/boundary wait。
 
-## 4. Profile 收敛出的 D3
+## 4. 历史 M1 profile 收敛出的 D3
 
 ### 4.1 当前选择
 
@@ -505,29 +625,30 @@ candidate 消除该 stall 后又暴露 output-credit stall。由这条因果链�
 无界 output queue。固定顺序 28.885 秒是 active precursor；当前 active candidate 是在其上
 增加 route-aware rate matching 与 stable interleave 的 hashed ResidencyPlan。
 
-### 4.2 接下来只做资格验证
+### 4.2 当时的资格验证计划
 
-当前不再泛化搜索 scheduler，也不做完整粒度笛卡尔积。下一步先完成：
+历史 M1 在这一节点停止泛化 scheduler 和完整粒度笛卡尔积，当时计划完成：
 
 - independently tuned and repeated formal E0；
 - 至少一个 action/capacity mix sensitivity；
 - 最小重复执行或第二 edge；
-- publication/transaction 计时边界；
+- publication/reclaim 计时边界；
 - 判断收益是否稳定跨越 exact-preferred crossover。
 
-当前 capacity group、三段粒度、双向 credits 和 launch order 已经固化为可 replay 的
-development `ResidencyPlan`。若资格检查通过，再冻结正式 schema/protocol。Coupled
+该 capacity group、三段粒度、双向 credits 和 launch order 已经固化为可 replay 的
+development `ResidencyPlan`。Coupled
 microbatch-16、compiled input-16 和 compiled output-4 在各自开发观察点没有提升；这只支持
-停止当前 exhaustive tuning，不构成对这些粒度的一般性拒绝。
+停止该历史 revision 的 exhaustive tuning，不构成对这些粒度的一般性拒绝。当前 successor
+不会等待这些检查才开始 HET/HOM、XP、rolling runner 和 strong-baseline foundation。
 
-### 4.3 只在资格验证失败时回退
+### 4.3 历史 revision 的回退规则
 
-若 formal E0 或 sensitivity 否定当前机制，再考虑 rank-aware byte balance、collective-arrival-aware
+若 formal E0 或 sensitivity 否定该历史机制，再考虑 rank-aware byte balance、collective-arrival-aware
 prefetch、D2 owner/pool granularity 或 D1/D3 budget co-design。任何改变 actions、owners、
 pools 或 layout 的候选都是新的 `stack_revision`，必须重跑自己的 S0/S1，而不是与本 revision
 直接比较。
 
-### 4.4 不急着做的内容
+### 4.4 历史 M1 当时延后的内容
 
 - 3/4 GPU；
 - topology sweep；
@@ -537,9 +658,10 @@ pools 或 layout 的候选都是新的 `stack_revision`，必须重跑自己的 
 - formal failure matrix；
 - exhaustive parameter sweep。
 
-当前 proposed 已胜过 S1 和单次 development E0，但相对同 stack route-major control 只有
-1.2879% 的单次收益；它尚未通过 independently tuned generic S2、formal E0 和最小资格
-验证，因此不能据此冻结 paper claim。
+这些延期不适用于当前 paper-core：1/2/4-rank、第二 edge、rolling failure recovery 和
+formal protocol 已进入 successor 蓝图。历史 candidate 相对同 stack route-major control
+只有 1.2879% 的单次收益；邻接但不同 runner 的 E0 diagnostics 只能提示可能存在 crossover，
+不能建立 independently tuned/repeated E0→D3 结论。
 
 ## 5. 五个灵活 milestone
 
@@ -635,50 +757,52 @@ development E0。
 
 **当前最大风险。** 当前只有一个 exact-stack paired control/candidate，仍共享一个训练
 seed、action mix，且 profile selection 与 evaluation 尚未形成正式 held-out boundary。
-Development E0 已产生 positive crossover，但尚未独立调优或重复。相邻 identity-only
-revision 的收益幅度更大，表明系统波动不可忽略。下一步应补 formal E0、正式重复和最小
-held-out sensitivity，而不是继续堆叠 buffer 或弱化 S1。
+邻接的 development diagnostics 提示可能存在 crossover，但它们不是 same-binary、
+independently tuned and repeated E0→D3 对比，因而尚未建立 crossover。相邻
+identity-only revision 的收益幅度更大，表明系统波动不可忽略。
 
 ### E：机制稳定后再正式化
 
-**状态：当前下一阶段。**
+**状态：历史过渡点；当前执行入口已由本文顶部 successor boundary 和实验蓝图取代。**
 
-**目标。** Development E0 已给出 positive crossover；现在用 independent tuning/repeats
-和最小 sensitivity 判断当前机制能否变成论文设计，再正式化。
+**当时目标。** 用 independent tuning/repeats 和最小 sensitivity 判断 development
+candidate 能否变成论文设计；历史结果只提示可能的 crossover，并未证明它。
 
 **届时再补。**
 
 - 最终 D1/D2/D3 责任边界；
 - 通用 schema/exporter/hash；
-- atomic publication、abort、reclaim；
+- rolling group validation、commit、abort、reclaim；
 - exact crossover；
 - capacity/action-mix sensitivity；
 - 1/2/4-GPU；
 - 第二 model edge 和正式 replication；
 - frozen protocol。
 
-**最大风险。** 当前 development crossover 无法在 independently tuned/repeated E0、
-capacity/action sensitivity 或 replication 中保持。若资格验证失败，则回到 D 重新定位
-机制，而不是用更多形式化工作包装失败候选。
+**最大风险。** Historical development indication 无法在 independently tuned/repeated
+E0、strongest generic baseline、capacity/action sensitivity 或 replication 中保持。若该
+候选失败，successor 仍在已经固定的 benchmark foundation 上重新定位机制。
 
-## 6. 开发判断标准
+## 6. 历史 M1 开发判断标准
 
-当前不设置复杂 formal gates，只连续回答四个问题：
+该阶段不设置复杂 formal gates，只连续回答四个问题：
 
 1. **能否运行？** 两卡 bounded-memory DRAM→GPU→DRAM 是否正确完成？
 2. **瓶颈是什么？** 搬运、compute、collective、rank wait 还是 writeback？
 3. **通用流水有多强？** S1 相对 S0 隐藏了多少，generic fixed-FIFO S2 又能隐藏多少？
-4. **场景特异机制是否有额外收益？** proposed 是否稳定胜过 independently tuned S2，
-   且能由 profile 解释？
+4. **场景特异机制是否有额外收益？** proposed 是否稳定胜过 independently tuned S2 与
+   profile-aware generic 中的强者，且能由 profile 解释？
 
-当前四个问题在这一个 M1 point 上的回答分别是：能；双向 staging/writeback 加 route
+历史四个问题在这一个 M1 point 上的回答分别是：能；双向 staging/writeback 加 route
 resource imbalance；S1 为 1.475x，fixed-FIFO segmentation 已经贡献大部分后续收益；
 selected D3 相对同 stack route-major control 只有 1.013047x。它已经超过“只胜
-sequential”的最低开发门槛并在该单次 point 上回答了 E0 crossover，但尚未证明相对强
-generic S2 的稳定 paper-level 增益；held-out generality、正式重复和论文证据仍未完成。
+sequential”的最低开发门槛，但尚未完成同 current stack 的 independently tuned S2、
+profile-aware generic 或 E0→D3 comparison，因此没有回答 formal crossover；held-out
+generality、正式重复和论文证据仍未完成。
 
-论文阶段仍需要严格可比性、correctness、physical capacity、independently tuned/repeated
-all-exact、failure 和扩展实验；但这些不阻塞当前两卡机制发现。
+Successor 仍需要严格可比性、correctness、physical capacity、independently tuned/repeated
+all-exact、strongest generic、failure 和扩展实验；这些不抹去历史两卡机制发现，也不阻塞
+当前 HET/XP/rolling foundation 实现。
 
 ## 7. 状态持久化
 
@@ -725,8 +849,9 @@ results/system/evokv_design3_m1/qk_entity_h1536_d3_profile_compiled_o4_seed0.jso
 ```
 
 这些文件记录从物理 materialization、顺序瓶颈、strong S1、input-only 归因、双向分段到
-route-aware stable interleave 的完整开发链，并建立单次 development E0 crossover。它们仍
-不证明正式 protocol、independent replication、generality 或 paper speedup。
+route-aware stable interleave 的完整开发链。相邻但不同 runner 的 E0 与 D3 数字只提示
+可能的 crossover；它们不建立 same-binary formal waterfall，也不证明正式 protocol、
+independent replication、generality 或 paper speedup。
 
 每个 run 至少记录：
 
@@ -740,14 +865,16 @@ route-aware stable interleave 的完整开发链，并建立单次 development E
 - correctness；
 - 当前结论、失败原因和下一步。
 
-大 K/V payload 只存在进程内 pageable DRAM 或 `/dev/shm` 等临时路径，不进入 Git。当前
-M1 old store 可以在同一 run-id 下通过完整 coverage 和 model/data/plan/owner binding
-复用；失败后的 partial target 不能自动覆盖。每次 candidate run 前应使用独立 target
-identity 或显式 reset，不能误把残留 coverage 当成新 run。
+大 K/V payload 只存在进程内 pageable DRAM 或临时物理 arena，不进入 Git。历史 M1 old
+store 曾完整物化；只有在 arena 仍存在且 coverage/hash/model/data/plan/owner 全部通过时
+才能复用，否则必须 rematerialize。Successor 的 576/720-GiB 等大点使用 qualification
+后的 NUMA-aware anonymous ordinary DRAM，不把 `/dev/shm` mount 当作唯一 backend。失败后
+的 partial replacement 不能自动覆盖；恢复必须按 group version/lineage 幂等继续，不能把
+残留 coverage 当成新 run。
 
-## 8. 立即执行顺序
+## 8. 历史 M0/M1 执行账本
 
-接下来严格限制在 GPU0/GPU1，但实现内部保持灵活：
+以下是已经完成或停留在旧 revision 的 GPU0/GPU1 路径，不是当前 formal 执行顺序：
 
 1. 已从 H12/W2 导出最小 `WorkManifest`；
 2. 已新建 pageable-DRAM source/target 与 byte-bounded grouping；
@@ -758,14 +885,40 @@ identity 或显式 reset，不能误把残留 coverage 当成新 run。
 7. 已物化 144-GiB complete old K/V，并完成 2,048-record、九组、288-GiB group-128 M1
    S0；
 8. 已补 fair group-64、17-group S0 和同 setting 的 M1 strong S1；
-9. 已完成 input-only causal probe 和 generic fixed-FIFO bidirectionally segmented S2；
+9. 已完成 input-only causal probe 和 historical v1 bidirectionally segmented
+   precursor；同 current stack、独立调优的 formal S2 未完成；
 10. 已实现 route-specific 三段解耦、bounded-flow planner、stable interleave、plan/stack
     hash，并以 28.514442098/28.147194647 秒完成同一 exact-stack route-major/selected pair
     与 full byte parity；
 11. 已补 grouped E0 与 owner-local D1-only contribution diagnostics；
-12. 下一步先补 independently tuned formal E0 与 generic S2、正式重复与最小 held-out
-    sensitivity，再决定
-    是否冻结正式 D3。
+12. 该 revision 停在 independently tuned formal E0/generic S2、正式重复与最小 held-out
+    sensitivity 之前。
 
-这个顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被设计
-推翻的正式接口。
+这条历史顺序的目标是尽快得到可反复使用的两卡 benchmark，而不是先完成一套可能随后被
+设计推翻的正式接口。
+
+## 9. 当前 successor 执行顺序
+
+当前不再按“先把旧两卡 candidate 做完，再决定是否扩展”串行推进，而按 baseline-first
+foundation 建设：
+
+1. 从同一 QK role split 生成 HET primary 与 HOM matched-control manifests，冻结长度、
+   valid-byte、owner-imbalance 和身份统计；
+2. 先冻结与方法无关的硬件 HBM cap，再 qualification 已预声明的固定 XP
+   （2,859,835 semantic rows + 1 padding row 的 2,859,836×4,096 physical FP32 table、
+   E4096→H1536、24L/H1536），冻结 1/2/4-way
+   placement ledger 和 model-update edge；若 qualification 失败，必须在任何 timing 前
+   发布新的 benchmark identity，不能在 ladder 中按 EvoKV 结果择优；
+3. 把现有 executor 参数化为 1/2/4 rank，并实现 live arena、bounded group shadow、
+   validation、versioned group commit、old-group reclaim 和幂等 resume；
+4. 在同一 stack 上先跑 tuned exact、S0、S1、current-stack S2 和 profile-aware generic，
+   完成 timer、correctness、capacity 与 baseline qualification；
+5. 在 strongest generic winner 上重新 profile 和探索 D3；isolation track 固定 D1/D2，
+   co-design track 允许形成新 `stack_revision`，但必须重跑它自己的全部 baselines；
+6. 只有结果准备晋升为 formal/paper evidence 时，才执行
+   [Benchmark Qualification Registry](../11_benchmark_qualification.md) 中登记的具体检查，
+   冻结 protocol，并开展 repeats、capacity/action/model/held-edge matrix。
+
+这些步骤只固定输入、输出和公平边界，不锁死中间接口或 scheduler 实现。任何阶段若暴露
+上游 action、owner、group 或 store 假设错误，可以回退并生成新 revision；不能用旧
+baseline 解释新 stack。

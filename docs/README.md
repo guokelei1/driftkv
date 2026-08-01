@@ -22,20 +22,23 @@ When documents disagree, use this order:
    portfolio, baseline-first execution ledger, exact experiment matrix, physical scale budget,
    run count, and figure/claim map. It is authoritative only for the planned evaluation map; it
    neither overrides D2/D3 mechanism definitions nor makes development artifacts scientific.
-4. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
+4. [11_benchmark_qualification.md](11_benchmark_qualification.md) — registry of workload,
+   capacity, topology, timer, baseline, and rolling-lifecycle checks required before formal
+   promotion. It is not a protocol and does not block benchmark design or implementation.
+5. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
    mechanism and current D1→D2 starting interface.
-5. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
+6. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
    implemented D2 state, non-scientific development evidence, pending W4/formal-evaluation work,
    and the D3 handoff.
-6. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
+7. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
    problem definition, source/capacity/timer contract, candidate mechanisms, baselines, and
    go/no-go conditions.
-7. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
-   — executable two-card foundation benchmark, staged baseline closure, candidate search, and
-   backtracking plan; it creates no protocol or evidence.
-8. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+8. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
+   — historical two-card mechanism ledger plus the flexible HET/XP/rolling successor foundation
+   and backtracking plan; it creates no protocol or evidence.
+9. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
    frozen D1 Stage 0–6 evidence ledger. It is history, not a current execution plan.
-9. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
+10. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
    semantics, usable capacity, and generality boundaries.
 
 Repository-local agent rules are in [../AGENTS.md](../AGENTS.md). Experiment records are indexed
@@ -47,17 +50,17 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 
 | Layer | Question | Output | Status |
 |---|---|---|---|
-| D1 | What should be translated, progressively repaired, or exactly recomputed? | immutable `ActionPlan` | frozen algorithm and single-configuration evidence |
+| D1 | What should be compiled or exactly recomputed? | immutable `ActionPlan`; progressive residual replay is D1-only supporting evidence | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
-| D3 | How should an out-of-core two-GPU stack move and execute K/V? | hashed, rate-matched `ResidencyPlan`; final interface open | real QK M1 boundary, grouped development E0/D1-only contribution diagnostics, fair S0, strong S1, full-group GPU staging, independent route-specific I/C/O granularity, same-source joint profiles, stable route interleaving, exact-stack paired execution, and byte parity are complete in development; independently tuned formal E0, held-out qualification, formal repeats, action/capacity mixes, transaction closure, and a formal protocol remain open |
+| D3 | How should one live cache larger than HBM move and execute on a 1/2/4-rank stack? | capacity-bounded `ResidencyPlan` plus versioned rolling groups | historical two-rank M1 mechanism chain complete in development; HET/HOM, XP, rolling lifecycle, strongest generic baseline, rank-general runner, formal repeats and protocol remain open |
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
-compiled ordering, merged exact pools, segmented destinations, and atomic publication. D3 begins
-with an isolation track that preserves the current upstream snapshot while scheduling
-ordinary-DRAM→GPU→ordinary-DRAM micro-waves. Mechanism discovery may also create a new globally
-planned D1/D2/D3 `stack_revision`; it must rerun its own baselines and cannot be presented as a
-ResidencyPlan-only ablation.
+compiled ordering, merged exact pools, segmented destinations, and group-valid outputs. D3 begins
+with an isolation track that preserves the upstream snapshot while scheduling
+ordinary-DRAM→GPU→ordinary-DRAM micro-waves, then validates, commits, and reclaims each rolling
+group. Mechanism discovery may also create a new globally planned D1/D2/D3 `stack_revision`; it
+must rerun its own baselines and cannot be presented as a ResidencyPlan-only ablation.
 
 ## What may be used as evidence
 
@@ -70,10 +73,11 @@ ResidencyPlan-only ablation.
 - D3 has a non-scientific M0 development family, not a frozen result family. Destination-v4
   correctness, normalized-capsule DRAM results, and hot-HBM D1 results cannot be renamed as D3
   evidence.
-- The QK M1 training, D1/D2 snapshot/characterizer, 144-GiB old-store materialization, fair S0,
+- The fixed-512 QK M1 training, D1/D2 snapshot/characterizer, 144-GiB old-store materialization, fair S0,
   strong S1, fixed segmented-I/O, and route-aware ResidencyPlan runs are real development
   executions. They remain
-  `scientific_result=false` and are mechanism-discovery evidence, not paper results.
+  `scientific_result=false` and are historical full-private-target mechanism-discovery evidence,
+  not the successor endpoint or paper results.
 - The frozen Markdown manuscript under `paper/cohortkv/` is a Stage-6 artifact dependency, not the
   current EvoKV manuscript or design source of truth.
 
@@ -91,9 +95,27 @@ The records below remain useful within their own protocols:
 Some filenames retain `CohortKV` or `StreamKV`. Those names identify frozen protocols and artifacts;
 they do not imply that the corresponding old architecture is current.
 
-## D3 benchmark-first entry
+## Successor paper benchmark
 
-The active implementation uses GPU0/GPU1 only:
+The successor uses natural-length `X-QK-HET` from D1 through D3; `X-QK-HOM` reuses the same
+records and valid histories in a masked 512-slot physical layout rather than selecting a different
+population or a better alternative. XP fixes 2,859,835 base-period semantic rows plus one
+padding row in a 2,859,836×4,096 physical FP32 table
+(43.638 GiB) and an owner-side E4096→H1536 projection, making full single-card placement
+capacity-inadmissible only after optimizer-updated active bytes pass the same bound and cover every
+row in the all-comparator request union across both formal edges. The integrated route domain is
+`compiled|exact`, and the same executor is
+parameterized for 1/2/4 ranks. D3 keeps one live cache plus bounded shadow/staging and completes
+`writeback → validation → group commit → old-group reclaim` for every byte-bounded group.
+
+Formal baselines include independently tuned exact, S0/S1, fixed-FIFO segmented S2, and a
+profile-aware work-conserving generic scheduler. Benchmark qualification is prepared alongside
+this foundation and becomes binding only before protocol freeze, formal repeats, and paper-result
+promotion.
+
+## Historical D3 M0/M1 mechanism entry
+
+The completed development implementation used GPU0/GPU1:
 
 1. keep the completed minimal H12/W2 `WorkManifest`;
 2. use the completed pageable-DRAM two-rank S0 as the reference;
@@ -105,13 +127,15 @@ The active implementation uses GPU0/GPU1 only:
 6. retain the fixed-order segmented-I/O candidate as the causal predecessor;
 7. use the implemented planner to bind route-specific I/C/O granularity, capacity, and a stable
    compiled/exact interleaving into one replayable plan;
-8. retain the completed grouped E0/D1-only contribution diagnostics, then independently tune and
-   repeat formal E0 plus held-out action/capacity sensitivity before formal evaluation.
+8. retain the completed grouped E0/D1-only contribution diagnostics; same-binary tuned E0/S2,
+   profile-aware generic, repeats, and sensitivity were unfinished in this revision and are not
+   the current successor execution path.
 
-A normalized exporter, full transaction, 1/2/4-GPU matrix, and frozen protocol are later
-paper-evidence tasks, not prerequisites for the first benchmark. Within one isolation revision,
-variants still use the same `WorkManifest`; a cross-layer revision records changed actions,
-owners, pools, layout, and source bytes and reruns its own baselines.
+A normalized exporter, rolling group lifecycle, segmented consumer, 1/2/4-rank runner, and frozen
+protocol were not prerequisites for this historical mechanism pass; they are required by the
+successor paper foundation. Within one isolation revision, variants still use the same
+`WorkManifest`; a cross-layer revision records changed actions, owners, pools, layout, and source
+bytes and reruns its own baselines.
 
 The concrete route is
 [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md).

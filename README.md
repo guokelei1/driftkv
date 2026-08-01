@@ -7,7 +7,8 @@ single update job into three successive system decisions:
 
 ```text
 D1 ActionPlan
-  what should be translated, progressively repaired, or exactly recomputed
+  what should be compiled or exactly recomputed
+  (progressive residual replay is a D1-only supporting extension)
         ↓
 D2 WavePlan constraints
   where that fixed work executes and how it becomes physical multi-GPU work
@@ -21,6 +22,18 @@ The authoritative research state is
 comparability is defined only by [docs/eval_protocol.md](docs/eval_protocol.md). Start from
 [docs/README.md](docs/README.md) for the complete document map.
 
+The successor paper benchmark uses natural-length `X-QK-HET` end to end and a same-record
+masked-512 `X-QK-HOM` physical-shape control. XP fixes 2,859,835 base-period semantic rows plus
+one padding row in a 43.638-GiB physical FP32 item table, with owner-side E4096→H1536 projection;
+only optimizer-updated active bytes may force
+distributed placement, and the all-comparator request union across both formal edges must be
+active. The executor is
+parameterized for 1/2/4 ranks.
+D3 maintains one live cache plus bounded group shadow/staging, then validates, commits, and
+reclaims each rolling group. The planned matrix and pre-promotion checks are
+[docs/10_paper_experiment_blueprint.md](docs/10_paper_experiment_blueprint.md) and
+[docs/11_benchmark_qualification.md](docs/11_benchmark_qualification.md).
+
 ## Current design
 
 ### D1: version-cohort tiered migration
@@ -30,8 +43,8 @@ D1 resolves the reuse–recompute trade-off and emits an immutable per-record `A
 - The fast tier fits the shared `fresh - cheap` K/V residual over cached old `Norm(x)` for one
   source/target version cohort; the selected data plane reparameterizes the compiled affine to run
   directly over existing old K/V.
-- The quality tier can replay a current-model prefix and transport its boundary residual to deeper
-  current projections.
+- A supporting D1-only quality extension can replay a current-model prefix and transport its
+  boundary residual to deeper current projections; it is not a D2/D3 headline route.
 - Exact current-model recomputation is the endpoint and the semantic reference.
 
 Version cohorts organize compilation and batching; they do not predict which user is safe to
@@ -46,7 +59,7 @@ D2 accepts D1 actions unchanged and lowers them onto row-sharded multi-GPU execu
 - compiled work is ordered by `(suffix, retained, final)` shape before fixed-size resident extent
   cuts, while physically identical exact reasons share one pool;
 - retained and suffix extents remain segmented, avoiding a full retained-prefix rewrite;
-- collective dependencies, coverage, lineage, and atomic target publication are explicit.
+- collective dependencies, coverage, lineage, and group-valid output are explicit.
 
 The D2→D3 contract is a global, capacity-independent `WavePlan` constraint view rather than a
 capacity-specific launch schedule. Current code implements the constituent mechanisms and a
@@ -57,25 +70,25 @@ commit/reclaim timing remain open.
 
 ### D3: action-aware out-of-core pipeline
 
-D3 is the next implementation target. Its first step is to freeze the D2 constraint exporter.
-Subsequent scheduler variants preserve the D1 `ActionPlan` and one common D2
-owner/operator/compatibility/dependency/layout hash, then derive a per-rank capacity-safe
-`ResidencyPlan` for:
+D3 is the active out-of-core implementation track. Its development runtime preserves the D1
+`ActionPlan` and one common D2 owner/operator/compatibility/dependency/layout hash, then derives a
+per-rank capacity-safe `ResidencyPlan` for:
 
 ```text
 ordinary host DRAM
   → bounded pinned staging
   → GPU execution
   → bounded pinned staging
-  → ordinary host DRAM private target
-  → atomic manifest publication
+  → ordinary host DRAM replacement group
+  → validation → group commit → old-group reclaim
 ```
 
-The initial comparison is against both sequential capacity groups and a strong action-oblivious
-double buffer with the same action-required source bytes. SSD/database ingress, serving traces,
-hotness, and host-DRAM oversubscription are outside the first D3 boundary. D3 has a frozen problem
-statement and exploration contract, but no executable handoff, frozen protocol, scheduler
-implementation, or result yet.
+The comparison includes sequential groups, strong double buffering, independently tuned
+fixed-FIFO segmentation, a profile-aware generic scheduler, and all-exact under the same rolling
+endpoint. The current fixed-512 GPU0/GPU1 QK M1 route-aware planner and complete-private-target
+runtime are historical development diagnostics, not the successor endpoint or a frozen paper
+result. SSD/database ingress, serving traces, hotness, and host-DRAM oversubscription remain
+outside this boundary.
 
 ## Evidence boundary
 
@@ -84,8 +97,14 @@ implementation, or result yet.
   hot-HBM route transforms existing exact source-version old K/V directly.
 - D2 implementation and mechanism discovery are far enough to define the physical lowering, but
   its current W3 timings are `scientific_result=false` and must not enter paper tables.
-- D3 is design-ready only. Existing destination-v4 and normalized-capsule DRAM experiments are
-  historical prototypes, not direct-old-K/V D3 evidence.
+- D3 has a historical two-A40 QK M1 development chain. Existing destination-v4 and normalized-capsule
+  DRAM experiments remain historical prototypes, not direct-old-K/V D3 evidence; those M1
+  timings are also non-scientific until a formal protocol is frozen.
+- The successor foundation now has a real 65,536-record natural-length QK manifest, same-record
+  masked-512 control, 36–720-GiB capacity cohorts, a physical two-A40 E4096 owner-projection
+  canary, and minimal rolling commit/reclaim/failure/replay canaries. The optimizer-active XP gate
+  and the first real HET D1/D2 rolling run remain open, so these artifacts are development
+  evidence rather than a D2/D3 result.
 - Historical protocol names such as `cohortkv_*` and `streamkv_*` remain unchanged because they
   identify immutable artifacts; the current paper/system name is EvoKV.
 

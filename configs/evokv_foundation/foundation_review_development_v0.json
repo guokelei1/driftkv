@@ -1,0 +1,99 @@
+{
+  "artifacts": {
+    "fixed512_d1_d2_environment_regression": {
+      "path": "results/system/evokv_design3_foundation/fixed512_s0.json",
+      "sha256": "ed52fc795cb567d5792bafb3d8dcb5e811914178dcc81e42f3d73f30992346ce"
+    },
+    "fixed_model_edge_inputs": {
+      "path": "data/processed/evokv_foundation/qk_xp_fixed_edge_inputs.npz",
+      "sha256": "ede184238c22200e3f1faf4d99ad5e76716d4817cead9dc4b5db4f2da8a3de63",
+      "summary_path": "configs/evokv_foundation/qk_xp_fixed_edge_inputs_summary.json",
+      "summary_sha256": "82d21636ed0e457b245986f7d5b4656f60ffc53e6e1ed03f61a936410038a05e"
+    },
+    "het_lifecycle_canary": {
+      "path": "results/system/evokv_design3_foundation/lifecycle_het.json",
+      "sha256": "1d1486e850042945400d9ef431e4b22d2973e66a190fc450a84ef3aaf0b7fcf3",
+      "valid_for_current_workload": false,
+      "reason": "pre-exclusion role and workload identity"
+    },
+    "hom_lifecycle_canary": {
+      "path": "results/system/evokv_design3_foundation/lifecycle_hom.json",
+      "sha256": "d15b9ee397372be2bbcbafc4a0b89240b6254340848792ce5ce9218999dc8c77",
+      "valid_for_current_workload": false,
+      "reason": "pre-exclusion role and workload identity"
+    },
+    "qk_foundation_summary": {
+      "path": "configs/evokv_foundation/qk_foundation_summary.json",
+      "sha256": "027b3223e6fdfc4f6cc9e50c7e065e2db2da64ad28920cdc2bcfb841f1ad83b9"
+    },
+    "qk_length_cache": {
+      "path": "data/processed/evokv_foundation/qk_full_user_lengths.npz",
+      "sha256": "22160edc856e4dbdd4773bb6d45a1b469f4f712553e9f6dc263fb86a581ecbef"
+    },
+    "qk_post_base_roles": {
+      "path": "configs/evokv_foundation/qk_post_base_roles.json",
+      "sha256": "64c7734e1cab6b4b0a2898fb71c15d905253a29e57e50d5dbadfb4fdc896b531"
+    },
+    "qk_workload": {
+      "path": "data/processed/evokv_foundation/x_qk_het_foundation.npz",
+      "sha256": "1ed2e2a6ce03ae606f069c09dd854dc3e5730b620608c9d0f17c27423c90f929"
+    },
+    "xp_projection_physical_canary": {
+      "path": "results/system/evokv_design3_foundation/projection_xp_physical.json",
+      "sha256": "e9585eb0bac8d95154361edd2199f3df78a6230c3616e4d226acde222fe6028f"
+    }
+  },
+  "checks": {
+    "benchmark_qualification": "not_run",
+    "formal_protocol": "not_frozen",
+    "het_hom_capacity_and_owner_ledger": "pass",
+    "het_lifecycle_canary_current_workload": "pending_rerun",
+    "hom_lifecycle_canary_current_workload": "pending_rerun",
+    "optimizer_active_forced_sharding": "pending",
+    "post_base_roles_pairwise_disjoint": "pass",
+    "post_base_roles_disjoint_from_upstream_training": "pass",
+    "qk_het_workload_materialized": "pass",
+    "real_het_d1_d2_rolling_numeric_canary": "pending",
+    "rolling_failure_replay_and_exactly_once": "pass",
+    "xp_owner_projection_numeric_oracle": "pass",
+    "xp_two_rank_physical_allocation": "pass"
+  },
+  "date": "2026-07-31",
+  "formal_design3": false,
+  "next_review_requires": [
+    "a base-only XP checkpoint with optimizer-updated row count and hash",
+    "HET and HOM lifecycle canaries rerun on the leakage-fixed workload",
+    "the exact active-row forced-sharding calculation to pass or a pre-timing benchmark revision",
+    "a natural-length HET compiled-and-exact ActionPlan overlay",
+    "a two-rank byte-bounded rolling canary that executes real D1 and D2 numerics"
+  ],
+  "protocol": "evokv_successor_foundation_review_development_v1",
+  "scientific_result": false,
+  "source_code": {
+    "builder": {
+      "path": "scripts/build_evokv_foundation_qk.py",
+      "sha256": "76d2b3d2c27a65e8238a4b80c36e69c637e3859fd0b0873bb7d1e84de113e780"
+    },
+    "lifecycle": {
+      "path": "src/hstu_kvcache/migration/foundation_lifecycle.py",
+      "sha256": "a4aea24f17cc586d86704ab8711a1f03f982874248358b7585ff316f302bfd03"
+    },
+    "lifecycle_runner": {
+      "path": "scripts/run_evokv_foundation_lifecycle_canary.py",
+      "sha256": "f23faadb247295ed51ba55fb7bc935d71787ff6523b35e70c2f24d026c6f4b04"
+    },
+    "projection": {
+      "path": "src/hstu_kvcache/migration/foundation_projection.py",
+      "sha256": "561ceffcdbbc34021d937a792b35b9388610128eabb8207f76e5b01daef8a9f3"
+    },
+    "projection_runner": {
+      "path": "scripts/run_evokv_foundation_projection_canary.py",
+      "sha256": "c669a5f8a85353df0180291037346f43df08d576b07a90dcdc2216a76defb48c"
+    },
+    "workload": {
+      "path": "src/hstu_kvcache/migration/foundation_workload.py",
+      "sha256": "1dc55742f83866e120784f8bb9aec34556ea26a60b1e37e609f2ea6e8dee4ba2"
+    }
+  },
+  "status": "leakage_fixed_foundation_pass_current_workload_canaries_pending"
+}

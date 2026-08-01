@@ -1,0 +1,89 @@
+{
+  "base_version": 0,
+  "checkpoint_admission": "numerical_stability_and_nonzero_update",
+  "edge_inputs": "../../data/processed/evokv_foundation/qk_xp_fixed_edge_inputs.npz",
+  "edge_summary": "qk_xp_fixed_edge_inputs_summary.json",
+  "evaluation_semantics": "next_unseen_window",
+  "formal_result": false,
+  "learning_rate_policy": {
+    "candidates": [
+      {
+        "dense": 1e-05,
+        "embedding": 0.0001,
+        "name": "lr_fixed_010x",
+        "projection": 1e-05
+      }
+    ],
+    "mode": "predeclared_fixed",
+    "quality_observed_for_selection": false,
+    "selected_candidate": "lr_fixed_010x",
+    "selection_role": "none"
+  },
+  "prequential_evaluations": [
+    {
+      "evaluation_end": 72,
+      "history_end": 64,
+      "model_version": 0
+    },
+    {
+      "evaluation_end": 80,
+      "history_end": 72,
+      "model_version": 1
+    },
+    {
+      "evaluation_end": 88,
+      "history_end": 80,
+      "model_version": 2
+    },
+    {
+      "evaluation_end": 96,
+      "history_end": 88,
+      "model_version": 3
+    }
+  ],
+  "protocol": "evokv_xp_prequential_stream_training_development_v1",
+  "quality_controls_training": false,
+  "quality_used_for_selection": false,
+  "scientific_result": false,
+  "split_roles": {
+    "quality": "qualification",
+    "train": "theta01",
+    "tuning": "theta12"
+  },
+  "stack_identity": "xp_qk_prequential3_e3_fixed010_development_v1",
+  "training": {
+    "epochs_per_update": 3,
+    "optimizer_state_continuity": "continuous_within_round",
+    "quality_negatives": 99,
+    "seeds": {
+      "quality": 20260831,
+      "training": 20260731,
+      "tuning": 20260817
+    },
+    "train_negatives": 8,
+    "tuning_negatives": 19,
+    "weight_decay": 0.0001
+  },
+  "tuning_controls_training": false,
+  "tuning_used_for_selection": false,
+  "updates": [
+    {
+      "history_end": 64,
+      "source_version": 0,
+      "target_version": 1,
+      "update_end": 72
+    },
+    {
+      "history_end": 72,
+      "source_version": 1,
+      "target_version": 2,
+      "update_end": 80
+    },
+    {
+      "history_end": 80,
+      "source_version": 2,
+      "target_version": 3,
+      "update_end": 88
+    }
+  ]
+}

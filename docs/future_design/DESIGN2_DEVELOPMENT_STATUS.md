@@ -1,10 +1,16 @@
 # EvoKV Design 2 development status
 
-Date: 2026-07-30
+Date: 2026-07-31
 
 This is the only live D2 implementation/evidence ledger. The mechanism is defined by
 [DESIGN2_FINAL_PLAN.md](DESIGN2_FINAL_PLAN.md). Earlier four-stage control and Stage-A/Stage-B
 handoff documents were consolidated here and removed.
+
+The PASS rows below are immutable H12/W1/W2/W3 development facts. The paper-scale successor does
+not relabel them: it uses HET primary/HOM control extents, a capacity-forced XP embedding,
+`compiled|exact` integrated actions, a 1/2/4-rank-capable runner, and rolling group
+commit/reclaim. Progressive remains D1-only supporting evidence. The old W4/Stage-C gate blocks
+promotion of the old family, not successor benchmark design or baseline implementation.
 
 ## 1. Status at a glance
 
@@ -267,56 +273,66 @@ Forbidden substitutes:
 If W4 fails, return to distributed routing/order/capacity/termination. If W1 parity or the immutable
 ledger fails, return to the D1→D2 adapter before debugging W4.
 
-## 9. Formal D2 work after W4
+## 9. Successor formal D2 work
 
-1. Freeze a new D2 protocol.
-2. Rerun one-shot/two-stage all-exact, both owner-local staged/fused contiguous fixed-action
-   controls, and complete D2 in the same SPMD binary; independently freeze the faster contiguous
-   control as the headline fixed-action denominator.
-3. Include plan/history preparation, suffix append, private target, validation, publication,
-   commit, and reclaim.
-4. Close full-682 strict COW and segmented consumer/next-wave compatibility.
-5. Run paired 1/2/4-GPU, capacity, failure, and physical communication matrices.
+1. Build/freeze the QK HET primary and HOM control manifests.
+2. Freeze the hardware HBM cap, then qualify XP at 2,859,835 base-period semantic rows plus one
+   padding row in a 2,859,836×4,096 physical FP32 table
+   (43.638 GiB), owner-side E4096→H1536 projection, and a 24L/H1536 core without consulting
+   EvoKV performance. Count only optimizer-updated active rows toward forced sharding; the
+   semantic-request union across both formal edges, all-exact, and every frozen fixed-action
+   exact/append/fallback path must be active and hashed, and active embedding plus dense/projection
+   bytes must exceed the single-card allocatable budget.
+3. Generalize one binary to 1/2/4 ranks and verify canonical 1/2/4-way shards.
+4. Rerun strongest all-exact/placement controls, both owner-local staged/fused contiguous
+   fixed-action controls, and complete D2; independently freeze the fastest legal denominators.
+5. Include plan/history preparation, suffix append, group writeback, validation, versioned commit,
+   old-group reclaim and segmented consumer/next-wave compatibility.
+6. Complete Benchmark Qualification, then freeze a new protocol and run capacity/failure/physical
+   communication matrices.
 
-Until then, `stage_c_evaluation_entry` remains blocked.
+`stage_c_evaluation_entry=blocked` remains true for the old family. The successor receives its own
+promotion state only after its protocol exists.
 
-## 10. Scale fallback
+## 10. Paper-scale foundation
 
-The current 312,145-row setting is sufficient for D2 mechanism discovery because it exposes both
-the naive mixed failure and a positive shape-aware segmented signal. Do not trigger a larger-model
-fallback now.
+The current 312,145-row H12 setting remains sufficient evidence for mechanism discovery, but it is
+not the paper-scale communication premise. XP proactively supplies the larger semantically valid
+setting rather than waiting for H12/X2 to fail:
 
-If that signal disappears under the formal boundary and bottleneck attribution shows that real
-accessed embedding/cardinality scale is too small, construct a new semantically valid D2 setting:
-
-1. select more real users/items from an already accepted dataset;
+1. select real base-period entities/features from an accepted dataset;
 2. train one base model and one or two short streaming updates;
-3. regenerate exact old K/V, current endpoints, compiled programs, certificates, and D1 action
-   plan using the same D1 flow;
-4. use it first for D2 mechanism discovery;
-5. expand to longer/multi-seed evidence only if it changes the Pareto frontier.
-
-Unused cold rows cannot be the source of the performance claim.
+3. regenerate exact old K/V, current endpoints, compiled programs, qualification evidence, and a
+   primary `compiled|exact` ActionPlan;
+4. build the checkpoint with a frozen 4-rank row-sharded sparse/row-wise optimizer path;
+5. report total/active/requested/unique rows, update counts, active bytes, and remote bytes;
+6. require the frozen all-comparator request union to be active and active fixed bytes alone to
+   force sharding.
 
 ## 11. D3 handoff
 
-The first D3 development handoff is a minimal H12/W2 two-rank `WorkManifest`; it may bind directly
-to current runtime metadata and does not need to solve the final interface first. For a later
-formal fixed-D2 isolation track, derive and hash a capacity-independent constraint view from:
+The first D3 development handoff was a minimal H12/W2 two-rank `WorkManifest`; it remains the
+historical M0/M1 identity. The successor WorkManifest carries HET valid extents and is consumable by
+a 1/2/4-rank runner. For a later formal fixed-D2 isolation track, derive and hash a
+capacity-independent constraint view from:
 
-- the immutable H12 action plan;
-- deterministic owner and embedding rules;
-- the implemented `(S,R,F,record_id)` compiled ordering followed by fixed-size extents;
+- the frozen XP-HET `compiled|exact` ActionPlan and its natural valid extents;
+- deterministic stable-hash owner and XP embedding-shard rules;
+- `(S,R,F,record_id)` shape/pool membership without capacity cuts or fixed-size resident extents;
 - merged-exact physical membership;
-- operator/program bindings, collective templates, segmented layout, and transaction semantics.
+- operator/program bindings, collective templates, segmented layout, and group-lifecycle
+  semantics.
+
+The immutable H12 plan remains a historical parity/shape canary only; it cannot be the source of
+the successor formal exporter.
 
 The export must not contain W3 `extent_size`, HBM cuts, resident launch order, or D3 staging
 decisions. It must validate record coverage and parity with the current integrated runtime, then
 serialize a stable content hash.
 
-Before that formal artifact exists, non-scientific D3 work may build ordinary-host source/target,
-per-rank admission, sequential groups, a basic double buffer, and candidate schedulers on
-GPU0/GPU1, provided one isolation comparison shares the same recorded WorkManifest. Cross-layer
+Before that formal artifact exists, non-scientific D3 work may continue on GPU0/GPU1, provided one
+isolation comparison shares the same recorded WorkManifest. The successor code must nevertheless
+be rank-parameterized rather than hard-coded to two cards. Cross-layer
 candidates receive a new `stack_revision` and rerun baselines. No such development run may treat
 W3 times as formal evidence, claim the normalized D2 boundary has closed, or assume the resident
 schedule fits HBM.
