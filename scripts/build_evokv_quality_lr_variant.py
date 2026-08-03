@@ -53,6 +53,21 @@ def main() -> None:
         or benchmark.get("model", {}).get("layers") != 24
     ):
         raise ValueError("quality LR base configuration differs")
+    training_users = benchmark["quality_chain"].get("training_users")
+    qualification_users = benchmark["quality_chain"].get(
+        "qualification_users"
+    )
+    epochs_per_update = schedule["training"].get("epochs_per_update")
+    if (
+        not isinstance(training_users, int)
+        or training_users < 1
+        or not isinstance(qualification_users, int)
+        or qualification_users < 1
+        or epochs_per_update != benchmark["quality_chain"].get(
+            "epochs_per_update"
+        )
+    ):
+        raise ValueError("quality LR population binding differs")
     scale = args.learning_rate_scale
     scale_name = f"{round(scale * 100):03d}x"
     candidate_name = f"lr_fixed_{scale_name}"
@@ -71,8 +86,9 @@ def main() -> None:
         "selection_role": "none",
     }
     schedule["stack_identity"] = (
-        "xp_qk_stream_aligned_warmup_train8192_qual4096_e1_"
-        f"fixed{scale_name}_development_v1"
+        "xp_qk_stream_aligned_warmup_"
+        f"train{training_users}_qual{qualification_users}_"
+        f"e{epochs_per_update}_fixed{scale_name}_{args.tag}_development_v1"
     )
     schedule["development_variant"] = {
         "axis": "optimizer_step_size",
@@ -82,8 +98,9 @@ def main() -> None:
         "training_corpus_changed": False,
     }
     benchmark["benchmark_id"] = (
-        "x_qk_xp_quality_stream_aligned_train8192_qual4096_e1_"
-        f"two_gpu_{args.tag}_development_v1"
+        "x_qk_xp_quality_stream_aligned_"
+        f"train{training_users}_qual{qualification_users}_"
+        f"e{epochs_per_update}_two_gpu_{args.tag}_development_v1"
     )
     benchmark["quality_chain"]["schedule_path"] = str(
         args.schedule_output

@@ -1,6 +1,6 @@
 # EvoKV Design 3 Foundation Benchmark and Exploration Plan
 
-日期：2026-07-31
+最后更新：2026-08-03
 
 状态：**历史 M0/M1 机制发现账本 + successor benchmark 的灵活执行入口，不是冻结
 protocol 或论文结果**。本文档完整保留 fixed-512、GPU0/GPU1、complete-private-target
@@ -9,6 +9,11 @@ protocol 或论文结果**。本文档完整保留 fixed-512、GPU0/GPU1、compl
 前的检查登记在 [../11_benchmark_qualification.md](../11_benchmark_qualification.md)。
 Qualification 不阻止 workload、runner、baselines 或机制设计，只阻止未合格结果晋升为
 paper evidence。
+
+当前 checkpoint 搜索已经结束。下一轮直接使用 registry 绑定的 QK theta0--theta4
+primary 与 QB theta0--theta3 secondary；旧 M1 专用 checkpoint payload 已回收，历史结果
+仍按原 hash 解释。完整路径与重训入口见
+[../13_cross_dataset_stream_checkpoint_plan.md](../13_cross_dataset_stream_checkpoint_plan.md)。
 
 ## Successor benchmark boundary
 
@@ -91,10 +96,11 @@ E4096 上查表并投影后，只返回 H1536 FP16，数值 oracle 通过。该 
 
 XP 的 dense core（含 4,096×1,536 projection）为 291,863,040 个 FP32 parameters；
 global embedding 加 dense 为 48,023,005,184 bytes，超过本机单卡 Torch allocatable
-47,699,722,240 bytes。但 forced-sharding 只能按真正 optimizer-updated rows 计算：
-当前精确门槛为 2,840,105 个 semantic rows，即 99.3101%。该 gate 仍是
-**pending**，也是进入正式 XP timing 前最重要的 Foundation Review 风险；冷分配和
-929,554-row request union 都不能代替它。
+47,699,722,240 bytes。Forced sharding 只能按真正 optimizer-updated rows 计算；精确门槛
+为 2,840,105 个 semantic rows，即 99.3101%。当前 selected XP checkpoint 的 bitmap
+包含 2,859,736 个 active semantic rows，因此 byte gate 已通过。尚未闭合的是两个 formal
+edges 及所有 fixed-action exact/append/fallback 路径的 request-union-to-active membership
+join；冷分配和仅有 929,554-row request-union count 都不能代替这项检查。
 
 真实 HET/HOM 工件上的四组 short/mid/long/saturated full-payload lifecycle canary 均
 完成 validate-before-commit、old reclaim、一次故障不发布、一次幂等 replay 和
@@ -103,11 +109,11 @@ exactly-once coverage。它当前使用 deterministic full-extent payload 验证
 compiled/exact records 跑通，makespan 0.3271 秒、exactly-once 通过、单 rank peak
 allocated HBM 11.157 GB；它只证明旧数值栈和 collective 环境可用。
 
-因此本轮结论是：**workload、真实 XP 两卡分片投影和 rolling 事务骨架已经可运行；正式
-ActionPlan overlay、active-row checkpoint、byte-bounded D1/D2 rolling runner 和
-36/72-GiB problem-existence baselines 尚未开始。** 下一次系统 review 应在
-active-row gate 与第一条真实 HET `compiled|exact` rolling canary 闭合后进行，而不是在
-当前组件 canary 上判断 D3 机制成败。上述结果全部保持
+因此本轮结论是：**workload、真实 XP 两卡分片投影、active-row checkpoint 和 rolling
+事务骨架已经可运行；正式 request-union membership、ActionPlan overlay、byte-bounded
+D1/D2 rolling runner 和 36/72-GiB problem-existence baselines 尚未闭合。** 下一次系统
+review 应在 request-union gate 与第一条真实 HET `compiled|exact` rolling canary 闭合后
+进行，而不是在当前组件 canary 上判断 D3 机制成败。上述结果全部保持
 `scientific_result=false`、`formal_design3=false`。
 
 以下 checkpoint 是**历史 fixed-512/full-private-target M0/M1 开发账本**。Milestone D

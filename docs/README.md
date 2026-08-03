@@ -25,20 +25,25 @@ When documents disagree, use this order:
 4. [11_benchmark_qualification.md](11_benchmark_qualification.md) — registry of workload,
    capacity, topology, timer, baseline, and rolling-lifecycle checks required before formal
    promotion. It is not a protocol and does not block benchmark design or implementation.
-5. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
+5. [12_d1_d2_baseline_round.md](12_d1_d2_baseline_round.md) — selected large-QK streaming
+   checkpoint/D1 development ledger, artifact retention, and D1→D2 result boundary.
+6. [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md) —
+   selected QK/QB versions, manifest hashes, rebuild commands, retention/cleanup, and downstream
+   reuse boundary; it creates no formal evidence.
+7. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
    mechanism and current D1→D2 starting interface.
-6. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
+8. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
    implemented D2 state, non-scientific development evidence, pending W4/formal-evaluation work,
    and the D3 handoff.
-7. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
+9. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
    problem definition, source/capacity/timer contract, candidate mechanisms, baselines, and
    go/no-go conditions.
-8. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
+10. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
    — historical two-card mechanism ledger plus the flexible HET/XP/rolling successor foundation
    and backtracking plan; it creates no protocol or evidence.
-9. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+11. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
    frozen D1 Stage 0–6 evidence ledger. It is history, not a current execution plan.
-10. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
+12. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
    semantics, usable capacity, and generality boundaries.
 
 Repository-local agent rules are in [../AGENTS.md](../AGENTS.md). Experiment records are indexed
@@ -53,6 +58,11 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 | D1 | What should be compiled or exactly recomputed? | immutable `ActionPlan`; progressive residual replay is D1-only supporting evidence | frozen algorithm and single-configuration evidence |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
 | D3 | How should one live cache larger than HBM move and execute on a 1/2/4-rank stack? | capacity-bounded `ResidencyPlan` plus versioned rolling groups | historical two-rank M1 mechanism chain complete in development; HET/HOM, XP, rolling lifecycle, strongest generic baseline, rank-general runner, formal repeats and protocol remain open |
+
+The retained local model inputs are frozen separately from the design documents: QK LR0.15
+theta0--theta4 is primary, and QB `u30_e3` theta0--theta3 is secondary. Their machine registry is
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`; verify it before use
+with `python scripts/verify_evokv_selected_checkpoints.py`.
 
 D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
@@ -119,8 +129,9 @@ The completed development implementation used GPU0/GPU1:
 
 1. keep the completed minimal H12/W2 `WorkManifest`;
 2. use the completed pageable-DRAM two-rank S0 as the reference;
-3. retain the completed H1536/24L `theta0→theta1` edge and its positive held-out signal as the
-   frozen M1 development boundary;
+3. retain the completed H1536/24L `theta0→theta1` compact result and positive held-out signal as
+   the frozen M1 development boundary; its old D3-specific checkpoint copy was retired because
+   the selected QK/QB registry now owns reusable model payloads;
 4. retain its 410-exact/1,638-compiled D1 snapshot, D2 characterizer, complete 144-GiB old store,
    nine-group group-128 S0, and S1-paired 17-group group-64 S0;
 5. retain the completed same-revision group-64 strong S1 and its wait/bubble profile;
@@ -198,6 +209,8 @@ observed points. Plan/profile construction is outside the timer. These results u
 ## Removed material
 
 Redundant D2 stage-control and handoff documents, the pre-rewrite manuscript correspondence, early
-paper drafts, and obsolete paper-process notes were removed. Their current facts were consolidated
-into the D2 design/status pair, the D1 evidence ledger, and this index. Git history remains the
-archive; deleted documents must not be cited as current state.
+paper drafts, obsolete paper-process notes, and completed one-off checkpoint-search launchers were
+removed. Their current facts were consolidated into the D2 design/status pair, the D1 evidence
+ledger, the selected-checkpoint registry, and this index. Reusable trainers/builders and compact
+negative results remain. Git history is the source archive for tracked material; deleted local
+checkpoint payloads are regenerable but not recoverable from a trash directory.

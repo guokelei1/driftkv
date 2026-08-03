@@ -24,6 +24,11 @@ Isolation-track experiments keep one D1/D2 `WorkManifest` fixed. Co-design exper
 globally regenerate actions, owners, pools, or layout before execution, record a new
 `stack_revision`, and rerun their baselines.
 
+The next mechanism round starts from the verified local checkpoint registry, not from another
+training-policy search. QK LR0.15 theta0--theta4 is primary; QB `u30_e3` theta0--theta3 is the
+secondary cross-dataset chain. Paths, hashes, rebuild commands, and cleanup are in
+[../13_cross_dataset_stream_checkpoint_plan.md](../13_cross_dataset_stream_checkpoint_plan.md).
+
 The successor paper boundary uses natural-length `X-QK-HET` as the headline workload and
 same-record masked-512 `X-QK-HOM` only as a matched physical-shape control. XP fixes
 2,859,835 base-period semantic rows plus one padding row in a 43.638-GiB physical FP32 table,
@@ -56,7 +61,9 @@ XP, rolling lifecycle, segmented-consumer closure, formal repeats, and qualifica
 The H12 workload is the first semantic canary, not physical oversubscription evidence. The
 fixed-512 QK old-plus-private-target point is also historical development evidence; successor
 capacity is defined by one live HET cache version plus bounded group shadow, not two complete
-versions. A software HBM cap remains development-only capacity emulation.
+versions. Its dedicated model checkpoint copies were retired in the 2026-08-03 storage cleanup;
+compact results and reusable mechanism code remain. A software HBM cap remains development-only
+capacity emulation.
 
 The former D2 four-stage controller and Stage-A/Stage-B handoff documents were consolidated into
 the D2 design/status pair. The pre-rewrite D2/D3 idea comparison was removed. Git history is not a

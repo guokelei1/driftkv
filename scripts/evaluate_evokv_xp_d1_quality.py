@@ -34,6 +34,10 @@ from hstu_kvcache.migration.xp_exact_baseline import (
     load_fixed_inputs,
     load_inference_checkpoint,
 )
+from hstu_kvcache.migration.xp_residual_fit import (
+    capture_embedded_normed_states,
+    fit_distributed_low_rank_cache_adapter,
+)
 from hstu_kvcache.models import HSTUKVCache
 from hstu_kvcache.streaming.xp_multiversion import (
     XPUpdateWindow,
@@ -45,7 +49,10 @@ from hstu_kvcache.streaming.xp_version_training import (
 )
 
 DEFAULT_CONFIG = "configs/evokv_baselines/x_qk_xp_two_gpu_baseline_v0.json"
-DEFAULT_CHECKPOINT_ROOT = "checkpoints/evokv_xp_qk_e4096_h1536/seed0"
+DEFAULT_CHECKPOINT_ROOT = (
+    "checkpoints/evokv_xp_qk_e4096_h1536/quality_rounds/"
+    "quality_lr_dual_20260802_round1_lr015"
+)
 DEFAULT_OUTPUT = "results/system/evokv_xp_d1_quality/theta0_to_theta1.json"
 DEFAULT_PROGRAM = (
     "results/system/evokv_xp_d1_quality/"
@@ -75,6 +82,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size-per-rank", type=int, default=1)
     parser.add_argument("--fit-batches", type=int, default=4)
     parser.add_argument("--probe-batches", type=int, default=4)
+    parser.add_argument("--residual-rank", type=int)
+    parser.add_argument("--residual-ridge", type=float, default=1e-3)
+    parser.add_argument("--max-fit-tokens-per-rank", type=int, default=4096)
     parser.add_argument("--qualification-batches", type=int, default=0)
     parser.add_argument("--negative-count", type=int, default=99)
     parser.add_argument("--reuse-exact-suffix-offsets", action="store_true")
@@ -146,6 +156,12 @@ def validate_args(args: argparse.Namespace, world_size: int) -> str:
         or args.batch_size_per_rank < 1
         or args.fit_batches < 1
         or args.probe_batches < 1
+        or (
+            args.residual_rank is not None
+            and not 0 <= args.residual_rank <= 1536
+        )
+        or args.residual_ridge < 0
+        or args.max_fit_tokens_per_rank < 2
         or args.qualification_batches < 0
         or (
             not args.reuse_exact_suffix_offsets
@@ -158,6 +174,10 @@ def validate_args(args: argparse.Namespace, world_size: int) -> str:
         or (
             args.include_frozen_control
             and not args.reuse_exact_suffix_offsets
+        )
+        or (
+            args.residual_rank is not None
+            and args.reuse_exact_suffix_offsets
         )
         or args.timing_repeats < 1
         or world_size not in {1, 2, 4}
@@ -287,6 +307,159 @@ def materialize_source(
             flush=True,
         )
     return caches, timings
+
+
+def _fit_prefix(
+    batch: dict[str, torch.Tensor],
+    history_end: int,
+    device: torch.device,
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+]:
+    prefix_width = history_end - 1
+    records = batch["record_indices"].to(device)
+    lengths = torch.where(
+        records >= 0,
+        torch.full_like(records, prefix_width),
+        torch.zeros_like(records),
+    )
+    return (
+        batch["item_ids"][:, :prefix_width].to(device),
+        batch["behaviors"][:, :prefix_width].to(device),
+        batch["time_deltas"][:, :prefix_width].to(device),
+        lengths,
+        records,
+    )
+
+
+@torch.no_grad()
+def materialize_fit_source_features(
+    dense,
+    embedding,
+    batches: tuple[dict[str, torch.Tensor], ...],
+    history_end: int,
+    device: torch.device,
+) -> tuple[list[tuple[torch.Tensor, ...]], dict[str, object]]:
+    values = []
+    records = 0
+    tokens = 0
+    for index, batch in enumerate(batches):
+        item_ids, behaviors, deltas, lengths, record_ids = _fit_prefix(
+            batch,
+            history_end,
+            device,
+        )
+        vectors = embedding(item_ids, lengths)
+        normed = capture_embedded_normed_states(
+            dense.core,
+            vectors,
+            behaviors,
+            deltas,
+            lengths,
+        )
+        valid = torch.arange(item_ids.shape[1], device=device)[None, :] < lengths[:, None]
+        values.append(
+            tuple(
+                layer[valid].to(device="cpu", dtype=torch.float16)
+                for layer in normed
+            )
+        )
+        records += int((record_ids >= 0).sum().item())
+        tokens += int(valid.sum().item())
+        print(
+            json.dumps(
+                {
+                    "phase": "fit_source_features",
+                    "batch": index + 1,
+                    "batches": len(batches),
+                    "history_end": history_end,
+                }
+            ),
+            flush=True,
+        )
+    return values, {
+        "local_fit_records": records,
+        "local_fit_tokens_before_sampling": tokens,
+        "source_feature_dtype": "torch.float16",
+    }
+
+
+@torch.no_grad()
+def fit_residual_program_adapter(
+    dense,
+    embedding,
+    batches: tuple[dict[str, torch.Tensor], ...],
+    source_features: list[tuple[torch.Tensor, ...]],
+    history_end: int,
+    device: torch.device,
+    args: argparse.Namespace,
+) -> tuple[object, dict[str, object]]:
+    if len(batches) != len(source_features):
+        raise ValueError("XP residual-fit source batch count differs")
+    feature_layers: list[list[torch.Tensor]] = [
+        [] for _ in dense.core.blocks
+    ]
+    residual_layers: list[list[torch.Tensor]] = [
+        [] for _ in dense.core.blocks
+    ]
+    for index, (batch, source) in enumerate(
+        zip(batches, source_features, strict=True)
+    ):
+        item_ids, behaviors, deltas, lengths, _ = _fit_prefix(
+            batch,
+            history_end,
+            device,
+        )
+        vectors = embedding(item_ids, lengths)
+        fresh = dense.core.compute_kv_from_item_embeddings(
+            vectors,
+            behaviors,
+            deltas,
+            lengths,
+        )
+        valid = torch.arange(item_ids.shape[1], device=device)[None, :] < lengths[:, None]
+        for layer, features_cpu in enumerate(source):
+            features = features_cpu.to(device=device, dtype=torch.float32)
+            block = dense.core.blocks[layer]
+            cheap = torch.cat(
+                (
+                    block.attn.k_proj(features),
+                    block.attn.v_proj(features),
+                ),
+                dim=-1,
+            )
+            exact = torch.cat(
+                (fresh.k[layer][valid], fresh.v[layer][valid]),
+                dim=-1,
+            )
+            feature_layers[layer].append(features_cpu)
+            residual_layers[layer].append(
+                (exact - cheap).to(device="cpu", dtype=torch.float16)
+            )
+        print(
+            json.dumps(
+                {
+                    "phase": "fit_target_residual",
+                    "batch": index + 1,
+                    "batches": len(batches),
+                }
+            ),
+            flush=True,
+        )
+    adapter, metrics = fit_distributed_low_rank_cache_adapter(
+        [torch.cat(values) for values in feature_layers],
+        [torch.cat(values) for values in residual_layers],
+        rank=args.residual_rank,
+        ridge=args.residual_ridge,
+        maximum_tokens_per_rank=args.max_fit_tokens_per_rank,
+        seed=args.candidate_seed + args.source_version * 1_000_003,
+        device=device,
+    )
+    return adapter, metrics
 
 
 def evaluate_role(
@@ -503,7 +676,7 @@ def main() -> None:
     )
     if any(
         args.history_end >= int(batch["item_ids"].shape[1])
-        for batch in (*probe_batches, *qualification_batches)
+        for batch in (*fit_batches, *probe_batches, *qualification_batches)
     ):
         raise ValueError("XP explicit history boundary exceeds role width")
     local_split = split_identity(
@@ -587,6 +760,19 @@ def main() -> None:
             device=device,
         )
     )
+    if not diagnostic_mode and args.residual_rank is not None:
+        fit_source_features, fit_source_metrics = (
+            materialize_fit_source_features(
+                source_dense,
+                source_embedding,
+                fit_batches,
+                args.history_end,
+                device,
+            )
+        )
+    else:
+        fit_source_features = []
+        fit_source_metrics = None
     if diagnostic_mode:
         probe_caches = []
         probe_source_timings = []
@@ -654,10 +840,32 @@ def main() -> None:
         del source_dense
     else:
         source_dense.to(device)
+        if args.residual_rank is None:
+            residual_adapter = None
+            residual_fit_metrics = None
+            fit_kind = "analytic_model_projection_no_quality_label_fit"
+        else:
+            residual_adapter, residual_fit_metrics = (
+                fit_residual_program_adapter(
+                    target_dense,
+                    target_embedding,
+                    fit_batches,
+                    fit_source_features,
+                    args.history_end,
+                    device,
+                    args,
+                )
+            )
+            residual_fit_metrics = {
+                **residual_fit_metrics,
+                **fit_source_metrics,
+            }
+            fit_kind = "label_free_disjoint_shared_low_rank_residual"
         compiled = compile_migration_program(
             target_dense.core,
             f"theta{args.source_version}",
             f"theta{args.target_version}",
+            adapter=residual_adapter,
         )
         direct, compile_metrics = compile_direct_oldkv_program(
             source_dense.core,
@@ -671,7 +879,7 @@ def main() -> None:
         if len(set(gathered_program_hashes)) != 1:
             raise RuntimeError("XP direct program differs across ranks")
         source_dense.to("cpu")
-        del source_dense, compiled
+        del source_dense, compiled, residual_adapter, fit_source_features
         program_device = direct.to(device, dtype=torch.float16)
     gc.collect()
     if device.type == "cuda":
@@ -904,7 +1112,8 @@ def main() -> None:
                 "fixed_edge_input_sha256": corpus.file_sha256,
                 "split_sha256": split["sha256"],
                 "program_identity_sha256": program_identity_sha,
-                "fit_kind": "analytic_model_projection_no_quality_label_fit",
+                "fit_kind": fit_kind,
+                "residual_fit_metrics": residual_fit_metrics,
             },
             compile_metrics=compile_metrics,
         )
@@ -975,8 +1184,13 @@ def main() -> None:
             "roles": {
                 "fit": {
                     "source_role": probe_role,
-                    "consumed_by_compiler": False,
-                    "reason": "direct-old-K/V compiler is analytic and label-free",
+                    "consumed_by_compiler": args.residual_rank is not None,
+                    "reason": (
+                        "disjoint label-free source/current K/V residual pairs"
+                        if args.residual_rank is not None
+                        else "direct-old-K/V compiler is analytic and label-free"
+                    ),
+                    "metrics": residual_fit_metrics,
                 },
                 "probe": {
                     "source_role": probe_role,
@@ -1008,6 +1222,9 @@ def main() -> None:
                 },
                 "direct_program_compile_seconds_per_rank": (
                     compile_metrics.elapsed_seconds
+                ),
+                "residual_fit_outside_maintenance_timer": (
+                    args.residual_rank is not None
                 ),
                 "cost_is_measured": True,
                 "mixed_cost_is_end_to_end": False,
@@ -1042,8 +1259,13 @@ def main() -> None:
                     "theta-source FP16-stored prefix K/V consumed by theta-target"
                 ),
                 "compiled_direct_oldkv": (
-                    "one shared analytic affine over existing FP16 source K/V, "
-                    "with FP16 destination storage"
+                    "one shared affine over existing FP16 source K/V with "
+                    + (
+                        "a label-free fitted residual compiled into the same "
+                        "online transform"
+                        if args.residual_rank is not None
+                        else "an analytic current-projection target"
+                    )
                 ),
                 "all_exact": (
                     "theta-target prefix K/V recomputed in FP32 with FP16 "
@@ -1055,7 +1277,11 @@ def main() -> None:
                     "are evaluated together"
                 ),
             },
-            "compile_metrics": compile_metrics.to_dict(),
+            "compile_metrics": {
+                **compile_metrics.to_dict(),
+                "fit_kind": fit_kind,
+                "residual_fit_metrics": residual_fit_metrics,
+            },
             "limitations": [
                 (
                     "the official fit/profile HET records are not materialized in "
@@ -1063,8 +1289,9 @@ def main() -> None:
                     "non-qualification fixed-edge role"
                 ),
                 (
-                    "the analytic direct-old-K/V compiler consumes model weights, "
-                    "not fit labels or per-record errors"
+                    "the compiler consumes model weights and optional disjoint "
+                    "label-free K/V residual pairs, never recommendation labels "
+                    "or per-record qualification errors"
                 ),
                 (
                     "quality-role record IDs are intentionally user-disjoint from "
@@ -1073,10 +1300,9 @@ def main() -> None:
                     "record assignments"
                 ),
                 (
-                    "the projection-only direct-old-K/V operator is an XP bridge "
-                    "development diagnostic, not the cross-dataset active low-rank "
-                    "fit headline; the historical fixed-task 3x3 evidence remains "
-                    "the primary D1 motivation"
+                    "this XP bridge remains development-only; the historical "
+                    "fixed-task 3x3 evidence remains the primary D1 generality "
+                    "evidence"
                 ),
                 "all artifacts remain development-only",
             ],

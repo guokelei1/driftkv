@@ -37,7 +37,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--checkpoint-root",
         type=Path,
-        default=ROOT / "checkpoints/evokv_xp_qk_e4096_h1536/seed0",
+        default=ROOT
+        / "checkpoints/evokv_xp_qk_e4096_h1536/quality_rounds/"
+        "quality_lr_dual_20260802_round1_lr015",
     )
     parser.add_argument("--checkpoint-version", type=int, default=2)
     parser.add_argument(

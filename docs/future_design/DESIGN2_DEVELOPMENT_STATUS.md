@@ -1,6 +1,6 @@
 # EvoKV Design 2 development status
 
-Date: 2026-07-31
+Last updated: 2026-08-03
 
 This is the only live D2 implementation/evidence ledger. The mechanism is defined by
 [DESIGN2_FINAL_PLAN.md](DESIGN2_FINAL_PLAN.md). Earlier four-stage control and Stage-A/Stage-B
@@ -11,6 +11,12 @@ not relabel them: it uses HET primary/HOM control extents, a capacity-forced XP 
 `compiled|exact` integrated actions, a 1/2/4-rank-capable runner, and rolling group
 commit/reclaim. Progressive remains D1-only supporting evidence. The old W4/Stage-C gate blocks
 promotion of the old family, not successor benchmark design or baseline implementation.
+
+The active successor input is now operationally available: QK LR0.15 theta0--theta4 is the
+primary model chain and QB `u30_e3` theta0--theta3 is secondary. Both are bound in
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`. This does not mutate
+the immutable H12 hashes below; every adopting successor `stack_revision` regenerates its own D1
+ActionPlan and physical baselines.
 
 ## 1. Status at a glance
 

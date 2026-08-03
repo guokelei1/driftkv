@@ -1,6 +1,6 @@
 # EvoKV Benchmark Qualification Registry
 
-日期：2026-07-31
+最后更新：2026-08-03
 
 状态：**实验配置与 runner 的待验证清单；不是冻结 protocol、paper result 或当前设计的
 阻塞 gate。**
@@ -11,6 +11,10 @@
 
 ## 1. Workload 与模型身份
 
+- 每个 qualification round 先通过
+  `scripts/verify_evokv_selected_checkpoints.py --full-payload`，并把
+  `selected_checkpoint_registry_development_v0.json` 的 hash 写入 round manifest。若使用
+  新重训 chain，先建立新的 registry revision，不能悄悄覆盖当前 QK/QB identity。
 - 从同一 QK base-only entity universe 生成自然变长 `X-QK-HET` primary manifest 和
   same-record、masked-512-layout `X-QK-HOM` control manifest。
 - HET 必须记录 old、retained、evicted、append、target length quantiles、512-token

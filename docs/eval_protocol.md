@@ -1,5 +1,7 @@
 # Current evaluation protocol
 
+Last updated: 2026-08-03
+
 > This file defines the valid artifact boundary. Any material change to targets, data split,
 > serving semantics, model family, or timing semantics requires a new protocol name and separate
 > result files.
@@ -68,11 +70,12 @@ records documented below.
 
 ### Selected XP prequential quality foundation
 
-`evokv_xp_prequential_stream_training_development_v1` remains the training protocol, but the
-active development configuration is now the selected
-`xp_qk_stream_aligned_warmup_train16384_qual4096_e1_fixed010_development_v1` stack. It is
-non-scientific and must not be mixed with the failed v0 learning-rate screen, historical
-`baseline_round3`, or fixed-512 QK M1 families.
+`evokv_xp_prequential_stream_training_development_v1` remains the training protocol. The immutable
+rollback anchor is
+`xp_qk_stream_aligned_warmup_train16384_qual4096_e1_fixed010_development_v1`; the preferred
+development quality candidate is its same-scale LR0.15 successor. Both are non-scientific and
+must remain separate from the failed v0 learning-rate screen, historical `baseline_round3`, or
+fixed-512 QK M1 families.
 
 - The sequence has four training edges. `theta0 --[64,72)--> theta1` is a mandatory
   bootstrap-to-streaming-objective warm-up and is excluded from D1 evidence. Ordinary edges are
@@ -80,28 +83,42 @@ non-scientific and must not be mixed with the failed v0 learning-rate screen, hi
   `theta3 --[88,96)--> theta4`.
 - Same-history cache comparisons occur at history ends 80, 88, and 96, and score the next unseen
   windows `[80,88)`, `[88,96)`, and `[96,104)` respectively.
-- Training uses 16,384 users, one epoch per update, continuous optimizer state, dense/projection
-  LR `1e-5`, and embedding LR `1e-4`. Checkpoint admission uses only numerical stability, a
+- Training uses 16,384 users, one epoch per update, and continuous optimizer state. The rollback
+  anchor uses dense/projection LR `1e-5` and embedding LR `1e-4`; the preferred development
+  candidate uses `1.5e-5` and `1.5e-4`. Checkpoint admission uses only numerical stability, a
   nonzero optimizer update, and complete publication. Ranking metrics never gate a version.
 - Qualification uses 4,096 disjoint users and 999 frozen negatives. Frozen-model, current-model
   Reuse, and current-model Exact controls use the same records, candidates, and physical endpoint:
   FP16 cache storage followed by FP32 consumption. Exact is the cache-fidelity reference, not a
   ranking-quality upper bound.
-- The selected Exact-over-Reuse sampled-CE gaps are 0.01846, 0.01068, and 0.01340. These values
-  were used in development configuration selection and therefore are not untouched formal test
-  evidence.
+- The rollback-anchor Exact-over-Reuse sampled-CE gaps are 0.01846, 0.01068, and 0.01340. The
+  LR0.15 candidate gaps are 0.03082, 0.01450, and 0.01095, with all record-cluster intervals
+  positive and an approximately 32% larger mean gap. LR0.20 is rejected because its last-edge
+  gap shrinks to 0.00765. These values were used in development configuration selection and are
+  therefore not untouched formal test evidence.
 - The model-quality windows are eight tokens, whereas the independently bound natural HET
   ActionPlan uses a 32-token append. Neither extent may be substituted into the other family.
 
-The selected checkpoints and baseline controls are under
-`quality_chain_stream_aligned_train16384_round1`. The two rejected 8,192-user checkpoint trees
-were deleted after compact results and bindings were retained. No full K/V payload is durable.
+The selected QK theta0--theta4 and QB theta0--theta3 payloads are bound by
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`. A downstream result
+must record that registry hash and pass `scripts/verify_evokv_selected_checkpoints.py`. A rebuilt
+chain is a new experimental identity until its manifest hashes are reviewed and a new registry
+revision is frozen.
+
+The rollback baseline controls remain under `quality_chain_stream_aligned_train16384_round1`, but
+their checkpoint payload was retired after LR0.15 selection. The preferred candidate checkpoints
+are under `quality_lr_dual_20260802_round1_lr015`. Rejected 8,192-user, LR0.20,
+`baseline_round3`, and historical `seed0/theta_1,2` checkpoint trees were deleted after compact
+results and bindings were retained. The common `seed0/theta_0` bootstrap remains available for
+retraining. No full K/V payload is durable. Exact retired paths and hashes are recorded in
+`checkpoint_retirement_20260802_v1.json` under the quality-chain anchors directory.
 
 ### XP D1 bridge v1
 
-`evokv_xp_d1_quality_development_v1` is a separate development protocol. All four D1 endpoints use
-FP16 cache storage and FP32 consumption, and the Reuse/Exact values must reproduce the selected
-baseline before any recovery ratio is reported. It evaluates:
+`evokv_xp_d1_quality_development_v1` is a separate development protocol with a bound compiler
+profile. All four D1 endpoints use FP16 cache storage and FP32 consumption, and the Reuse/Exact
+values must reproduce the selected baseline before any recovery ratio is reported. The analytic
+profile evaluates:
 
 - all Reuse;
 - one analytic direct-old-K/V compiled affine;
@@ -119,6 +136,23 @@ This protocol is a large-XP system bridge, not the cross-dataset fitted-residual
 support D1→D2 causality and freeze inputs for mechanism development. It may not be promoted as a
 formal D1 replication, a complete D2 speedup, or a proof that Exact maximizes NDCG/Hit. Bound
 artifacts live under `selected_d1_bridge_round1`.
+
+The label-free residual profile keeps the same endpoint and direct-old-K/V program shape but fits
+`fresh - cheap` K/V residuals on a disjoint theta12 slice before folding the correction into the
+online affine. Its result must bind `fit_kind`, rank, ridge, sampled-token limit, evaluation split,
+program hash, and the same Reuse/Exact endpoint hashes; it may not be pooled with the analytic
+profile. The preferred LR0.15 development point uses rank 16, ridge `1e-3`, 128 global fit records,
+and at most 8,192 global sampled tokens/layer. It closes 99.995%, 99.992%, and 100.024% of the three
+paired CE gaps at 0.163x, 0.152x, and 0.148x Exact maintenance. A rank-64 control has lower K/V
+error but no material task-quality gain. Both ranks were compared on the development qualification
+role, so rank-16 is a development preference rather than formal rank selection. The archive is
+`quality_lr015_d1_residual_20260802_round1.json` under the quality-chain anchors directory.
+The maintenance ratios exclude one-time shared fit and compilation by construction; any end-to-end
+paper result must report that cost separately and its cohort-level amortization.
+
+Adopting this residual profile in D2 or D3 creates a new `stack_revision`: all physical baselines
+for that revision must be rerun. The older analytic mixed-action component bounds remain valid only
+for their frozen causal-control stack.
 
 Separate W3 mechanism-development families now include the integrated v1–v5 pilot/full682 runs,
 full-payload validation, wave-embedding characterization, and the synthetic lookup contention
@@ -2035,6 +2069,138 @@ code snapshot. All source-hash, candidate-binding, Stage-5-semantic, claim-bindi
 whole-aggregate, and TBD-disposition checks must pass. The result remains adaptive seed-0
 development evidence. New training seeds and predeclared dataset/model-capacity cells belong to
 Stage 7 and must not modify this frozen result family.
+
+### Large-QB multi-field checkpoint screen (development only)
+
+`evokv_qb_large_multifield_stream_development_v0` is a checkpoint-construction and opportunity
+screen, not a formal paper-result protocol. It binds the base-only `mf9_e4096` catalog and frozen
+5,000-user horizon-104 corpus described in
+[13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md). The
+24L/H1536 model uses nine real feature rows per input token, one owner-side E4096→H1536 projection,
+and item-only candidate scoring. Every semantic row must receive a finite nonzero optimizer update;
+allocated, initialized, or zero-gradient rows do not count toward its forced-sharding gate.
+
+The first handoff trains one common `theta0`, then runs `u15_e1`, `u30_e1`, `u15_e3`, and
+`u30_e3` sequentially on the same GPU0/GPU1 pair through `theta2`. The final three candidates
+resume the bound common checkpoint and its dense/projection optimizer state instead of repeating
+base training. All four use the same seed,
+corpus, base objective, FP16 cache-storage/FP32-consumption endpoint, candidates, and model
+geometry. Only the predeclared streaming-update learning rates differ. Each edge trains on
+the current train-role window and evaluates Frozen, Reuse, and Exact on the next unseen tuning and
+qualification windows. Qualification metrics are report-only and cannot select the candidate;
+per-update absolute ranking improvement is not a checkpoint gate. All four branches bind the same
+physical theta0 payload and base optimizer state. Results remain `scientific_result=false`, `formal_design2=false`, and
+`formal_design3=false`; they cannot be pooled with Q-SEM, QK XP, or formal D2/D3 measurements.
+
+The screen stops after its first ordinary edge. Its initial development review retained `u15_e3`: tuning
+and report-only qualification Exact-over-Reuse sampled-CE gaps are `+0.02092` and `+0.01697`,
+while its K/V drift is materially below the higher-update `u30_e3` branch. `u15_e1` and `u30_e1`
+checkpoint payloads were retired only after their compact results, manifests and hashes were
+archived; their shared theta0 remains as the selected chain's physical upstream. Later multi-edge
+review rejected `u15_e3`; its model payload is no longer retained.
+
+The continuation uses the same protocol and frozen training configuration, resumes from the
+selected result's checkpoint and optimizer binding, and runs `theta2→theta3` and `theta3→theta4`
+as separately committed stages. Each stage evaluates Frozen, Reuse and Exact on the next unseen
+tuning and qualification window. The compact full-chain summary binds all five checkpoint
+manifests and all three source result hashes. These artifacts remain development-only and cannot
+be pooled with formal D1/D2/D3 evidence. Full K/V payloads are transient; only checkpoints, the
+continuation optimizer needed for resume, manifests, compact edge ledgers, logs, and summaries may
+persist.
+
+The completed `u15_e3` continuation is a negative full-chain boundary. Its three ordinary tuning
+CE gaps are `+0.02092/+0.00359/-0.00705`; report-only qualification gaps are
+`+0.01697/+0.00288/-0.00631`. Numerical stability, forced sharding, endpoint execution and
+checkpoint publication all pass, so the last-edge reversal is not recast as an implementation
+failure. Its complete checkpoint tree was retired after compact results, edge records and
+manifest hashes were archived. The retirement record is
+`u15_e3_continuation/checkpoint_retirement_theta3_theta4.json`.
+
+The completed `u30_e3` fixed-policy continuation is the second negative full-chain boundary. Its
+ordinary tuning CE gaps are `+0.02409/+0.01297/-0.01094`; report-only qualification gaps are
+`+0.02246/+0.01024/-0.01247`. It retains the screened three-epoch dense/projection `3e-5` and
+embedding `3e-4` update rates, identical roles, and identical endpoint semantics. The first two
+ordinary edges remain positive and define the selected QB theta0--theta3 development chain, while
+the last edge reverses on both roles and has no retained theta4 payload.
+
+The bounded theta4 training screen freezes the exact `u30_e3` theta0--theta3 manifests and
+optimizer state. It derives separate theta4 candidates by changing only the final edge's training
+window and epoch count: current `[88,96)` for one epoch, recent replay `[80,96)` for one epoch,
+and recent replay for two epochs. The fixed current-window three-epoch result is the negative
+control. All policies train only on data available before the `[96,104)` evaluation window.
+Candidate checkpoint roots are disjoint and cannot mutate the frozen prefix. Selection is the
+maximum positive tuning Reuse-minus-Exact sampled-CE gap; qualification is reported after the
+tuning decision and never selects a candidate. The screen is development-only and does not turn
+the chosen training policy into a cross-seed or formal paper claim. All later D1, D2, and D3
+comparisons using the retained family must bind the same selected checkpoint chain.
+
+The first theta4-only screen is a completed negative development boundary. Current-window one
+epoch gives tuning/qualification CE gaps `+0.00096/+0.00298`; recent-two-window replay for one
+epoch gives `+0.00120/+0.00132`; replay for two epochs gives `-0.00074/-0.00228`. Because the
+maximum tuning gap is below `0.01`, no candidate is promoted. Their checkpoint payloads are
+retired while compact results, logs, and hashes remain.
+
+The successor theta4 screen preserves the same frozen theta0--theta3 state, roles, candidates,
+and `[96,104)` evaluation. It predeclares six training mechanisms: the missing current-window
+two-epoch point, current-window one epoch with dense/projection AdamW restart, recency-weighted
+replay, 32-negative current-window training, 32-negative weighted replay, and a core-heavy
+learning-rate allocation. Selection still reads only tuning and requires a sampled-CE gap of at
+least `0.01`; qualification remains report-only. Failed checkpoint payloads are regenerable
+transients and are retired immediately after their compact results pass validation.
+
+This second screen is also a completed negative development boundary. Its best candidate,
+32-negative current-window training, gives tuning/report-only-qualification gaps of
+`+0.00158/+0.00348`; all other candidates are smaller or negative. Relative K/V drift across the
+six candidates is nevertheless roughly `0.14`--`0.26`, so the result rules out further nearby
+optimizer-policy search on this fixed `[88,96) -> [96,104)` endpoint. All six checkpoint payloads
+were retired after their compact evidence was validated.
+
+`evokv_qb_large_multifield_horizon_extension_development_v0` is the bounded successor foundation.
+It preserves the exact 5,000 user IDs, disjoint role assignments, base-only catalog, and every
+byte of every user's first 104 events, then appends only natural events from the same source table
+up to horizon 112. Valid lengths remain heterogeneous (104--112); 3,229/456/908
+train/tuning/qualification users reach 112. This artifact is development-only and cannot be
+treated as a new independent dataset or replication.
+
+`evokv_qb_large_theta4_extended_development_v0` freezes the original `u30_e3` theta0--theta3
+manifests and optimizer state. Its two predeclared candidates train theta4 once on `[88,104)` with
+8 or 32 sampled negatives and evaluate Frozen, Reuse, and Exact only on unseen `[104,112)` events.
+Candidate roots are disjoint. Selection reads only the tuning Reuse-minus-Exact sampled-CE gap and
+requires at least `0.01`; qualification remains report-only. Below-threshold payloads are retired
+after compact results are bound. The round remains `scientific_result=false` and stops before D1,
+D2, D3, or KuaiRand work because those choices depend on the measured opportunity.
+
+That horizon-112 round is a completed negative boundary. Its 8-negative candidate gives
+`+0.00090/+0.00294` tuning/report-only-qualification, while its 32-negative candidate gives
+`+0.00029/+0.00165`. Both fail the tuning threshold and their payloads are retired after compact
+validation, releasing 104,849,906,974 bytes.
+
+`evokv_qb_large_theta4_broad_screen_development_v0` is the user-requested final broad development
+search. Its horizon-128 corpus is another natural extension of the same source asset: user IDs,
+roles, catalog, and all first-104 event arrays remain identical. Valid histories span 104--128;
+2,746/385/781 train/tuning/qualification users reach 128. Every candidate resumes the same theta3,
+trains theta4 only with data ending at history 120, and evaluates the same unseen `[120,128)`
+endpoint. Nine predeclared candidates vary update volume, 8 versus 32 negatives, one versus two
+passes, recent-16-only or recent-16-upweighted sampling, AdamW inheritance versus reset, and the
+relative dense/projection/embedding update allocation. None is allowed to read qualification for
+selection.
+
+A candidate is eligible only when tuning Reuse-minus-Exact sampled CE is at least `0.01` and the
+tuning current-model Exact endpoint improves over Frozen by at least `0.02` CE. Among eligible
+candidates, tuning CE gap selects the rolling champion; qualification is opened only as a
+report-only endpoint already computed by the common runner. At most one checkpoint payload is
+retained, and every failed or superseded payload is deleted after its result, hashes, manifest,
+optimizer binding, and rejection reason are durable. This is development selection, not formal
+cross-seed evidence; any accepted family still requires a predeclared replication before a paper
+quality claim.
+
+The broad screen is a completed negative boundary. No candidate meets the `0.01` tuning gap. The
+largest tuning/report-only-qualification gap is `+0.00398/+0.00560`, even though the corresponding
+current Exact model improves over Frozen. All candidate payloads were retired after compact
+results and hashes were validated. Final-update policy search is closed: the active QB chain ends
+at theta3 and is used only on theta1→theta2 and theta2→theta3. Its exact paths and hashes are in
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`; rebuild and reuse
+rules are in [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md).
 
 ## 6. Metrics and statistics
 

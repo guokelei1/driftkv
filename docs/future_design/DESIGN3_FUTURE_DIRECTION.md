@@ -1,6 +1,6 @@
 # EvoKV Design 3 方向：Hierarchical Out-of-Core Pipeline
 
-日期：2026-07-31
+最后更新：2026-08-03
 
 状态：**route-aware ResidencyPlan、grouped development E0 和 contribution diagnostics
 已完成；正式重复、协议和论文结果尚不存在**。
@@ -15,6 +15,11 @@ matched control；集成路径的主动作是 `compiled|exact`；XP 用 base-per
 `stage → compute → writeback → validate → group commit → old-group reclaim` 滚动替换
 capacity groups。本文记录的 fixed-512、GPU0/GPU1、complete old + private target M1
 结果全部保留为历史开发证据，不能替代 successor 的正式结果。
+
+2026-08-03 已完成可复用模型输入的收敛：QK LR0.15 theta0--theta4 为 primary，QB
+`u30_e3` theta0--theta3 为 secondary。旧 fixed-512 D3 专用模型副本已删除，但 compact
+结果和机制代码保留。新的 D3 runner 必须从 machine registry 绑定 checkpoint，并为选定
+edge/records 重新生成 K/V、ActionPlan、WavePlan 与 ResidencyPlan。
 
 具体的两卡 foundation benchmark、H12 semantic canary、真实 QK 物理 out-of-core
 workload、分阶段实现和回退条件见

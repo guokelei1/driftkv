@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-07-31. This document replaces earlier project-wide problem
+> Status: authoritative as of 2026-08-03. This document replaces earlier project-wide problem
 > statements, contribution layouts, and execution roadmaps. Experimental semantics remain
 > subordinate to [eval_protocol.md](eval_protocol.md).
 
@@ -173,33 +173,35 @@ user-disjoint. Cold allocation cannot manufacture the boundary.
 
 ## 3. Current status
 
-Current execution availability (2026-08-01): development rounds are restricted to the GPU0/GPU1
-NVLink pair. Four-rank and GPU2/GPU3 experiments are deferred until the user explicitly restores
-those devices; this changes scheduling only, not the planned paper matrix.
+Current execution availability (2026-08-03): development exploration may run one two-rank job on
+the GPU0/GPU1 NVLink pair. GPU2/GPU3 and four-rank jobs are unavailable until the user explicitly
+reports otherwise; availability changes scheduling only, not the planned paper matrix.
 
 | Layer | State | What is closed | What remains |
 |---|---|---|---|
-| D1 | frozen | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate | broader replication and optional Stage-4.10 successor |
-| D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness; XP owner-side E4096→H1536 two-rank physical canary | optimizer-active XP checkpoint, D3-facing constraints, 1/2/4-rank runner, strong placement/exact baselines, segmented consumer, full integrated group timing, frozen formal protocol |
-| D3 | successor foundation running; mechanism and paper evidence open | historical M0/M1 chain; real 65,536-record HET/HOM manifests and capacity ledger; minimal rolling validate/commit/reclaim/failure/replay canary; fixed-512 D1/D2 environment regression | real HET ActionPlan overlay and numeric rolling runner, active-row XP edge, 36/72-GiB problem-existence baselines, strongest generic scheduler, held-out qualification/repeats, frozen formal protocol and paper evidence |
+| D1 | frozen method; preferred large-XP development candidate selected | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate, LR0.15 rank-16 label-free residual bridge | predeclared large-XP replication, broader replication, and optional Stage-4.10 successor |
+| D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness; selected XP checkpoint passes the optimizer-active byte gate | exact request-union membership join, D3-facing constraints, 1/2/4-rank runner, strong placement/exact baselines, segmented consumer, full integrated group timing, frozen formal protocol |
+| D3 | successor foundation running; mechanism and paper evidence open | historical M0/M1 chain; real 65,536-record HET/HOM manifests and capacity ledger; minimal rolling validate/commit/reclaim/failure/replay canary; fixed-512 D1/D2 environment regression | real HET ActionPlan overlay and numeric rolling runner, 36/72-GiB problem-existence baselines, strongest generic scheduler, held-out qualification/repeats, frozen formal protocol and paper evidence |
 
 The two-A40 XP quality foundation is complete as development evidence. After one explicit
-bootstrap-to-streaming-objective warm-up edge, the selected chain trains 16,384 user-disjoint
+bootstrap-to-streaming-objective warm-up edge, the immutable LR0.10 rollback chain trains 16,384 user-disjoint
 update records for one epoch on each of four contiguous eight-exposure windows and evaluates the
 ordinary `theta1→theta2`, `theta2→theta3`, and `theta3→theta4` edges on 4,096 fixed qualification
 users and the next unseen window. The model remains 24L/H1536 with a 43.638-GiB global FP32
 embedding table. All cache endpoints use FP16 storage followed by FP32 consumption, and every
-edge uses the same frozen 999-negative candidate binding. The selected learning rates are
+edge uses the same frozen 999-negative candidate binding. The rollback-anchor learning rates are
 `1e-5` for dense/projection and `1e-4` for embedding. Checkpoint admission reads no ranking
 metric.
 
 The resulting Exact-over-Reuse sampled-CE gaps are 0.01846, 0.01068, and 0.01340; record-cluster
 95% intervals are `[0.01520, 0.02167]`, `[0.00917, 0.01223]`, and
 `[0.01073, 0.01603]`. All three current-model Exact endpoints also improve over the frozen-model
-control in CE. This configuration was selected from three development candidates; it is not a
-formal replication or untouched-test result. Its four checkpoints are retained under
-`quality_chain_stream_aligned_train16384_round1`; the two rejected candidate checkpoint trees
-were deleted after their compact results and hashes were preserved.
+control in CE. This configuration was selected from the initial three development candidates and
+is retained as a compact rollback point; it is not a formal replication or untouched-test result.
+Its four checkpoint payloads were retired after the LR0.15 candidate closed the same role more
+strongly. The compact results remain under `quality_chain_stream_aligned_train16384_round1`; the
+two rejected candidate checkpoint trees were also deleted after preserving their results and
+hashes.
 
 The follow-on `evokv_xp_d1_quality_development_v1` bridge is also complete on the three edges.
 The analytic direct-old-K/V compiled path closes 63.9%, 55.3%, and 70.0% of the paired CE gap;
@@ -211,6 +213,40 @@ end-to-end mixed-runtime speedup and not a replacement for the cross-dataset fit
 headline. The bound artifacts and summary are in
 `results/baseline_rounds/quality_chain/selected_d1_bridge_round1/`; no full K/V payload is
 retained.
+
+A bounded same-scale successor search is also complete without changing model, data roles, cache
+endpoint, or online operator shape. LR0.15 gives Exact-over-Reuse CE gaps of 0.03082, 0.01450, and
+0.01095, with positive record-cluster intervals on every edge and an approximately 32% larger mean
+gap than the LR0.10 rollback anchor. LR0.20 was rejected because its later-edge opportunity
+shrinks. On LR0.15, a rank-16 shared residual fitted from 128 disjoint theta12 records and at most
+8,192 global tokens/layer reads no recommendation labels or qualification errors and is folded
+into the same 453,138,469-byte `24×3072×3072` FP16 direct-old-K/V affine. It closes 99.995%,
+99.992%, and 100.024% of the paired CE gaps at 0.163x, 0.152x, and 0.148x Exact maintenance, with
+mean relative K/V errors 0.00413, 0.00536, and 0.00520. A simultaneous rank-64 control has lower
+K/V error but no material task-quality gain and a 3.8x larger pre-fold adapter, so rank-16 is the
+preferred development candidate. These values are development-selected, not a formal replicate.
+The immutable archive is
+`results/baseline_rounds/quality_chain/anchors/quality_lr015_d1_residual_20260802_round1.json`.
+The original LR0.10 compact anchor and its analytic mixed-action causal diagnostic remain intact,
+but its checkpoint payload is retired. A D2/D3 stack revision that adopts rank-16 must rerun its
+own physical baselines.
+
+The retained LR0.15 `theta1`--`theta4` chain plus the common `seed0/theta_0` bootstrap is the
+canonical QK development family. It may be reused with different QK record populations and valid
+histories up to 512, but every workload regenerates and binds its K/V endpoints, D1 actions,
+D2/D3 plans, quality records, and correctness digest.
+
+The cross-dataset checkpoint search is also closed. QB `mf9_e4096` uses nine real base-only
+feature namespaces, 2,985,070 optimizer-active rows, E4096 owner projection, and the same
+24L/H1536 core; its 46.636-GiB global fixed model is capacity-forced over one A40. The retained
+`u30_e3` theta0--theta3 chain has two positive ordinary edges: tuning/report-only-qualification
+Exact-over-Reuse sampled-CE gaps are `+0.02409/+0.02246` for theta1→theta2 and
+`+0.01297/+0.01024` for theta2→theta3. The theta3→theta4 edge and all final-update searches are
+negative, so no QB theta4 payload is retained and that search is closed. QB is a secondary
+cross-dataset D1 and D2/D3 stressor; QK remains primary. Exact checkpoint paths, manifest hashes,
+resume points, rebuild commands, and the 2026-08-03 cleanup ledger are in
+[13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md) and
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`.
 
 D3 development uses the current D1 plan and implemented D2 runtime. M0 uses a minimal two-rank
 `WorkManifest`; the QK M1 revision binds its action snapshot, owner map, group plan, checkpoints,
@@ -237,7 +273,9 @@ qualification roles. Their natural target length has median 153 and p95 404; onl
 and is retained only where independently capacity-admitted.
 
 The all-exact valid-target request union contains 929,554 mapped rows and is entirely inside the
-base catalog, but optimizer activity remains unmeasured. The actual XP forced-sharding threshold
+base catalog. The selected checkpoint bitmap reports 2,859,736 optimizer-active semantic rows,
+which exceeds the byte-count threshold, but the exact union-to-active membership join across both
+formal edges and every frozen fallback path remains pending. The actual XP forced-sharding threshold
 is 2,840,105 optimizer-updated semantic rows (99.3101%): global FP32 embedding plus the dense core
 is 48,023,005,184 bytes versus 47,699,722,240 single-card Torch allocatable bytes. A real
 GPU0/GPU1 physical canary successfully allocates the modulo shards and performs owner-side
@@ -585,6 +623,29 @@ bounded replacement shadow and preserves its old extent until validation and com
 
 ## 7. Current execution order
 
+### Selected checkpoint freeze
+
+The large-model checkpoint search is complete for the next mechanism round:
+
+1. QK LR0.15 theta0--theta4 is the primary chain and supplies three positive ordinary edges.
+2. QB `u30_e3` theta0--theta3 is the secondary chain and supplies two positive ordinary edges.
+3. The machine registry verifies every retained manifest, payload path, source result, and QB
+   optimizer resume point.
+4. Rejected QB chains, QB theta4, stale lock files, and historical D3-only model copies were
+   retired on 2026-08-03; compact diagnostics and reusable implementation remain.
+5. KuaiRand long-context and motivation checkpoints remain because they still bind frozen result
+   families. A new KuaiRand large-core chain is no longer a prerequisite for D1/D2/D3 mechanism
+   development; add it later only for a predeclared replication need.
+
+Run `python scripts/verify_evokv_selected_checkpoints.py` before constructing a new stack. Use
+`scripts/run_evokv_selected_checkpoint_rebuild.sh` only when a chain must be regenerated; a rebuild
+creates a new identity and does not mutate the registry automatically. The detailed operational
+boundary is in [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md).
+
+The immediate route is now baseline-first: bind one QK edge and workload, reproduce Reuse/Exact,
+execute the frozen D1 plan, lower the same work through D2, then run the same revision through D3.
+Repeat only after the first complete stack exposes the actual bottleneck.
+
 ### D2 closure
 
 1. Build the natural-length HET primary manifest and matched HOM control, and freeze the
@@ -739,6 +800,10 @@ Do not claim that:
   [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
 - Frozen D1 evidence ledger:
   [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md)
+- Selected QK/QB checkpoint ledger and rebuild boundary:
+  [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md)
+- Machine-readable selected checkpoint registry:
+  `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`
 - Result-family semantics:
   [eval_protocol.md](eval_protocol.md)
 - Experiment-record index:

@@ -3,8 +3,8 @@
 ## Environment
 
 - 4x NVIDIA A40 (46GB each), CUDA 13.1, torch 2.12.1
-- Current experiment availability is restricted to GPU0/GPU1. Do not schedule work on GPU2/GPU3
-  or launch four-rank jobs until the user explicitly restores their availability.
+- Current experiment availability permits one two-rank job on GPU0/GPU1. GPU2/GPU3 and four-rank
+  jobs are unavailable until the user explicitly reports otherwise.
 - Python 3.13.12, numpy/pandas/scipy installed
 
 ## Commands
@@ -52,6 +52,12 @@
   baseline-first ledger, and claim/figure map; it does not create evidence.
 - `docs/11_benchmark_qualification.md` registers checks required before protocol freeze, formal
   repeats, or paper promotion; it is not a current design/implementation blocker.
+- `docs/12_d1_d2_baseline_round.md` records the selected large-QK stream checkpoint and D1 bridge.
+- `docs/13_cross_dataset_stream_checkpoint_plan.md` is the operational QK/QB checkpoint ledger:
+  selected versions, hashes, rebuild commands, retention, cleanup, and downstream reuse boundary.
+- `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json` is the
+  machine-readable selected-checkpoint source. Verify it with
+  `scripts/verify_evokv_selected_checkpoints.py` before consuming a retained chain.
 - `docs/future_design/DESIGN2_FINAL_PLAN.md` defines the D2 mechanism and D1→D2→D3 interface.
 - `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md` is the only live D2 status ledger.
 - `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the flexible D3 problem/direction entry; it
@@ -83,22 +89,52 @@
   roles and a 65,536-record HET/HOM universe; natural target length is median 153, p95 404, and
   only 2.1835% saturated. Full HET old/target valid K/V is 1.498/1.801 TB, with nested
   36/72/144/288/576/720-GiB cohorts. The two-rank physical E4096 owner-projection canary and
-  HET/HOM rolling transaction canaries pass. The all-exact request union is 929,554 rows, but the
-  optimizer-active forced-sharding gate remains pending and requires at least 2,840,105 active
-  semantic rows. These artifacts are `scientific_result=false`; the rolling lifecycle canary does
-  not yet execute D1/D2 numerics.
-- The selected two-rank XP quality foundation is
+  HET/HOM rolling transaction canaries pass. The selected XP checkpoint records 2,859,736
+  optimizer-active semantic rows and therefore passes the 2,840,105-row byte gate. The all-exact
+  request union is 929,554 rows, but its exact membership join with the active bitmap across both
+  formal edges and every frozen fallback path remains pending. These artifacts are
+  `scientific_result=false`; the rolling lifecycle canary does not yet execute D1/D2 numerics.
+- The large QB `mf9_e4096` foundation is complete. It uses nine base-only real feature
+  namespaces, 75,389 prediction items, 2,985,070 optimizer-active semantic rows, an E4096 owner
+  projection, and the 24L/H1536 core. Its fixed FP32 model is 50,074,839,040 bytes and therefore
+  capacity-forced over one A40. The selected development chain is `u30_e3` theta0--theta3. Its
+  ordinary theta1→theta2 and theta2→theta3 tuning/report-only-qualification Exact-over-Reuse
+  sampled-CE gaps are `+0.02409/+0.02246` and `+0.01297/+0.01024`. Theta0 is physically retained
+  under `u15_e1`; theta1--theta3 and optimizer resume points are under `u30_e3`. The final
+  theta3→theta4 edge and all bounded final-update searches are negative and have no retained
+  checkpoint payload. Compact results remain, and the 2026-08-03 cleanup additionally retired the
+  rejected `u15_e3` tree and historical D3-specific model payloads. QB is a secondary D1/D2/D3
+  stressor; QK remains primary. Do not resume the deleted theta4 search.
+- The retained LR0.10 two-rank XP rollback foundation is
   `quality_chain_stream_aligned_train16384_round1`: one warm-up edge followed by three ordinary
   stream edges, 16,384 training users, 4,096 disjoint qualification users, one epoch/update,
   dense/projection LR 1e-5, embedding LR 1e-4, 999 frozen negatives, and a common FP16-storage /
   FP32-consumption cache endpoint. Exact-over-Reuse CE gaps are 0.01846/0.01068/0.01340 with all
-  record-cluster 95% intervals positive. This is development-selected, not formal replication.
+  record-cluster 95% intervals positive. This is retained development evidence, not the current
+  preferred chain or a formal replication.
   `selected_d1_bridge_round1` reproduces those endpoints and observes compiled gap recovery of
   63.9%/55.3%/70.0% at 0.162x/0.152x/0.146x Exact maintenance components; approximately 20%
   Exact mixed repair recovers 68.9%/62.3%/74.3%, while naive mixed component bounds remain
   0.764x/0.781x/0.731x Exact. This is D1→D2 causal development evidence, not end-to-end D2 timing.
-  Keep the selected four checkpoints and compact programs/plans/results; the two rejected
-  8,192-user checkpoint trees have been deleted and no full K/V payload is retained.
+  Keep the compact programs/plans/results. The superseded LR0.10 checkpoint payload, the two
+  rejected 8,192-user trees, `baseline_round3`, and historical `seed0/theta_1,2` have been deleted;
+  retain `seed0/theta_0` as the common retraining bootstrap. No full K/V payload is retained.
+- A bounded same-scale successor round now retains LR0.10 as the immutable rollback anchor and
+  selects LR0.15 as the preferred development quality candidate. Its Exact-over-Reuse CE gaps are
+  0.03082/0.01450/0.01095 with all record-cluster intervals positive. On those same endpoints, a
+  rank-16 shared `fresh - cheap` residual fit consumes 128 disjoint theta12 records, at most 8,192
+  global tokens/layer, and no recommendation labels or qualification errors; after folding into
+  the same 453,138,469-byte `24×3072×3072` FP16 direct-old-K/V affine it recovers
+  99.995%/99.992%/100.024% of the CE gaps at 0.163x/0.152x/0.148x Exact maintenance. Rank 64 has
+  lower K/V error but no material task-quality advantage and a 3.8x larger pre-fold adapter. This
+  is development-selected, not formal evidence. The archive is
+  `results/baseline_rounds/quality_chain/anchors/quality_lr015_d1_residual_20260802_round1.json`.
+  The LR0.15 theta1–theta4 checkpoints are the only retained XP update chain; exact retirement
+  records are in `checkpoint_retirement_20260802_v1.json` beside that archive.
+  The QK and QB retained manifests and optimizer bindings are jointly frozen in
+  `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`.
+  Do not silently substitute it into the frozen analytic D2/D3 stack; an adopting `stack_revision`
+  must rerun its own physical baselines.
 - D3 keeps one live cache plus bounded group shadow/staging and executes
   writeback→validation→group commit→old-group reclaim. Complete old+private-target COW remains a
   historical M1 endpoint, not the formal capacity definition.
@@ -245,6 +281,10 @@
   owner-projection canary, and rolling transaction canary. The workload is real; the lifecycle
   payload is deterministic and does not yet execute D1/D2 numerics. All current artifacts are
   non-scientific Foundation Review evidence.
+- `scripts/run_evokv_selected_checkpoint_rebuild.sh` is the only active QK/QB selected-chain
+  rebuild handoff. `scripts/verify_evokv_selected_checkpoints.py` validates the retained local
+  assets against the machine registry. The removed QB theta4/horizon and dual-LR scripts were
+  one-off completed searches, not current experiment entry points.
 - `results/validity/`, `results/scaling/`, `results/exposure/`, and
   `results/motivation_scale/` — current result families. Their protocol records must remain
   separate; raw per-seed files and checkpoints stay local and ignored.

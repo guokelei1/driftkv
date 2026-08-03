@@ -1,6 +1,6 @@
 # EvoKV 论文实验总蓝图
 
-日期：2026-07-31
+最后更新：2026-08-03
 
 状态：**论文级 benchmark 与 evaluation 设计，尚不构成新的结果 protocol 或论文证据**。
 已有结果的有效性仍由 [eval_protocol.md](eval_protocol.md) 决定；D1/D2/D3 的当前事实与
@@ -95,7 +95,7 @@ in-flight shadow/staging。现有 QK M1 的 144-GiB old + 144-GiB private-target
 | 数据集 | 原始规模与时间语义 | 论文使用量 | 证据职责 | 明确不承担的职责 |
 |---|---|---|---|---|
 | KuaiRand-1K | 11,713,045 rows、1,000 users、真实毫秒时间戳和 31 个日期 | Q-SEM 使用 250/500/980 users；R-KR 使用 945-user preparation 中的 682-record H12 job | 真实日历更新、D1 质量、长上下文、重复更新、shape 异质性 | 大 embedding 的 D2/D3 headline |
-| Tenrec QB | 2,442,299 rows、34,240 users、130,637 raw items；只有 user 内 ordinal order | Q-SEM 使用 1,000/3,000/5,000 users | 紧凑的跨 workload 质量复现 | 大规模 D2/D3；calendar-time drift |
+| Tenrec QB | 2,442,299 rows、34,240 users、130,637 raw items；只有 user 内 ordinal order | Q-SEM 使用 1,000/3,000/5,000 users；X-QB development 使用 5,000 个达到 104 exposures 的用户 | 跨 workload 质量复现；待资格化的多字段大模型与 D2/D3 secondary stressor | calendar-time drift；替代 X-QK primary |
 | Tenrec QK | 493,458,970 rows、5,022,750 users、3,753,436 raw items；只有 user 内 ordinal order | Q-SEM 使用 1,000/3,000/5,000 users；X-QK HET/HOM 从 1,880,275 个达到 96-event 边界的用户中选取，long-edge roles 从 25,770 个达到 576-event 边界的用户中选取 | 大 entity embedding、多卡 lookup、物理 out-of-core、容量与模型敏感性 | 将 ordinal window 写成“按天更新” |
 
 QB/QK 是 Tenrec 同一 collection 的两个相关表，论文必须如实说明，不能把它们包装成两个
@@ -152,7 +152,9 @@ R-KR 固定为已有 KuaiRand 4+12/H12 workload：
 
 它的优点是长度和 `(suffix, retained)` shape 丰富，并且已经有 direct-old-K/V、
 1/2/4-GPU resident 与 11-update lifecycle 证据。缺点是 embedding 只有 0.595 GiB，
-所以 D2 的大表 headline 必须来自 X-QK。
+所以当前 D2 的 primary headline 必须来自 X-QK。X-QB 已有 theta0--theta3 selected
+development chain，可作为 secondary stressor；它仍不能替换 X-QK primary，也不能把
+development selection 当成 formal replication。
 
 ### 3.4 X-QK：系统模型与统一 workload
 
@@ -169,6 +171,7 @@ R-KR 固定为已有 KuaiRand 4+12/H12 workload：
 | X1 | 16L/H1024, 16×64, T=512 | 84,990,976 | 0.317 GiB | 10.909 GiB | 32 MiB | 第二个真实系统模型；model sensitivity |
 | X2 | 24L/H1536, 24×64, T=512 | 285,571,584 | 1.064 GiB | 16.364 GiB | 72 MiB | 已完成的两卡 development 与大模型 fidelity bridge |
 | XP | 24L/H1536 core、bias-free E4096→H1536 owner-side projection、T=512 | 291,863,040 | 1.087 GiB | 43.638 GiB | full-length calibration 为 72 MiB | D2/D3/E2E paper-scale primary |
+| X-QB selected | 24L/H1536 core、9-field base-only rows、E4096→H1536、T=512 | 291,863,040 | 1.087 GiB | 45.549 GiB | full-length calibration 为 72 MiB | theta0--theta3 development chain；secondary D1/D2/D3 stressor |
 | X3，可选 | 32L/H2048, 32×64, T=512 | 675,428,352 | 2.516 GiB | 由 XP 规则生成 | 128 MiB | 核心结果稳定后的 model stress |
 
 X2 已有一个 development `theta0→theta1` edge。它使用 225,737 个 base eligible targets、
@@ -183,6 +186,16 @@ D1 program、ActionPlan 和全部 baselines 都使用同一个 geometry/hash。�
 新的 blueprint identity 和失败原因，再重新 qualification；不能在已有 timing 中挑一个
 更有利的宽度。系统 scale 不要求每个 timing cell 重训多 seed，也不把一个 system seed
 当作 D1 质量泛化证据。
+
+X-QB selected family 固定 75,389 个 base-only prediction items 和 2,985,070 个
+optimizer-active semantic rows。九个 namespace 来自真实 item、user、user-item 与已观察
+context crosses，不含 inactive padding rows；exact/append 每 token 请求九行，compiled
+retained prefix 不请求 embedding。其 global active fixed FP32 model（不计 padding 行）为
+50,074,839,040 bytes，超过单 A40 allocatable budget 2,375,116,800 bytes。当前保留
+`u30_e3` theta0--theta3，theta1→theta2 和 theta2→theta3 在 tuning 与 report-only
+qualification 上均有正 Exact-over-Reuse CE gap。它已经可用于 mechanism development，
+但在 chosen-chain D1、same-stack physical baselines 和预声明 replication 完成前仍不是
+paper evidence。
 
 E4096 是明确标记的 capacity-stress model scale，不冒充 QK 的默认工业配置。它是在同一
 2,859,836-row 真实 item namespace 上预声明的标准 power-of-two 宽度，使
@@ -416,11 +429,11 @@ anonymous arena 消耗的是同一套物理 DRAM，504 GiB mount capacity 与约
 
 ### 4.4 磁盘与产物生命周期
 
-磁盘是 formal matrix 的实际资源边界，但容量快照不是冻结 protocol。清理旧 source
-shards 与 DRAM arena 后，2026-07-31 的最新准备快照为：仓库所在 `/data` 分区总容量约
-3.5 TiB、可用约 **503 GiB**；仓库约 64 GiB，其中 checkpoints 约 53 GiB；根分区可用
-约 118 GiB。每个实验族开始前必须重新记录这些值，不能把本文快照当成未来运行时的
-事实。大型临时文件不得通过 `/tmp`、默认 Torch 临时目录或 core dump 意外写入根分区。
+磁盘是 formal matrix 的实际资源边界，但容量快照不是冻结 protocol。2026-08-03 完成
+selected-chain 清理后的准备快照为：仓库所在 `/data` 分区总容量约 3.5 TiB、可用约
+**642 GiB**；仓库约 452 GiB，其中 checkpoints 约 432 GiB；根分区可用约 119 GiB。
+每个实验族开始前必须重新记录这些值，不能把本文快照当成未来运行时的事实。大型临时
+文件不得通过 `/tmp`、默认 Torch 临时目录或 core dump 意外写入根分区。
 
 即使每个 formal cell 只保留一份完整 consumer-ready target，多个 288–720 GiB cells 也会
 快速进入多 TiB；最大点的一份 720 GiB target 已经超过当前全部空闲磁盘。因此
@@ -429,24 +442,23 @@ baseline-first 的“冻结结果”只指冻结 protocol、metadata、timing sa
 job 后先完成 digest/witness，再在 timer 外按相同 group 顺序从 checkpoint/raw history
 重建 old cache 到同一 arena；不能为了重复实验长期保存第二份 old epoch。
 
-长期模型资产采用单一 canonical 表示：
+长期模型资产采用 machine registry 绑定的单一 canonical 表示：
 
-| Asset | Per version | Three versions |
+| Asset | Retained versions | Current durable bytes |
 |---|---:|---:|
-| X1 dense + global embedding | 11.226 GiB | 33.678 GiB |
-| X2 dense + global embedding | 17.428 GiB | 52.284 GiB |
-| XP dense + global embedding | 约 44.725 GiB | 约 134.175 GiB |
+| QK LR0.15 large-core chain | `theta0–theta4` | 约 223.7 GiB |
+| QB `u30_e3` large-core chain | `theta0–theta3` + 3 resume points | 约 193.1 GiB |
+| frozen KuaiRand/motivation auxiliary roots | historical bound versions | 约 15.1 GiB |
+| checkpoint total | selected + still-evidentiary | 约 432 GiB |
 
-当前 X2 `theta0/theta1` 已占约 35 GiB；补齐 X2 `theta2` 与 X1 三版本约新增
-51.1 GiB。XP 的 checkpoint/optimizer/scratch 实测预算必须在 qualification 时补入
-storage manifest；三版本 canonical inference state 约 134.175 GiB，因此当前磁盘未必阻止首个 baseline，但
-很可能使持久化全部 1/2/4 layouts 不合理，并可能触发用户已允许的专用实验盘扩容。在当前
-filesystem 下，1/2/4-GPU embedding layouts 不应全部长期复制。这里的 canonical 是具有
-全局 row-order digest 的唯一持久化内容，允许由一套已验证的 sharded physical layout
-承载，不要求额外复制一个 global tensor 文件。当前默认做法是从它为当前
-`model edge × world size` 生成一个临时 layout，验证 global digest 与 lookup parity，
-完成该实验族后回收 payload，只保留 shard manifest 与 digest；增加专用实验盘后可以
-重新评估是否持久化这些可重建 layouts。
+精确路径、manifest/optimizer hash 和清理记录位于
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`。当前空间足以
+启动一个新 baseline family，也足以单独重建一条 QK 或 QB chain；不能在不清理临时资产
+的情况下同时复制两条完整 chain。1/2/4-GPU embedding layouts 不长期并存。这里的
+canonical 是具有全局 row-order digest 的唯一持久化内容，允许由一套已验证的 sharded
+physical layout 承载，不要求额外复制 global tensor 文件。每个
+`model edge × world size` 的 derived layout 临时生成，验证 global digest 与 lookup
+parity，完成该实验族后回收 payload，只保留 shard manifest 与 digest。
 
 统一 retention policy 为：
 
@@ -454,8 +466,9 @@ filesystem 下，1/2/4-GPU embedding layouts 不应全部长期复制。这里�
   只驻 ordinary/pinned DRAM 或 HBM，禁止落入 NVMe、`/tmp` 或 swap；
 - correctness reference 逐 extent 生成 digest 和固定 witness 后立即释放；correctness、
   warmup、五次 measured jobs 复用同一 DRAM arena，并在 timer 外重建相同 old source；
-- 每个真实模型版本只长期保存 inference-only canonical checkpoint；optimizer state
-  最多保留一个最新恢复点，并在 inference checkpoint 验证后回收；
+- 每个真实模型版本只长期保存一份 canonical checkpoint。当前 QB development chain 为
+  可重建性暂留 theta0/theta2/theta3 三个 optimizer resume points；它们是明确登记的临时
+  例外，D1/D2/D3 inference 不读取。正式 family 冻结后再缩减为一个最新恢复点；
 - formal result bundle 只保存完整配置、source/code/environment hash、五个原始 timing
   samples、per-rank phase/resource counters、per-extent digest/Merkle root、coverage、
   lineage、失败位置和少量固定数值 witness；
@@ -465,13 +478,12 @@ filesystem 下，1/2/4-GPU embedding layouts 不应全部长期复制。这里�
 - checkpoint 写入、reshard scratch 和 result bundle 都采用有配额的 experiment-local
   目录；不允许把同一 checkpoint 复制进每个 cell 的结果目录。
 
-在 XP qualification 尚未完成前，不再给出虚假的单一峰值数字。X1/X2 的新增量仍约
-57–65 GiB；XP
-三版本、一个 active derived layout、atomic checkpoint 临时副本和至多一个 optimizer
-recovery state 将把新增峰值推到大约 **260–330 GiB**，具体值由 qualification 的真实
-optimizer/scratch 实测更新。当前空间可以启动 builder/canary，但是否在 baseline family 之间反复
-reshard、是否提前安装专用盘，由 storage preflight 决定。所有 builder/runner 必须在物化
-前声明 `persistent_bytes` 与 `scratch_bytes`。准备阶段以物化长期资产之前的空闲量为基准：
+新增实验不再使用旧的 X1/X2/三版本估算。当前实测重建预算为：QK update chain 约
+179 GiB，QB theta0--theta3 加 resume state 约 195 GiB。一个 active derived layout、
+atomic checkpoint 临时副本和 runner scratch 必须另行声明。当前空间允许逐族执行，但
+是否在 baseline family 之间反复 reshard、是否提前安装专用盘，由 storage preflight
+决定。所有 builder/runner 必须在物化前声明 `persistent_bytes` 与 `scratch_bytes`。
+准备阶段以物化长期资产之前的空闲量为基准：
 
 $$
 B_{\mathrm{available,initial}} -
@@ -491,13 +503,12 @@ spill 到 NVMe、减少 physical materialization 或删除仍未冻结 lineage �
 若后续增加一块约 1 TB 的专用实验盘，它不改变 paper-core 的语义，只改变哪些
 可重建资产值得长期保留。以下标记用于扩盘后重新审查实验计划：
 
-| Artifact | 当前 503 GiB free 下的策略 | 增加专用盘后的策略 | 标记 |
+| Artifact | 当前约 642 GiB free 下的策略 | 增加专用盘后的策略 | 标记 |
 |---|---|---|---|
-| X1/X2 六个 canonical inference checkpoints | 必须长期保留，约 85.962 GiB total | 原样保留并迁移到 content-addressed store | core，无需等扩盘 |
-| XP 三个 canonical inference checkpoints | qualification 后保留，预计约 134.175 GiB | 优先迁移到 content-addressed store | core，扩盘触发点 |
+| selected QK/QB canonical checkpoints | 按 registry 原样保留，约 416.8 GiB | 优先迁移到 content-addressed store | core，无需等扩盘 |
 | 当前 edge 的一个 derived shard layout | 临时生成并回收 | 频繁复用时允许持久化 | core，无需等扩盘 |
-| X1/X2/XP 完整 1/2/4-GPU layouts | 不默认保留 | 可持久化并消除重复 reshard | `EXPAND-P1` |
-| 多版本 optimizer/restart states | 只留一个最新恢复点；XP 大小由 row-wise/offload qualification 实测，不能沿用旧 22–35 GiB 估计 | 训练需反复回退时可按 edge 保留 | `EXPAND-P1` |
+| QK/QB 完整 1/2/4-GPU layouts | 不默认保留 | 可持久化并消除重复 reshard | `EXPAND-P1` |
+| 多版本 optimizer/restart states | 仅保留 registry 登记的 QB resume points；新 family 默认只留最新点 | 训练需反复回退时可按 edge 保留 | `EXPAND-P1` |
 | 可选 X3 三版本及其 layouts | paper-core 前不生成 | 核心结果稳定后再预算 | `EXPAND-P2` |
 | 完整 formal K/V outputs 或无上限 raw logs | 不保留 | 仍不保留 | 非扩盘项 |
 

@@ -22,6 +22,12 @@ The authoritative research state is
 comparability is defined only by [docs/eval_protocol.md](docs/eval_protocol.md). Start from
 [docs/README.md](docs/README.md) for the complete document map.
 
+The reusable local model inputs are the registered QK LR0.15 theta0--theta4 primary chain and QB
+`u30_e3` theta0--theta3 secondary chain. Verify their manifests and payload bindings with
+`python scripts/verify_evokv_selected_checkpoints.py`; exact paths, hashes, retention rules, and
+QK/QB rebuild commands are in
+[docs/13_cross_dataset_stream_checkpoint_plan.md](docs/13_cross_dataset_stream_checkpoint_plan.md).
+
 The successor paper benchmark uses natural-length `X-QK-HET` end to end and a same-record
 masked-512 `X-QK-HOM` physical-shape control. XP fixes 2,859,835 base-period semantic rows plus
 one padding row in a 43.638-GiB physical FP32 item table, with owner-side E4096→H1536 projection;
@@ -102,9 +108,10 @@ outside this boundary.
   timings are also non-scientific until a formal protocol is frozen.
 - The successor foundation now has a real 65,536-record natural-length QK manifest, same-record
   masked-512 control, 36–720-GiB capacity cohorts, a physical two-A40 E4096 owner-projection
-  canary, and minimal rolling commit/reclaim/failure/replay canaries. The optimizer-active XP gate
-  and the first real HET D1/D2 rolling run remain open, so these artifacts are development
-  evidence rather than a D2/D3 result.
+  canary, and minimal rolling commit/reclaim/failure/replay canaries. The selected XP checkpoint
+  passes the forced-sharding byte gate with 2,859,736 optimizer-active semantic rows; the exact
+  request-union-to-active-bitmap join and the first real HET D1/D2 rolling run remain open. These
+  artifacts are development evidence rather than a D2/D3 result.
 - Historical protocol names such as `cohortkv_*` and `streamkv_*` remain unchanged because they
   identify immutable artifacts; the current paper/system name is EvoKV.
 

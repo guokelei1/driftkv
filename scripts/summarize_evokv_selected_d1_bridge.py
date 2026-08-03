@@ -51,6 +51,7 @@ def close_fraction(reuse: float, candidate: float, exact: float) -> float:
 def main() -> None:
     args = parse_args()
     rows = []
+    fit_kinds = set()
     for edge in EDGES:
         result_path = args.result_root / f"{edge}.json"
         baseline_path = args.baseline_root / "cells" / f"{edge}.json"
@@ -86,6 +87,12 @@ def main() -> None:
         ):
             raise ValueError(f"D1 bridge comparison binding differs: {edge}")
         methods = result_quality["methods"]
+        fit_kinds.add(
+            result.get("compile_metrics", {}).get(
+                "fit_kind",
+                "analytic_model_projection_no_quality_label_fit",
+            )
+        )
         baseline_methods = baseline_quality["methods"]
         for endpoint in ("all_reuse", "all_exact"):
             result_ce = float(
@@ -167,11 +174,12 @@ def main() -> None:
         "result_root": str(args.result_root),
         "baseline_root": str(args.baseline_root),
         "protocol": PROTOCOL,
+        "fit_kinds": sorted(fit_kinds),
         "endpoint_parity_with_selected_baseline": True,
         "mixed_cost_is_end_to_end": False,
         "interpretation": (
-            "development-only large-XP D1 bridge diagnostic; the direct-old-K/V "
-            "analytic projection is not the cross-dataset fitted-residual headline"
+            "development-only large-XP D1 bridge diagnostic with endpoint parity; "
+            "the fit kind is recorded per result and never uses qualification labels"
         ),
         "edges": rows,
     }

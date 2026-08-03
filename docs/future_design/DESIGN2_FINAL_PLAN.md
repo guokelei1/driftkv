@@ -1,6 +1,6 @@
 # EvoKV Design 2: Wave-Compiled Segmented Execution
 
-Date: 2026-07-31
+Last updated: 2026-08-03
 
 Status: **current mechanism fixed; D3-facing constraint exporter, formal Stage-B freeze, paper
 protocol, and results remain open**. Historical code and artifact names retain `cohortkv_*` so
@@ -38,6 +38,10 @@ paper workload changes four future-facing contracts without relabeling those art
 The successor runner is parameterized for 1/2/4 ranks. Benchmark Qualification is recorded
 separately and blocks only paper-result promotion, not current benchmark design or baseline
 implementation.
+
+Mechanism development now consumes the selected QK theta0--theta4 chain first and the selected QB
+theta0--theta3 chain as a secondary stressor. Their manifests are frozen by
+`selected_checkpoint_registry_development_v0.json`; D2 never selects or retrains a checkpoint.
 
 ## 1. Problem
 

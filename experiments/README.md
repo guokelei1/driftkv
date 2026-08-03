@@ -112,13 +112,14 @@ frozen yet. W3 integrated timings, full-payload validation, and synthetic lookup
 
 ## D3
 
-There is no frozen D3 experiment record. The first implementation now follows
+There is no frozen D3 paper-result record. The historical two-A40 M0/M1 mechanism chain follows
 [../docs/future_design/DESIGN3_FUTURE_DIRECTION.md](../docs/future_design/DESIGN3_FUTURE_DIRECTION.md)
 and its concrete
 [foundation/exploration plan](../docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) by
-producing a minimal H12/W2 `WorkManifest` plus GPU0/GPU1 ordinary-DRAM S0 benchmark under
-`configs/evokv_d3/development/`. The next implementation step is the same-revision S1 double
-buffer, followed by the real-capacity QK M1. A normalized
-constraint exporter is deferred until the selected mechanism clarifies the final interface. All
-initial artifacts are development-only. H12 capacity caps are emulation, not physical out-of-core
-evidence; paper-facing capacity evidence uses a larger real-history two-A40 workload.
+retaining the minimal H12/W2 `WorkManifest`, S0/S1, segmented-I/O, route-aware ResidencyPlan, and
+grouped contribution diagnostics under `configs/evokv_d3/development/` and `results/system/`.
+Their old D3-specific checkpoint copies were retired on 2026-08-03; compact results and mechanism
+code remain. They are fixed-512/full-private-target development evidence only. The active successor
+starts from the selected checkpoint registry, natural-length HET/HOM workloads, rolling
+commit/reclaim, and a rank-parameterized runner. A normalized D2 constraint exporter and formal D3
+protocol remain open. H12 capacity caps are emulation, not physical out-of-core evidence.
