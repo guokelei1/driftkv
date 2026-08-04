@@ -1,6 +1,6 @@
 # D1/D2 Baseline and Selected XP Quality Foundation
 
-Last updated: 2026-08-03
+Last updated: 2026-08-04
 
 Status: selected development evidence and the baseline-first successor handoff. Checkpoint paths
 and hashes are owned by [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md).
@@ -12,8 +12,8 @@ and D3 work. It answers three distinct questions without treating them as one re
 
 1. does stale K/V reuse leave an observable current-model consistency gap on an embedding-sharded
    paper-scale model under ordinary stream updates;
-2. can a D1 compiled repair close a useful part of that gap with much less measured maintenance
-   work than exact replay;
+2. can a D1 compiled repair close a useful part of that gap at low logical Exact replay; historical
+   resident measurements are retained only as implementation-feasibility diagnostics;
 3. after D1 reduces semantic work, does a naive mixed execution already realize the corresponding
    physical benefit, or is D2 still required?
 
@@ -26,7 +26,7 @@ The repository keeps two complementary D1 tracks.
 
 | Track | Scope | Role |
 |---|---|---|
-| Cross-dataset semantic evidence | KuaiRand, QB, and QK; three model tiers; four training seeds | Primary D1 generality, cost/fidelity, and negative-boundary evidence |
+| Cross-dataset semantic evidence | KuaiRand, QB, and QK; three model tiers; four training seeds | Primary D1 generality, logical-work/quality, and negative-boundary evidence |
 | XP system bridge | QK, 24L/H1536, E4096 row-sharded embedding, two A40s | Connects reuse/exact quality, the active fitted-residual D1 operator, and the later D2/D3 system workload |
 
 The XP bridge contains two controls. The analytic direct-old-K/V projection preserves the original
@@ -154,13 +154,13 @@ is therefore the preferred development candidate. Recovery slightly above 100% o
 is reported as a paired method-minus-Exact difference, not as a claim that migrated K/V is more
 exact than exact recomputation.
 
-This result closes the requested development search: the same-scale stream chain has a larger,
-stable Reuse–Exact opportunity and the active D1 mechanism recovers essentially all of it at the
-same 14.8%–16.3% online maintenance fraction. It also changes how the next systems experiment must
-be interpreted. The rank-16 program is preferred for D1 quality, while the fixed mixed ActionPlan
-remains a D2 physical-lowering workload until an explicit stack revision reruns its own baselines.
-The near-Exact XP result cannot silently erase cross-dataset exact/fallback cases or be reused as
-formal D2 evidence.
+This result closes the one-edge compiler search: the same-scale stream chain has a larger, stable
+Reuse–Exact opportunity and the active D1 mechanism recovers essentially all of it at the same
+14.8%–16.3% online maintenance fraction. It does not close recursive D1. Every row above starts
+from exact source-version K/V; it never feeds `theta1→theta2` output into `theta2→theta3` or that
+output into `theta3→theta4`. The rank-16 program is therefore the incumbent for the recursive
+comparison, not an already validated recursive design. The near-Exact XP result cannot silently
+erase cross-dataset exact/fallback cases or be reused as formal D2 evidence.
 
 ## 5. Artifacts and retention
 
@@ -211,30 +211,42 @@ Reuse and Exact reproduce the selected baseline before computing any recovery ra
 | Naive mixed component bound | Reducing logical Exact work does not automatically produce proportional physical savings | Communication dominates; complete D2 is already faster |
 | Immutable plans/programs | D1 can export bound work for a later D2 runner | The current quality-role plan is the final natural-length HET ActionPlan |
 
-## 7. Next result-dependent boundary
+## 7. Completed QK recursive round and next boundary
 
-The bounded quality search is complete. The LR0.10 compact evidence remains an immutable rollback
-anchor, while its 179-GiB checkpoint payload has been retired;
-LR0.15 plus the rank-16 residual compiler is the preferred development D1 candidate. Neither is a
-formal replicate. Before any paper promotion, a predeclared training-seed or untouched-role repeat
-must confirm both the positive Reuse–Exact denominator and residual generalization.
+QK Round A completed on GPU0/GPU1 under
+`evokv_qk_recursive_d1_round_a_development_v0`. It executed the incumbent and rollout-aware
+programs through all three ordinary edges with true FP16 recursive handoff and no hidden Exact
+reset. The compact result root is
+`results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
 
-The next physical D2 round should hold one checkpoint/program/plan revision fixed and implement
-the two-card comparison below. The QK primary and QB secondary chains are already selected and
-verified; no additional checkpoint search or KuaiRand large-core build blocks this round. Their
-exact reuse boundary is in
-[13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md).
+The current system-design point is `ract_kv_exact10`:
 
-1. all-Exact at the same endpoint;
-2. naive mixed execution;
-3. owner-local compiled retained repair plus merged exact/append pools;
-4. shape-aware grouping and segmented destination;
-5. complete D2 with the same ActionPlan and full output validation.
+| Edge | Exact valid-token fraction | CE-gap recovery | Mean K/V recovery | Cumulative CE recovery |
+|---|---:|---:|---:|---:|
+| `theta1→theta2` | 10.010% | 99.986% | 97.246% | 99.986% |
+| `theta2→theta3` | 10.010% | 99.985% | 94.933% | 99.997% |
+| `theta3→theta4` | 10.010% | 100.002% | 94.932% | 100.000% |
 
-The first question is whether the naive mixed component bound falls materially once work is
-physically separated. If D2 uses the rank-16 revision, it must rerun its analytic/naive physical
-baselines under that same revision; it may not compare against the older LR0.10 stack. If it uses
-the frozen analytic causal control, the 73%–78% component bounds remain the diagnostic baseline.
-In either case, diagnose embedding lookup, collective count, destination movement, or
-synchronization before changing D1 again. D3 out-of-core scheduling remains a later layer and must
-not be mixed into this resident D2 attribution round.
+The true-recursive one-edge incumbent loses K/V fidelity on the later edges, recovering only
+30.95% and 53.49%; deployment-matched RACT-KV with no scheduled Exact recovers 94.33% and 94.26%.
+This isolates the benefit of fitting on the method-produced rollout distribution. The 10% renewal
+point retains that behavior while defining a finite, label-free Exact schedule.
+
+The frozen v0 summary is `complete_no_admitted_policy` because its old selector treated a
+conservative held-out triangle-inequality rollout bound as a per-edge target gate. That quantity
+does not prove recommendation accuracy and is now a diagnostic in the system design. The result
+file and old selector outcome remain immutable; the design interpretation is not a retroactive
+protocol pass.
+
+The next result-dependent boundary is a newly frozen QB confirmation protocol. It must keep the QK
+rank, ridge, fit size, sampled-token limit, direct-old-K/V endpoint, and 10% renewal policy fixed,
+execute `theta1→theta2→theta3` without QB-specific tuning, and select on recursive K/V/task
+quality, logical Exact work, and lineage. The old `stability_certificate` field may remain for
+artifact compatibility but is diagnostic rather than a theory or selection gate. Operational
+fallback is reported under correctness and cannot be hidden in work accounting.
+
+Only after QB confirmation should a physical D2 round hold the selected recursive
+checkpoint/program/plan sequence fixed and compare all-Exact, naive mixed, owner-local compiled
+repair, shape-aware/segmented lowering, and complete D2. The older 73%–78% naive component bounds
+remain valid diagnostics for their frozen analytic stack but cannot substitute for the new
+recursive stack's baselines.

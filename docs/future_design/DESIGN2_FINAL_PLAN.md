@@ -1,10 +1,16 @@
 # EvoKV Design 2: Wave-Compiled Segmented Execution
 
-Last updated: 2026-08-03
+Last updated: 2026-08-04
 
 Status: **current mechanism fixed; D3-facing constraint exporter, formal Stage-B freeze, paper
 protocol, and results remain open**. Historical code and artifact names retain `cohortkv_*` so
 existing hashes and result families remain stable.
+
+Execution-order guard: this is a downstream design, not the current experiment boundary. No new
+D2 performance round starts until the recursive QK D1 selection and locked QB confirmation in
+`DESIGN1_RECURSIVE_KV_MIGRATION.md` close. Throughout D2, source/target versions describe K/V
+lineage during a sequential update of one serving model; they never mean concurrent model service
+or request routing among versions.
 
 This document defines D2 only. Current execution state is in
 [DESIGN2_DEVELOPMENT_STATUS.md](DESIGN2_DEVELOPMENT_STATUS.md). The interface below remains the

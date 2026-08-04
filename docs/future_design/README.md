@@ -1,15 +1,29 @@
 # Active design documents
 
-This directory contains one design/status pair for the implemented D2 mechanisms, plus a flexible
-D3 direction and a foundation document that separates the historical GPU0/GPU1 mechanism chain
-from the successor paper benchmark.
+This directory contains the active recursive D1 design, one design/status pair for the implemented
+D2 mechanisms, plus a flexible D3 direction and a foundation document that separates the
+historical GPU0/GPU1 mechanism chain from the successor paper benchmark.
 
 | Document | Role |
 |---|---|
+| [DESIGN1_RECURSIVE_KV_MIGRATION.md](DESIGN1_RECURSIVE_KV_MIGRATION.md) | single-serving-model premise, seven-version capacity ledger, rollout-aware RACT-KV, 10% Exact renewal, completed QK development result, diagnostic/fallback boundary, and locked QB next step |
 | [DESIGN2_FINAL_PLAN.md](DESIGN2_FINAL_PLAN.md) | D2 mechanism, required `ActionPlan`→D3-facing constraint interface, baselines, timer, and formal gate |
 | [DESIGN2_DEVELOPMENT_STATUS.md](DESIGN2_DEVELOPMENT_STATUS.md) | frozen inputs, implemented state, non-scientific evidence, W4/formal gaps, and D3 handoff |
 | [DESIGN3_FUTURE_DIRECTION.md](DESIGN3_FUTURE_DIRECTION.md) | D3 core DRAM↔HBM problem, isolation/co-design tracks, candidate mechanisms, and later paper conditions |
 | [DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) | historical H12/QK two-rank ledger plus flexible HET/XP/rolling foundation, strongest-baseline construction, and backtracking |
+
+The completed QK v0 semantic contract is recorded at
+`configs/evokv_d1/development/recursive_large_chain_design_v0.json`; the executable binding is
+`configs/evokv_d1/development/qk_recursive_round_a_two_gpu_v0.json`. Neither contains a physical
+GPU timing gate.
+
+The QK round completed at
+`results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
+Its 10% RACT-KV path achieves near-Exact CE and more than 94.9% mean K/V recovery on all three true
+recursive edges. It is development evidence, not a formal result. The old v0 selector's
+`stability_certificate` is now interpreted as a held-out rollout diagnostic, not an accuracy
+theorem or current headline gate; the original `complete_no_admitted_policy` summary remains
+unchanged. The next boundary is a newly frozen, locked QB confirmation protocol.
 
 The current architecture is:
 
@@ -19,14 +33,24 @@ D1 semantic ActionPlan
   → D3 capacity-bounded ResidencyPlan
 ```
 
+The architecture begins from one non-negotiable premise: exactly one recommendation-model version
+serves at a time. Versions form a sequential update chain; `source_version`/`target_version` are
+K/V lineage, not simultaneous model service. Rolling migration may temporarily retain old and new
+K/V groups, but every request uses the one current model.
+
+D1 freezes semantic actions and logical Exact valid-token work only. D2 proves whether those fixed
+actions reduce real multi-GPU work and time; D3 handles capacity placement and rolling movement.
+
 The interface above is the current paper decomposition, not a permanent exploration boundary.
 Isolation-track experiments keep one D1/D2 `WorkManifest` fixed. Co-design experiments may
 globally regenerate actions, owners, pools, or layout before execution, record a new
 `stack_revision`, and rerun their baselines.
 
 The next mechanism round starts from the verified local checkpoint registry, not from another
-training-policy search. QK LR0.15 theta0--theta4 is primary; QB `u30_e3` theta0--theta3 is the
-secondary cross-dataset chain. Paths, hashes, rebuild commands, and cleanup are in
+training-policy search. True recursive D1 on QK LR0.15 theta1--theta4 is complete and freezes the
+10% rollout-aware system-design point; the next run confirms that method on QB `u30_e3`
+theta1--theta3 without QB-specific tuning. D2/D3 performance work follows this result-dependent
+boundary. Paths, hashes, rebuild commands, and cleanup are in
 [../13_cross_dataset_stream_checkpoint_plan.md](../13_cross_dataset_stream_checkpoint_plan.md).
 
 The successor paper boundary uses natural-length `X-QK-HET` as the headline workload and

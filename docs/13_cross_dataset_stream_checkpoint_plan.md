@@ -1,10 +1,12 @@
 # Selected cross-dataset stream checkpoint chains
 
-Date: 2026-08-03
+Date: 2026-08-04
 
-Status: **QK and QB development chains are selected, registered, locally retained, and ready for
-D1/D2/D3 mechanism work.** This document replaces the completed parameter-search handoffs. It is
-an operational checkpoint ledger, not a formal result protocol.
+Status: **QK and QB development chains are selected, registered, and locally retained; QK
+recursive Round A is complete and QB confirmation is next.** D2/D3 consume the selected D1 only
+after the cross-dataset confirmation boundary closes. This
+document replaces the completed parameter-search handoffs. It is an operational checkpoint
+ledger, not a formal result protocol.
 
 The machine-readable source is
 `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`. Before any new
@@ -23,10 +25,16 @@ round; that mode also hashes all dense, projection, embedding, bitmap, and optim
 The selected chains solve different experimental needs while sharing the same 24-layer,
 H1536/E4096 large-core structure:
 
-| Chain | Versions | Positive ordinary edges | Role |
-|---|---:|---:|---|
-| Tenrec QK LR0.15 | `theta0–theta4` | 3 | primary D1→D2→D3 development chain |
-| Tenrec QB `u30_e3` | `theta0–theta3` | 2 | cross-dataset D1 evidence and secondary D2/D3 stressor |
+| Chain | Registered versions | Evaluated versions | Recursive edges | Role |
+|---|---|---|---:|---|
+| Tenrec QK LR0.15 | `theta0–theta4` | `theta1–theta4` | 3 | primary D1 design/selection chain |
+| Tenrec QB `u30_e3` | `theta0–theta3` | `theta1–theta3` | 2 | locked cross-dataset D1 confirmation and later D2/D3 stressor |
+
+The seven evaluated large models are therefore four sequential QK versions and three sequential
+QB versions. They are not concurrently served models and are not seven independent seeds. At any
+instant the system serves exactly one current recommendation model; version labels bind K/V
+lineage across its next update. Both `theta0` checkpoints remain bootstrap/rebuild prerequisites,
+but their warm-up edges are excluded from D1 evidence.
 
 QK remains the system headline because it also owns the natural-length HET/HOM universe and the
 paper-scale capacity cohorts. QB is not a replacement for QK. It is valuable because its nine
@@ -36,6 +44,24 @@ edges let us test whether a mechanism survives a different ordered-exposure tabl
 These are development-selected chains. They are sufficient for implementation, causal
 diagnostics, baseline construction, and mechanism search. They are not yet cross-seed formal paper
 evidence.
+
+The canonical fixed-state capacity ledger is:
+
+| Quantity | QK `theta1–4` | QB `theta1–3` |
+|---|---:|---:|
+| Physical embedding shape | 2,859,836×4,096 | 2,985,071×4,096 |
+| Physical embedding parameters | 11,713,888,256 | 12,226,850,816 |
+| Dense plus projection parameters | 291,863,040 | 291,863,040 |
+| Physical fixed parameters | 12,005,751,296 | 12,518,713,856 |
+| Physical fixed FP32 bytes | 48,023,005,184 | 50,074,855,424 |
+| Physical fixed FP32 GiB | 44.7249 | 46.6358 |
+| Optimizer-active semantic rows | 2,859,736 | 2,985,070 |
+| Optimizer-active fixed FP32 bytes | 48,021,366,784 | 50,074,839,040 |
+
+Physical counts include one padding row. Optimizer-active counts exclude padding and, on QK, 99
+semantic rows without a real optimizer update. These are logical parameter bytes, not the slightly
+larger serialized checkpoint-file sizes. Every evaluated version within one chain has the same
+geometry and capacity.
 
 ## 2. Retained QK chain
 
@@ -161,10 +187,12 @@ It must not reuse a plan compiled for another edge, record set, length distribut
 
 For current development:
 
-- use QK `theta1→theta2` first when the largest quality opportunity is useful;
-- use QK `theta2→theta3` as a second-edge stability check;
-- use QB `theta2→theta3` as the preferred secondary system edge because its complete prefix and
-  optimizer binding are retained and its gap remains positive on both roles;
+- preserve the completed stateful QK `theta1→theta2→theta3→theta4` Round-A result and use
+  edge-local exact-source rows only as oracle-reset diagnostics;
+- freeze the QK-supported 10% RACT-KV system-design point for both QB ordinary edges;
+- treat the old serialized rollout-bound field as a diagnostic rather than an accuracy theory or
+  QB selection gate;
+- do not tune the method on QB or resume the deleted QB theta4 search;
 - keep the D1 action snapshot immutable inside a D2/D3 isolation revision;
 - if mechanism discovery changes D1 actions or D2 layout, record a new `stack_revision` and rerun
   the baselines for that revision.
@@ -254,15 +282,21 @@ promotes one.
 
 ## 7. Next execution boundary
 
-Checkpoint selection is no longer the active task. The next work is baseline-first mechanism
-development on the registered chains:
+Checkpoint selection is no longer the active task. QK Round A has completed the first recursive
+D1 boundary in `future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md`; its 10% RACT-KV route is the
+current development design point. The next work is:
 
-1. freeze one QK edge and one record/length/capacity manifest;
-2. run and validate all-Reuse/all-Exact plus the fixed D1 method;
-3. lower the same ActionPlan through D2 and measure logical-to-physical sparsity;
-4. execute the same work out of core through D3 with rolling group replacement;
-5. repeat the selected mechanism on the second QK edge and the QB secondary edge;
-6. add seeds and formal 1/2/4-rank points only after the mechanisms and baselines stabilize.
+1. preserve the completed v0 QK result and its historical automatic-selector outcome;
+2. freeze a new QB confirmation protocol in which recursive K/V/task recovery, logical scheduled
+   Exact work, and lineage are primary, while the old rollout “certificate” is diagnostic;
+3. run the frozen rank-16, ridge, fit-size, sampled-token, direct-old-K/V, and 10% renewal settings
+   on QB `theta1→theta2→theta3` without QB-specific tuning;
+4. freeze the confirmed D1 ActionPlan/program contract before any new D2/D3 performance round.
 
 Qualification in `11_benchmark_qualification.md` blocks formal promotion, not this mechanism and
 baseline work.
+
+The completed QK execution binding is
+`configs/evokv_d1/development/qk_recursive_round_a_two_gpu_v0.json`; its compact result is under
+`results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
+Do not reuse its v0 protocol string for QB or formal repeats.

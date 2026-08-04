@@ -6,6 +6,11 @@ The active documents describe one three-layer EvoKV architecture:
 semantic ActionPlan → distributed WavePlan constraints → capacity-bounded ResidencyPlan
 ```
 
+All three layers share one fixed premise: exactly one current recommendation-model version serves
+at a time. Versions are sequential update checkpoints; old/new tags are K/V lineage during a
+transition, not simultaneously served models. Each recursive D1 output becomes the next update's
+source.
+
 Old design exploration is recoverable from Git history. Historical experiment records remain
 tracked under `experiments/` because their measurements and negative results are useful, but they
 do not define the current design.
@@ -30,20 +35,23 @@ When documents disagree, use this order:
 6. [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md) —
    selected QK/QB versions, manifest hashes, rebuild commands, retention/cleanup, and downstream
    reuse boundary; it creates no formal evidence.
-7. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
+7. [future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md](future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md)
+   — active single-serving-model recursive D1 design, seven-version capacity ledger, logical
+   Exact-work/quality boundary, completed QK development result, and locked QB confirmation step.
+8. [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md) — current D2
    mechanism and current D1→D2 starting interface.
-8. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
+9. [future_design/DESIGN2_DEVELOPMENT_STATUS.md](future_design/DESIGN2_DEVELOPMENT_STATUS.md) —
    implemented D2 state, non-scientific development evidence, pending W4/formal-evaluation work,
    and the D3 handoff.
-9. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
+10. [future_design/DESIGN3_FUTURE_DIRECTION.md](future_design/DESIGN3_FUTURE_DIRECTION.md) — D3
    problem definition, source/capacity/timer contract, candidate mechanisms, baselines, and
    go/no-go conditions.
-10. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
+11. [future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md](future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md)
    — historical two-card mechanism ledger plus the flexible HET/XP/rolling successor foundation
    and backtracking plan; it creates no protocol or evidence.
-11. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
+12. [09_single_configuration_full_chain_plan.md](09_single_configuration_full_chain_plan.md) —
    frozen D1 Stage 0–6 evidence ledger. It is history, not a current execution plan.
-12. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
+13. [dataset_expansion_audit.md](dataset_expansion_audit.md) — accepted and rejected dataset
    semantics, usable capacity, and generality boundaries.
 
 Repository-local agent rules are in [../AGENTS.md](../AGENTS.md). Experiment records are indexed
@@ -55,16 +63,23 @@ by [../experiments/README.md](../experiments/README.md), active design documents
 
 | Layer | Question | Output | Status |
 |---|---|---|---|
-| D1 | What should be compiled or exactly recomputed? | immutable `ActionPlan`; progressive residual replay is D1-only supporting evidence | frozen algorithm and single-configuration evidence |
+| D1 | What semantic point between stale reuse and all-Exact preserves quality across updates? | recursive immutable `ActionPlan`; rollout-aware RACT-KV plus 10% token-budgeted Exact renewal | QK four-version development round complete with near-Exact task quality and >94.9% K/V recovery; revised locked QB confirmation remains |
 | D2 | Where and in what physical distributed form should those fixed actions execute? | global D3-facing `WavePlan` constraints | mechanisms implemented; normalized exporter/hash and formal evidence open |
 | D3 | How should one live cache larger than HBM move and execute on a 1/2/4-rank stack? | capacity-bounded `ResidencyPlan` plus versioned rolling groups | historical two-rank M1 mechanism chain complete in development; HET/HOM, XP, rolling lifecycle, strongest generic baseline, rank-general runner, formal repeats and protocol remain open |
 
-The retained local model inputs are frozen separately from the design documents: QK LR0.15
-theta0--theta4 is primary, and QB `u30_e3` theta0--theta3 is secondary. Their machine registry is
+The retained local model inputs are frozen separately from the design documents. The seven D1
+evaluation versions are QK LR0.15 theta1--theta4 and QB `u30_e3` theta1--theta3; theta0 remains a
+bootstrap outside D1 evidence. QK is the primary selection chain and QB is the locked confirmation
+chain. Their machine registry is
 `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`; verify it before use
 with `python scripts/verify_evokv_selected_checkpoints.py`.
 
-D1 resolves the semantic reuse–recompute trade-off. D2 converts the resulting logical sparsity into
+D1 has resolved the QK development trade-off at the 10% scheduled-Exact point and next confirms the
+same frozen mechanism on QB; its axes are logical Exact valid-token work, quality, and
+accumulation, not GPU time. The old serialized `stability_certificate` is a held-out rollout
+diagnostic rather than a mathematical proof or current headline gate. Operational fallback is
+handled under correctness and remains separate from scheduled Exact renewal.
+D2 then converts the resulting fixed logical sparsity into
 physical savings through owner-local retained repair, row-sharded exact/append, `(S,R)`-aware
 compiled ordering, merged exact pools, segmented destinations, and group-valid outputs. D3 begins
 with an isolation track that preserves the upstream snapshot while scheduling

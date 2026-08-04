@@ -1,12 +1,16 @@
 # EvoKV Design 3 方向：Hierarchical Out-of-Core Pipeline
 
-最后更新：2026-08-03
+最后更新：2026-08-04
 
 状态：**route-aware ResidencyPlan、grouped development E0 和 contribution diagnostics
 已完成；正式重复、协议和论文结果尚不存在**。
 本文档描述当前最可能的 D3 形态，不是阻塞机制发现的接口合同，也不能作为 paper claim 的
 证据。D1/D2 的已有证据仍按各自冻结协议解释，但新的 D3 development 可以从轻量 adapter
 开始，并允许根据 DRAM/HBM 实测形成新的跨层 `stack_revision`。
+
+当前执行顺序以递归 D1 为先：先完成 QK 三个连续迁移 edge 的方法选择，再用冻结设置完成
+QB 两个 edge 的确认，之后才启动新的 D2/D3 performance round。全文的版本号都只表示单一
+当前推荐模型更新时的 K/V lineage；不表示多个推荐模型同时服务，也不允许按模型版本路由请求。
 
 2026-07-31 起，论文级 successor benchmark 采用以下统一边界：自然变长
 `X-QK-HET` 是 D1→D2→D3 的 headline workload，同记录 masked-512 `X-QK-HOM` 只作

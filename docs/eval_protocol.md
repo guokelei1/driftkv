@@ -1,6 +1,6 @@
 # Current evaluation protocol
 
-Last updated: 2026-08-03
+Last updated: 2026-08-04
 
 > This file defines the valid artifact boundary. Any material change to targets, data split,
 > serving semantics, model family, or timing semantics requires a new protocol name and separate
@@ -8,6 +8,8 @@ Last updated: 2026-08-03
 
 The frozen D1 Stage 0–6 evidence ledger is
 [`09_single_configuration_full_chain_plan.md`](09_single_configuration_full_chain_plan.md).
+The active large-model recursive D1 design and next result boundary are
+[`future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md`](future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md).
 The D2 mechanism and live execution/evidence state are
 [`future_design/DESIGN2_FINAL_PLAN.md`](future_design/DESIGN2_FINAL_PLAN.md) and
 [`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
@@ -27,6 +29,12 @@ for W4. C0 uses a fixed 16-record fixture and records `formal_stage_c=false`, no
 claim, `target_epoch_published=false`, and no capacity evidence; its development namespace pointer
 is not a formal epoch publication. These artifacts are categorically ineligible for the Stage-B
 summary.
+
+The paper and every successor protocol assume exactly one current recommendation-model version is
+serving at a time. Checkpoint versions form a sequential update chain. `source_version` and
+`target_version` identify K/V lineage for one transition; they do not authorize concurrent
+multi-model serving or request routing among versions. Rolling old/new K/V coexistence is legal
+only as bounded transition state under the one current model.
 
 The W4/Stage-C gate above applies to promotion of the existing D2 family; it does not prohibit
 designing the successor benchmark, implementing baselines, or generalizing a new runner to
@@ -153,6 +161,81 @@ paper result must report that cost separately and its cohort-level amortization.
 Adopting this residual profile in D2 or D3 creates a new `stack_revision`: all physical baselines
 for that revision must be rerun. The older analytic mixed-action component bounds remain valid only
 for their frozen causal-control stack.
+
+### Large-model recursive D1 development
+
+`evokv_recursive_d1_large_chain_development_v0` is the machine design family; the completed
+non-scientific executable QK Round-A protocol is
+`evokv_qk_recursive_d1_round_a_development_v0`. Its result root is
+`results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
+It executes one full stateful cache chain without exact source resets between ordinary edges:
+
+- QK primary: exact `theta1` source followed by deployed
+  `theta1→theta2→theta3→theta4` outputs;
+- QB confirmation remains a separate future family: exact `theta1` source followed by deployed
+  `theta1→theta2→theta3` outputs;
+- QK determines the system-design point; QB receives the frozen QK settings without QB-specific
+  method tuning;
+- both `theta0→theta1` warm-up edges remain outside D1 evidence.
+
+The QK comparison includes all-Reuse, all-Exact, edge-local exact-source rank-16 diagnostics,
+recursive execution of the incumbent rank-16 programs, rollout-conditioned fitting without its
+paired-source contraction term, full RACT-KV without scheduled Exact, and full RACT-KV with 10%
+and 20% scheduled Exact valid-token renewal. The source passed to every later recursive edge must
+be the serialized FP16 output produced by the preceding method. An in-memory or on-disk
+replacement by exact source-version K/V invalidates the recursive row.
+
+Scheduled Exact selection uses stable identity, valid-prefix cost, previous exact version, and
+migration depth only. It is stratified and balanced by valid retained-prefix tokens. Fit,
+held-out-rollout, and qualification records are disjoint. Recommendation labels and realized
+quality errors are forbidden inputs to fitting or renewal. Natural Exact and operational fallback
+are reported separately; fallback is a correctness path rather than a normal D1 design action.
+
+For lower-is-better CE, recursive edge recovery compares the deployed pre-edge cache, deployed
+post-edge cache, and exact target cache under the same current target model. Cumulative recovery
+compares the original exact QK/QB `theta1` cache, recursive output, and exact current-version
+cache. Report raw paired differences whenever the Reuse-to-Exact denominator is non-positive.
+Oracle-reset rank-16 output is a composition diagnostic, not a deployable method.
+
+The frozen v0 selector required:
+
+- scheduled Exact retained-prefix work is no more than 20% of all-Exact valid-token work;
+- every positive-denominator edge and the final cumulative endpoint recover at least 90% of the
+  paired CE opportunity, with any edge below 80% an immediate no-go;
+- recursive recovery is within five percentage points of its oracle-reset diagnostic on every
+  edge, with a ten-point difference an immediate no-go;
+- mean K/V fidelity recovery is at least 90%, with per-layer and p90 errors reported;
+- total D1 Exact retained-prefix valid tokens, including synchronous fallback, do not exceed the
+  candidate's declared 0%, 10%, or 20% logical budget on any edge;
+- program, checkpoint, lineage, renewal, exact-budget, FP16 endpoint, and output hashes validate.
+
+The v0 implementation additionally treated a held-out triangle-inequality rollout bound as a
+target/hard gate. Its completed summary is `complete_no_admitted_policy`: the 10% path passes the
+quality, K/V, logical-work, oracle-gap, lineage, and hard checks but exceeds the old 0.1 diagnostic
+target on its second and third edges. This outcome is immutable and may not be rewritten as a v0
+protocol pass.
+
+For system-design interpretation, `ract_kv_exact10` is the current QK point. It uses 10.010%
+scheduled Exact valid-token work on every edge, recovers 99.985%--100.002% of the per-edge CE gap,
+recovers 94.932%--97.246% of mean K/V fidelity, and ends at 100.000% cumulative CE recovery. The
+held-out rollout quantity is empirical and probe-dependent; it does not prove recommendation
+accuracy and is retained as a diagnostic rather than a headline Design-1 gate.
+
+D1 records scheduled/fallback Exact valid tokens, compiled valid tokens, natural Exact work,
+method-common append, extents, tensor shapes, and program identity. It does not select a method by
+GPU time and does not make a speedup claim. A later D2 protocol must bind the frozen D1
+ActionPlan/program sequence, lower the same work on GPU, and measure lookup, padding,
+communication, movement, kernel time, and wall time. D3 separately owns capacity staging and
+rolling execution. Fit/compile/update-inclusive accounting belongs to the later system evaluation,
+not to the D1 semantic gate.
+
+The next QB confirmation or any formal QK repeat must use a new protocol string frozen before
+execution. It freezes the QK rank-16 rollout-aware compiler and 10% renewal policy, selects on
+recursive K/V/task quality, logical scheduled-Exact work, and lineage, and names the held-out
+rollout bound as a diagnostic. The 0% row remains an ablation because it has no finite renewal
+schedule. Operational fallback remains visible in correctness/work ledgers but does not define the
+normal design point. If locked QB confirmation fails, the method remains QK-only development
+evidence and D2/D3 must not present it as the cross-dataset fixed D1 stack.
 
 Separate W3 mechanism-development families now include the integrated v1–v5 pilot/full682 runs,
 full-payload validation, wave-embedding characterization, and the synthetic lookup contention
@@ -364,6 +447,20 @@ non-scientific D2 status and pending commands are recorded in
 [`future_design/DESIGN2_DEVELOPMENT_STATUS.md`](future_design/DESIGN2_DEVELOPMENT_STATUS.md).
 
 ## 1. Protocol families
+
+### D1 recursive development family
+
+The machine design family is `evokv_recursive_d1_large_chain_development_v0`; the completed QK
+execution protocol is `evokv_qk_recursive_d1_round_a_development_v0`. Both remain non-scientific.
+The semantic contract, executable evaluator, artifact schema, exact source/output lineage checks,
+and QK handoff are implemented and preserved under
+`configs/evokv_d1/development/recursive_large_chain_design_v0.json` and the completed Round-A
+result root. They must not be pooled with the edge-local
+`evokv_xp_d1_quality_development_v1`, KuaiRand Stage-4.6/4.9 lifecycle families, or any D2/D3
+timer. The v0 automatic selector outcome remains historical. The current design interpretation
+uses logical Exact valid-token work, recursive K/V/task recovery, and lineage; its held-out rollout
+bound is diagnostic. Physical GPU efficiency is a downstream D2/D3 question. A QB confirmation or
+formal repeat requires a new protocol string.
 
 ### D2 development families
 
@@ -1103,6 +1200,11 @@ selected attention-weighted program is exploratory development evidence. It must
 training seeds or accepted external checkpoints before any confirmatory task-quality claim.
 
 ### 5.9 KuaiRand verified cohort compiler
+
+This frozen historical protocol bundled a resident-GPU cost certificate into its action
+publication rule. That convention is not inherited by the active large-model recursive D1:
+current D1 selects only on logical Exact valid-token work, quality, and accumulation, while D2
+owns physical GPU-cost and wall-time evidence.
 
 `kuairand_long_context_4plus12_verified_compiler_v1` fixes the selected attention-weighted
 full-affine programs and adds an independent label-free certification role. The seed-9151

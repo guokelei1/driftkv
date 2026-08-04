@@ -2,8 +2,13 @@
 
 EvoKV studies how to update model-version-stale HSTU prefix K/V after a generative recommender
 advances to a new model version. Exact replay restores current-model state but repeats the complete
-history computation. Reusing the old cache is cheap but version-inconsistent. EvoKV turns this
-single update job into three successive system decisions:
+history computation. Reusing the old cache is cheap but version-inconsistent.
+
+The core system premise is fixed: exactly one recommendation-model version serves at any instant.
+Versions form a sequential update chain; they are not co-served and requests are not routed among
+them. Old and new K/V groups may coexist only while one current model transitions persistent cache
+state, after which committed old extents are reclaimed. EvoKV turns this single-model update job
+into three successive system decisions:
 
 ```text
 D1 ActionPlan
@@ -27,6 +32,9 @@ The reusable local model inputs are the registered QK LR0.15 theta0--theta4 prim
 `python scripts/verify_evokv_selected_checkpoints.py`; exact paths, hashes, retention rules, and
 QK/QB rebuild commands are in
 [docs/13_cross_dataset_stream_checkpoint_plan.md](docs/13_cross_dataset_stream_checkpoint_plan.md).
+The active recursive D1 design has completed QK theta1--theta4 as three consecutive maintenance
+rounds and freezes the 10% rollout-aware method for QB theta1--theta3 confirmation; see
+[docs/future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md](docs/future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md).
 
 The successor paper benchmark uses natural-length `X-QK-HET` end to end and a same-record
 masked-512 `X-QK-HOM` physical-shape control. XP fixes 2,859,835 base-period semantic rows plus
@@ -42,16 +50,26 @@ reclaims each rolling group. The planned matrix and pre-promotion checks are
 
 ## Current design
 
-### D1: version-cohort tiered migration
+### D1: recursive reuse–recompute planning
 
-D1 resolves the reuse–recompute trade-off and emits an immutable per-record `ActionPlan`.
+D1 resolves the reuse–recompute trade-off and emits an immutable per-record `ActionPlan`. Its
+large-model path is recursive: each migrated output becomes the next model update's input, with no
+unreported exact reset between edges. D1 is selected by logical Exact valid-token work, recursive
+K/V/task recovery, and lineage---not by GPU time.
 
-- The fast tier fits the shared `fresh - cheap` K/V residual over cached old `Norm(x)` for one
-  source/target version cohort; the selected data plane reparameterizes the compiled affine to run
-  directly over existing old K/V.
+- The primary RACT-KV (Rollout-Aware Cache Transport) branch fits one shared semantic affine on
+  paired exact/deployed old-K/V states, preserving an exact-source anchor while learning the
+  rollout distribution produced by preceding migrations.
+- The current QK design point uses deterministic 10% valid-token Exact renewal; 0% and 20% remain
+  mechanism/budget controls.
 - A supporting D1-only quality extension can replay a current-model prefix and transport its
   boundary residual to deeper current projections; it is not a D2/D3 headline route.
 - Exact current-model recomputation is the endpoint and the semantic reference.
+
+The v0 artifact field `stability_certificate` is a conservative held-out rollout diagnostic, not
+a mathematical proof of recommendation accuracy and not the current headline design gate.
+Operational fallback belongs to implementation correctness; scheduled Exact renewal is the normal
+D1 trade-off mechanism.
 
 Version cohorts organize compilation and batching; they do not predict which user is safe to
 reuse. Recommendation labels, per-user drift, JVP, and Fisher signals do not route caches.
@@ -100,7 +118,10 @@ outside this boundary.
 
 - D1 has a frozen KuaiRand single-configuration vertical slice and broader motivation/method
   replications. The normalized-capsule source path is a measured negative result; the selected
-  hot-HBM route transforms existing exact source-version old K/V directly.
+  hot-HBM route transforms existing old K/V directly. The full QK three-edge Round A is complete
+  as non-scientific development evidence: the 10% RACT-KV point recovers 99.985%--100.002% of the
+  per-edge CE gap and more than 94.9% mean K/V fidelity. A revised locked QB two-edge confirmation
+  remains the active unfinished D1 boundary.
 - D2 implementation and mechanism discovery are far enough to define the physical lowering, but
   its current W3 timings are `scientific_result=false` and must not enter paper tables.
 - D3 has a historical two-A40 QK M1 development chain. Existing destination-v4 and normalized-capsule

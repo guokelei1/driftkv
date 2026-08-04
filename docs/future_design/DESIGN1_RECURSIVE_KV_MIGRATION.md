@@ -1,0 +1,312 @@
+# EvoKV Design 1: rollout-aware recursive K/V migration
+
+Last updated: 2026-08-04
+
+Status: **QK Round A is complete as development evidence. `ract_kv_exact10` is the current
+system-design point; locked QB confirmation and formal replication remain open.**
+
+The completed round is
+`results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
+It is `scientific_result=false` and must not be promoted as a formal paper result. Its frozen v0
+summarizer reports `complete_no_admitted_policy` because an experimental rollout-bound target was
+part of that round's preregistered selector. That historical result remains unchanged. The current
+design interpretation treats the bound as a diagnostic rather than a mathematical certificate or
+a headline selection gate.
+
+The executable v0 implementation remains in:
+
+- `configs/evokv_d1/development/qk_recursive_round_a_two_gpu_v0.json`;
+- `src/hstu_kvcache/migration/recursive_d1.py`;
+- `scripts/evaluate_evokv_qk_recursive_d1.py`;
+- `scripts/summarize_evokv_qk_recursive_d1.py`;
+- `scripts/run_evokv_qk_recursive_d1_round_a.sh`.
+
+Artifact field names such as `stability_certificate` are retained for compatibility with that
+completed round. New paper text calls this quantity a **held-out rollout stability diagnostic**.
+
+## 1. Non-negotiable system premise
+
+EvoKV studies one recommender that is updated sequentially:
+
+```text
+theta1 -> theta2 -> ... -> theta_t
+```
+
+Exactly one recommendation-model version is current at any serving instant. The system does not
+co-serve several model versions and does not route requests among old and new models. A persistent
+user history keeps prefix K/V produced by the preceding checkpoint; after publication, that K/V
+is stale derived state that must move to the one current model.
+
+Source and target versions identify cache provenance during one migration. Rolling groups may
+temporarily contain different K/V lineages, but every inference uses the current model. A group is
+validated and committed before its old extent is reclaimed.
+
+The paper-core question is:
+
+> Can a model-update cohort migrate persistent prefix K/V with only a small amount of exact
+> history replay, recover most of the fresh-cache quality, and continue doing so when each
+> migrated output becomes the next update's source?
+
+## 2. Design 1 boundary
+
+Design 1 chooses the semantic point between two extremes:
+
+- stale reuse performs no retained-prefix maintenance but leaves version-inconsistent K/V;
+- all-Exact replays every retained history under the current model.
+
+The active online action domain is only `compiled|exact`:
+
+- `compiled` applies one cohort-shared direct-old-K/V affine;
+- `exact` replays the retained prefix under the current model and resets its migration lineage.
+
+D1 reports valid-token Exact fraction, recursive K/V fidelity, recommendation-quality recovery,
+and lineage. It does not choose GPU owners, kernels, collectives, tensor layouts, HBM placement,
+or pipeline order, and it makes no physical speedup claim. D2 lowers the frozen actions to GPUs;
+D3 schedules the resulting fixed work under capacity.
+
+Progressive residual replay remains a supporting D1-only comparison. It is not a headline route
+and is not part of the integrated D1->D2->D3 ActionPlan.
+
+## 3. The seven selected large-model versions
+
+The evaluation uses two sequential chains, not seven concurrent models:
+
+| Chain | Evaluated versions | Recursive migrations | Role |
+|---|---|---:|---|
+| Tenrec QK LR0.15 | `theta1`, `theta2`, `theta3`, `theta4` | 3 | primary design chain |
+| Tenrec QB `u30_e3` | `theta1`, `theta2`, `theta3` | 2 | locked cross-dataset confirmation |
+
+QK and QB `theta0` are training/bootstrap checkpoints outside D1 evidence. The current QK round
+therefore spans four versions and three real recursive migrations.
+
+| Quantity | QK `theta1-4` | QB `theta1-3` |
+|---|---:|---:|
+| HSTU geometry | 24L/H1536, 24x64, T=512 | 24L/H1536, 24x64, T=512 |
+| Owner projection | E4096->H1536 | E4096->H1536 |
+| Prediction items | 250,000 | 75,389 |
+| Physical fixed parameters | 12,005,751,296 | 12,518,713,856 |
+| Physical fixed FP32 bytes | 48,023,005,184 | 50,074,855,424 |
+
+Checkpoint identity and hashes remain owned by
+`configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`.
+
+## 4. Mechanism
+
+### 4.1 Reproduce the source distribution created by the system
+
+An accurate one-edge translator is insufficient if later programs are fitted only on pristine K/V.
+In deployment, `theta2->theta3` consumes the actual output produced on `theta1->theta2`, and the
+same is true for every later edge.
+
+For a small, disjoint fit cohort, D1 therefore constructs three label-free states at each edge:
+
+1. exact source-version K/V;
+2. the actual FP16 cache produced by preceding D1 programs and scheduled renewal;
+3. exact target-version K/V.
+
+The first edge begins from exact `theta1`. Later fit states are generated by replaying the already
+chosen D1 path, including its real approximation depths. This closes the training/deployment
+distribution gap without reading recommendation labels, qualification errors, NDCG, Hit, or a
+per-user realized benefit.
+
+### 4.2 Fit one shared rollout-aware repair
+
+All users crossing one checkpoint edge share the same parameter update. RACT-KV, short for
+**Rollout-Aware Cache Transport**, amortizes that structure as one shared program per layer and
+edge.
+
+The compiler begins with the existing cheap source-to-target projection and fits a rank-16
+residual in old-K/V feature space. The fit is trained to:
+
+- map the actual recursively deployed source toward exact current-model K/V;
+- retain an exact-source anchor so one-edge behavior is not sacrificed;
+- reduce the difference between mapped deployed and exact source states.
+
+These are fitting objectives, not a theorem about downstream accuracy. Their purpose is to make
+the compiler see the errors its own preceding programs create. The first implementation uses 128
+global fit records, no more than 8,192 global tokens per layer, rank 16, and ridge `1e-3`.
+
+The low-rank representation is only an offline regularizer. Before publication it is folded into
+one dense FP16 affine per layer. Online execution therefore has one shared semantic operator, not
+a second adapter pass and not a per-user model.
+
+### 4.3 Execute directly over cached old K/V
+
+Computing the fitted map from normalized hidden states would require an extra per-layer tensor as
+large as the cache. EvoKV instead composes the repair through the fixed source K/V projection and
+publishes an equivalent affine over existing old K/V.
+
+The compiled route consequently needs:
+
+- the valid old K/V extent;
+- one small shared edge program;
+- zero per-record `Norm(x)` state;
+- no raw-history replay or embedding lookup for the retained prefix.
+
+This semantic representation creates the opportunity that D2 later realizes through owner-local
+execution.
+
+### 4.4 Renew a small deterministic Exact fraction
+
+Approximate K/V becomes the input to later updates. D1 therefore recomputes a bounded subset of
+retained prefixes exactly at every edge while using the compiled affine for the rest.
+
+Records are assigned to stable, valid-token-balanced renewal groups using only record identity,
+valid retained length, last exact version, and migration depth. Rotating one of ten groups gives a
+nominal 10% Exact valid-token fraction. Exact renewal resets that record's lineage; the other
+roughly 90% take the shared compiled route. The schedule does not inspect recommendation labels or
+observed per-user quality.
+
+The percentage refers only to valid stale retained-prefix tokens. Current-model append is common
+to all records and is reported separately. A record with no usable old cache is natural Exact and
+is also reported separately.
+
+Scheduled Exact renewal is a central design component because it defines the reuse--recompute
+trade-off. It must not be confused with fallback.
+
+### 4.5 Recursively hand off the real output
+
+Every edge writes an FP16 cache that becomes the next edge's input. There is no exact reset between
+ordinary transitions and no alternate serving model. The chain is evaluated as one stateful
+operation:
+
+```text
+exact theta1 K/V
+  -> deployed theta2 K/V
+  -> deployed theta3 K/V
+  -> deployed theta4 K/V
+```
+
+This recursive handoff is the central difference from three independent one-edge experiments.
+
+### 4.6 Freeze an immutable ActionPlan
+
+Each transition emits a content-hashed ActionPlan containing:
+
+- the one current target model and source/target K/V lineage;
+- record identity, last exact version, and migration depth;
+- valid retained, append, and target extents;
+- `compiled|exact` action and scheduled/natural reason;
+- exact-token and compiled-token ledgers;
+- fit-role and program identity;
+- output digest for the next recursive edge.
+
+D2 and D3 may change physical lowering, grouping, and schedule, but not these semantic actions in a
+fixed-stack comparison.
+
+## 5. Why this is a system design contribution
+
+The contribution is not “a new matrix” in isolation and is not a claimed proof of model accuracy.
+It is the composition of four system decisions:
+
+1. use the model-version cohort to amortize one repair program across many histories;
+2. fit later programs on the recursively deployed state distribution created by the system;
+3. compile the repair directly over persistent old K/V with no per-record auxiliary state;
+4. mix that cheap route with a small, label-free Exact renewal budget and export immutable work to
+   the distributed and out-of-core layers.
+
+This gives a concrete system contract: D1 reduces exact history replay while preserving state
+quality; D2 makes that fixed logical reduction efficient on row-sharded GPUs; D3 preserves it when
+one cache population exceeds HBM.
+
+## 6. QK Round-A development result
+
+The full two-rank QK round completed all six methods, all three recursive edges, 4,096
+qualification records, and true FP16 handoff without hidden exact resets or persisted full K/V
+payloads.
+
+For the current 10% design point:
+
+| Edge | Exact valid-token fraction | CE-gap recovery | Mean K/V recovery | Cumulative CE recovery |
+|---|---:|---:|---:|---:|
+| `theta1->theta2` | 10.010% | 99.986% | 97.246% | 99.986% |
+| `theta2->theta3` | 10.010% | 99.985% | 94.933% | 99.997% |
+| `theta3->theta4` | 10.010% | 100.002% | 94.932% | 100.000% |
+
+Mean post-migration K/V relative error is `0.560%`, `0.674%`, and `0.781%`. The final score cosine
+to Exact is `0.99999998`, and final Top-10 overlap is `0.9999516`.
+
+The true-recursive incumbent rank-16 programs recover only `30.95%` and `53.49%` of K/V fidelity
+on the second and third edges. RACT-KV with 0% scheduled Exact raises those values to `94.33%` and
+`94.26%`. This is the main mechanism evidence: deployment-matched fitting prevents the severe
+cache-fidelity composition loss seen in the one-edge incumbent. Adding 10% scheduled Exact raises
+the later-edge recovery to about `94.93%` while providing a finite renewal schedule.
+
+This is development evidence from one trained QK chain. Record-cluster intervals inside that
+chain are diagnostics, not independent model replications.
+
+## 7. Role of the rollout diagnostic and fallback
+
+### 7.1 The old “certificate” is not a theory proof
+
+The v0 evaluator reserves 32 disjoint records and measures how the fitted affine maps their
+observed rollout error. It then adds mapped source difference, one-edge residual, and FP16 residual
+with a triangle-inequality bound and normalizes by stale-Reuse error. The serialized field is named
+`stability_certificate` for historical compatibility.
+
+This quantity:
+
+- is empirical and probe-dependent;
+- is deliberately conservative;
+- does not prove recommendation accuracy, CE, NDCG, Hit, or Top-k behavior;
+- does not establish a global Lipschitz theorem;
+- is not the theoretical foundation of EvoKV.
+
+The QK 10% values are `0.044`, `0.135`, and `0.182`, while actual K/V and task quality remain
+strong. The old v0 selector required every value to be at most `0.1`, which is why its summary did
+not automatically admit a policy. The current system design uses this measurement as a held-out
+rollout diagnostic for understanding difficult layers and depths, not as a headline gate. Formal
+evidence is based on recursive K/V fidelity, task-quality recovery, exact work, lineage, and
+cross-dataset/seed replication.
+
+Changing this interpretation does not retroactively change the v0 result. A later formal repeat
+must use a new protocol string and state the revised selection rule before execution.
+
+### 7.2 Fallback is an operational guard
+
+Fallback covers exceptional conditions such as a missing/mismatched program, invalid lineage,
+non-finite output, or a failed numerical canary. It terminates in Exact so the system can preserve
+correctness and atomic publication.
+
+Fallback is not the D1 novelty, not a prediction that a cache is unsafe, and not part of the
+normal 10% mechanism. Any fallback work remains visible in operational and evaluation ledgers; a
+timed point cannot claim a 10% exact budget if fallback materially increases its realized work.
+The paper discusses fallback under implementation correctness and failure handling rather than in
+the core Design 1 narrative.
+
+## 8. Cost and claim boundary
+
+The observed 10.010% is the fraction of retained-prefix tokens sent through full Exact replay. It
+is not a claim that total computation or wall time is 10% of all-Exact. The remaining tokens still
+run the shared affine, and every record performs current-model append.
+
+Earlier same-shape one-edge measurements place the compiled affine component at roughly
+`0.148x-0.163x` of Exact maintenance. A linear semantic-component estimate for the 10% mixture is
+therefore roughly `0.233x-0.246x` of Exact before D2 lowering, but that estimate is not a physical
+mixed-wave result. Only a matched D2/D3 implementation may claim GPU or end-to-end speedup.
+
+## 9. Next boundary
+
+The current Design 1 point freezes:
+
+- RACT-KV deployment-matched fitting;
+- rank 16, ridge `1e-3`, 128 fit records, and at most 8,192 sampled tokens/layer;
+- one dense direct-old-K/V affine per edge;
+- 10% valid-token-balanced scheduled Exact renewal;
+- true recursive FP16 handoff and `compiled|exact` ActionPlans.
+
+The next result-dependent step is locked QB `theta1->theta2->theta3` confirmation with no
+QB-specific method tuning. Before that run, its protocol must be revised so the held-out rollout
+bound is explicitly diagnostic rather than a theoretical or selection certificate. The primary
+gates remain:
+
+1. no hidden exact reset and valid lineage on both edges;
+2. at least 90% CE-gap recovery per edge and cumulatively;
+3. at least 90% mean K/V fidelity recovery;
+4. approximately 10% scheduled Exact valid-token work, with natural/operational Exact reported
+   separately;
+5. no recommendation label or qualification outcome used for fitting or renewal.
+
+After QB confirmation, D2 must consume the frozen QK/QB action/program sequence and measure whether
+the logical reduction becomes lower lookup, communication, GPU work, and wall time. Any later
+semantic change creates a new stack revision and reruns its own baselines.

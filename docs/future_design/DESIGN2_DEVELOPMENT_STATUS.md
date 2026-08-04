@@ -1,10 +1,14 @@
 # EvoKV Design 2 development status
 
-Last updated: 2026-08-03
+Last updated: 2026-08-04
 
 This is the only live D2 implementation/evidence ledger. The mechanism is defined by
 [DESIGN2_FINAL_PLAN.md](DESIGN2_FINAL_PLAN.md). Earlier four-stage control and Stage-A/Stage-B
 handoff documents were consolidated here and removed.
+
+Current route guard: historical D2 evidence remains valid, but successor performance execution is
+downstream of the active recursive D1 QK→QB closure. Version tags below are cache lineage under one
+current serving model, not simultaneously served recommendation models.
 
 The PASS rows below are immutable H12/W1/W2/W3 development facts. The paper-scale successor does
 not relabel them: it uses HET primary/HOM control extents, a capacity-forced XP embedding,

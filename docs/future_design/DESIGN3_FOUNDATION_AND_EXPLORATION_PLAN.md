@@ -1,6 +1,6 @@
 # EvoKV Design 3 Foundation Benchmark and Exploration Plan
 
-最后更新：2026-08-03
+最后更新：2026-08-04
 
 状态：**历史 M0/M1 机制发现账本 + successor benchmark 的灵活执行入口，不是冻结
 protocol 或论文结果**。本文档完整保留 fixed-512、GPU0/GPU1、complete-private-target
@@ -9,6 +9,11 @@ protocol 或论文结果**。本文档完整保留 fixed-512、GPU0/GPU1、compl
 前的检查登记在 [../11_benchmark_qualification.md](../11_benchmark_qualification.md)。
 Qualification 不阻止 workload、runner、baselines 或机制设计，只阻止未合格结果晋升为
 paper evidence。
+
+执行顺序与职责边界：先由 D1 在单一当前服务模型的 QK→QB 顺序链上冻结 logical
+`compiled|exact` work、质量和递归 lineage；D2 再证明这些动作怎样映射为实际多卡 GPU
+降本；D3 只在固定 D1/D2 revision 上处理容量、搬运、流水和提交回收。本文所有版本标签都
+是 K/V lineage，不是多模型同时服务。
 
 当前 checkpoint 搜索已经结束。下一轮直接使用 registry 绑定的 QK theta0--theta4
 primary 与 QB theta0--theta3 secondary；旧 M1 专用 checkpoint payload 已回收，历史结果

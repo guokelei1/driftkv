@@ -1,6 +1,6 @@
 # EvoKV 论文实验总蓝图
 
-最后更新：2026-08-03
+最后更新：2026-08-04
 
 状态：**论文级 benchmark 与 evaluation 设计，尚不构成新的结果 protocol 或论文证据**。
 已有结果的有效性仍由 [eval_protocol.md](eval_protocol.md) 决定；D1/D2/D3 的当前事实与
@@ -10,6 +10,11 @@
 config。
 
 ## 1. 结论先行
+
+全文使用一个不可变系统前提：任意时刻只有一个当前推荐模型提供服务。模型版本是
+`theta1→theta2→...` 的顺序更新 checkpoint，不是并行服务的多个模型；旧/新版本只标记
+迁移中 K/V 的 lineage。滚动迁移时可以短暂同时存在旧组和已提交的新组，但所有推理都使用
+唯一当前模型，提交后回收旧组。本文不研究 multi-model serving 或按版本路由请求。
 
 论文实验不应做成
 
@@ -43,12 +48,12 @@ config。
 strongest generic winners 冻结后重算，不能为了维持旧数字删除强 baseline。D1 已有的
 36 条模型版本链不重训；旧 W3/D3 development 数字只用于选机制和预算，不进入论文结果表。
 
-执行采用 **per-layer baseline first**，但不能机械地先跑完所有 baseline 再碰任何
-proposed，因为 D3 的 mixed baseline 必须建立在已经冻结的 complete D2 stack 上。正确顺序
-是先冻结 D2 foundation，再完成 D2 并冻结 stack，随后冻结 D3 foundation，最后才运行 D3
+执行采用 **D1-first、随后 per-layer baseline first**。首先在 QK 四版本上完成真正递归的
+D1，并把选中方法锁定到 QB 三版本确认；在此之前不启动新的 D2/D3 performance round。
+随后先冻结 D2 foundation，再完成 D2 并冻结 stack，接着冻结 D3 foundation，最后运行 D3
 proposed。每一层都先验证数据、模型、分片、DRAM/HBM、timer、consumer endpoint 和独立
-数值 oracle。调优 screen、Benchmark Qualification、D1 同 SLA comparator pass 和已有 D1
-证据不计入 system timed cells，但必须保留全部配置与结果，不能只公开赢家。
+数值 oracle。调优 screen、Benchmark Qualification、D1 同 SLA comparator pass 和递归
+D1 development 不计入 system timed cells，但必须保留全部配置与结果，不能只公开赢家。
 
 主系统场景从一开始就承认 K/V extent 的自然异质性。`X-QK-HET` 是所有 headline
 system experiments 的主 workload：它保留每条真实记录在更新边上的 old、retained、
@@ -73,7 +78,7 @@ in-flight shadow/staging。现有 QK M1 的 144-GiB old + 144-GiB private-target
 
 | RQ | 要回答的问题 | 主要证据 |
 |---|---|---|
-| RQ1 | 模型更新后，reuse 与 exact recomputation 之间是否存在真实且可重复的质量—计算矛盾？ | M1、D1-A、D1-B |
+| RQ1 | 单个服务模型连续更新后，reuse 与 exact 之间是否存在真实矛盾；低逻辑重算量 D1 连续使用时能否避免明显累积退化？ | M1、D1-A、D1-B、D1-C |
 | RQ2 | 减少逻辑 exact work 是否会自动按比例减少多卡上的物理工作？ | M2、D2-A |
 | RQ3 | D2 的 owner-local execution、合并 exact pool、shape-aware lowering 和 segmented target 是否把逻辑稀疏性真正转成物理稀疏性？ | D2-A、D2-B |
 | RQ4 | 当完整 cache 超过可用 HBM 后，简单顺序分组和 whole-group double buffering 还暴露什么瓶颈？ | M3、D3-A |
@@ -82,11 +87,20 @@ in-flight shadow/staging。现有 QK M1 的 144-GiB old + 144-GiB private-target
 
 三层设计的实验边界保持清楚：
 
-- D1 评价“做什么”及其 fidelity/cost；
+- D1 在唯一当前服务模型的顺序更新链上评价“做什么”，只以 valid-token Exact 逻辑工作量、
+  质量恢复和累积稳定性定义 trade-off；其输出必须成为下一轮输入，不能在边间偷偷 exact
+  reset，也不在本层宣称 GPU speedup；
 - D2 固定 D1 action，评价“在哪里、以什么物理形态执行”；
 - D3 固定一个 stack revision，评价“超出 HBM 后如何搬运和流水”；
 - 若 D3 探索迫使 D1/D2 发生实质变化，则产生新的 `stack_revision`，并在该 revision
   下重跑其 own baseline，不能跨 revision 相除。
+
+D1 的候选创新必须按
+[`DESIGN1_RECURSIVE_KV_MIGRATION.md`](future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md)
+第 4.5 节的最近工作边界表述：不能把 K/V 翻译、校正损失或选择性重算本身写成首次贡献。
+论文要检验的是单一当前模型连续更新下，成对 exact/实际递归源收缩、有限深度的 label-free
+Exact renewal 与不可变语义 ActionPlan 这一组合；在 QK 递归和锁定 QB 确认通过前只能称为
+candidate mechanism，不能写成已证实贡献。
 
 ## 3. Benchmark portfolio
 
@@ -196,6 +210,19 @@ retained prefix 不请求 embedding。其 global active fixed FP32 model（不�
 qualification 上均有正 Exact-over-Reuse CE gap。它已经可用于 mechanism development，
 但在 chosen-chain D1、same-stack physical baselines 和预声明 replication 完成前仍不是
 paper evidence。
+
+当前 D1 的七个大模型是两条顺序链：QK `theta1–theta4` 四个版本、三次递归迁移；QB
+`theta1–theta3` 三个版本、两次锁定确认。两条链的 `theta0` 只用于 bootstrap/lineage，
+不计入七个评测版本。其最新固定容量为：
+
+| Chain | Physical embedding parameters | Dense+projection parameters | Physical fixed parameters | Physical FP32 bytes / GiB | Optimizer-active fixed bytes |
+|---|---:|---:|---:|---:|---:|
+| QK `theta1–4` | 11,713,888,256 | 291,863,040 | 12,005,751,296 | 48,023,005,184 / 44.7249 | 48,021,366,784 |
+| QB `theta1–3` | 12,226,850,816 | 291,863,040 | 12,518,713,856 | 50,074,855,424 / 46.6358 | 50,074,839,040 |
+
+Physical 数包含一个 padding row；active 数排除 padding，QK 还排除 99 个未收到真实
+optimizer update 的 semantic rows。这里是参数逻辑字节，不是带容器 metadata 的 checkpoint
+文件大小。精确版本 hash 与路径由 selected-checkpoint registry 管理。
 
 E4096 是明确标记的 capacity-stress model scale，不冒充 QK 的默认工业配置。它是在同一
 2,859,836-row 真实 item namespace 上预声明的标准 power-of-two 宽度，使
@@ -882,7 +909,7 @@ phase breakdown、validation/commit/reclaim。主张是每层在自己的资源�
 `owner-local contiguous fixed-action`，不能用它宣称完整 owner-compute 增量。如果 D1 的
 logical plan 在这一强物理执行下仍不比 exact 快，这正是 D2 motivation，不应删除该结果。
 
-### D1-A：Cost–fidelity frontier
+### D1-A：Logical recompute–quality frontier
 
 **状态：EvoKV primary replication 已冻结；同 SLA structural comparator 需要新的
 comparison protocol。**
@@ -893,45 +920,42 @@ comparison protocol。**
 | Structural controls | 九个预选 discovery checkpoints；不能赋予四-seed replication 含义 |
 | Endpoint references | stale reuse、current projection、exact |
 | Structural discovery baselines | fixed deep suffix、plain progressive-prefix replay、recent-token rectangles、arbitrary contiguous intervals |
-| Primary integrated EvoKV actions | compiled affine repair、exact fallback |
+| Primary integrated EvoKV actions | compiled affine repair、scheduled Exact renewal |
 | Supporting D1-only action | residual-delta progressive repair；只进质量/算法消融，不进入 D2/D3 headline |
-| Metrics | measured GPU cost/full-exact、K/V recovery、score recovery、Top-k overlap、paired ranking delta |
+| Metrics | scheduled Exact valid-token fraction、K/V recovery、score recovery、Top-k overlap、paired ranking delta；operational fallback 只在 correctness/work ledger 单列 |
 | Output | 主文同 SLA frontier 与 aggregate EvoKV result；九个 discovery cells 的完整 raw-action frontier 放 appendix |
 
-主张是 shared affine repair 在多个 workload/capacity 上形成稳定的 cost/fidelity interior
-point。严格 task-quality gate 只通过 6/9 cells 的事实必须保留；不能挑掉 negative endpoint，
-也不能把 task quality 变成 cache admission oracle。
+主张是 shared affine repair 加 bounded Exact renewal 在 stale reuse 与 all-Exact 之间形成
+semantic interior point。严格 task-quality gate 只通过 6/9 cells 的事实必须保留；不能挑掉
+negative endpoint，也不能把 task quality 变成 cache admission oracle。已有 resident-kernel
+数字只作为实现可行性历史记录，不参与当前 D1 方法选择；相同 ActionPlan 的实际 GPU 收益
+由 D2 重新测量。
 
 这里不能把不同 protocol 的“已选择点”直接画成一个 Pareto。plain prefix 与
 recent/interval discovery 使用过 20% recovery selector，而 D1 primary 是 50%，并以
 75/90% 为 secondary operating points，而且两族历史 artifact 的 split seeds/probe users
 也不同。正式同 SLA comparison 因此不是一次 JSON 重汇总：它必须先冻结一个新的
 comparison protocol，在九个 discovery model-version cells 的共同 probe users 上重新
-evaluate/timing structural actions，再用 50% recovery target 为每个 family 独立选择最低
-实测成本的合法 action；depth/rank/token rectangle/interval 不能看 final users 或 seeds
-1–3。这个 pass 不重训模型，也不改变 36 条 quality replication chains，但其 action-level
-runs 在 manifest 审计后单独预算，不计入 system timed-cell portfolio。若不做这个新 pass，
+evaluate structural actions，再用共同 recovery target 为每个 family 独立选择最低 logical
+Exact valid-token fraction 的合法 action；compiled-token volume 作为另一列原始工作量，不
+与 Exact token 人为换算。depth/rank/token rectangle/interval 不能看 final users 或 seeds
+1–3。这个 pass 不重训模型，也不改变 36 条 quality replication chains。若不做这个新 pass，
 主文就不能声称已有同 SLA frontier，只能在 appendix 报 historical raw actions 的
 descriptive frontier。
 
-D1-A 仍然只是 resident-kernel frontier：current projection/compiled 需要 old
-`Norm(x)`，residual tier 需要 BF16 hidden suffix，reuse 读取 old K/V，exact 读取 raw
-history。每条线必须报告 auxiliary-state bytes、fit/compile cost 和 amortization；主文不能
-把 0.121× resident kernel cost 直接称为 end-to-end 系统 speedup。physical source 闭环由
-D1-B 单独回答。
+D1-A 的新递归选择不能按 resident-kernel timing 排序。current projection/compiled、reuse、
+exact 的 source 表示差异，以及 auxiliary-state bytes、fit/compile 和 amortization，都交给
+D2/E1 在冻结 D1 ActionPlan 后统一核算。历史 0.121× resident-kernel 数字不能作为新的 D1
+gate，更不能称为 end-to-end speedup。
 
-### D1-B：Source representation 与 repeated renewal
+### D1-B：Repeated renewal supporting evidence
 
 **状态：复用 R-KR frozen 结果。**
 
-- source panel A1：`/data` ext4 buffered-POSIX normalized capsule 对同 boundary exact，
-  保留 frozen no-transform/reuse-copy floor 与负结果；
-- source panel A2：decoded pinned-DRAM-resident normalized capsule economics 对 paired
-  pinned-DRAM exact；这是 1/4-GPU backup evidence，不冒充 ordinary pageable DRAM；
-- source panel B：hot-HBM direct-old-K/V 对 hot-HBM raw-history exact；现有冻结结果没有
-  hot-HBM no-transform control，若新增只能标 supporting measurement；
-- source/operator：A1/B 报告 1/2/4 GPU，A2 只报告已有 1/4 GPU；各自报告 program bytes、
-  compile time、source bytes、preload 和 break-even；
+本节只把 repeated-input 的 fidelity、lineage、logical Exact fraction 和 depth 作为 D1
+supporting evidence。历史 normalized-capsule、pinned-DRAM 和 hot-HBM source-path/GPU
+数字统一移到 D2 motivation/appendix，不构成 D1 的算法指标或选择条件。
+
 - lifecycle primary：Stage 4.9 corrected growing-history same-device rollout，682-record
   cohort 上 11 个 updates，下一步真正读取上一步输出；
 - Stage 4.9 primary controls：fresh paired all-exact 与简单的
@@ -940,10 +964,11 @@ D1-B 单独回答。
   all-migrate/all-exact endpoints、matched-random、periodic/depth-only 与 fixed-quota
   candidates 只按其 selection/diagnostic role 报告；threshold refresh 只保留为 negative
   diagnostic，不作为唯一 comparator；
-- metrics：per-edge/cumulative GPU cost、exact fraction、migration depth、最低
-  cache/score/top-100 fidelity、lineage。
+- D1 metrics：per-edge/cumulative logical Exact valid-token fraction、migration depth、最低
+  cache/score/top-100 fidelity、lineage；历史 GPU cost 单列为 D2-facing diagnostic。
 
-主图可将同边界 source-path bars 与 11-edge lifecycle curve 合并成两个 panel。
+本节主图只画 logical Exact fraction、migration depth 与 11-edge quality/fidelity lifecycle。
+source-path bars 进入 D2 图，不与 D1 semantic curve 合并。
 Stage 4.6 与 Stage 4.9 的 history、append 和 denominator 不同，不能把 0.2134× 与
 0.100017× 拼成一条曲线。Stage 4.9 中 current-model append 在 retained migration 后执行，
 并从 migration numerator 与 paired exact denominator 对称排除。closest external
@@ -952,6 +977,44 @@ Stage 4.6 与 Stage 4.9 的 history、append 和 denominator 不同，不能把 
 Q-SEM 3×3×4 aggregate。生命周期仍不宣称 organic serving trace、在线最优 selector 或
 跨数据集 generality。Stage 4.9 只有 11 个 updates，短于 H12 的 12-edge horizon，因此
 没有观察一个完整 renewal cycle，也不能宣称长期 deadline 已被完整验证。
+
+### D1-C：七版本递归迁移
+
+**状态：QK 四版本 Round A 已完成 development evidence；10% RACT-KV 是当前系统设计点，
+锁定 QB 三版本确认待执行。**
+
+系统始终只有一个当前服务模型。QK 从 exact `theta1` 开始，实际输出依次成为
+`theta2→theta3→theta4` 的下一轮输入，中间没有隐藏 exact reset。完整 round 比较 all-Reuse、
+all-Exact、逐边 exact-source rank-16 oracle、现有 rank-16 真递归、rollout-only 消融、
+RACT-KV 0% Exact，以及 RACT-KV 加 10%/20% valid-token Exact renewal。
+
+RACT-KV（Rollout-Aware Cache Transport）在 disjoint fit role 上生成 paired exact/deployed
+source，以 exact-source anchor 保留单边语义，并让 shared affine 直接学习系统自身产生的
+rollout 输入分布。它最终仍导出一个 direct-old-K/V semantic affine；rank 只是离线拟合正则，
+不是额外 online route。
+
+当前 10% 点三轮分别使用 10.010% valid retained-prefix Exact，得到
+99.986%/99.985%/100.002% edge CE recovery、97.246%/94.933%/94.932% mean K/V recovery，
+final cumulative CE recovery 为 100.000%。真递归 incumbent 在后两轮 K/V recovery 只有
+30.95%/53.49%，而 RACT-KV 0% 已恢复到 94.33%/94.26%，因此核心机制证据来自
+deployment-matched rollout fitting，而不是 fallback 或一个理论定理。
+
+v0 artifact 中名为 `stability_certificate` 的量，是 32 个 held-out probe 上把 mapped error、
+one-edge residual 与 FP16 residual 用三角不等式相加后的经验诊断；它不能证明推荐准确性。
+旧 v0 selector 因该诊断超过 0.1 而写出 `complete_no_admitted_policy`，这个历史结果保持不变；
+论文 Design 1 不再把它写成理论证书或 headline gate。后续 formal repeat 必须使用新的 protocol
+string，不能事后把 v0 改写成预注册通过。
+
+10% 指 valid retained-prefix 的逻辑 Exact replay；其余约 90% 仍执行 compiled affine，common
+append 另计，因此不能写成“总计算量只有 10%”。scheduled Exact renewal 是正常 Design 1
+trade-off；fallback 只属于 artifact/numerical/failure correctness，在 implementation 与
+correctness evaluation 中报告，不能成为设计创新或隐藏 work。
+
+下一步 QB 使用完全冻结的 rank-16、ridge、fit size、sampled-token cap、direct-old-K/V endpoint
+和 10% renewal 执行 `theta1→theta2→theta3`，不允许 QB-specific tuning。QB 的主要 gate 是
+真递归 lineage、每轮/累计 CE recovery、mean K/V recovery 与 logical scheduled-Exact work；
+held-out rollout bound 只作诊断。完整机制、artifact contract 和边界见
+[`future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md`](future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md)。
 
 ### D2-A：Mechanism ablation
 
@@ -1189,6 +1252,10 @@ overhead table 报告：
 | R-KR source/operator/lifecycle | frozen single-configuration artifacts | 按同 source/timer boundary 与 Stage 4.6/4.9 protocol 重组，不跨边界合并 |
 | D2 W3、D3 M0/M1 development | 若干单次 development profiles | 只用于选机制和预算；不进入 paper table |
 
+七版本递归 D1 不塞进 system timed-cell envelope。QK 三次迁移已经完成并确定 10% RACT-KV
+为当前 development 设计点；下一轮只生成锁定的 QB 两次迁移 confirmation，不能回看 QB
+结果修改 QK 选定设置。QK v0 仍是 non-scientific development evidence。
+
 D1 同 SLA baseline 工作按 **9 个 discovery-cell comparison bundles** 管理，不产生新模型
 training chains。每个 bundle 的结构 action 数取决于 3/6/9-layer action manifest；正式运行
 前必须先枚举并 hash 全部 depth/suffix/rectangle/interval candidates，届时冻结准确的
@@ -1283,21 +1350,23 @@ appendix，避免主文变成结果目录。
 
 paper-core 完成意味着：
 
-1. 每层 baseline/control 先于本层 proposed 冻结，按第 5.5 节先完成 D2 stack 再建立 D3
+1. 单服务模型前提贯穿所有 artifact；QK 三轮真递归与锁定 QB 两轮确认通过 D1-C 的
+   quality、accumulation 和 logical Exact-token gates，且边间没有隐藏 exact reset；
+2. 每层 baseline/control 先于本层 proposed 冻结，按第 5.5 节先完成 D2 stack 再建立 D3
    foundation；qualification 后冻结的全部去重 cells 均具备相同 revision 内的
    correctness/warmup/5 repeats；
-2. M2 明确给出 logical tokens、physical bytes 与 wall time；
-3. D1 comparator 不跨 recovery target、source tier 或 Stage 4.6/4.9 protocol 合并；
-4. D2 同时有可归因的六行 R-KR ablation、XP 强制分片 2/4-rank evidence 和
+3. M2 明确给出 logical tokens、physical bytes 与 wall time；
+4. D1 comparator 不跨 recovery target、source tier 或 Stage 4.6/4.9 protocol 合并；
+5. D2 同时有可归因的六行 R-KR ablation、XP 强制分片 2/4-rank evidence 和
    X2/R-KR 的 1-rank support；
-5. D3 同时有 tuned exact、generic S2、profile-aware generic scheduler、HET causal chain、
+6. D3 同时有 tuned exact、generic S2、profile-aware generic scheduler、HET causal chain、
    288/576/720 GiB single-version capacity 和 held-out edge，并相对 strongest generic
    winner 报告结果；
-6. rolling groups 可被 segmented consumer 读取并进入下一 wave；
-7. plan、group writeback、commit、reclaim 与 failure semantics 都在 overhead/correctness 表中
+7. rolling groups 可被 segmented consumer 读取并进入下一 wave；
+8. plan、group writeback、commit、reclaim 与 failure semantics 都在 overhead/correctness 表中
    闭合；
-8. exact 和 mixed 均通过独立 semantic oracle，而不只是互相 byte parity；
-9. 所有 paper claim 都能指向一个同边界、同 revision、可复现的 result family。
+9. exact 和 mixed 均通过独立 semantic oracle，而不只是互相 byte parity；
+10. 所有 paper claim 都能指向一个同边界、同 revision、可复现的 result family。
 
 核心稳定后才考虑：
 
@@ -1312,15 +1381,18 @@ paper-core 完成意味着：
 
 下一步不是直接启动整个 490–560-execution envelope，而是依次生成：
 
-1. formal QK role split、HET primary 与 HOM control manifests；
-2. XP qualification 与 X1/X2/XP model-edge、program、primary compiled/exact ActionPlan；
-3. 带 storage-configured safety floor（当前为 100 GiB）、临时 reshard 回收和
+1. 冻结新的 QB confirmation protocol：保留 QK 10% RACT-KV 设置，把旧 certificate 字段明确
+   降为 held-out rollout diagnostic；
+2. 生成并执行 QB 三版本 locked confirmation handoff；
+3. formal QK role split、HET primary 与 HOM control manifests；
+4. XP qualification 与 X1/X2/XP model-edge、program、primary compiled/exact ActionPlan；
+5. 带 storage-configured safety floor（当前为 100 GiB）、临时 reshard 回收和
    compact-result schema 的磁盘 preflight；
-4. 记录但暂不执行独立 Benchmark Qualification：NUMA-aware DRAM arena、共同 usable-HBM
+6. 记录但暂不执行独立 Benchmark Qualification：NUMA-aware DRAM arena、共同 usable-HBM
    budget、1/2/4 rank、timing purity 与最大地址；
-5. 四个新 protocol/config families：M2、D2、D3/E2E、correctness/group lifecycle；
-6. 补齐并验证 fine-grained exact、staged/fused owner-local contiguous、generic S2 和
+7. 四个新 protocol/config families：M2、D2、D3/E2E、correctness/group lifecycle；
+8. 补齐并验证 fine-grained exact、staged/fused owner-local contiguous、generic S2 和
    profile-aware generic baseline runners；
-7. baseline 开始前再按第 5.6 节执行 qualification 与 independent oracle canary；
-8. 按第 5.5 节先跑 M2/D2 foundations，再完成并冻结 D2 stack；
-9. 在该 stack 上跑 M3/D3 foundations，最后才运行 D3 proposed/ablation cells。
+9. baseline 开始前再按第 5.6 节执行 qualification 与 independent oracle canary；
+10. 按第 5.5 节先跑 M2/D2 foundations，再完成并冻结 D2 stack；
+11. 在该 stack 上跑 M3/D3 foundations，最后才运行 D3 proposed/ablation cells。

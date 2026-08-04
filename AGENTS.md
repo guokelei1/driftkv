@@ -48,6 +48,16 @@
 
 - `docs/08_core_insights_and_roadmap.md` is the authoritative research state and roadmap.
 - `docs/eval_protocol.md` defines which experimental results are valid and comparable.
+- `docs/future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md` defines the active large-model D1
+  mechanism, its single-serving-model premise, completed QK development result, diagnostic/
+  fallback interpretation, and locked QB boundary.
+- `configs/evokv_d1/development/recursive_large_chain_design_v0.json` is the machine-readable D1
+  design contract. It freezes semantic/logical choices only and is not itself an executable
+  round.
+- `configs/evokv_d1/development/qk_recursive_round_a_two_gpu_v0.json` and
+  `scripts/run_evokv_qk_recursive_d1_round_a.sh` are the completed QK recursive D1 v0 execution
+  binding and resumable GPU0/GPU1 handoff. The compact full result is under
+  `results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
 - `docs/10_paper_experiment_blueprint.md` defines the planned paper matrix, resource envelope,
   baseline-first ledger, and claim/figure map; it does not create evidence.
 - `docs/11_benchmark_qualification.md` registers checks required before protocol freeze, formal
@@ -70,7 +80,16 @@
 
 ## Current research route
 
-- The object is model-version-stale HSTU prefix K/V under streaming training.
+- The system has exactly one current recommendation-model version serving at any instant. Model
+  versions are sequential update checkpoints, not concurrently served models. Old/new version
+  tags describe K/V lineage during one transition; rolling groups may temporarily carry different
+  K/V versions, but all inference uses the one current model. Do not reframe the paper as
+  multi-model serving, model routing, or cache sharing among simultaneously active models.
+- The object is model-version-stale HSTU prefix K/V under streaming training. The primary D1
+  question is now recursive: the K/V produced on one update must become the next update's source
+  without a hidden exact reset. QK theta1--theta4 supplies three transitions; QB theta1--theta3
+  supplies two locked confirmation transitions. These are seven sequential evaluation versions,
+  while theta0 remains a warm-up/bootstrap outside D1 evidence.
 - The successor integrated ActionPlan uses `compiled|exact`. Progressive residual replay remains a
   D1-only supporting extension and is not a D2/D3 headline route.
 - `X-QK-HET` is the primary D1→D2→D3 workload and preserves natural valid extents;
@@ -135,17 +154,42 @@
   `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`.
   Do not silently substitute it into the frozen analytic D2/D3 stack; an adopting `stack_revision`
   must rerun its own physical baselines.
+- The QK recursive Round A is complete as development evidence. `ract_kv_exact10` performs true
+  theta1→theta2→theta3→theta4 handoff with 10.010% Exact valid-token work per edge,
+  99.986%/99.985%/100.002% edge CE recovery, 97.246%/94.933%/94.932% mean K/V recovery, and
+  100.000% final cumulative CE recovery. The v0 summary remains `complete_no_admitted_policy`
+  because its old selector used a conservative held-out triangle-bound target. That field is an
+  empirical rollout diagnostic, not a mathematical accuracy certificate or current headline
+  gate. Preserve the v0 result unchanged; the next step is a new locked QB confirmation protocol
+  with the QK 10% settings frozen and no QB-specific tuning. No new D2/D3 performance round
+  precedes this boundary.
 - D3 keeps one live cache plus bounded group shadow/staging and executes
   writeback→validation→group commit→old-group reclaim. Complete old+private-target COW remains a
   historical M1 endpoint, not the formal capacity definition.
 - The successor runner is 1/2/4-rank-capable. XP 2/4-rank points are headline; X2/R-KR provide
   1-rank sanity. Qualification blocks only formal promotion, not foundation or mechanism work.
-- The active method is version-cohort tiered cache migration:
-  - fast tier: fit a shared `fresh - cheap` K/V residual and compile it into one affine projection
-    over cached old `Norm(x)`;
-  - quality tier: replay a current-model prefix and transport its boundary residual delta to deeper
-    current `Norm + Wk/Wv` projections;
-  - endpoint: exact current-model K/V recomputation.
+- The active large-model D1 design point is RACT-KV (Rollout-Aware Cache Transport) with 10%
+  scheduled Exact renewal:
+  - fit one shared rank-16 direct-K/V correction on paired exact and deployed rollout sources,
+    including an exact-source anchor and an observed-error contraction term;
+  - rotate a deterministic 10% valid-token Exact renewal budget using identity, extent, last exact
+    version, and depth only; 0% and 20% remain controls;
+  - record the old affine-gain/residual/FP16 `stability_certificate` field only as a held-out
+    rollout diagnostic; it does not prove recommendation accuracy;
+  - keep operational fallback under implementation correctness rather than the D1 novelty;
+  - progressive residual replay remains a separate D1-only supporting extension, not this primary
+    recursive route.
+- The 2026-08-04 closest-work screen makes the novelty claim deliberately narrow. Do not claim the
+  first K/V translator, correction loss, selective K/V reuse/recompute policy, or observation that
+  updates make K/V stale. The candidate contribution is the combined single-current-model
+  sequential lifecycle, deployment-matched fitting on exact/actual rollout states, direct-old-K/V
+  compilation, bounded label-free valid-token renewal, and immutable semantic-to-physical
+  interface. Refresh this screen before submission;
+  Mixture-of-Translators is a particularly recent close neighbor.
+- D1 freezes only the semantic reuse–recompute trade-off: `compiled|exact` actions, valid-token
+  Exact work, recursive K/V/task recovery, and lineage. It does not select on or claim
+  GPU time. D2 maps the immutable D1 work to multi-GPU operators and establishes physical savings;
+  D3 owns capacity staging, overlap, and rolling publication.
 - Fixed suffix, progressive prefix, arbitrary intervals, and recent-token rectangles are baselines,
   not the active method. The cross-dataset capacity screen changed the earlier suffix decision:
   plain prefix is never selected in the unified library, all 54 matched recent-token partial
@@ -156,8 +200,9 @@
   or negative. Task quality is not an admission oracle: every stale cohort receives unconditional
   compiled repair, with exact recomputation under budget in the integrated path. Progressive
   residual replay remains a separately evaluated D1 extension. Version cohorts are used for
-  compilation, not to predict whether reuse is safe. This frozen D1 determines what is compiled or
-  exactly recomputed and exports an immutable action plan. Active D2 determines how that fixed work
+  compilation, not to predict whether reuse is safe. Historical D1 evidence remains frozen; once
+  the recursive QK→QB revision passes, that revision determines what is compiled or exactly
+  recomputed and exports an immutable action-plan sequence. Active D2 then determines how that fixed work
   moves and executes: `(suffix, retained)` extent compilation, owner-local retained repair,
   row-sharded exact/append, segmented suffix-only destination, merged physical exact pools,
   collective dependencies, and group-valid output. The current D2→D3 paper decomposition uses a
@@ -260,6 +305,11 @@
   `scripts/validate_cohortkv_stage4_5_oldkv_full_transport.py`,
   `scripts/benchmark_cohortkv_stage4_5_oldkv.py`, and
   `scripts/freeze_cohortkv_stage4_5.py` — frozen direct-old-K/V source-plan entry points.
+- `src/hstu_kvcache/migration/recursive_d1.py`,
+  `scripts/evaluate_evokv_qk_recursive_d1.py`,
+  `scripts/summarize_evokv_qk_recursive_d1.py`, and
+  `scripts/run_evokv_qk_recursive_d1_round_a.sh` implement the completed stateful QK recursive D1
+  v0 mechanism, validator, and two-rank handoff. Its completed result remains non-scientific.
 - `src/hstu_kvcache/migration/design2_*.py`,
   `scripts/benchmark_cohortkv_design2_integrated_w3.py`,
   `scripts/validate_cohortkv_design2_integrated_full_payload.py`, and

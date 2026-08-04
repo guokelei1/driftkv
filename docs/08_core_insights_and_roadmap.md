@@ -1,6 +1,6 @@
 # Core insights and roadmap
 
-> Status: authoritative as of 2026-08-03. This document replaces earlier project-wide problem
+> Status: authoritative as of 2026-08-04. This document replaces earlier project-wide problem
 > statements, contribution layouts, and execution roadmaps. Experimental semantics remain
 > subordinate to [eval_protocol.md](eval_protocol.md).
 
@@ -12,6 +12,13 @@ $$
 \theta_0 \rightarrow \theta_1 \rightarrow \cdots \rightarrow \theta_t.
 $$
 
+The system has exactly one current recommendation-model version serving at any instant. These are
+sequential update checkpoints, not models co-served behind a router. Old and new version labels on
+K/V describe derived-state lineage during one transition. Rolling groups may temporarily retain
+different K/V versions, but all inference uses the one current model; validated target groups
+commit and then reclaim their old extents. This single-serving-model premise is non-negotiable and
+must not be replaced by a multi-model-serving problem statement.
+
 For a fixed history prefix \(x\), the cache
 
 $$
@@ -21,7 +28,8 @@ $$
 is derived from model version \(v\). After the model advances to \(t\), stale reuse is cheap but
 version-inconsistent, while exact replay under \(\theta_t\) repeats the complete history
 computation. EvoKV asks whether HSTU structure can update this persistent derived state at lower
-cost while retaining a controlled approximation to current-model K/V.
+cost while retaining a controlled approximation to current-model K/V, including when one
+approximate update becomes the next model transition's source.
 
 The paper currently organizes one task into three successive system layers:
 
@@ -42,18 +50,31 @@ transport measurements may motivate a new globally planned D1/D2/D3 `stack_revis
 revision must rerun its own baselines instead of comparing against an older stack. Existing frozen
 D1 and D2 evidence is not retroactively changed.
 
-### 1.1 D1 question: reuse versus recomputation
+### 1.1 D1 question: recursive reuse versus recomputation
 
-> Can a version cohort share a migration program that closes a useful portion of the stale-to-fresh
-> K/V gap at materially lower GPU cost than exact history replay?
+> Can one sequential model-update cohort share a migration program that closes at least 80%–90%
+> of the stale-to-fresh quality gap with at most 10%–20% valid-token Exact replay, while the
+> migrated output remains a stable source for later updates?
 
 D1 emits a per-record `ActionPlan` that is immutable within one execution/revision. The
 paper-core integrated action domain is:
 
 - **compiled repair:** fit the shared `fresh - cheap` residual for a source/target version cohort
-  and compile it into one affine transform over cached source-version state; the selected hot path
-  composes this transform directly over existing old K/V;
+  and compile it into one shared semantic affine over cached source-version K/V; D2 owns its
+  physical realization;
 - **exact:** recompute current-model K/V and reset approximation depth.
+
+The active large-model D1 revision is explicitly recursive. It starts from exact QK `theta1` K/V,
+produces `theta2`, feeds that produced state into `theta2→theta3`, and then feeds the result into
+`theta3→theta4`. RACT-KV (Rollout-Aware Cache Transport) fits later-edge programs on paired
+exact/deployed rollout states, anchors one-edge semantics, and suppresses the approximation-error
+directions produced by earlier migrations. A deterministic, label-free 10% valid-token Exact
+renewal schedule bounds approximation age. D1 selects on logical Exact work, recursive K/V/task
+quality, and lineage. A held-out rollout bound is retained as an empirical diagnostic; it is not a
+mathematical proof of recommendation accuracy and is not a headline design gate. Actual GPU work
+and time are D2/D3 evidence.
+The detailed candidate and gates are in
+[future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md](future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md).
 
 The already implemented **progressive residual repair** remains valid D1-only supporting evidence:
 it replays a current-model prefix and transports a boundary residual when its auxiliary state is
@@ -173,13 +194,13 @@ user-disjoint. Cold allocation cannot manufacture the boundary.
 
 ## 3. Current status
 
-Current execution availability (2026-08-03): development exploration may run one two-rank job on
+Current execution availability (2026-08-04): development exploration may run one two-rank job on
 the GPU0/GPU1 NVLink pair. GPU2/GPU3 and four-rank jobs are unavailable until the user explicitly
 reports otherwise; availability changes scheduling only, not the planned paper matrix.
 
 | Layer | State | What is closed | What remains |
 |---|---|---|---|
-| D1 | frozen method; preferred large-XP development candidate selected | method, direct-old-K/V source plan, bounded renewal, Stage-5 guard/fallback/transaction, Stage-6 aggregate, LR0.15 rank-16 label-free residual bridge | predeclared large-XP replication, broader replication, and optional Stage-4.10 successor |
+| D1 | QK recursive development round complete; 10% RACT-KV is the current system-design point | direct-old-K/V source path, LR0.15 one-edge bridge, true QK three-transition handoff, rollout-aware fitting, 10% logical Exact point with near-Exact quality | revise the confirmation protocol so rollout bounds are diagnostic, then run locked QB two-transition confirmation and later formal repeats |
 | D2 | implementation and mechanism discovered; paper evidence open | Stage A, W1/W2, W3 diagnostics, C0 wiring, segmented/shape-aware/merged-exact development path, full-payload development correctness; selected XP checkpoint passes the optimizer-active byte gate | exact request-union membership join, D3-facing constraints, 1/2/4-rank runner, strong placement/exact baselines, segmented consumer, full integrated group timing, frozen formal protocol |
 | D3 | successor foundation running; mechanism and paper evidence open | historical M0/M1 chain; real 65,536-record HET/HOM manifests and capacity ledger; minimal rolling validate/commit/reclaim/failure/replay canary; fixed-512 D1/D2 environment regression | real HET ActionPlan overlay and numeric rolling runner, 36/72-GiB problem-existence baselines, strongest generic scheduler, held-out qualification/repeats, frozen formal protocol and paper evidence |
 
@@ -235,6 +256,13 @@ The retained LR0.15 `theta1`--`theta4` chain plus the common `seed0/theta_0` boo
 canonical QK development family. It may be reused with different QK record populations and valid
 histories up to 512, but every workload regenerates and binds its K/V endpoints, D1 actions,
 D2/D3 plans, quality records, and correctness digest.
+
+The three rank-16 values above are edge-local exact-source results. They do not show that
+`theta1→theta2` output can be consumed by `theta2→theta3`, or that the resulting output can be
+consumed by `theta3→theta4`, without cumulative degradation. The seven selected evaluation
+versions are QK `theta1–theta4` and QB `theta1–theta3`; their `theta0` checkpoints remain
+bootstrap lineage and are not D1 evidence. Closing that recursive gap is now the first
+result-dependent boundary before new D2/D3 performance work.
 
 The cross-dataset checkpoint search is also closed. QB `mf9_e4096` uses nine real base-only
 feature namespaces, 2,985,070 optimizer-active rows, E4096 owner projection, and the same
@@ -642,9 +670,36 @@ Run `python scripts/verify_evokv_selected_checkpoints.py` before constructing a 
 creates a new identity and does not mutate the registry automatically. The detailed operational
 boundary is in [13_cross_dataset_stream_checkpoint_plan.md](13_cross_dataset_stream_checkpoint_plan.md).
 
-The immediate route is now baseline-first: bind one QK edge and workload, reproduce Reuse/Exact,
-execute the frozen D1 plan, lower the same work through D2, then run the same revision through D3.
-Repeat only after the first complete stack exposes the actual bottleneck.
+The QK four-version Round A is complete. The 10% RACT-KV path executes true
+`theta1→theta2→theta3→theta4` handoff with 10.010% Exact valid-token work on every edge,
+99.985%--100.002% edge CE recovery, 94.932%--97.246% mean K/V recovery, and 100.000% final
+cumulative CE recovery. It has no hidden Exact reset or operational fallback. This is
+single-chain development evidence, not a formal result.
+
+The frozen v0 summarizer did not automatically admit a policy because its experimental
+triangle-inequality rollout bound exceeded a 0.1 target on the second and third edges. That bound
+does not prove recommendation accuracy and is now treated as a held-out stability diagnostic.
+The v0 summary remains unchanged; the design revision is explicit and must use a new protocol for
+later formal evidence. The next action is locked QB `theta1→theta2→theta3` confirmation with the
+10% RACT-KV settings frozen and without QB-specific tuning. D1 makes no GPU-speed claim. D2/D3
+consume the resulting fixed recursive action/program sequence and separately establish physical
+execution and capacity benefits.
+
+### D1 recursive closure
+
+1. Preserve the one-current-model serving premise in every config, artifact, and paper statement.
+2. Retain the completed QK Round-A v0 result and its old selector outcome without rewriting it.
+3. Freeze the QK-supported system mechanism: paired exact/deployed rollout fitting, exact-source
+   anchor, one direct-old-K/V affine, and 10% label-free valid-token renewal.
+4. Rename the old “stability certificate” in design prose to a held-out rollout diagnostic; do not
+   present it as an accuracy theorem or use its old 0.1 triangle-bound target as the headline gate.
+5. Freeze a revised QB confirmation protocol before execution. Require true recursive handoff,
+   at least 90% per-edge/cumulative CE recovery, at least 90% mean K/V recovery, valid lineage,
+   and approximately 10% scheduled Exact valid-token work.
+6. Report natural Exact and any operational fallback separately. Fallback is a correctness path,
+   not a normal D1 action or novelty claim.
+7. If the locked QB confirmation fails, revise D1 rather than tuning on QB or silently changing the
+   selected chain.
 
 ### D2 closure
 
@@ -711,18 +766,37 @@ fixed(model + embedding shard + program + context)
 The complete evaluation portfolio and physical scale budget are now specified in
 [`10_paper_experiment_blueprint.md`](10_paper_experiment_blueprint.md). Execution proceeds by:
 
-1. materializing the formal QK role split, HET primary and HOM control manifests;
-2. freezing XP and producing edge-specific X1/X2/XP programs, two-route action plans, and verified
+1. closing the QK recursive D1 design and locked QB confirmation on the selected seven versions;
+2. materializing the formal QK role split, HET primary and HOM control manifests;
+3. freezing XP and producing edge-specific X1/X2/XP programs, two-route action plans, and verified
    1/2/4-way embedding shards;
-3. closing the resident/out-of-core timers, segmented consumer and rolling group lifecycle;
-4. applying baseline-first within each layer: D2 foundation, complete D2/frozen stack, D3
+4. closing the resident/out-of-core timers, segmented consumer and rolling group lifecycle;
+5. applying baseline-first within each layer: D2 foundation, complete D2/frozen stack, D3
    foundation including fixed-FIFO and profile-aware generic schedulers, then D3 mechanisms;
-5. executing the separate Benchmark Qualification registry before formal result promotion, then
+6. executing the separate Benchmark Qualification registry before formal result promotion, then
    de-duplicating the current 70–80-cell envelope into an exact ledger.
 
 The blueprint plans new result families; it does not promote any W3 or D3 development artifact.
 
 ## 8. Go/no-go and pivot rules
+
+D1 precedes the systems gates. The current development design point is the completed QK 10%
+RACT-KV path. Cross-dataset promotion still requires the locked QB two-edge confirmation with no
+more than the declared scheduled Exact valid-token budget, valid recursive lineage, and the same
+quality gates. A one-edge near-Exact result, an oracle reset before each edge, or a small-model
+lifecycle cannot substitute for this test. Any operational fallback remains visible in work
+accounting but is not a normal design route. If QB fails, inspect rollout exposure, fit-role
+coverage, FP16 accumulation, and renewal behavior; do not rescue it with recommendation-label
+routing or by changing the selected model chain.
+
+The novelty claim is also gated, not assumed. The 2026-08-04 closest-work screen rules out claims
+of first K/V translation, first correction loss, first selective reuse/recompute, or first stale-K/V
+observation after model updates. The live candidate is their narrower system combination under one
+current serving model: deployment-matched fitting on exact and actual rollout states, a shared
+direct-old-K/V program, bounded label-free valid-token renewal, true recursive handoff, and an
+immutable D1 semantic plan separated from D2/D3 physical execution. No mathematical accuracy
+proof is claimed. Refresh the screen before submission and keep a negative result if the
+cross-dataset gates fail.
 
 D2 should not be promoted as a paper design unless fixed-action physical lowering survives the
 formal same-boundary timer and strong all-exact baseline. If the W3 benefit disappears, first
@@ -759,6 +833,11 @@ source representation.
 
 Do not claim that:
 
+- several recommendation-model versions are simultaneously serving or requests are routed among
+  them;
+- the seven selected QK/QB checkpoints are seven concurrent models or seven independent seeds;
+- the current large-QK rank-16 results already establish recursive composition or absence of
+  accumulated error;
 - model age predicts safe reuse;
 - per-user drift/JVP/Fisher is the active route;
 - fixed suffix, plain prefix, recent-token replay, or arbitrary intervals are active EvoKV designs;
@@ -790,6 +869,8 @@ Do not claim that:
   [10_paper_experiment_blueprint.md](10_paper_experiment_blueprint.md)
 - Benchmark qualification registry:
   [11_benchmark_qualification.md](11_benchmark_qualification.md)
+- Active recursive D1 design:
+  [future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md](future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md)
 - Current D2 design:
   [future_design/DESIGN2_FINAL_PLAN.md](future_design/DESIGN2_FINAL_PLAN.md)
 - D2 implementation/evidence status:
