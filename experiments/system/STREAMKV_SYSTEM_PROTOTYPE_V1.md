@@ -131,4 +131,4 @@ paper design. It does not yet establish:
 
 The real checkpoint/capsule replay and direct writer were completed by system v2/v3. At the time,
 the successor was the destination-oriented contract in `DESTINATION_OUT_OF_CORE_V4.md`. The
-current D1/D2/D3 route is defined only by `docs/08_core_insights_and_roadmap.md`.
+current D1/D2/D3 route is defined only by `docs/archive/08_core_insights_and_roadmap.md`.

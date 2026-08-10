@@ -1,0 +1,36 @@
+{
+  "schema": "evokv_checkpoint_retirement_v1",
+  "status": "complete",
+  "created_at": "2026-08-10",
+  "completed_at": "2026-08-10",
+  "reason": "The E4160 capacity route changes embedding width and introduces a learned projection, so its optimizer geometry does not preserve the successful E512 medium-chain training behavior. It is superseded by the E512 row-replicated capacity route.",
+  "retired_root": {
+    "path": "checkpoints/evokv_kuairand_latest_query_large_e4160_theta1_theta9_frozen_v20",
+    "bytes_before_removal": 146192666364,
+    "file_count_before_removal": 21,
+    "versions": [
+      {
+        "version": 1,
+        "checkpoint_bytes": 48730888788,
+        "manifest_sha256": "db5fbd6dd7a844a3c2032de65334b9e9aea643468454d7100be32635ca3ca546"
+      },
+      {
+        "version": 2,
+        "checkpoint_bytes": 48730888788,
+        "manifest_sha256": "c721f062c979c1d8d3afaec346df9d515121c08b5565ac5d2e09b666f3864d6b"
+      },
+      {
+        "version": 3,
+        "checkpoint_bytes": 48730888788,
+        "manifest_sha256": "36e190d00ad1692afbf661590e68a6cb82f6b9db316698174389ce157a908fd8"
+      }
+    ]
+  },
+  "bytes_after_removal": 0,
+  "retained": [
+    "configs/evokv_root_cause/kuairand_latest_query_large_e4160_theta1_theta9_frozen_20260810_v20.json",
+    "results/root_cause_campaign/kuairand_latest_query_large_e4160_theta1_theta9_frozen_20260810_v20",
+    "results/root_cause_campaign/kuairand_latest_query_large_e4160_theta1_theta3_lineage_20260810_v27/result.json"
+  ],
+  "recoverability": "Retrain from the retained immutable config, theta0 bootstrap, candidate records, logs and lineage result. Every removed payload artifact hash remains embedded in the retained checkpoint manifests' compact record above only at the manifest level; the complete per-file hashes remain in the repository history and prior execution logs."
+}

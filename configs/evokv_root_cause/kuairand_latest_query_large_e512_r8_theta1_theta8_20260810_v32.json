@@ -1,0 +1,159 @@
+{
+  "checkpoint": {
+    "compatible_config_sha256": [
+      "554ddac865c5f299a97dc4343f6704cbd0c622fcd367930d07ed33a8b21c4f6b"
+    ],
+    "embedding_storage": "full",
+    "expected_checkpoint_bytes_per_version": 48200000000,
+    "expected_global_parameter_bytes": 47960055552,
+    "imported_prefix_versions": 0,
+    "minimum_free_bytes": 520000000000,
+    "retain_bootstrap": false,
+    "versions": 8,
+    "write_reserve_bytes": 50000000000
+  },
+  "data": {
+    "user_limit": null
+  },
+  "evaluation": {
+    "candidate_count": 100,
+    "local_batch_size": 4,
+    "targets_per_user": 4
+  },
+  "execution": {
+    "lineage_source_chunk_size": 2,
+    "minimum_workspace_bytes": 4294967296,
+    "world_size": 2
+  },
+  "formal_result": false,
+  "model": {
+    "embedding_replicas": 8,
+    "embedding_seed": 91843,
+    "embedding_width": 512,
+    "extra_embedding_std": 0.001,
+    "extra_projection_std": 0.00001,
+    "hidden_size": 512,
+    "num_heads": 8,
+    "num_layers": 8,
+    "projection_seed": 91849,
+    "query_mode": "latest_item_query",
+    "require_single_card_overflow": true
+  },
+  "outputs": {
+    "checkpoint_root": "checkpoints/evokv_kuairand_latest_query_large_e512_r8_theta1_theta8_v30",
+    "root": "results/root_cause_campaign/kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30"
+  },
+  "parent": {
+    "base_config": {
+      "path": "configs/evokv_root_cause/kuairand_latest_item_query_fullusers_h512_l8_20260810_v10.json",
+      "sha256": "a7757310eab0d7d332253292e633c7edb1bad8c8fc2707da11280bc1cb99f1ef"
+    },
+    "theta0": {
+      "path": "results/root_cause_campaign/kuairand_latest_item_query_fullusers_h512_l8_20260810_v10/checkpoints/seed_53117/theta0.pt",
+      "sha256": "1a6ef08445b7dfd8fffdb49ef02ea97559eb6fb69a2ebe4f060d3cdc9146b294"
+    }
+  },
+  "protocol": "evokv_kuairand_projected_persistent_chain_v0",
+  "round_id": "kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30",
+  "scientific_result": false,
+  "selection": {
+    "group_metric": "ndcg_at_5",
+    "groups": [
+      [2, 3],
+      [4, 5],
+      [6, 8]
+    ],
+    "metrics": ["ndcg_at_5"],
+    "minimum_group_mean_relative_percent": 3.0,
+    "minimum_relative_percent": 1.0,
+    "positive_metrics": ["mrr", "ndcg_at_5", "hit_rate_at_5"],
+    "report_metrics": ["mrr", "ndcg_at_5", "hit_rate_at_5"]
+  },
+  "status": "ready_for_autonomous_execution",
+  "training": {
+    "calibration_dense_lr": 0.0002,
+    "calibration_embedding_lr": 0.00001,
+    "calibration_examples": 0,
+    "calibration_kv_lr": 0.0005,
+    "calibration_projection_lr": 0.00000001,
+    "candidate_ladder": [
+      {
+        "dense_lr": 0.0002,
+        "embedding_lr": 0.00001,
+        "kv_lr": 0.002,
+        "maximum_update_examples": 20000,
+        "name": "rowrep_projectionlow_kv4_e4",
+        "projection_lr": 0.00000001,
+        "update_epochs": 4
+      },
+      {
+        "dense_lr": 0.0002,
+        "embedding_lr": 0.00001,
+        "kv_lr": 0.0005,
+        "maximum_update_examples": 20000,
+        "name": "projectionlow_continuation_e4",
+        "projection_lr": 0.00000001,
+        "update_epochs": 4
+      },
+      {
+        "dense_lr": 0.0001,
+        "embedding_lr": 0.00001,
+        "kv_lr": 0.00025,
+        "maximum_update_examples": 20000,
+        "name": "balanced_half_e2",
+        "projection_lr": 0.00000001,
+        "update_epochs": 2
+      },
+      {
+        "dense_lr": 0.0001,
+        "embedding_lr": 0.00001,
+        "kv_lr": 0.00025,
+        "maximum_update_examples": 20000,
+        "name": "balanced_half_e3",
+        "projection_lr": 0.00000001,
+        "update_epochs": 3
+      },
+      {
+        "dense_lr": 0.00005,
+        "embedding_lr": 0.00001,
+        "kv_lr": 0.000125,
+        "maximum_update_examples": 20000,
+        "name": "balanced_quarter_e2",
+        "projection_lr": 0.00000001,
+        "update_epochs": 2
+      }
+    ],
+    "candidate_schedule": {
+      "2": "rowrep_projectionlow_kv4_e4",
+      "3": "balanced_half_e2",
+      "4": "balanced_half_e3",
+      "5": "balanced_half_e2",
+      "6": "balanced_quarter_e2",
+      "7": "balanced_half_e2",
+      "8": "balanced_half_e3"
+    },
+    "checkpoint_policy": "fixed_schedule",
+    "initial_candidate": {
+      "dense_lr": 0.0002,
+      "embedding_lr": 0.00001,
+      "kv_lr": 0.0005,
+      "maximum_update_examples": 20000,
+      "name": "projectionlow_anchor_e4",
+      "projection_lr": 0.00000001,
+      "update_epochs": 4
+    },
+    "local_batch_size": 4,
+    "seed": 53117,
+    "weight_decay": 0.0001
+  },
+  "transitions": [
+    {"evaluation_date": "20220423", "source_version": 0, "target_version": 1, "update_date": "20220422"},
+    {"evaluation_date": "20220424", "source_version": 1, "target_version": 2, "update_date": "20220423"},
+    {"evaluation_date": "20220425", "source_version": 2, "target_version": 3, "update_date": "20220424"},
+    {"evaluation_date": "20220426", "source_version": 3, "target_version": 4, "update_date": "20220425"},
+    {"evaluation_date": "20220427", "source_version": 4, "target_version": 5, "update_date": "20220426"},
+    {"evaluation_date": "20220428", "source_version": 5, "target_version": 6, "update_date": "20220427"},
+    {"evaluation_date": "20220429", "source_version": 6, "target_version": 7, "update_date": "20220428"},
+    {"evaluation_date": "20220430", "source_version": 7, "target_version": 8, "update_date": "20220429"}
+  ]
+}

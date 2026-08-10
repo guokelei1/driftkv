@@ -1,0 +1,57 @@
+{
+  "evaluation": {
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 2026080853,
+    "methods": [
+      "fresh_full_a",
+      "fresh_full_b",
+      "stale_previous",
+      "no_prefix"
+    ],
+    "record_limit_per_rank": 128,
+    "target_versions": [2, 3, 4, 5, 6, 7, 8]
+  },
+  "execution": {
+    "evaluation_cuda_visible_devices": "0,1",
+    "evaluation_world_size": 2,
+    "training_cuda_visible_devices": "0"
+  },
+  "formal_result": false,
+  "outputs": {
+    "checkpoint_root": "checkpoints/evokv_root_cause/kuairand_kv_only_chain_h256_l6_v0",
+    "evaluation_result": "results/root_cause_campaign/kuairand_kv_only_chain_h256_l6_20260808_v0/evaluation.json",
+    "table": "results/root_cause_campaign/kuairand_kv_only_chain_h256_l6_20260808_v0/reuse_loss_table.md",
+    "training_result": "results/root_cause_campaign/kuairand_kv_only_chain_h256_l6_20260808_v0/training.json"
+  },
+  "protocol": "evokv_kuairand_kv_only_chain_v0",
+  "scientific_result": false,
+  "source": {
+    "base_config": {
+      "path": "configs/evokv_root_cause/kuairand_causal_core_h256_l6_theta0_theta2_20260808_v0.json",
+      "sha256": "462ec6f3d7b2c08e8b407fd8bfd1da0eefa1b6b0d575f5431252f8d82866e894"
+    },
+    "theta1": {
+      "path": "checkpoints/evokv_root_cause/kuairand_causal_core_h256_l6_v0/theta_1/model.pt",
+      "sha256": "a1cd6aa6977b4bba0fad62b1c178e239eb6d5d8a667b4e6fd3cf6fdb3575bada"
+    },
+    "theta2": {
+      "path": "checkpoints/evokv_root_cause/kuairand_history_path_screen_h256_l6_v0/kv_only/theta_2/model.pt",
+      "sha256": "ace6f385b1851afccc2005f8fc73e4c2eb2dfce574a0977fb97de51b45ab3d9e"
+    }
+  },
+  "status": "ready_for_autonomous_execution",
+  "total_num_days": 23,
+  "training": {
+    "batch_size": 8,
+    "epochs_per_update": 2,
+    "lr": 0.0001,
+    "negative_count": 32,
+    "optimizer_lifecycle": "fresh_adamw_per_update",
+    "parameter_group": "kv",
+    "seed": 2026080851,
+    "source_version": 2,
+    "target_versions": [3, 4, 5, 6, 7, 8],
+    "update_date_indices": [16, 17, 18, 19, 20, 21],
+    "weight_decay": 0.0001
+  }
+}

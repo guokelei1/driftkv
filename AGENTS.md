@@ -2,386 +2,69 @@
 
 ## Environment
 
-- 4x NVIDIA A40 (46GB each), CUDA 13.1, torch 2.12.1
-- Current experiment availability permits one two-rank job on GPU0/GPU1. GPU2/GPU3 and four-rank
-  jobs are unavailable until the user explicitly reports otherwise.
-- Python 3.13.12, numpy/pandas/scipy installed
+- Python 3.13.12, PyTorch 2.12.1, CUDA 13.1.
+- Four NVIDIA A40 GPUs exist, but only GPU0/GPU1 are currently available.
+- Use at most one two-rank job. GPU2/GPU3 and four-rank jobs require explicit new user authorization.
 
 ## Commands
 
-- Install package: `pip install -e .`
-- Run tests: `pytest`
+- Install: `pip install -e .`
+- Tests: `pytest`
 - Lint: `ruff check src tests scripts`
-- Type check: `mypy src` only when explicitly requested; it is not installed by default
-
-## Long-running experiment handoff
-
-- Before starting any experiment expected to take five minutes or longer, first create and validate
-  a user-runnable script. Do not start that experiment unless the user explicitly asks the agent to
-  run it.
-- Treat one handoff as one executable experiment round, not as one isolated command. Bundle all
-  currently ready and mutually compatible training, baseline, evaluation, and validation jobs into
-  one orchestration script, run them sequentially in dependency order, and avoid making the user
-  invoke each job separately.
-- The handoff script must freeze or record its configuration, perform relevant resource
-  preflights, write logs and machine-readable results to explicit paths, fail without overwriting a
-  valid result, and support safe resume or an unambiguous fresh run when practical.
-- Reuse valid prerequisites within the round. After each job has produced and passed validation of
-  its durable artifacts, release its transient GPU state, worker processes, shared-memory or mmap
-  stores, and other regenerable large intermediates before starting the next job. Preserve
-  only checkpoints likely to be reused, plus compact programs, plans, ledgers, logs,
-  configurations, and result summaries needed for analysis or resume. Never retain full K/V
-  payloads across stages; discard large intermediates that can be reconstructed from retained
-  checkpoints and bindings.
-- Give the user the exact command, estimated wall time and resource use, output paths, and the
-  artifacts to return for analysis. End the turn and let the user run it; do not repeatedly poll a
-  long experiment.
-- Stop a round at a real result-dependent boundary: if later code, configuration, or experiment
-  choice depends on interpreting this round's measurements, do not guess and append it. Analyze the
-  returned artifacts, make the next implementation changes, and then provide the next round's
-  orchestration script.
-- The agent may directly run short canaries, unit tests, formatting checks, and experiments expected
-  to finish in under five minutes. If a supposedly short run reveals that the remaining work will
-  exceed five minutes, preserve the completed state and hand off the remainder through a script.
+- Do not run `mypy` unless explicitly requested.
 
 ## Sources of truth
 
-- `docs/08_core_insights_and_roadmap.md` is the authoritative research state and roadmap.
-- `docs/eval_protocol.md` defines which experimental results are valid and comparable.
-- `docs/future_design/DESIGN1_RECURSIVE_KV_MIGRATION.md` defines the active large-model D1
-  mechanism, its single-serving-model premise, completed QK development result, diagnostic/
-  fallback interpretation, and locked QB boundary.
-- `configs/evokv_d1/development/recursive_large_chain_design_v0.json` is the machine-readable D1
-  design contract. It freezes semantic/logical choices only and is not itself an executable
-  round.
-- `configs/evokv_d1/development/qk_recursive_round_a_two_gpu_v0.json` and
-  `scripts/run_evokv_qk_recursive_d1_round_a.sh` are the completed QK recursive D1 v0 execution
-  binding and resumable GPU0/GPU1 handoff. The compact full result is under
-  `results/baseline_rounds/quality_chain/recursive_d1_round_a/qk_recursive_d1_round_a_20260804_round1/`.
-- `docs/10_paper_experiment_blueprint.md` defines the planned paper matrix, resource envelope,
-  baseline-first ledger, and claim/figure map; it does not create evidence.
-- `docs/11_benchmark_qualification.md` registers checks required before protocol freeze, formal
-  repeats, or paper promotion; it is not a current design/implementation blocker.
-- `docs/12_d1_d2_baseline_round.md` records the selected large-QK stream checkpoint and D1 bridge.
-- `docs/13_cross_dataset_stream_checkpoint_plan.md` is the operational QK/QB checkpoint ledger:
-  selected versions, hashes, rebuild commands, retention, cleanup, and downstream reuse boundary.
-- `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json` is the
-  machine-readable selected-checkpoint source. Verify it with
-  `scripts/verify_evokv_selected_checkpoints.py` before consuming a retained chain.
-- `docs/future_design/DESIGN2_FINAL_PLAN.md` defines the D2 mechanism and D1→D2→D3 interface.
-- `docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md` is the only live D2 status ledger.
-- `docs/future_design/DESIGN3_FUTURE_DIRECTION.md` is the flexible D3 problem/direction entry; it
-  is not a frozen interface, protocol, or result.
-- `docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md` preserves the historical
-  two-card M0/M1 ledger and defines the flexible HET/XP/rolling successor foundation,
-  baseline-first search, and backtracking path; it is not a protocol or result.
-- When documents conflict, follow the roadmap and evaluation protocol. Do not recover claims from
-  deleted early documents or old result paths.
+- `docs/08_core_insights_and_roadmap.md` is the authoritative research state.
+- `docs/eval_protocol.md` defines valid and comparable measurements.
+- `docs/BASELINE_REPRODUCTION.md` defines the only supported rebuild path.
+- `configs/evokv_root_cause/kuairand_large_baseline_registry_20260811_v0.json` is the machine-readable selected-baseline registry.
+- `scripts/run_evokv_kuairand_large_baseline_rebuild.sh` is the canonical verify/resume/fresh entrypoint.
+- Historical scripts and result directories are not current facts unless one of these sources names them.
 
-## Current research route
+## Current selected baseline
 
-- The system has exactly one current recommendation-model version serving at any instant. Model
-  versions are sequential update checkpoints, not concurrently served models. Old/new version
-  tags describe K/V lineage during one transition; rolling groups may temporarily carry different
-  K/V versions, but all inference uses the one current model. Do not reframe the paper as
-  multi-model serving, model routing, or cache sharing among simultaneously active models.
-- The object is model-version-stale HSTU prefix K/V under streaming training. The primary D1
-  question is now recursive: the K/V produced on one update must become the next update's source
-  without a hidden exact reset. QK theta1--theta4 supplies three transitions; QB theta1--theta3
-  supplies two locked confirmation transitions. These are seven sequential evaluation versions,
-  while theta0 remains a warm-up/bootstrap outside D1 evidence.
-- The successor integrated ActionPlan uses `compiled|exact`. Progressive residual replay remains a
-  D1-only supporting extension and is not a D2/D3 headline route.
-- `X-QK-HET` is the primary D1→D2→D3 workload and preserves natural valid extents;
-  `X-QK-HOM` reuses the same records and valid histories in a masked 512-slot physical layout.
-  Capacity and grouping use valid K/V bytes, not padded records.
-- XP fixes 2,859,835 base-period semantic rows plus one padding row in a
-  2,859,836×4,096 physical FP32 table (43.638 GiB), owner-side
-  E4096→H1536 projection and a 24L/H1536 core. Freeze the hardware HBM cap first; qualification
-  validates this geometry without consulting EvoKV performance. Only optimizer-updated rows count
-  toward forced sharding: the request union across both formal edges, all headline manifests,
-  all-exact, and every frozen fixed-action exact/append/fallback path must be active and hashed.
-  Active embedding bytes plus dense/projection bytes must exceed the single-card allocatable
-  budget. The common-upstream base builder may use later-role users' base-period histories, but
-  post-base roles remain user-disjoint.
-- Foundation Review 0 is complete as development evidence. The full QK scan freezes disjoint
-  roles and a 65,536-record HET/HOM universe; natural target length is median 153, p95 404, and
-  only 2.1835% saturated. Full HET old/target valid K/V is 1.498/1.801 TB, with nested
-  36/72/144/288/576/720-GiB cohorts. The two-rank physical E4096 owner-projection canary and
-  HET/HOM rolling transaction canaries pass. The selected XP checkpoint records 2,859,736
-  optimizer-active semantic rows and therefore passes the 2,840,105-row byte gate. The all-exact
-  request union is 929,554 rows, but its exact membership join with the active bitmap across both
-  formal edges and every frozen fallback path remains pending. These artifacts are
-  `scientific_result=false`; the rolling lifecycle canary does not yet execute D1/D2 numerics.
-- The large QB `mf9_e4096` foundation is complete. It uses nine base-only real feature
-  namespaces, 75,389 prediction items, 2,985,070 optimizer-active semantic rows, an E4096 owner
-  projection, and the 24L/H1536 core. Its fixed FP32 model is 50,074,839,040 bytes and therefore
-  capacity-forced over one A40. The selected development chain is `u30_e3` theta0--theta3. Its
-  ordinary theta1→theta2 and theta2→theta3 tuning/report-only-qualification Exact-over-Reuse
-  sampled-CE gaps are `+0.02409/+0.02246` and `+0.01297/+0.01024`. Theta0 is physically retained
-  under `u15_e1`; theta1--theta3 and optimizer resume points are under `u30_e3`. The final
-  theta3→theta4 edge and all bounded final-update searches are negative and have no retained
-  checkpoint payload. Compact results remain, and the 2026-08-03 cleanup additionally retired the
-  rejected `u15_e3` tree and historical D3-specific model payloads. QB is a secondary D1/D2/D3
-  stressor; QK remains primary. Do not resume the deleted theta4 search.
-- The retained LR0.10 two-rank XP rollback foundation is
-  `quality_chain_stream_aligned_train16384_round1`: one warm-up edge followed by three ordinary
-  stream edges, 16,384 training users, 4,096 disjoint qualification users, one epoch/update,
-  dense/projection LR 1e-5, embedding LR 1e-4, 999 frozen negatives, and a common FP16-storage /
-  FP32-consumption cache endpoint. Exact-over-Reuse CE gaps are 0.01846/0.01068/0.01340 with all
-  record-cluster 95% intervals positive. This is retained development evidence, not the current
-  preferred chain or a formal replication.
-  `selected_d1_bridge_round1` reproduces those endpoints and observes compiled gap recovery of
-  63.9%/55.3%/70.0% at 0.162x/0.152x/0.146x Exact maintenance components; approximately 20%
-  Exact mixed repair recovers 68.9%/62.3%/74.3%, while naive mixed component bounds remain
-  0.764x/0.781x/0.731x Exact. This is D1→D2 causal development evidence, not end-to-end D2 timing.
-  Keep the compact programs/plans/results. The superseded LR0.10 checkpoint payload, the two
-  rejected 8,192-user trees, `baseline_round3`, and historical `seed0/theta_1,2` have been deleted;
-  retain `seed0/theta_0` as the common retraining bootstrap. No full K/V payload is retained.
-- A bounded same-scale successor round now retains LR0.10 as the immutable rollback anchor and
-  selects LR0.15 as the preferred development quality candidate. Its Exact-over-Reuse CE gaps are
-  0.03082/0.01450/0.01095 with all record-cluster intervals positive. On those same endpoints, a
-  rank-16 shared `fresh - cheap` residual fit consumes 128 disjoint theta12 records, at most 8,192
-  global tokens/layer, and no recommendation labels or qualification errors; after folding into
-  the same 453,138,469-byte `24×3072×3072` FP16 direct-old-K/V affine it recovers
-  99.995%/99.992%/100.024% of the CE gaps at 0.163x/0.152x/0.148x Exact maintenance. Rank 64 has
-  lower K/V error but no material task-quality advantage and a 3.8x larger pre-fold adapter. This
-  is development-selected, not formal evidence. The archive is
-  `results/baseline_rounds/quality_chain/anchors/quality_lr015_d1_residual_20260802_round1.json`.
-  The LR0.15 theta1–theta4 checkpoints are the only retained XP update chain; exact retirement
-  records are in `checkpoint_retirement_20260802_v1.json` beside that archive.
-  The QK and QB retained manifests and optimizer bindings are jointly frozen in
-  `configs/evokv_foundation/selected_checkpoint_registry_development_v0.json`.
-  Do not silently substitute it into the frozen analytic D2/D3 stack; an adopting `stack_revision`
-  must rerun its own physical baselines.
-- The QK recursive Round A is complete as development evidence. `ract_kv_exact10` performs true
-  theta1→theta2→theta3→theta4 handoff with 10.010% Exact valid-token work per edge,
-  99.986%/99.985%/100.002% edge CE recovery, 97.246%/94.933%/94.932% mean K/V recovery, and
-  100.000% final cumulative CE recovery. The v0 summary remains `complete_no_admitted_policy`
-  because its old selector used a conservative held-out triangle-bound target. That field is an
-  empirical rollout diagnostic, not a mathematical accuracy certificate or current headline
-  gate. Preserve the v0 result unchanged; the next step is a new locked QB confirmation protocol
-  with the QK 10% settings frozen and no QB-specific tuning. No new D2/D3 performance round
-  precedes this boundary.
-- D3 keeps one live cache plus bounded group shadow/staging and executes
-  writeback→validation→group commit→old-group reclaim. Complete old+private-target COW remains a
-  historical M1 endpoint, not the formal capacity definition.
-- The successor runner is 1/2/4-rank-capable. XP 2/4-rank points are headline; X2/R-KR provide
-  1-rank sanity. Qualification blocks only formal promotion, not foundation or mechanism work.
-- The active large-model D1 design point is RACT-KV (Rollout-Aware Cache Transport) with 10%
-  scheduled Exact renewal:
-  - fit one shared rank-16 direct-K/V correction on paired exact and deployed rollout sources,
-    including an exact-source anchor and an observed-error contraction term;
-  - rotate a deterministic 10% valid-token Exact renewal budget using identity, extent, last exact
-    version, and depth only; 0% and 20% remain controls;
-  - record the old affine-gain/residual/FP16 `stability_certificate` field only as a held-out
-    rollout diagnostic; it does not prove recommendation accuracy;
-  - keep operational fallback under implementation correctness rather than the D1 novelty;
-  - progressive residual replay remains a separate D1-only supporting extension, not this primary
-    recursive route.
-- The 2026-08-04 closest-work screen makes the novelty claim deliberately narrow. Do not claim the
-  first K/V translator, correction loss, selective K/V reuse/recompute policy, or observation that
-  updates make K/V stale. The candidate contribution is the combined single-current-model
-  sequential lifecycle, deployment-matched fitting on exact/actual rollout states, direct-old-K/V
-  compilation, bounded label-free valid-token renewal, and immutable semantic-to-physical
-  interface. Refresh this screen before submission;
-  Mixture-of-Translators is a particularly recent close neighbor.
-- D1 freezes only the semantic reuse–recompute trade-off: `compiled|exact` actions, valid-token
-  Exact work, recursive K/V/task recovery, and lineage. It does not select on or claim
-  GPU time. D2 maps the immutable D1 work to multi-GPU operators and establishes physical savings;
-  D3 owns capacity staging, overlap, and rolling publication.
-- Fixed suffix, progressive prefix, arbitrary intervals, and recent-token rectangles are baselines,
-  not the active method. The cross-dataset capacity screen changed the earlier suffix decision:
-  plain prefix is never selected in the unified library, all 54 matched recent-token partial
-  actions are slower, and arbitrary intervals add negligible value.
-- Fixed-task 3x3 data/model-capacity motivation and cohort-tiered method replication are complete
-  over KuaiRand, QB, and QK. The compiled operator scales in kernel cost and K/V fidelity, but the
-  strict task-quality gate passes 6/9 cells because some full-maintenance endpoints are near zero
-  or negative. Task quality is not an admission oracle: every stale cohort receives unconditional
-  compiled repair, with exact recomputation under budget in the integrated path. Progressive
-  residual replay remains a separately evaluated D1 extension. Version cohorts are used for
-  compilation, not to predict whether reuse is safe. Historical D1 evidence remains frozen; once
-  the recursive QK→QB revision passes, that revision determines what is compiled or exactly
-  recomputed and exports an immutable action-plan sequence. Active D2 then determines how that fixed work
-  moves and executes: `(suffix, retained)` extent compilation, owner-local retained repair,
-  row-sharded exact/append, segmented suffix-only destination, merged physical exact pools,
-  collective dependencies, and group-valid output. The current D2→D3 paper decomposition uses a
-  global, capacity-independent WavePlan constraint view. The historical GPU0/GPU1 H12/QK paths
-  remain development ledgers; the successor builds HET/HOM, XP, rolling groups, and a
-  rank-parameterized runner. Isolation-track runs keep one D1/D2 snapshot fixed. Mechanism
-  discovery may also create a globally replanned D1/D2/D3 `stack_revision`; it must rerun its own
-  baselines rather than compare against an older stack. Complex organic mixed versions remain a
-  later feedback layer.
-- The former per-user drift/JVP/Fisher/three-state route is retired. Do not reintroduce it as the
-  project crux. Its only valid role is a clearly labeled negative result in the motivation.
-- Single-configuration Stages 0–4.6 are frozen. The closest selective baseline fails its certificate;
-  the deployed compiler plans pass on serialized FP16 capsule/program/output, while the optional
-  residual hidden suffix is BF16 after measured FP16 overflow. Reference, packed, and fused
-  operators share one unpadded extent API. The 30-point full-cohort normal-path matrix closes
-  lazy source streaming and HBM/DRAM publication, but the current 17.82-GB physical FP16 capsule
-  path loses to exact at all six matched endpoints and spends 91.35%–96.91% of compiled time in
-  source processing. Stage 4.5 is now frozen separately: the primary hot-HBM plan composes the
-  deployed affine into a direct transform over existing old K/V, retains zero extra per-record
-  `Norm(x)`, reclaims old extents after replacement staging, preserves the certificate and full
-  real transport, and beats paired HBM-resident raw-history exact at full-cohort 1/2/4-GPU points.
-  This is not a cold-filesystem or SSD claim, and its equivalence/certificate assumes exact
-  source-version K/V. Stage 4.6 now supplies the repeated-input evidence on the single frozen
-  KuaiRand seed-0/16L-H512 configuration and one A40: exact theta0 K/V is recursively advanced
-  through 11 updates under a balanced age/deadline policy with program-level label-free edge
-  severity, 15%–25% exact budgets, and maximum migration depth four. The complete 682-record chain
-  costs 0.2134x all-exact GPU time and preserves minimum cache/score/top100 fidelity
-  0.9632/0.999950/0.9918. Its per-cache threshold predecessor is a negative result because it
-  produced severe refresh waves; do not recover an adaptive-risk or optimal-selector claim.
-  Recommendation labels never route caches. D1 Stages 0–6 and the declared Stage-5 guard/fallback/
-  transaction closure are frozen.
-- D2's paper story is logical-to-physical sparsity. `134/682 = 19.6%` exact-route records is an
-  action-count statistic, while the full mixed wave still performs `347,062/934,917 = 37.1%` of
-  all-exact lookup tokens. A three-A40 W3 development chain shows naive mixed losing to exact and
-  the segmented/shape-aware/merged-exact lowering producing a positive full682 point; full payload
-  correctness also passes. These are `scientific_result=false`, not paper evidence. W4 is only
-  the unfinished gate of the old family. The successor still needs XP/HET/HOM, a new D2 protocol,
-  capacity-admitted 1/2/4-rank results, group validation/commit/reclaim timing, and a segmented
-  consumer. Synthetic lookup contention is supporting characterization, not a serving trace or
-  D2 gate.
-- D3 has a real but historical two-A40 fixed-512 QK M1 out-of-core development chain, not a frozen
-  protocol or paper result.
-  Its 24L/H1536 model has a 16.364-GiB global FP32 embedding, and its fixed 2,048-record D1/D2
-  snapshot contains 1,638 compiled and 410 exact actions. Complete old plus private target K/V is
-  288 GiB in ordinary DRAM. On the shared 17-group boundary, fair S0 is 48.238 seconds, strong S1
-  is 32.703 seconds, and the historical v1 fixed-order bidirectional runner is 28.885 seconds.
-  The active development `ResidencyPlan` independently controls per-route input, compute, and
-  output granularity over full-group GPU staging. It admits only compiled/exact profiles measured
-  jointly from the same source, uses max-rank stage times with discrete tail scaling, and optimizes
-  a stable route interleave under the runtime's one-group-input-lookahead/one-drain-credit flow
-  model. Small order spaces are exhaustive; larger spaces use Pareto-beam dynamic programming. A
-  global-min-anchored 3% tie prefers lower HBM, pinned memory, and segmentation cost. The plan
-  embeds its profiles and binds compiler/program/source code, Torch/CUDA, GPU UUID/PCI identity,
-  store tier, groups, and checkpoints; both ranks repeat HBM and pinned-capacity preflight.
-  Under one exact stack/hash, the route-major `(8,8,8)` control takes 28.514442098 seconds and the
-  selected stable order `[13,0..11,14,12,15,16]` takes 28.147194647 seconds: 1.013047x, or a
-  1.2879% wall-time reduction. The selected result is 1.16186x over S1 and 1.71379x over fair S0;
-  its 29.244944224-second prediction is 3.90% above observation. Both 77,309,939,712-byte rank
-  targets are byte-identical to S1 with complete, exactly-once coverage. The chosen granularity is
-  `(8,8,8)` for both routes, so route-asymmetric granularity benefit is not established. Compiled
-  input-16 and output-4 only failed to improve their observed development points. Plan/profile
-  construction is outside the timer. An adjacent identity-only revision observed 29.7169→28.0497
-  (5.61%), but it is a variability diagnostic, not a frozen benefit. All results remain
-  `scientific_result=false` and `formal_design3=false`. Grouped development E0 is now
-  44.638644214 seconds sequentially and 33.548799294 seconds with the action-oblivious two-slot
-  pipeline. Owner-local naive-staged D1-only is 57.597180375 seconds; the current-binary
-  sequential D1+D2 rerun is 49.752669533 seconds. D1-only and D2 request the same 262,336 global
-  lookup tokens but issue 852 versus 387 collectives/rank. These are contribution diagnostics,
-  not a placement-oblivious owner-compute ablation or formal waterfall. Independently tuned E0,
-  held-out qualification, formal repeats, HET/HOM and XP foundations, strongest generic
-  baselines, rolling group lifecycle, segmented consumer, 1/2/4-rank successor runner, and a
-  frozen protocol remain open.
-  H12 is only a capacity-emulated semantic canary. SSD/database ingress, serving traces, host-DRAM
-  oversubscription, and online hotness remain out of scope.
-
-## Code layout
-
-- `src/hstu_kvcache/models/` — modular simplified HSTU; pointwise unnormalized attention and
-  first-class K/V output are defining features.
-- `src/hstu_kvcache/data/` — KuaiRand streaming trace and ML1m loader.
-- `src/hstu_kvcache/streaming/` — leak-free next-item training and model-version utilities.
-- `src/hstu_kvcache/migration/` — layerwise state capture and migration operators.
-- `scripts/*validity.py`, `scripts/*scaling.py`, `scripts/*motivation_capacity_v2.py`, and
-  `scripts/*migration*.py` — active experiment entry points.
-- `scripts/evaluate_kuairand_long_context_sync_design.py` and
-  `scripts/benchmark_kuairand_long_context_sync_system.py` — active 4+12 progressive-sync
-  algorithm/operator/runtime entry points.
-- `scripts/evaluate_cohortkv_stage1_frontier.py`, `scripts/compile_cohortkv_stage2.py`, and
-  `scripts/benchmark_cohortkv_stage3_operator.py` — frozen single-configuration baseline,
-  deployed-compiler, and common-layout operator entry points.
-- `scripts/compile_cohortkv_stage4_6_edges.py`,
-  `scripts/evaluate_cohortkv_stage4_6_lifecycle.py`,
-  `scripts/run_cohortkv_stage4_6_full_chain.py`, and
-  `scripts/freeze_cohortkv_stage4_6.py` — frozen continuous-lifecycle entry points.
-- `scripts/materialize_cohortkv_stage4_sources.py`,
-  `scripts/benchmark_cohortkv_stage4_system.py`, and `scripts/freeze_cohortkv_stage4.py` — frozen
-  full-cohort source, normal-path system, and checked-summary entry points.
-- `scripts/compile_cohortkv_stage4_5_oldkv.py`,
-  `scripts/evaluate_cohortkv_stage4_5_oldkv_certificate.py`,
-  `scripts/validate_cohortkv_stage4_5_oldkv_full_transport.py`,
-  `scripts/benchmark_cohortkv_stage4_5_oldkv.py`, and
-  `scripts/freeze_cohortkv_stage4_5.py` — frozen direct-old-K/V source-plan entry points.
-- `src/hstu_kvcache/migration/recursive_d1.py`,
-  `scripts/evaluate_evokv_qk_recursive_d1.py`,
-  `scripts/summarize_evokv_qk_recursive_d1.py`, and
-  `scripts/run_evokv_qk_recursive_d1_round_a.sh` implement the completed stateful QK recursive D1
-  v0 mechanism, validator, and two-rank handoff. Its completed result remains non-scientific.
-- `src/hstu_kvcache/migration/design2_*.py`,
-  `scripts/benchmark_cohortkv_design2_integrated_w3.py`,
-  `scripts/validate_cohortkv_design2_integrated_full_payload.py`, and
-  `scripts/benchmark_cohortkv_design2_resource_isolation.py` — active D2 development entry
-  points; their current W3 artifacts are non-scientific mechanism discovery.
-- `src/hstu_kvcache/migration/destination.py` and `out_of_core.py` are historical destination-v4
-  implementation assets, not current D3 evidence.
-- `src/hstu_kvcache/migration/design3_work.py`,
-  `scripts/build_evokv_design3_m0_work.py`, and
-  `scripts/benchmark_evokv_design3_m0.py` are the active flexible D3 M0 manifest/grouping and
-  GPU0/GPU1 pageable-DRAM S0 entry points. Their artifacts are development diagnostics.
-- `src/hstu_kvcache/migration/design3_residency.py`,
-  `scripts/plan_evokv_design3_residency.py`, and
-  `scripts/benchmark_evokv_design3_m1.py` implement the active hashed D3 planner and the real QK
-  M1 route-aware out-of-core runtime. Their current artifacts are non-scientific development
-  evidence.
-- `src/hstu_kvcache/migration/foundation_{workload,projection,lifecycle}.py` and the matching
-  `scripts/*evokv_foundation*.py` entry points implement the successor HET/HOM builder, physical
-  owner-projection canary, and rolling transaction canary. The workload is real; the lifecycle
-  payload is deterministic and does not yet execute D1/D2 numerics. All current artifacts are
-  non-scientific Foundation Review evidence.
-- `scripts/run_evokv_selected_checkpoint_rebuild.sh` is the only active QK/QB selected-chain
-  rebuild handoff. `scripts/verify_evokv_selected_checkpoints.py` validates the retained local
-  assets against the machine registry. The removed QB theta4/horizon and dual-LR scripts were
-  one-off completed searches, not current experiment entry points.
-- `results/validity/`, `results/scaling/`, `results/exposure/`, and
-  `results/motivation_scale/` — current result families. Their protocol records must remain
-  separate; raw per-seed files and checkpoints stay local and ignored.
+- Dataset: KuaiRand-1K standard logs only.
+- Versions: θ1–θ8; θ0 is bootstrap only.
+- Model: video/author, latest-item query, 8L/H512/8 heads, max length 512.
+- Evaluation: one positive plus 99 frozen negatives; NDCG@5 primary, MRR and HR@5 reported.
+- Capacity: one 23,396,297×512 physical embedding space, sharded over GPU0/GPU1; 47,960,055,552 parameter bytes or 44.666 GiB.
+- Selected NDCG@5 matrix: 26/28 positive cells and 7/7 positive adjacent cells.
+- This is single-seed development evidence: `scientific_result=false`, `formal_result=false`.
 
 ## Experimental invariants
 
-- Predict item `t+1` from hidden state `t`.
-- Train only on targets from the current stream date and use engaged items as evaluation positives.
-- Fit the item vocabulary on the base period only.
-- Respect sequence lengths and zero padding in hidden-state and K/V computation.
-- For HET workloads, preserve valid old/retained/evicted/append/target extents end to end; HET
-  capacity/throughput axes exclude padding. Physical admission always uses actual allocated bytes,
-  including masked padding in the same-record HOM control.
-- Formal out-of-core capacity is single-version valid K/V bytes plus bounded group shadow/staging,
-  not complete old plus complete private target.
-- Every rolling group carries explicit old/new version and lineage state. Validate before commit,
-  reclaim only after commit, and make resume idempotent.
-- QK HET is a trace-grounded heterogeneous cache snapshot under one fixed model edge; its
-  per-user ordinal boundaries are not a cross-user co-temporal or calendar-time trace.
-- Evaluate stale serving as an old-version prefix cache plus the latest token under the current
-  model; fresh is a complete current-model forward on the same history.
-- Measure GPU cost; never substitute a hand-written cost constant.
-- Treat training seed as the replication unit. User/sample-level statistics within one trained
-  model are diagnostics, not independent experimental repeats.
-- Do not mix result families with different protocol strings.
-- New primary KuaiRand training runs should use `training_sequences=all_chunks` and record
-  effective target counts. Existing latest-only results remain valid within their own protocols.
-- Full recomputation is the cache-fidelity reference, not a guaranteed upper bound on ranking
-  quality; report paired quality differences from full when recovery exceeds 100%.
+- Exactly one current model serves at a time. Old version labels describe K/V lineage only.
+- Train on an update date and evaluate on the next natural date; never train on evaluation targets.
+- Compare Reuse and Recompute on identical users, histories, current model, query and candidates.
+- Reuse means old-version prefix K/V plus current-model latest token/query. Recompute means a full current-model forward on the same valid history.
+- Preserve natural sequence lengths and exclude padding from semantic K/V extents.
+- Full recomputation is the cache-fidelity reference, not a guaranteed ranking-quality upper bound.
+- Report absolute endpoints and `100 * (Recompute - Reuse) / Reuse` without clipping or scaling.
+- Never perturb K/V, duplicate identical embeddings to claim capacity, delete negative cells, or combine incompatible protocols.
+- Training seed is the replication unit; user-level samples within one model are diagnostics.
 
-## Datasets
+## Long experiments
 
-- KuaiRand-1K source: `/home/gkl/fun-rec/data/dataset/kuairand/KuaiRand-1K/data/`; local copy in
-  `data/kuairand/`.
-- Only KuaiRand-1K standard logs are local. Top-5k/top-20k/top-50k retain 3.67%/8.18%/13.35% of
-  their rows. The random-exposure log is excluded from training, and KuaiRand-27K is not present.
-- ML1m hard_v5 source: `/home/gkl/LRM1/data/standardized/movielens_1m_hard_v5/pilot20`; local copy
-  in `data/movielens/`.
-- Taobao UserBehavior is local but rejected at the target-semantics gate because it lacks true
-  unclicked impressions.
-- Tenrec QB/QK are the positive ordered-exposure extensions; they are related tables from one
-  collection and have ordinal rather than global calendar time.
-- ZhihuRec is a documented negative maintenance boundary.
+- Before any experiment expected to exceed five minutes, create and validate a user-runnable orchestration script.
+- Do not start such an experiment unless the user explicitly asks the agent to run it.
+- Bundle dependent training, evaluation and validation into one resumable round with frozen configuration, resource preflights, explicit logs and machine-readable outputs.
+- Preserve reusable checkpoints and compact records. Do not retain full K/V payloads between stages.
+- Stop at genuine result-dependent boundaries; do not silently change the protocol after seeing results.
+- Short canaries, lint and tests may run directly.
 
-## Conventions
+## Code layout
 
-- No comments in code unless asked.
-- Keep HSTU modules decoupled so layer/block/attention changes remain localized.
-- Start new structural sweeps at one seed and small scale; only reproduce candidates that change
-  the Pareto frontier.
+- `src/hstu_kvcache/models/`: HSTU model and first-class K/V output.
+- `src/hstu_kvcache/streaming/kuairand_query_transition.py`: θ0 workload/training semantics.
+- `src/hstu_kvcache/streaming/kuairand_projected_persistent.py`: sequential natural model chain.
+- `src/hstu_kvcache/streaming/kuairand_capacity_lift.py`: function-preserving large-capacity lift.
+- `scripts/verify_evokv_kuairand_large_baseline.py`: static, semantic and payload verification.
+
+## Repository conventions
+
+- Use `rg`/`rg --files` for search and `apply_patch` for edits.
+- Preserve unrelated dirty-worktree changes.
+- No code comments unless requested.
+- Keep HSTU modules decoupled so attention, block and layer changes remain localized.
+- Start structural sweeps at one seed and small scale; reproduce only candidates that change the frontier.

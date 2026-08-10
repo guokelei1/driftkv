@@ -11,5 +11,5 @@ This tree is a reference library, not the source of current research state.
 
 The active EvoKV manuscript is maintained separately from this tracked reference tree. Current
 claims and experiment boundaries come from
-[../docs/08_core_insights_and_roadmap.md](../docs/08_core_insights_and_roadmap.md) and
-[../docs/eval_protocol.md](../docs/eval_protocol.md), not from an old draft or a reference paper.
+[../docs/archive/08_core_insights_and_roadmap.md](../docs/archive/08_core_insights_and_roadmap.md) and
+[../docs/archive/eval_protocol.md](../docs/archive/eval_protocol.md), not from an old draft or a reference paper.

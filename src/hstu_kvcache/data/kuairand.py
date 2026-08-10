@@ -62,6 +62,7 @@ def load_kuairand(
     max_users: int | None = None,
     fit_num_days: int | None = None,
     context_hash_buckets: int = 0,
+    prediction_items_from_engaged_only: bool = False,
 ) -> KuaiRandTrace:
     """Load one or more KuaiRand log CSVs into a single sorted trace.
 
@@ -75,6 +76,9 @@ def load_kuairand(
             the item embedding table on 4xA40). Without context hash buckets,
             interactions with dropped items are removed.
         max_users: optionally cap the user catalog (for fast feasibility runs).
+        prediction_items_from_engaged_only: fit the prediction catalog from
+            engaged base-period rows while preserving all other exposures as
+            context when context hash buckets are enabled.
     """
     frames = []
     for p in csv_paths:
@@ -95,18 +99,32 @@ def load_kuairand(
     if context_hash_buckets < 0:
         raise ValueError("context_hash_buckets must be non-negative")
 
+    catalog_fit_df = fit_df
+    if prediction_items_from_engaged_only:
+        engaged = (
+            fit_df["is_click"].astype(bool)
+            | fit_df["is_like"].astype(bool)
+            | fit_df["is_follow"].astype(bool)
+            | fit_df["is_comment"].astype(bool)
+            | fit_df["is_forward"].astype(bool)
+            | fit_df["long_view"].astype(bool)
+        )
+        catalog_fit_df = fit_df[engaged]
+        if catalog_fit_df.empty:
+            raise ValueError("engaged-only prediction catalog is empty")
+
     if max_items is not None:
-        item_counts = fit_df["video_id"].value_counts()
+        item_counts = catalog_fit_df["video_id"].value_counts()
         keep_items = item_counts.head(max_items).index
         if context_hash_buckets == 0:
             df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
             fit_df = fit_df[fit_df["video_id"].isin(keep_items)]
     elif fit_num_days is not None:
-        keep_items = fit_df["video_id"].unique()
+        keep_items = catalog_fit_df["video_id"].unique()
         if context_hash_buckets == 0:
             df = df[df["video_id"].isin(keep_items)].reset_index(drop=True)
     else:
-        keep_items = fit_df["video_id"].unique()
+        keep_items = catalog_fit_df["video_id"].unique()
 
     behavior = np.ones(len(df), dtype=np.int8)
     for column, value in (

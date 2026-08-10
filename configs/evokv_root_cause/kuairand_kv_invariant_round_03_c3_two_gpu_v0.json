@@ -1,0 +1,102 @@
+{
+  "protocol": "evokv_root_cause_kuairand_kv_invariant_v0",
+  "status": "ready_for_autonomous_execution",
+  "scope": "development_model_revision",
+  "scientific_result": false,
+  "formal_result": false,
+  "round_id": "round_03_c3_kuairand_kv_invariant",
+  "campaign": {
+    "path": "configs/evokv_root_cause/root_cause_campaign_20260807_v0.json",
+    "sha256": "1f5ee5add427691c762ad31ea906c2366f2bc521795330d17308be496b5335d1"
+  },
+  "parent": {
+    "config": "configs/evokv_root_cause/kuairand_natural_day_round_03_b_two_gpu_v0.json",
+    "config_sha256": "d2ed3b57b014b7c908a0f84a97989992b6fca5c6dfcd29367968ad89645276ba",
+    "runner": "src/hstu_kvcache/streaming/kuairand_root_cause.py",
+    "runner_sha256": "f55d010df1fe6e98b683a97f3d4787bf9badba0e2b347989586115ea609fb695",
+    "training_result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_b_kuairand_natural_day/training.json",
+    "training_sha256": "64e8e5bef14b4205fac6df981d2aeab5512665e4787f199621e611d20163fa12",
+    "evaluation_result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_b_kuairand_natural_day/evaluation.json",
+    "evaluation_sha256": "3a701cb2c5a263c9e956744263c15ad7ac67630eafe5cdc9f89fcea13b9ca732",
+    "checkpoint_root": "checkpoints/evokv_root_cause/kuairand_round_03_b_main"
+  },
+  "precursor": {
+    "config": "configs/evokv_root_cause/kuairand_cache_compatible_round_03_c2_two_gpu_v0.json",
+    "config_sha256": "a58a5b047c5b5448d8b45bdafd3e87b854e66e650cf7798d096e0321989ea805",
+    "runner": "src/hstu_kvcache/streaming/kuairand_cache_compatible.py",
+    "runner_sha256": "1704bea339a669be1e6544ae3bfe9656b56d8a785e928e2eecee892f41e0daa6",
+    "training_result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_c2_kuairand_cache_compatible/training.json",
+    "training_sha256": "56c995de9ef3c0e54c332e36aded2a853d7c15f1cc80981e8c24f1957929eff4",
+    "evaluation_result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_c2_kuairand_cache_compatible/evaluation.json",
+    "evaluation_sha256": "089be98f5036dcca0f12a823e88bfdb45135d80cb4a3ce8dc6c17f11bc12ab60"
+  },
+  "checkpoints": [
+    {
+      "version": 0,
+      "manifest_sha256": "a23fdb43cd8e0fe891a099a73ec03fccc6eb1da033026b6d31c75dac47e5e271"
+    },
+    {
+      "version": 1,
+      "manifest_sha256": "384499612fa6a79f4f407a5e8c5a5da0af6e14f25bfd0ebd2fd8ac9c2620a7fa"
+    },
+    {
+      "version": 2,
+      "manifest_sha256": "bee91e6f607c3fe8cc6b3e287f747f428380cd38f2a14205d6ffa965d24fa71b"
+    }
+  ],
+  "model_revision": {
+    "input_item_embedding": "frozen_theta0",
+    "cache_producing_parameters": "frozen_theta0",
+    "output_head": "untied_all_context_items",
+    "ranking_catalog": "base_prediction_items_only",
+    "trainable_backbone_parameters": [
+      "blocks.2.attn.q_proj.weight",
+      "blocks.2.attn.out_proj.weight",
+      "blocks.2.gate_proj.weight",
+      "final_norm.weight"
+    ]
+  },
+  "training": {
+    "seed": 2026080741,
+    "batch_size": 8,
+    "negative_count": 32,
+    "update_epochs": 2,
+    "stream_lr": 0.0001,
+    "weight_decay": 0.0001,
+    "training_sequences": "all_chunks",
+    "maximum_update_batches_per_epoch": null
+  },
+  "methods": [
+    "base_anchor",
+    "compatible_previous",
+    "compatible_current_reuse",
+    "compatible_current_exact",
+    "full_previous",
+    "full_current"
+  ],
+  "quality": {
+    "record_limit_per_rank": 128,
+    "sampling_seed": 2026080728,
+    "target_chunk": 128,
+    "full_catalog_item_chunk": 32768,
+    "suffix_chunk": 128,
+    "bootstrap_samples": 1000,
+    "bootstrap_seed": 2026080743
+  },
+  "decision_rule": {
+    "primary_pooled_ce_retention_percent": 50.0,
+    "hybrid_pooled_ce_retention_percent": 25.0,
+    "require_positive_ce_ci_on_each_edge": true,
+    "require_positive_ranking_ci_on_each_edge_for_primary": true
+  },
+  "execution": {
+    "training_cuda_visible_devices": "0",
+    "evaluation_cuda_visible_devices": "0,1",
+    "evaluation_world_size": 2
+  },
+  "outputs": {
+    "checkpoint_root": "checkpoints/evokv_root_cause/kuairand_round_03_c3_kv_invariant",
+    "training_result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_c3_kuairand_kv_invariant/training.json",
+    "evaluation_result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_c3_kuairand_kv_invariant/evaluation.json"
+  }
+}

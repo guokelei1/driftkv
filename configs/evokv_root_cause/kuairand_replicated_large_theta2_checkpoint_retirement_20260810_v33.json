@@ -1,0 +1,35 @@
+{
+  "schema": "evokv_checkpoint_retirement_v1",
+  "status": "complete",
+  "created_at": "2026-08-10",
+  "completed_at": "2026-08-10",
+  "reason": "The first row-replicated theta2 candidate learned the next-day task but did not create a sufficient recommendation-quality gap between current-model recomputation and theta1 cache reuse. A controlled K/V learning-rate intervention produced a strong positive replacement candidate from the same theta1 checkpoint.",
+  "retired_checkpoint": {
+    "path": "checkpoints/evokv_kuairand_latest_query_large_e512_r8_theta1_theta8_v30/theta_2",
+    "checkpoint_bytes": 48077080276,
+    "file_count_before_removal": 7,
+    "manifest_sha256": "f98eadf7673feb345a0029cee89c9eade544821c17120d0af1f53cd39786f124",
+    "accepted_record_sha256": "f3642cc9e83d6fcae08097a0058242e6dd7ce7ab6d470b0b112b2542b486f731",
+    "candidate": "projectionlow_continuation_e4",
+    "ndcg_at_5_relative_percent": 0.4628294737308942,
+    "mrr_relative_percent": 4.219725490308298,
+    "hit_rate_at_5_relative_percent": -5.565217391304349
+  },
+  "replacement_probe": {
+    "path": "results/root_cause_campaign/kuairand_replicated_large_theta2_directional_probes_20260810_v31/rowrep_theta2_kv4_e4.json",
+    "sha256": "a5e30e891ab0e8205eed35e78e24f54c62deaf5030af191c7d7dd16f4328aae2",
+    "candidate": "rowrep_theta2_kv4_e4",
+    "ndcg_at_5_relative_percent": 11.907861686485091,
+    "mrr_relative_percent": 5.490293077146346,
+    "hit_rate_at_5_relative_percent": 10.943396226415095
+  },
+  "retained": [
+    "results/root_cause_campaign/kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30/rejected/theta2_projectionlow_continuation_e4/manifest.json",
+    "results/root_cause_campaign/kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30/rejected/theta2_projectionlow_continuation_e4/accepted.json",
+    "results/root_cause_campaign/kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30/rejected/theta2_projectionlow_continuation_e4/progress.json",
+    "results/root_cause_campaign/kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30/edges/theta_2/candidates/00_projectionlow_continuation_e4.json",
+    "results/root_cause_campaign/kuairand_latest_query_large_e512_r8_theta1_theta8_20260810_v30/prefix_lineage/theta1_theta2/result.json",
+    "results/root_cause_campaign/kuairand_replicated_large_theta2_directional_probes_20260810_v31/rowrep_theta2_kv4_e4.json"
+  ],
+  "recoverability": "The rejected payload can be deterministically retrained from theta1, the retained v30 config, candidate record and seed."
+}

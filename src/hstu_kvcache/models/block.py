@@ -23,6 +23,7 @@ class HSTUBlockConfig:
     gating: Literal["none", "silu_gate", "glu", "ffn"] = "silu_gate"
     mlp_ratio: float = 4.0
     norm_eps: float = 1e-6
+    block_variant: str = "legacy"
 
 
 class HSTUBlock(nn.Module):
@@ -37,11 +38,22 @@ class HSTUBlock(nn.Module):
         super().__init__()
         self.cfg = cfg
         h = cfg.attn.hidden_size
-        self.norm = RMSNorm(h, eps=cfg.norm_eps)
+        self.norm = (
+            nn.LayerNorm(h, eps=cfg.norm_eps)
+            if cfg.block_variant == "hstu_reference"
+            else RMSNorm(h, eps=cfg.norm_eps)
+        )
         self.attn = PointwiseAttention(cfg.attn)
         self.gating = cfg.gating
+        self.block_variant = cfg.block_variant
+        self.attn_output_norm = (
+            nn.LayerNorm(self.attn.inner, eps=cfg.norm_eps)
+            if cfg.block_variant == "hstu_reference"
+            else None
+        )
         if cfg.gating in ("silu_gate", "glu"):
-            self.gate_proj = nn.Linear(h, h, bias=False)
+            gate_width = self.attn.inner if cfg.block_variant == "hstu_reference" else h
+            self.gate_proj = nn.Linear(h, gate_width, bias=False)
         elif cfg.gating == "ffn":
             inner = int(h * cfg.mlp_ratio)
             self.fc1 = nn.Linear(h, inner, bias=False)
@@ -62,7 +74,12 @@ class HSTUBlock(nn.Module):
             attn_out = self.attn(x_norm, attn_mask=attn_mask, return_kv=False)
             k = v = None
 
-        if self.gating == "silu_gate":
+        if self.block_variant == "hstu_reference":
+            assert self.attn_output_norm is not None
+            out = self.attn.out_proj(
+                self.attn_output_norm(attn_out) * F.silu(self.gate_proj(x_norm))
+            )
+        elif self.gating == "silu_gate":
             out = attn_out * F.silu(self.gate_proj(x_norm))
         elif self.gating == "glu":
             out = attn_out * torch.sigmoid(self.gate_proj(x_norm))
@@ -94,7 +111,12 @@ class HSTUBlock(nn.Module):
         x_norm = self.norm(x_new)
         attn_out, (k_all, v_all) = self.attn.forward_with_cache(x_norm, cached_k, cached_v)
 
-        if self.gating == "silu_gate":
+        if self.block_variant == "hstu_reference":
+            assert self.attn_output_norm is not None
+            out = self.attn.out_proj(
+                self.attn_output_norm(attn_out) * F.silu(self.gate_proj(x_norm))
+            )
+        elif self.gating == "silu_gate":
             out = attn_out * F.silu(self.gate_proj(x_norm))
         elif self.gating == "glu":
             out = attn_out * torch.sigmoid(self.gate_proj(x_norm))
@@ -121,7 +143,12 @@ class HSTUBlock(nn.Module):
                 cached_v,
             )
         )
-        if self.gating == "silu_gate":
+        if self.block_variant == "hstu_reference":
+            assert self.attn_output_norm is not None
+            out = self.attn.out_proj(
+                self.attn_output_norm(attn_out) * F.silu(self.gate_proj(x_norm))
+            )
+        elif self.gating == "silu_gate":
             out = attn_out * F.silu(self.gate_proj(x_norm))
         elif self.gating == "glu":
             out = attn_out * torch.sigmoid(self.gate_proj(x_norm))
@@ -143,7 +170,12 @@ class HSTUBlock(nn.Module):
         residual = x
         x_norm = self.norm(x)
         attn_out = self.attn.forward_stale_kv(x_norm, cached_k, cached_v)
-        if self.gating == "silu_gate":
+        if self.block_variant == "hstu_reference":
+            assert self.attn_output_norm is not None
+            out = self.attn.out_proj(
+                self.attn_output_norm(attn_out) * F.silu(self.gate_proj(x_norm))
+            )
+        elif self.gating == "silu_gate":
             out = attn_out * F.silu(self.gate_proj(x_norm))
         elif self.gating == "glu":
             out = attn_out * torch.sigmoid(self.gate_proj(x_norm))

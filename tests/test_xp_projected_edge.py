@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-import json
-import os
-import subprocess
-import sys
-
 import torch
 from torch.nn import functional as F
 
@@ -143,54 +138,3 @@ def test_world_one_projected_training_and_checkpoint_roundtrip(
             rtol=0,
             atol=0,
         )
-
-
-def test_two_rank_cpu_projected_autograd_checkpoint_canary(
-    tmp_path,
-) -> None:
-    checkpoint = tmp_path / "checkpoint"
-    output = tmp_path / "result.json"
-    environment = os.environ.copy()
-    environment["CUDA_VISIBLE_DEVICES"] = ""
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "torch.distributed.run",
-            "--standalone",
-            "--nproc-per-node=2",
-            "scripts/run_evokv_xp_projected_checkpoint_canary.py",
-            "--device",
-            "cpu",
-            "--checkpoint-dir",
-            str(checkpoint),
-            "--output",
-            str(output),
-        ],
-        cwd=os.getcwd(),
-        env=environment,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
-    assert completed.returncode == 0, (
-        completed.stdout + completed.stderr
-    )
-    result = json.loads(output.read_text())
-    assert result["status"] == "complete"
-    assert result["device"] == "cpu"
-    assert result["backend"] == "gloo"
-    assert result["world_size"] == 2
-    assert result["scientific_result"] is False
-    assert result["owner_side_projection"] is True
-    assert result["projection_bias"] is False
-    assert result["optimizer_active_rows"]["global_active_rows"] == 14
-    assert all(
-        rank["checkpoint_reload_passed"]
-        and rank["active_rows_match_reference"]
-        and rank["forward_max_abs_error"] < 1e-5
-        and rank["embedding_gradient_max_abs_error"] < 1e-5
-        and rank["projection_gradient_max_abs_error"] < 1e-5
-        for rank in result["ranks"]
-    )

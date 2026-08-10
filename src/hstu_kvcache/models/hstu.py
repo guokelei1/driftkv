@@ -29,6 +29,9 @@ class HSTUConfig:
     norm_eps: float = 1e-6
     input_dropout: float = 0.1
     tie_item_embeddings: bool = True
+    block_variant: str = "legacy"
+    relative_position_bias: bool = False
+    causal_diagonal: str = "inclusive"
 
     def __post_init__(self) -> None:
         if self.num_items < 1:
@@ -37,6 +40,14 @@ class HSTUConfig:
             self.num_prediction_items = self.num_items
         if not 1 <= self.num_prediction_items <= self.num_items:
             raise ValueError("num_prediction_items must be in [1, num_items]")
+        if self.block_variant not in ("legacy", "hstu_reference"):
+            raise ValueError("block_variant differs")
+        if self.block_variant == "hstu_reference" and (
+            self.gating != "silu_gate" or self.activation != "silu"
+        ):
+            raise ValueError("hstu_reference block configuration differs")
+        if self.causal_diagonal not in ("inclusive", "exclusive"):
+            raise ValueError("causal_diagonal differs")
 
 
 class HSTU(nn.Module):
@@ -59,6 +70,11 @@ class HSTU(nn.Module):
         h = cfg.hidden_size
 
         self.item_emb = ItemEmbedding(cfg.num_items, h)
+        self.output_emb = (
+            None
+            if cfg.tie_item_embeddings
+            else ItemEmbedding(int(cfg.num_prediction_items), h)
+        )
         self.behavior_emb = BehaviorEncoder(cfg.num_behaviors, h)
         self.temporal_enc = TemporalEncoder(h, cfg.temporal_num_freqs, cfg.temporal_max_period)
         self.in_proj = nn.Linear(h, h, bias=False)
@@ -80,8 +96,19 @@ class HSTU(nn.Module):
             qk_scale=cfg.qk_scale,
             attn_dropout=cfg.attn_dropout,
             activation=cfg.activation,
+            max_seq_len=cfg.max_seq_len,
+            block_variant=cfg.block_variant,
+            relative_position_bias=cfg.relative_position_bias,
+            causal_diagonal=cfg.causal_diagonal,
         )
-        return HSTUBlock(HSTUBlockConfig(attn=attn_cfg, gating=cfg.gating, norm_eps=cfg.norm_eps))
+        return HSTUBlock(
+            HSTUBlockConfig(
+                attn=attn_cfg,
+                gating=cfg.gating,
+                norm_eps=cfg.norm_eps,
+                block_variant=cfg.block_variant,
+            )
+        )
 
     def embed_inputs(
         self,
@@ -245,7 +272,22 @@ class HSTU(nn.Module):
     ) -> torch.Tensor:
         """hidden [B, L, H] (use last position) -> scores [B, C]."""
         last = self.last_hidden(hidden, lengths)
-        return self.item_emb.score(last, candidate_ids)
+        return self.score_hidden(last, candidate_ids)
+
+    @property
+    def prediction_item_weight(self) -> torch.Tensor:
+        if self.output_emb is None:
+            return self.item_emb.weight
+        return self.output_emb.weight
+
+    def score_hidden(
+        self,
+        hidden: torch.Tensor,
+        candidate_ids: torch.Tensor,
+    ) -> torch.Tensor:
+        if self.output_emb is None:
+            return self.item_emb.score(hidden, candidate_ids)
+        return self.output_emb.score(hidden, candidate_ids)
 
     @torch.no_grad()
     def forward_with_cache_embedded(

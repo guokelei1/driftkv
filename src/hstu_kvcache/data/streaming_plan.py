@@ -66,6 +66,7 @@ class StreamingDataPlan:
         min_interactions_per_user: int = 5,
         fit_vocabulary_on_base: bool = False,
         context_hash_buckets: int = 0,
+        prediction_items_from_engaged_only: bool = False,
         history_window_days: int | None = None,
         total_num_days: int | None = None,
     ) -> StreamingDataPlan:
@@ -77,6 +78,7 @@ class StreamingDataPlan:
             max_users=max_users,
             fit_num_days=base_num_days if fit_vocabulary_on_base else None,
             context_hash_buckets=context_hash_buckets,
+            prediction_items_from_engaged_only=prediction_items_from_engaged_only,
         )
         all_dates = sorted(trace.interactions["date"].astype(str).unique())
         if total_num_days is not None:
@@ -157,22 +159,30 @@ class StreamingDataPlan:
             return None
         cap = truncate or self.max_seq_len
         n = len(hist["item_ids"])
+        window_end = n
+        if as_of_timestamp is not None:
+            window_end = int(
+                np.searchsorted(hist["timestamps"], as_of_timestamp, side="left")
+            )
+        if window_end < 1:
+            return None
         window_start = 0
         if self.history_window_days is not None and as_of_timestamp is not None:
             cutoff = as_of_timestamp - self.history_window_days * 86400 * 1000
             window_start = int(
                 np.searchsorted(hist["timestamps"], cutoff, side="left")
             )
-        available_length = n - window_start
-        start = max(window_start, n - cap)
-        if start >= n:
+        window_start = min(window_start, window_end)
+        available_length = window_end - window_start
+        start = max(window_start, window_end - cap)
+        if start >= window_end:
             return None
         return {
-            "item_ids": hist["item_ids"][start:],
-            "behaviors": hist["behaviors"][start:],
-            "time_deltas": hist["time_deltas"][start:],
-            "labels": hist["labels"][start:],
-            "timestamps": hist["timestamps"][start:],
+            "item_ids": hist["item_ids"][start:window_end],
+            "behaviors": hist["behaviors"][start:window_end],
+            "time_deltas": hist["time_deltas"][start:window_end],
+            "labels": hist["labels"][start:window_end],
+            "timestamps": hist["timestamps"][start:window_end],
             "user_id": u,
             "available_length_before_token_cap": available_length,
             "token_truncated": available_length > cap,

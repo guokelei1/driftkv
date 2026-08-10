@@ -4,6 +4,7 @@ import math
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class TemporalEncoder(nn.Module):
@@ -55,14 +56,23 @@ class ItemEmbedding(nn.Module):
         self.num_items = num_items
         self.hidden_size = hidden_size
         self.weight = nn.Parameter(torch.zeros(num_items + 1, hidden_size))
+        self.sparse_gradient = False
         nn.init.normal_(self.weight, std=0.02)
         with torch.no_grad():
             self.weight[padding_idx].fill_(0.0)
 
     def forward(self, item_ids: torch.Tensor) -> torch.Tensor:
-        return self.weight[item_ids]
+        return F.embedding(
+            item_ids,
+            self.weight,
+            sparse=self.sparse_gradient,
+        )
 
     def score(self, hidden: torch.Tensor, candidate_ids: torch.Tensor) -> torch.Tensor:
         """Dot-product scoring: hidden [.., H] x candidates [.., C, H] -> [.., C]."""
-        cand = self.weight[candidate_ids]  # [.., C, H]
+        cand = F.embedding(
+            candidate_ids,
+            self.weight,
+            sparse=self.sparse_gradient,
+        )
         return torch.einsum("...h,...ch->...c", hidden, cand)

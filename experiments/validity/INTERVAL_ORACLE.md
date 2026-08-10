@@ -100,7 +100,7 @@ that gate. The current roadmap has since replaced suffix as the active method.
 
 The corrected `frozen / full reuse / full compute` control and the subsequent KuaiRand scale gates
 have since passed. Current priorities are maintained only in
-`docs/08_core_insights_and_roadmap.md`; this historical report does not define the next phase.
+`docs/archive/08_core_insights_and_roadmap.md`; this historical report does not define the next phase.
 
 ## Artifacts
 

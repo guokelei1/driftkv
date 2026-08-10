@@ -1,7 +1,7 @@
 {
   "cleanup": {
-    "completed_at": "2026-08-03",
-    "expected_released_bytes": 195121037312,
+    "completed_at": "2026-08-05",
+    "expected_released_bytes": 642672754995,
     "retired_paths": [
       {
         "bytes": 102514917376,
@@ -44,26 +44,35 @@
         "bytes": 2301534208,
         "path": "checkpoints/evokv_design3_m1_qk_ctx512144",
         "reason": "regenerable historical D3 canary model payload"
+      },
+      {
+        "bytes": 240186998972,
+        "path": "checkpoints/evokv_xp_qk_e4096_h1536",
+        "reason": "retired QK development chain; theta0 objective, fixed ordinal windows and validation protocol do not match the active foundation training plan"
+      },
+      {
+        "bytes": 207364718711,
+        "path": "checkpoints/evokv_qb_large_mf9_e4096",
+        "reason": "retired QB development chain; fixed ordinal windows, old epoch/role protocol and incomplete chain do not match the active foundation training plan"
       }
     ],
     "status": "complete"
   },
   "created_at": "2026-08-03",
   "formal_result": false,
-  "retained_auxiliary_checkpoint_roots": [
-    {
-      "path": "checkpoints/kuairand_long_context_4plus12_exploration",
-      "reason": "supports frozen D1 single-configuration and repeated-renewal evidence"
-    },
-    {
-      "path": "checkpoints/motivation_capacity_v2",
-      "reason": "supports the completed cross-dataset motivation matrix"
-    }
-  ],
+  "legacy_small_experiment_retirement": {
+    "bytes": 3577,
+    "path": "configs/evokv_foundation/legacy_small_experiment_retirement_20260805_v0.json",
+    "recovery_path": "/data/gkl/evokv_retired_small_20260805",
+    "sha256": "655e3ae680e72f37af924d3d922dfa586e9c49fd14c220991463801cebeb6247",
+    "status": "complete"
+  },
+  "retained_auxiliary_checkpoint_roots": [],
   "schema": "evokv_selected_checkpoint_registry_development_v0",
   "scientific_result": false,
   "selected_chains": {
     "qb": {
+      "retirement_ledger": "configs/evokv_foundation/checkpoint_retirement_20260805_v1.json",
       "active_edges": [
         {
           "qualification_exact_over_reuse_sampled_ce": 0.022461739313439644,
@@ -139,9 +148,10 @@
           "sha256": "fb21c56d98de459779dd320299230acd89d9c8c84a7f5b224172d51e1e9b2218"
         }
       ],
-      "status": "selected_development_chain_theta0_to_theta3"
+      "status": "retired_rebuild_required"
     },
     "qk": {
+      "retirement_ledger": "configs/evokv_foundation/checkpoint_retirement_20260805_v1.json",
       "active_edges": [
         {
           "exact_over_reuse_sampled_ce": 0.030818740735475636,
@@ -209,8 +219,8 @@
           "sha256": "cc5a9ac273da76ed76ecbdca3317bf2a3730688df6a9b0e1926d83b3b31f133d"
         }
       ],
-      "status": "selected_development_chain_theta0_to_theta4"
+      "status": "retired_rebuild_required"
     }
   },
-  "status": "ready_for_d1_d2_d3_development"
+  "status": "rebuild_required_before_d1_d2_d3_development"
 }

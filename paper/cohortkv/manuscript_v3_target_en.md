@@ -11,8 +11,8 @@
 > paper structure, Sections 4–6 are connected components of D1; the deadline-based lifecycle in
 > Section 5 is not the current Design 2. Current D2 is fixed-action, wave-compiled segmented
 > execution over row-sharded embeddings and remains under formal evaluation. Its authoritative
-> definition and claim boundary are in `docs/08_core_insights_and_roadmap.md`,
-> `docs/eval_protocol.md`, and `docs/future_design/DESIGN2_FINAL_PLAN.md`; they must be integrated
+> definition and claim boundary are in `docs/archive/08_core_insights_and_roadmap.md`,
+> `docs/archive/eval_protocol.md`, and `docs/archive/future_design/DESIGN2_FINAL_PLAN.md`; they must be integrated
 > in a later manuscript revision rather than filled into this frozen evidence snapshot.
 
 ## Abstract

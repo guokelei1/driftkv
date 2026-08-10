@@ -1,0 +1,78 @@
+{
+  "round_id": "kuairand_true_next_item_h512_l8_t512_canary_20260810_v1",
+  "protocol": "evokv_kuairand_prediction_query_transition_v0",
+  "status": "ready_for_autonomous_execution",
+  "scientific_result": false,
+  "formal_result": false,
+  "data": {
+    "base_log": {
+      "path": "data/kuairand/log_standard_4_08_to_4_21_1k.csv",
+      "sha256": "355355897a84baa4df26b78b0271bb9a27b127a39cd7aa4a898cf86db0bc1810"
+    },
+    "stream_log": {
+      "path": "data/kuairand/log_standard_4_22_to_5_08_1k.csv",
+      "sha256": "548daf771e54e2b73086cc8e7c6f56787d44421f5026c2100421810e47ae9dd4"
+    },
+    "video_features": {
+      "path": "data/kuairand/video_features_basic_1k.csv",
+      "sha256": "18cb8b9133635a5e53d4e33b1644137b8673b615cc1aaa500b6d3d09695efae3"
+    },
+    "catalog_fit": "all_base_exposures",
+    "target_catalog_fit": "base_engaged_items",
+    "sequence_semantics": "engaged_in_catalog_actions",
+    "base_training_days": 14,
+    "base_targets_per_user_day": 1,
+    "update_targets_per_user": 4,
+    "minimum_prefix_length": 32,
+    "update_date": "20220422",
+    "evaluation_date": "20220423",
+    "selection_seed": 61031,
+    "user_limit": 32
+  },
+  "model": {
+    "field_mode": "video_author",
+    "query_mode": "last_history_item",
+    "gating": "silu_gate",
+    "hidden_size": 512,
+    "num_layers": 8,
+    "num_heads": 8,
+    "max_seq_len": 512,
+    "input_dropout": 0.1,
+    "activation": "elu_plus1",
+    "qk_scale": 1.0
+  },
+  "training": {
+    "objective": "normalized_true_next_item_sampled_softmax",
+    "negative_source": "base_exposure_frequency_matched",
+    "seeds": [53117],
+    "base_epochs": 1,
+    "update_epochs": 1,
+    "base_lr": 0.0003,
+    "update_lr": 0.0001,
+    "base_embedding_lr": 0.005,
+    "update_embedding_lr": 0.005,
+    "publish_alpha": 1.0,
+    "batch_size": 8,
+    "negative_samples": 64,
+    "negative_pool_size": 895944,
+    "temperature": 0.05,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0
+  },
+  "evaluation": {
+    "batch_size": 8,
+    "bootstrap_samples": 500,
+    "bootstrap_seed": 917341,
+    "candidate_seed": 917341,
+    "candidate_count": 50,
+    "candidate_source": "base_exposure_frequency_matched_unseen",
+    "minimum_relative_percent": 1.0,
+    "minimum_passing_ranking_metrics": 1
+  },
+  "execution": {
+    "cuda_visible_devices": "0"
+  },
+  "outputs": {
+    "root": "results/root_cause_campaign/kuairand_true_next_item_h512_l8_t512_canary_20260810_v1"
+  }
+}

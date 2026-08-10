@@ -7,6 +7,7 @@ from hstu_kvcache.migration.recursive_d1 import (
     mix_exact_cache,
     rollout_stability_certificate,
     select_depth_balanced_tokens,
+    stale_token_score_renewal,
     storage_cache,
     token_balanced_renewal,
     update_lineage,
@@ -45,6 +46,54 @@ def test_token_balanced_renewal_rotates_with_integer_cap() -> None:
         assert not observed.intersection(exact)
         observed.update(exact)
     assert observed == set(range(4096))
+
+
+def test_stale_token_score_renewal_accumulates_and_resets() -> None:
+    exact, scores, ledger = stale_token_score_renewal(
+        [(10, 40, 80), (11, 20, 20), (12, 10, 0)],
+        threshold=100,
+    )
+    assert exact == {10}
+    assert scores == {10: 0, 11: 40, 12: 10}
+    assert ledger["scheduled_exact_valid_tokens"] == 40
+    assert ledger["actual_valid_token_fraction"] == 4 / 7
+    assert ledger["sorting_used_for_selection"] is False
+    assert ledger["all_next_scores_strictly_below_threshold"] is True
+
+    exact, scores, ledger = stale_token_score_renewal(
+        [(10, 44, scores[10]), (11, 24, scores[11]), (12, 14, scores[12])],
+        threshold=100,
+    )
+    assert exact == set()
+    assert scores == {10: 44, 11: 64, 12: 24}
+    assert ledger["candidate_score_maximum"] == 64
+    assert ledger["next_score_maximum"] == 64
+
+
+def test_stale_token_score_renewal_uses_edge_weight() -> None:
+    exact, scores, ledger = stale_token_score_renewal(
+        [(1, 30, 20), (2, 10, 70)],
+        threshold=100,
+        edge_weight=2,
+    )
+    assert exact == set()
+    assert scores == {1: 80, 2: 90}
+    assert ledger["edge_weight"] == 2
+
+
+def test_stale_token_score_renewal_distinguishes_lengths_with_bounded_debt() -> None:
+    scores = {1: 0, 2: 0}
+    counts = {1: 0, 2: 0}
+    for _ in range(4):
+        exact, scores, ledger = stale_token_score_renewal(
+            [(1, 128, scores[1]), (2, 64, scores[2])],
+            threshold=256,
+        )
+        for record in exact:
+            counts[record] += 1
+        assert ledger["all_next_scores_strictly_below_threshold"] is True
+    assert counts == {1: 2, 2: 1}
+    assert scores == {1: 0, 2: 0}
 
 
 def test_depth_balanced_sampling_covers_each_available_depth() -> None:

@@ -82,6 +82,12 @@ def main() -> None:
         raise ValueError("selected checkpoint registry schema differs")
     chain_reports = {}
     for name, chain in registry["selected_chains"].items():
+        if chain.get("status") == "retired_rebuild_required":
+            chain_reports[name] = {
+                "status": "retired_rebuild_required",
+                "retirement_ledger": chain.get("retirement_ledger"),
+            }
+            continue
         checkpoint_files = 0
         durable_bytes = 0
         for entry in chain["checkpoint_manifests"]:
@@ -109,6 +115,25 @@ def main() -> None:
     for entry in registry["retained_auxiliary_checkpoint_roots"]:
         if not Path(entry["path"]).is_dir():
             raise FileNotFoundError(entry["path"])
+    retirement = registry.get("legacy_small_experiment_retirement")
+    if retirement is not None:
+        retirement_path = Path(retirement["path"])
+        if (
+            retirement.get("status") != "complete"
+            or not retirement_path.is_file()
+            or retirement_path.stat().st_size != int(retirement["bytes"])
+            or sha256(retirement_path) != retirement["sha256"]
+            or not Path(retirement["recovery_path"]).is_dir()
+        ):
+            raise ValueError("legacy small experiment retirement differs")
+        retirement_ledger = json.loads(retirement_path.read_text())
+        present = [
+            entry["path"]
+            for entry in retirement_ledger["retired_paths"]
+            if Path(entry["path"]).exists()
+        ]
+        if present:
+            raise ValueError(f"legacy small experiment paths remain: {present}")
     if registry["cleanup"]["status"] == "complete":
         present = [
             entry["path"]

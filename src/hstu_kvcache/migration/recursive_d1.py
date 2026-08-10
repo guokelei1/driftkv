@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 import torch.distributed as dist
 
@@ -203,6 +204,78 @@ def token_balanced_renewal(
         "recommendation_metrics_read": False,
     }
     return exact_ids, ledger
+
+
+def stale_token_score_renewal(
+    records: Sequence[tuple[int, int, int]],
+    *,
+    threshold: int,
+    edge_weight: int = 1,
+) -> tuple[set[int], dict[int, int], dict[str, object]]:
+    if not records or threshold < 1 or edge_weight < 1:
+        raise ValueError("recursive D1 score renewal request differs")
+    record_ids = [int(value[0]) for value in records]
+    if (
+        len(record_ids) != len(set(record_ids))
+        or any(
+            int(tokens) < 1 or int(score) < 0
+            for _, tokens, score in records
+        )
+    ):
+        raise ValueError("recursive D1 score renewal records differ")
+    candidates = {
+        int(record_id): int(score) + edge_weight * int(tokens)
+        for record_id, tokens, score in records
+    }
+    exact_ids = {
+        record_id
+        for record_id, candidate in candidates.items()
+        if candidate >= threshold
+    }
+    next_scores = {
+        record_id: 0 if record_id in exact_ids else candidate
+        for record_id, candidate in candidates.items()
+    }
+    total_tokens = sum(int(tokens) for _, tokens, _ in records)
+    exact_tokens = sum(
+        int(tokens)
+        for record_id, tokens, _ in records
+        if int(record_id) in exact_ids
+    )
+    score_values = np.fromiter(candidates.values(), dtype=np.int64)
+    next_score_values = np.fromiter(next_scores.values(), dtype=np.int64)
+
+    def percentile(fraction: float) -> int:
+        index = min(len(score_values) - 1, math.ceil(fraction * len(score_values)) - 1)
+        return int(np.partition(score_values, index)[index])
+
+    ledger = {
+        "policy": "cumulative_stale_token_score_threshold",
+        "score_threshold": threshold,
+        "edge_weight": edge_weight,
+        "score_unit": "valid_token_model_update",
+        "records": len(records),
+        "total_valid_tokens": total_tokens,
+        "scheduled_exact_records": len(exact_ids),
+        "scheduled_exact_valid_tokens": exact_tokens,
+        "actual_record_fraction": len(exact_ids) / len(records),
+        "actual_valid_token_fraction": exact_tokens / total_tokens,
+        "candidate_score_minimum": int(score_values.min()),
+        "candidate_score_median": percentile(0.5),
+        "candidate_score_p95": percentile(0.95),
+        "candidate_score_maximum": int(score_values.max()),
+        "next_score_nonzero_records": sum(
+            int(value > 0) for value in next_scores.values()
+        ),
+        "next_score_maximum": int(next_score_values.max()),
+        "all_next_scores_strictly_below_threshold": bool(
+            np.all(next_score_values < threshold)
+        ),
+        "quality_labels_read": False,
+        "recommendation_metrics_read": False,
+        "sorting_used_for_selection": False,
+    }
+    return exact_ids, next_scores, ledger
 
 
 def update_lineage(

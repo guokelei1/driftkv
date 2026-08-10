@@ -19,6 +19,10 @@ class PointwiseAttentionConfig:
     attn_dropout: float = 0.0
     # Activation type: "elu_plus1" (HSTU original), "relu" (no +1 baseline, forces peaked attention)
     activation: str = "elu_plus1"
+    max_seq_len: int = 2048
+    block_variant: str = "legacy"
+    relative_position_bias: bool = False
+    causal_diagonal: str = "inclusive"
 
 
 class PointwiseAttention(nn.Module):
@@ -50,11 +54,70 @@ class PointwiseAttention(nn.Module):
         self.scale = cfg.qk_scale * (self.head_dim ** -0.5) if cfg.qk_scale != 1.0 else 1.0
         self.attn_dropout = nn.Dropout(cfg.attn_dropout) if cfg.attn_dropout > 0 else nn.Identity()
         self.activation = cfg.activation
+        self.block_variant = cfg.block_variant
+        self.causal_diagonal = cfg.causal_diagonal
+        if cfg.relative_position_bias:
+            self.position_bias = nn.Embedding(2 * cfg.max_seq_len - 1, self.num_heads)
+            nn.init.normal_(self.position_bias.weight, mean=0.0, std=0.02)
+        else:
+            self.position_bias = None
 
     def _activate(self, attn: torch.Tensor) -> torch.Tensor:
         if self.activation == "relu":
             return F.relu(attn)
+        if self.activation == "silu":
+            return F.silu(attn)
         return F.elu(attn) + 1.0
+
+    def _relative_position_bias(
+        self,
+        query_positions: torch.Tensor,
+        key_positions: torch.Tensor,
+        dtype: torch.dtype,
+    ) -> torch.Tensor | None:
+        if self.position_bias is None:
+            return None
+        offset = self.cfg.max_seq_len - 1
+        indices = key_positions.unsqueeze(0) - query_positions.unsqueeze(1) + offset
+        values = self.position_bias(indices).permute(2, 0, 1).unsqueeze(0)
+        return values.to(dtype=dtype)
+
+    def _project(self, x: torch.Tensor):
+        B, L, _ = x.shape
+        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        if self.block_variant == "hstu_reference":
+            q = F.silu(q)
+            k = F.silu(k)
+            v = F.silu(v)
+        return q, k, v
+
+    def _aggregate(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        query_positions: torch.Tensor,
+        key_positions: torch.Tensor,
+        keep: torch.Tensor,
+    ) -> torch.Tensor:
+        attn = torch.matmul(q, k.transpose(-2, -1)) * self.scale
+        bias = self._relative_position_bias(query_positions, key_positions, attn.dtype)
+        if bias is not None:
+            attn = attn + bias
+        attn = self._activate(attn)
+        if self.block_variant == "hstu_reference":
+            attn = attn / self.cfg.max_seq_len
+        attn = self.attn_dropout(attn * keep)
+        return torch.matmul(attn, v)
+
+    def _finish(self, out: torch.Tensor) -> torch.Tensor:
+        B, _, L, _ = out.shape
+        out = out.transpose(1, 2).reshape(B, L, self.inner)
+        if self.block_variant == "hstu_reference":
+            return out
+        return self.out_proj(out)
 
     def forward(
         self,
@@ -73,21 +136,10 @@ class PointwiseAttention(nn.Module):
         Returns: out [B, L, H], and optionally (k, v).
         """
         B, L, _ = x.shape
-        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        # q,k,v: [B, num_heads, L, head_dim]
-
-        attn = torch.matmul(q, k.transpose(-2, -1)) * self.scale  # [B, h, L, L]
-        attn = self._activate(attn)
-
+        q, k, v = self._project(x)
         keep = self._build_keep_mask(L, attn_mask, x.device, x.dtype)
-        attn = attn * keep  # multiplicative causal mask (0 = drop future)
-        attn = self.attn_dropout(attn)
-
-        out = torch.matmul(attn, v)  # [B, h, L, head_dim]
-        out = out.transpose(1, 2).reshape(B, L, self.inner)
-        out = self.out_proj(out)
+        positions = torch.arange(L, device=x.device)
+        out = self._finish(self._aggregate(q, k, v, positions, positions, keep))
 
         if return_kv:
             k_ret = k.transpose(1, 2).reshape(B, L, self.inner)
@@ -114,25 +166,29 @@ class PointwiseAttention(nn.Module):
         """
         B, m, _ = x_new.shape
         n = cached_k.shape[1]
-        q = self.q_proj(x_new).view(B, m, self.num_heads, self.head_dim).transpose(1, 2)
-        k_new = self.k_proj(x_new).view(B, m, self.num_heads, self.head_dim).transpose(1, 2)
-        v_new = self.v_proj(x_new).view(B, m, self.num_heads, self.head_dim).transpose(1, 2)
+        q, k_new, v_new = self._project(x_new)
         k_cached = cached_k.view(B, n, self.num_heads, self.head_dim).transpose(1, 2)
         v_cached = cached_v.view(B, n, self.num_heads, self.head_dim).transpose(1, 2)
         k_all = torch.cat([k_cached, k_new], dim=2)  # [B, h, n+m, d]
         v_all = torch.cat([v_cached, v_new], dim=2)
 
-        attn = torch.matmul(q, k_all.transpose(-2, -1)) * self.scale  # [B, h, m, n+m]
-        attn = self._activate(attn)
-        # mask: [m, n+m] - prefix all visible, new positions causal
-        mask = torch.ones(m, n + m, device=x_new.device, dtype=attn.dtype)
-        mask[:, n:] = torch.ones(m, m, device=x_new.device, dtype=attn.dtype).tril()
-        attn = attn * mask[None, None, :, :]
-        attn = self.attn_dropout(attn)
-
-        out = torch.matmul(attn, v_all)  # [B, h, m, d]
-        out = out.transpose(1, 2).reshape(B, m, self.inner)
-        out = self.out_proj(out)
+        mask = torch.ones(m, n + m, device=x_new.device, dtype=x_new.dtype)
+        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
+        mask[:, n:] = torch.ones(
+            m, m, device=x_new.device, dtype=x_new.dtype
+        ).tril(diagonal=diagonal)
+        query_positions = torch.arange(n, n + m, device=x_new.device)
+        key_positions = torch.arange(n + m, device=x_new.device)
+        out = self._finish(
+            self._aggregate(
+                q,
+                k_all,
+                v_all,
+                query_positions,
+                key_positions,
+                mask[None, None, :, :],
+            )
+        )
         k_all_flat = k_all.transpose(1, 2).reshape(B, n + m, self.inner)
         v_all_flat = v_all.transpose(1, 2).reshape(B, n + m, self.inner)
         return out, (k_all_flat, v_all_flat)
@@ -145,61 +201,32 @@ class PointwiseAttention(nn.Module):
     ):
         B, m, _ = x_new.shape
         n = cached_k.shape[1]
-        q = self.q_proj(x_new).view(
-            B,
-            m,
-            self.num_heads,
-            self.head_dim,
+        q, k_new, v_new = self._project(x_new)
+        k_cached = cached_k.view(
+            B, n, self.num_heads, self.head_dim
         ).transpose(1, 2)
-        k_new = self.k_proj(x_new).view(
-            B,
-            m,
-            self.num_heads,
-            self.head_dim,
+        v_cached = cached_v.view(
+            B, n, self.num_heads, self.head_dim
         ).transpose(1, 2)
-        v_new = self.v_proj(x_new).view(
-            B,
-            m,
-            self.num_heads,
-            self.head_dim,
-        ).transpose(1, 2)
-        if n:
-            k_cached = cached_k.view(
-                B,
-                n,
-                self.num_heads,
-                self.head_dim,
-            ).transpose(1, 2)
-            v_cached = cached_v.view(
-                B,
-                n,
-                self.num_heads,
-                self.head_dim,
-            ).transpose(1, 2)
-            prefix_attention = self._activate(
-                torch.matmul(q, k_cached.transpose(-2, -1))
-                * self.scale
+        k_all = torch.cat([k_cached, k_new], dim=2)
+        v_all = torch.cat([v_cached, v_new], dim=2)
+        mask = torch.ones(m, n + m, device=x_new.device, dtype=x_new.dtype)
+        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
+        mask[:, n:] = torch.ones(
+            m, m, device=x_new.device, dtype=x_new.dtype
+        ).tril(diagonal=diagonal)
+        query_positions = torch.arange(n, n + m, device=x_new.device)
+        key_positions = torch.arange(n + m, device=x_new.device)
+        out = self._finish(
+            self._aggregate(
+                q,
+                k_all,
+                v_all,
+                query_positions,
+                key_positions,
+                mask[None, None, :, :],
             )
-            prefix_attention = self.attn_dropout(prefix_attention)
-            out = torch.matmul(prefix_attention, v_cached)
-            del prefix_attention
-        else:
-            out = torch.zeros_like(q)
-        suffix_attention = self._activate(
-            torch.matmul(q, k_new.transpose(-2, -1)) * self.scale
         )
-        causal = torch.ones(
-            m,
-            m,
-            device=x_new.device,
-            dtype=suffix_attention.dtype,
-        ).tril()
-        suffix_attention = self.attn_dropout(
-            suffix_attention * causal[None, None, :, :]
-        )
-        out = out + torch.matmul(suffix_attention, v_new)
-        out = out.transpose(1, 2).reshape(B, m, self.inner)
-        out = self.out_proj(out)
         k_new_flat = k_new.transpose(1, 2).reshape(B, m, self.inner)
         v_new_flat = v_new.transpose(1, 2).reshape(B, m, self.inner)
         return out, (k_new_flat, v_new_flat)
@@ -223,17 +250,24 @@ class PointwiseAttention(nn.Module):
         Returns: out [B, L, H].
         """
         B, L, _ = x.shape
-        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        q, _, _ = self._project(x)
         k = cached_k.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         v = cached_v.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        attn = torch.matmul(q, k.transpose(-2, -1)) * self.scale  # [B, h, L, L]
-        attn = self._activate(attn)
-        causal = torch.ones(L, L, device=x.device, dtype=attn.dtype).tril()
-        attn = attn * causal[None, None, :, :]
-        attn = self.attn_dropout(attn)
-        out = torch.matmul(attn, v)
-        out = out.transpose(1, 2).reshape(B, L, self.inner)
-        return self.out_proj(out)
+        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
+        causal = torch.ones(L, L, device=x.device, dtype=x.dtype).tril(
+            diagonal=diagonal
+        )
+        positions = torch.arange(L, device=x.device)
+        return self._finish(
+            self._aggregate(
+                q,
+                k,
+                v,
+                positions,
+                positions,
+                causal[None, None, :, :],
+            )
+        )
 
     def _build_keep_mask(
         self,
@@ -248,5 +282,8 @@ class PointwiseAttention(nn.Module):
                 keep = keep[None, None, :, :]
             return keep
         # default: strict causal lower-triangular (position i attends to j <= i)
-        causal = torch.ones(L, L, device=device, dtype=dtype).tril()
+        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
+        causal = torch.ones(L, L, device=device, dtype=dtype).tril(
+            diagonal=diagonal
+        )
         return causal[None, None, :, :]

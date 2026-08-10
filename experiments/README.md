@@ -6,9 +6,9 @@ do not define the current EvoKV architecture or next task.
 
 Use:
 
-1. [../docs/08_core_insights_and_roadmap.md](../docs/08_core_insights_and_roadmap.md) for the
+1. [../docs/archive/08_core_insights_and_roadmap.md](../docs/archive/08_core_insights_and_roadmap.md) for the
    current interpretation and roadmap;
-2. [../docs/eval_protocol.md](../docs/eval_protocol.md) for valid protocol families and
+2. [../docs/archive/eval_protocol.md](../docs/archive/eval_protocol.md) for valid protocol families and
    comparability;
 3. the individual record for commands, artifacts, metrics, and limitations.
 
@@ -87,7 +87,7 @@ negative evidence and must not be pooled with another protocol.
 Stage 4's normalized source is a negative economics result. Stage 4.5 is a hot-HBM direct-old-K/V
 result. Stages 4.7/4.8 use an older append accounting boundary. Stage 4.10 is an unselected
 two-edge smoke. Consult the D1 evidence ledger before using any number:
-[../docs/09_single_configuration_full_chain_plan.md](../docs/09_single_configuration_full_chain_plan.md).
+[../docs/archive/09_single_configuration_full_chain_plan.md](../docs/archive/09_single_configuration_full_chain_plan.md).
 
 ## Historical system prototypes
 
@@ -105,7 +105,7 @@ superseded. They do not define current D2 or D3.
 ## D2 development
 
 Current D2 development artifacts are indexed in
-[../docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md](../docs/future_design/DESIGN2_DEVELOPMENT_STATUS.md).
+[../docs/archive/future_design/DESIGN2_DEVELOPMENT_STATUS.md](../docs/archive/future_design/DESIGN2_DEVELOPMENT_STATUS.md).
 They are intentionally not represented as a formal paper-result record because no D2 protocol is
 frozen yet. W3 integrated timings, full-payload validation, and synthetic lookup contention remain
 `scientific_result=false`.
@@ -113,9 +113,9 @@ frozen yet. W3 integrated timings, full-payload validation, and synthetic lookup
 ## D3
 
 There is no frozen D3 paper-result record. The historical two-A40 M0/M1 mechanism chain follows
-[../docs/future_design/DESIGN3_FUTURE_DIRECTION.md](../docs/future_design/DESIGN3_FUTURE_DIRECTION.md)
+[../docs/archive/future_design/DESIGN3_FUTURE_DIRECTION.md](../docs/archive/future_design/DESIGN3_FUTURE_DIRECTION.md)
 and its concrete
-[foundation/exploration plan](../docs/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) by
+[foundation/exploration plan](../docs/archive/future_design/DESIGN3_FOUNDATION_AND_EXPLORATION_PLAN.md) by
 retaining the minimal H12/W2 `WorkManifest`, S0/S1, segmented-I/O, route-aware ResidencyPlan, and
 grouped contribution diagnostics under `configs/evokv_d3/development/` and `results/system/`.
 Their old D3-specific checkpoint copies were retired on 2026-08-03; compact results and mechanism

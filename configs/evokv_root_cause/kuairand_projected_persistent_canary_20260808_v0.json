@@ -1,0 +1,108 @@
+{
+  "checkpoint": {
+    "expected_global_parameter_bytes": 748855040,
+    "minimum_free_bytes": 2147483648,
+    "versions": 1,
+    "write_reserve_bytes": 1073741824
+  },
+  "data": {
+    "user_limit": null
+  },
+  "evaluation": {
+    "candidate_count": 100,
+    "local_batch_size": 16,
+    "targets_per_user": 4
+  },
+  "execution": {
+    "minimum_workspace_bytes": 4294967296,
+    "world_size": 2
+  },
+  "formal_result": false,
+  "model": {
+    "embedding_seed": 91843,
+    "embedding_width": 64,
+    "extra_embedding_std": 0.001,
+    "extra_projection_std": 0.00001,
+    "hidden_size": 64,
+    "num_heads": 2,
+    "num_layers": 2,
+    "projection_seed": 91849,
+    "require_single_card_overflow": false
+  },
+  "outputs": {
+    "checkpoint_root": "checkpoints/evokv_kuairand_projected_mechanism_canary_20260808_v1",
+    "root": "results/opportunity_discovery/evokv_kuairand_projected_mechanism_canary_20260808_v1"
+  },
+  "parent": {
+    "base_config": {
+      "path": "configs/evokv_root_cause/kuairand_prediction_query_full_replication_20260808_v7.json",
+      "sha256": "368061e56f8cedb92ae9c00b89862b8e76f49e9ec874739e6c1152e6dd019e9f"
+    },
+    "theta0": {
+      "path": "results/opportunity_discovery/evokv_kuairand_query_20260808_v0/full_replication_alpha075/checkpoints/seed_53117/theta0.pt",
+      "sha256": "70bf99721efde067852d6843784e753dbfab231995dc65de090588491155a151"
+    }
+  },
+  "protocol": "evokv_kuairand_projected_persistent_chain_v0",
+  "round_id": "kuairand_projected_mechanism_canary_20260808_v1",
+  "scientific_result": false,
+  "selection": {
+    "metrics": [
+      "ndcg_at_5"
+    ],
+    "minimum_relative_percent": 1.0,
+    "minimum_stream_mean_relative_percent": 3.0,
+    "maximum_consecutive_below_preferred": 1,
+    "positive_metrics": [
+      "mrr",
+      "ndcg_at_5",
+      "hit_rate_at_5"
+    ],
+    "preferred_relative_percent": 3.0,
+    "report_metrics": [
+      "mrr",
+      "ndcg_at_5",
+      "hit_rate_at_5"
+    ],
+    "stream_mean_start_version": 2
+  },
+  "status": "ready_for_autonomous_execution",
+  "training": {
+    "calibration_dense_lr": 0.0001,
+    "calibration_embedding_lr": 0.01,
+    "calibration_examples": 512,
+    "calibration_projection_lr": 0.0001,
+    "candidate_ladder": [
+      {
+        "dense_lr": 0.0005,
+        "embedding_lr": 0.04,
+        "maximum_update_examples": 8192,
+        "name": "unused_canary_fallback",
+        "projection_lr": 0.0005,
+        "update_epochs": 2
+      }
+    ],
+    "initial_candidate": {
+      "dense_lr": 0.0001,
+      "embedding_lr": 0.01,
+      "examples_per_user": 8,
+      "kv_lr": 0.001,
+      "maximum_update_examples": 8192,
+      "name": "theta1_mechanism_canary_recent8_kv",
+      "projection_lr": 0.0001,
+      "sampling": "recent_per_user",
+      "update_epochs": 2
+    },
+    "local_batch_size": 8,
+    "seed": 53117,
+    "weight_decay": 0.0001
+  },
+  "transitions": [
+    {
+      "evaluation_date": "20220423",
+      "source_version": 0,
+      "target_version": 1,
+      "update_date": "20220422"
+    }
+  ]
+}

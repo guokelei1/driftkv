@@ -1,0 +1,242 @@
+{
+  "protocol": "evokv_kuairand_projected_persistent_chain_v0",
+  "round_id": "kuairand_stationary_next1_theta5_theta10_20260809_v1",
+  "status": "ready_for_autonomous_execution",
+  "scientific_result": false,
+  "formal_result": false,
+  "parent": {
+    "base_config": {
+      "path": "configs/evokv_root_cause/kuairand_prediction_query_full_replication_20260808_v7.json",
+      "sha256": "368061e56f8cedb92ae9c00b89862b8e76f49e9ec874739e6c1152e6dd019e9f"
+    },
+    "theta0": {
+      "path": "results/opportunity_discovery/evokv_kuairand_query_20260808_v0/full_replication_alpha075/checkpoints/seed_53117/theta0.pt",
+      "sha256": "70bf99721efde067852d6843784e753dbfab231995dc65de090588491155a151"
+    }
+  },
+  "model": {
+    "embedding_seed": 91843,
+    "embedding_width": 4160,
+    "extra_embedding_std": 0.001,
+    "extra_projection_std": 0.00001,
+    "hidden_size": 64,
+    "num_heads": 2,
+    "num_layers": 2,
+    "projection_seed": 91849,
+    "require_single_card_overflow": true
+  },
+  "data": {
+    "user_limit": null
+  },
+  "training": {
+    "calibration_dense_lr": 0.0001,
+    "calibration_embedding_lr": 0.01,
+    "calibration_examples": 512,
+    "calibration_kv_lr": 0.0001,
+    "calibration_projection_lr": 0.0001,
+    "local_batch_size": 4,
+    "seed": 53117,
+    "weight_decay": 0.0001,
+    "checkpoint_policy": "quality_gate",
+    "initial_candidate": {
+      "name": "theta1_warmup_n8192_e2",
+      "update_epochs": 2,
+      "maximum_update_examples": 8192,
+      "embedding_lr": 0.01,
+      "projection_lr": 0.0001,
+      "dense_lr": 0.0001
+    },
+    "candidate_ladder": [
+      {
+        "name": "next1_half_recent16",
+        "update_epochs": 2,
+        "maximum_update_examples": 16384,
+        "embedding_lr": 0.02,
+        "projection_lr": 0.00025,
+        "dense_lr": 0.00075,
+        "kv_lr": 0.0005,
+        "sampling": "recent_per_user",
+        "examples_per_user": 16,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_upper_recent16",
+        "update_epochs": 2,
+        "maximum_update_examples": 16384,
+        "embedding_lr": 0.06,
+        "projection_lr": 0.001,
+        "dense_lr": 0.001,
+        "kv_lr": 0.002,
+        "sampling": "recent_per_user",
+        "examples_per_user": 16,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_weak_global",
+        "update_epochs": 2,
+        "maximum_update_examples": 8192,
+        "embedding_lr": 0.04,
+        "projection_lr": 0.0005,
+        "dense_lr": 0.0005,
+        "kv_lr": 0.001,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_upper_global",
+        "update_epochs": 2,
+        "maximum_update_examples": 12288,
+        "embedding_lr": 0.06,
+        "projection_lr": 0.001,
+        "dense_lr": 0.001,
+        "kv_lr": 0.002,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_mid_recent16",
+        "update_epochs": 2,
+        "maximum_update_examples": 16384,
+        "embedding_lr": 0.05,
+        "projection_lr": 0.00075,
+        "dense_lr": 0.00075,
+        "kv_lr": 0.0015,
+        "sampling": "recent_per_user",
+        "examples_per_user": 16,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_half_recent8",
+        "update_epochs": 2,
+        "maximum_update_examples": 8192,
+        "embedding_lr": 0.02,
+        "projection_lr": 0.00025,
+        "dense_lr": 0.00075,
+        "kv_lr": 0.0005,
+        "sampling": "recent_per_user",
+        "examples_per_user": 8,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_upper_recent8",
+        "update_epochs": 2,
+        "maximum_update_examples": 8192,
+        "embedding_lr": 0.06,
+        "projection_lr": 0.001,
+        "dense_lr": 0.001,
+        "kv_lr": 0.002,
+        "sampling": "recent_per_user",
+        "examples_per_user": 8,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_kv002_recent8",
+        "update_epochs": 2,
+        "maximum_update_examples": 8192,
+        "embedding_lr": 0.04,
+        "projection_lr": 0.0005,
+        "dense_lr": 0.0005,
+        "kv_lr": 0.002,
+        "sampling": "recent_per_user",
+        "examples_per_user": 8,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      },
+      {
+        "name": "next1_upper_recent16_e3",
+        "update_epochs": 3,
+        "maximum_update_examples": 16384,
+        "embedding_lr": 0.06,
+        "projection_lr": 0.001,
+        "dense_lr": 0.001,
+        "kv_lr": 0.002,
+        "sampling": "recent_per_user",
+        "examples_per_user": 16,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [0.05]
+      }
+    ]
+  },
+  "evaluation": {
+    "candidate_count": 100,
+    "local_batch_size": 8,
+    "targets_per_user": 1
+  },
+  "execution": {
+    "minimum_workspace_bytes": 8589934592,
+    "world_size": 2
+  },
+  "selection": {
+    "group_metric": "ndcg_at_5",
+    "groups": [[2, 4], [5, 7], [8, 10]],
+    "metrics": ["ndcg_at_5"],
+    "minimum_group_mean_relative_percent": 3.0,
+    "minimum_relative_percent": 1.0,
+    "positive_metrics": ["mrr", "ndcg_at_5", "hit_rate_at_5"],
+    "report_metrics": ["mrr", "ndcg_at_5", "hit_rate_at_5"]
+  },
+  "lineage_selection": {
+    "versions": [5, 6, 7, 8, 9, 10],
+    "tuning_fraction": 0.5,
+    "split_seed": 20260809241,
+    "tuning_bootstrap_samples": 200,
+    "minimum_adjacent_relative_percent": 3.0,
+    "minimum_lineage_mean_relative_percent": 3.0,
+    "maximum_lineage_relative_percent": 100.0,
+    "minimum_lineage_positive_fraction": 1.0,
+    "candidate_order": [
+      "next1_half_recent16",
+      "next1_upper_recent16",
+      "next1_weak_global",
+      "next1_upper_global",
+      "next1_mid_recent16",
+      "next1_half_recent8",
+      "next1_upper_recent8",
+      "next1_kv002_recent8",
+      "next1_upper_recent16_e3"
+    ],
+    "primary_metric": "ndcg_at_5",
+    "positive_ranking_metrics": ["ndcg_at_5"],
+    "lineage_mean_metrics": ["ndcg_at_5"],
+    "minimum_fresh_metrics": {
+      "mrr": 0.09,
+      "ndcg_at_5": 0.08,
+      "hit_rate_at_5": 0.12
+    },
+    "require_candidate_ce_positive": false,
+    "require_fresh_update_ranking_positive": false
+  },
+  "checkpoint": {
+    "compatible_config_sha256": [
+      "48c4e69177cfe17a9681da21e3b9491f49ebbb588f2559eb3d92e10ce718bf6f",
+      "0e3435719cf7b810cb7b028752227c85f2c01a13376a586b561b6a99c68e4dba",
+      "ae54f64723ae1c47229663fbfa5e9e70e908e2617b094870af13b1cd2698ee9f"
+    ],
+    "expected_global_parameter_bytes": 48665534208,
+    "imported_prefix_versions": 4,
+    "minimum_free_bytes": 120000000000,
+    "versions": 10,
+    "write_reserve_bytes": 68719476736
+  },
+  "outputs": {
+    "checkpoint_root": "checkpoints/evokv_kuairand_stationary_prefix_low_seed53117_v0",
+    "root": "results/root_cause_campaign/kuairand_stationary_prefix_low_seed53117_v0"
+  },
+  "transitions": [
+    {"source_version": 0, "target_version": 1, "update_date": "20220422", "evaluation_date": "20220423"},
+    {"source_version": 1, "target_version": 2, "update_date": "20220423", "evaluation_date": "20220424"},
+    {"source_version": 2, "target_version": 3, "update_date": "20220424", "evaluation_date": "20220425"},
+    {"source_version": 3, "target_version": 4, "update_date": "20220425", "evaluation_date": "20220426"},
+    {"source_version": 4, "target_version": 5, "update_date": "20220426", "evaluation_date": "20220427"},
+    {"source_version": 5, "target_version": 6, "update_date": "20220427", "evaluation_date": "20220428"},
+    {"source_version": 6, "target_version": 7, "update_date": "20220428", "evaluation_date": "20220429"},
+    {"source_version": 7, "target_version": 8, "update_date": "20220429", "evaluation_date": "20220430"},
+    {"source_version": 8, "target_version": 9, "update_date": "20220430", "evaluation_date": "20220501"},
+    {"source_version": 9, "target_version": 10, "update_date": "20220501", "evaluation_date": "20220502"}
+  ]
+}

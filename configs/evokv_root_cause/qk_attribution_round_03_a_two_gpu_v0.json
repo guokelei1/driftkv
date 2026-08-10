@@ -1,0 +1,104 @@
+{
+  "protocol": "evokv_root_cause_qk_attribution_v0",
+  "status": "ready_for_autonomous_execution",
+  "round_id": "round_03_a_qk_attribution",
+  "scope": "development_attribution",
+  "scientific_result": false,
+  "formal_result": false,
+  "campaign": {
+    "path": "configs/evokv_root_cause/root_cause_campaign_20260807_v0.json",
+    "sha256": "1f5ee5add427691c762ad31ea906c2366f2bc521795330d17308be496b5335d1"
+  },
+  "canary": {
+    "result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution_canary/result.json",
+    "result_sha256": "b214849dcc8b1ce9ed00cb59624bd4e3e86d4d772d824d04015f00c05ddc8dfe",
+    "decision": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution_canary/decision.json",
+    "decision_sha256": "9fb35827c6a83d2e140c69eddaf84cd0bb53c026bc3a27b5c54d9454b234cef3"
+  },
+  "data": {
+    "corpus": "data/processed/evokv_foundation/qk_theta0_theta7_stream_v0.npz",
+    "corpus_sha256": "973008eec1dd4e0efbbedcca0bc2cf58f6e91db4edf18e8e629a9af2b0f81ae6",
+    "role": "stream_train",
+    "edge": 2,
+    "optimizer_participants_only": true,
+    "require_evaluation_positive": true,
+    "sampling_seed": 2026080711,
+    "sampling": "rank-local PCG64 permutation without replacement, then record-order execution",
+    "record_limit_per_rank": 512
+  },
+  "checkpoints": {
+    "theta0": {
+      "root": "checkpoints/evokv_qk_next_item_e4096_h1536/seed0",
+      "version": 0,
+      "manifest_sha256": "3ee24a4a0f72408b94c40521df4fc005d8b29ec4fc7565a2eb1efe399e0b6228"
+    },
+    "theta1": {
+      "root": "checkpoints/evokv_qk_next_item_e4096_h1536/seed0/.theta_1_branch_a_e3_lr100_20260806_round1_work",
+      "version": 1,
+      "manifest_sha256": "5007dc5e8a28244c671e1cf5aa62f5ec0366bdf2f3ea3646d96cae9a2239642e"
+    },
+    "theta2": {
+      "root": "checkpoints/evokv_qk_next_item_e4096_h1536/seed0/.qk_theta2_update_relevance_20260806_round1_theta2_relevance_e2_lr075_n32_work",
+      "version": 2,
+      "manifest_sha256": "82f8e49ab34aab2b7f77c53e7538edb26d7b21263ac81c4f11b54e69ce3e8a3e"
+    }
+  },
+  "interventions": {
+    "methods": [
+      "fresh_theta2",
+      "stale_theta1",
+      "direct_theta0",
+      "recursive_theta0_theta1",
+      "zero_prefix",
+      "no_prefix",
+      "wrong_user_fresh",
+      "shuffled_prefix",
+      "recent_4",
+      "recent_16",
+      "recent_64",
+      "embedding_table_update_only",
+      "projection_update_only",
+      "embedding_projection_update",
+      "kv_projection_update_only",
+      "non_kv_dense_update_only"
+    ],
+    "metric_pairs": [
+      ["stale_theta1", "fresh_theta2"],
+      ["direct_theta0", "recursive_theta0_theta1"],
+      ["zero_prefix", "no_prefix"],
+      ["wrong_user_fresh", "shuffled_prefix"],
+      ["recent_4", "recent_16"],
+      ["recent_64", "embedding_table_update_only"],
+      ["projection_update_only", "embedding_projection_update"],
+      ["kv_projection_update_only", "non_kv_dense_update_only"]
+    ],
+    "recent_lengths": [4, 16, 64],
+    "shuffle_seed": 2026080713,
+    "cache_endpoint": "FP16 storage followed by FP32 consumption",
+    "recursive_semantics": "theta0 exact prefix through edge1 boundary, theta1 append through edge2 boundary, theta2 serving",
+    "hybrid_base": "theta1 cache producer with exactly one declared theta2 parameter group substituted"
+  },
+  "quality": {
+    "candidate_set": "all_prediction_items",
+    "target_chunk": 8,
+    "full_catalog_item_chunk": 32768,
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 2026080717
+  },
+  "execution": {
+    "world_size": 2,
+    "cuda_visible_devices": "0,1",
+    "snapshot_batch_size_per_rank": 8,
+    "minimum_free_hbm_bytes_per_rank": 37580963840,
+    "minimum_free_disk_bytes": 107374182400,
+    "estimated_wall_minutes": [25, 75]
+  },
+  "outputs": {
+    "round_root": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution",
+    "preflight": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution/preflight.json",
+    "result": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution/result.json",
+    "validation": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution/validation.json",
+    "decision": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution/decision.json",
+    "log": "results/root_cause_campaign/evokv_root_cause_20260807_v0/round_03_a_qk_attribution/run.log"
+  }
+}

@@ -98,7 +98,7 @@ There are also concrete negatives:
 
 Terminal optimization, the held-out contiguous-interval oracle, streaming value control, and the
 subsequent KuaiRand scale gates are complete. Current priorities are maintained only in
-`docs/08_core_insights_and_roadmap.md`; this historical report does not define the next phase.
+`docs/archive/08_core_insights_and_roadmap.md`; this historical report does not define the next phase.
 
 ## Artifacts
 

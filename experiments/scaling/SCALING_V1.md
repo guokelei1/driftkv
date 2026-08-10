@@ -1,7 +1,7 @@
 # Scaling-v1: fixed optimized suffix
 
 > Historical structural-baseline record. The fixed suffix is not the active D1 method; current
-> interpretation is maintained in `docs/08_core_insights_and_roadmap.md`.
+> interpretation is maintained in `docs/archive/08_core_insights_and_roadmap.md`.
 
 ## Scope
 
@@ -142,7 +142,7 @@ Subsequent work increased both data/model scale and repaired latest-only base-da
 full is a fidelity reference but not always a ranking-quality ceiling, so the “above 100% is
 noise” shorthand is retired. A later data audit rejected Taobao UserBehavior as the primary second
 stream because it lacks true unclicked impressions. The current cross-dataset plan is maintained
-only in `docs/08_core_insights_and_roadmap.md`.
+only in `docs/archive/08_core_insights_and_roadmap.md`.
 
 ## Artifacts
 

@@ -1,0 +1,43 @@
+{
+  "schema": "evokv_qk_theta1_checkpoint_retirement_v0",
+  "status": "completed",
+  "created_at": "2026-08-06",
+  "completed_at": "2026-08-06",
+  "reason": "The one-epoch theta1 candidate undertrains window 1 relative to the theta0 bootstrap and is superseded by an epoch-by-learning-rate intensity sweep. Compact training and evaluation evidence is retained; only the reproducible checkpoint payload is retired.",
+  "retired_checkpoint": {
+    "path": "checkpoints/evokv_qk_next_item_e4096_h1536/seed0/.theta_1_reuse_recompute_full_catalog_20260805_round1_work",
+    "version": 1,
+    "manifest_sha256": "899b4d4bb1205ccccad0322923d8f99095ee93df443a71af43eb9d698f5c425f",
+    "bytes_before_removal": 50372470871,
+    "file_count_before_removal": 9,
+    "training_epochs": 1,
+    "dense_learning_rate": 0.000015,
+    "projection_learning_rate": 0.000015,
+    "embedding_learning_rate": 0.00015,
+    "recoverability": "rerun scripts/run_evokv_qk_theta1_full_catalog_round.sh from the retained theta0 checkpoint and stream corpus"
+  },
+  "retained_compact_results": [
+    {
+      "path": "results/foundation_model/qk_theta1/qk_theta1_reuse_recompute_full_catalog_20260805_round1/result.json",
+      "sha256": "13d3b5e1f9224d558d70b1fb058e85adc5f596a4af0698b75750ab5b7477e49c"
+    },
+    {
+      "path": "results/foundation_model/qk_theta1/qk_theta1_stream_sensitivity_20260806_round1/result.json",
+      "sha256": "cae156cc98f1207133ab6227b804b0e38647e2d30d7af0f2b1448e6ef087970a"
+    },
+    {
+      "path": "results/foundation_model/qk_theta1/qk_theta1_candidate_protocol_sweep_20260806_round1/result.json",
+      "sha256": "6f3ebd3f96de9366ef95d337512d53575885e4cec14591dd8f59a49434d7db28"
+    },
+    {
+      "path": "results/foundation_model/qk_theta1/qk_theta1_stream_alignment_20260806_round1/result.json",
+      "sha256": "5d01fe99668698be21d40d36ee98645d26a600d37e3739f9c096f3a33600a5c4"
+    }
+  ],
+  "preserved_inputs": [
+    "checkpoints/evokv_qk_next_item_e4096_h1536/seed0/theta_0",
+    "data/processed/evokv_foundation/qk_theta0_theta7_stream_v0.npz",
+    "configs/evokv_foundation/qk_theta0_theta7_stream_data_v0.json",
+    "configs/evokv_foundation/qk_theta0_theta7_stream_roles_v0.json"
+  ]
+}

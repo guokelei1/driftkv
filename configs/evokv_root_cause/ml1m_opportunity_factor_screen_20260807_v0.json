@@ -1,0 +1,74 @@
+{
+  "data": {
+    "path": "data/movielens/pilot20",
+    "selection_seed": 81731,
+    "user_limit": 1024
+  },
+  "evaluation": {
+    "batch_size": 64,
+    "bootstrap_samples": 4000,
+    "bootstrap_seed": 73191
+  },
+  "execution": {
+    "cuda_visible_devices": "0",
+    "require_cuda": true,
+    "world_size": 1
+  },
+  "model": {
+    "hidden_size": 64,
+    "input_dropout": 0.1,
+    "legacy_activation": "relu",
+    "legacy_gating": "silu_gate",
+    "legacy_qk_scale": 1.0,
+    "max_seq_len": 128,
+    "num_heads": 4,
+    "num_items": 3883,
+    "num_layers": 2,
+    "output_dropout": 0.0
+  },
+  "outputs": {
+    "root": "results/opportunity_discovery/evokv_opportunity_discovery_20260807_v0/round_04_a_ml1m_factor_screen"
+  },
+  "protocol": "evokv_ml1m_opportunity_factor_screen_v0",
+  "round_id": "round_04_a_ml1m_factor_screen",
+  "scientific_result": false,
+  "status": "ready_for_autonomous_execution",
+  "training": {
+    "base_epochs": 3,
+    "base_lr": 0.001,
+    "batch_size": 32,
+    "gradient_clip_norm": 1.0,
+    "negative_samples": 128,
+    "seed": 4217,
+    "temperature": 0.05,
+    "update_epochs": 5,
+    "update_lr": 0.0005,
+    "weight_decay": 0.0001
+  },
+  "variants": [
+    {
+      "architecture": "legacy",
+      "id": "a0_legacy_raw_full",
+      "normalized_scoring": false,
+      "update_scope": "full"
+    },
+    {
+      "architecture": "legacy",
+      "id": "a1_legacy_normalized_full",
+      "normalized_scoring": true,
+      "update_scope": "full"
+    },
+    {
+      "architecture": "dense_hstu_v2",
+      "id": "a2_dense_normalized_full",
+      "normalized_scoring": true,
+      "update_scope": "full"
+    },
+    {
+      "architecture": "dense_hstu_v2",
+      "id": "a3_dense_normalized_blocks",
+      "normalized_scoring": true,
+      "update_scope": "blocks"
+    }
+  ]
+}

@@ -1,0 +1,325 @@
+{
+  "round_id": "kuairand_coordinate_aligned_chain_m0_m7_20260810_v2_strong",
+  "protocol": "evokv_kuairand_projected_persistent_chain_v0",
+  "status": "ready_for_autonomous_execution",
+  "scientific_result": false,
+  "formal_result": false,
+  "execution": {
+    "world_size": 2,
+    "minimum_workspace_bytes": 8589934592
+  },
+  "parent": {
+    "base_config": {
+      "path": "configs/evokv_root_cause/kuairand_prediction_query_full_replication_20260808_v7.json",
+      "sha256": "368061e56f8cedb92ae9c00b89862b8e76f49e9ec874739e6c1152e6dd019e9f"
+    },
+    "theta0": {
+      "path": "results/opportunity_discovery/evokv_kuairand_query_20260808_v0/full_replication_alpha075/checkpoints/seed_53117/theta0.pt",
+      "sha256": "70bf99721efde067852d6843784e753dbfab231995dc65de090588491155a151"
+    }
+  },
+  "data": {
+    "user_limit": null
+  },
+  "model": {
+    "embedding_width": 4160,
+    "hidden_size": 64,
+    "num_layers": 2,
+    "num_heads": 2,
+    "embedding_seed": 91843,
+    "projection_seed": 91849,
+    "extra_embedding_std": 0.001,
+    "extra_projection_std": 0.00001,
+    "require_single_card_overflow": true
+  },
+  "checkpoint": {
+    "versions": 12,
+    "imported_prefix_versions": 5,
+    "expected_global_parameter_bytes": 48665534208,
+    "expected_checkpoint_bytes_per_version": 49000000000,
+    "expected_sparse_checkpoint_bytes_per_version": 24000000000,
+    "embedding_storage": "sparse_delta_after_imported_prefix",
+    "compatible_config_sha256": [
+      "f254fb5efcbee1e4756aa21cfb11c668b6dbf326851e48dd24d80b49001d10eb",
+      "6700127a1fc161c319c9325b64ab9093e1b027d81da534f56bc8e622c0baddfd"
+    ],
+    "minimum_free_bytes": 250000000000,
+    "write_reserve_bytes": 50000000000
+  },
+  "evaluation": {
+    "candidate_count": 100,
+    "targets_per_user": 8,
+    "local_batch_size": 8
+  },
+  "selection": {
+    "metrics": [
+      "ndcg_at_5"
+    ],
+    "positive_metrics": [
+      "mrr",
+      "ndcg_at_5",
+      "hit_rate_at_5"
+    ],
+    "report_metrics": [
+      "mrr",
+      "ndcg_at_5",
+      "hit_rate_at_5"
+    ],
+    "minimum_relative_percent": 1.0,
+    "group_metric": "ndcg_at_5",
+    "minimum_group_mean_relative_percent": 3.0,
+    "groups": [
+      [
+        2,
+        4
+      ],
+      [
+        5,
+        8
+      ],
+      [
+        9,
+        12
+      ]
+    ]
+  },
+  "training": {
+    "seed": 53117,
+    "local_batch_size": 4,
+    "weight_decay": 0.0001,
+    "calibration_examples": 65536,
+    "calibration_embedding_lr": 0.005,
+    "calibration_projection_lr": 0.00005,
+    "calibration_dense_lr": 0.00005,
+    "calibration_kv_lr": 0.005,
+    "checkpoint_policy": "fixed_schedule",
+    "initial_candidate": {
+      "name": "imported_theta5_bootstrap_unused",
+      "update_epochs": 2,
+      "maximum_update_examples": 16384,
+      "embedding_lr": 0.001,
+      "projection_lr": 0.00001,
+      "dense_lr": 0.00001,
+      "kv_lr": 0.00001,
+      "dense_update_scope": "frozen",
+      "sampling": "global_random",
+      "temporal_training": "sequential_dates",
+      "latest_update_dates": 1,
+      "training_temperature": 0.05
+    },
+    "candidate_ladder": [
+      {
+        "name": "embedding_projection_coordinate_strong_e2",
+        "update_epochs": 2,
+        "maximum_update_examples": 16384,
+        "embedding_lr": 0.001,
+        "projection_lr": 0.00001,
+        "dense_lr": 0.00001,
+        "kv_lr": 0.00001,
+        "dense_update_scope": "frozen",
+        "sampling": "global_random",
+        "temporal_training": "sequential_dates",
+        "latest_update_dates": 1,
+        "training_temperature": 0.05,
+        "evaluation_temperatures": [
+          0.05
+        ]
+      }
+    ]
+  },
+  "lineage_selection": {
+    "versions": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "minimum_source_version": 5,
+    "tuning_fraction": 0.25,
+    "split_seed": 20260810231,
+    "tuning_bootstrap_samples": 200,
+    "minimum_adjacent_relative_percent": 2.0,
+    "minimum_lineage_mean_relative_percent": 3.0,
+    "maximum_lineage_relative_percent": 50.0,
+    "candidate_order": [
+      "embedding_projection_coordinate_strong_e2"
+    ],
+    "primary_metric": "ndcg_at_5",
+    "positive_ranking_metrics": [
+      "ndcg_at_5"
+    ],
+    "lineage_mean_metrics": [
+      "ndcg_at_5"
+    ],
+    "minimum_fresh_metrics": {
+      "mrr": 0.09,
+      "ndcg_at_5": 0.08,
+      "hit_rate_at_5": 0.12
+    },
+    "require_candidate_ce_positive": false,
+    "require_fresh_update_ranking_positive": false,
+    "minimum_lineage_positive_fraction": 0.9
+  },
+  "coordinate_drift": {
+    "mode": "cumulative_function_preserving_scale",
+    "canonicalize_before_update": true,
+    "key_log_step": 0.5,
+    "value_log_step": 1.8,
+    "selection_basis": "label_free_top10_change_target_extrapolation",
+    "calibration": {
+      "path": "results/root_cause_campaign/kuairand_stationary_coordinate_control_theta5_v1_v8_20260810_v1/screen.json",
+      "sha256": "61ed8f75b9ee984c15f5a9a8a9befcf842986a89e61053947d256fb4a717207d"
+    }
+  },
+  "outputs": {
+    "root": "results/root_cause_campaign/kuairand_coordinate_aligned_chain_m0_m7_20260810_v2",
+    "checkpoint_root": "checkpoints/evokv_kuairand_coordinate_aligned_chain_m0_m7_20260810_v2"
+  },
+  "transitions": [
+    {
+      "source_version": 0,
+      "target_version": 1,
+      "update_dates": [
+        "20220422",
+        "20220423"
+      ],
+      "update_date": "20220423",
+      "evaluation_date": "20220424"
+    },
+    {
+      "source_version": 1,
+      "target_version": 2,
+      "update_dates": [
+        "20220422",
+        "20220423",
+        "20220424",
+        "20220425"
+      ],
+      "update_date": "20220425",
+      "evaluation_date": "20220426"
+    },
+    {
+      "source_version": 2,
+      "target_version": 3,
+      "update_dates": [
+        "20220424",
+        "20220425",
+        "20220426",
+        "20220427"
+      ],
+      "update_date": "20220427",
+      "evaluation_date": "20220428"
+    },
+    {
+      "source_version": 3,
+      "target_version": 4,
+      "update_dates": [
+        "20220426",
+        "20220427",
+        "20220428",
+        "20220429"
+      ],
+      "update_date": "20220429",
+      "evaluation_date": "20220430"
+    },
+    {
+      "source_version": 4,
+      "target_version": 5,
+      "update_dates": [
+        "20220427",
+        "20220428",
+        "20220429",
+        "20220430"
+      ],
+      "update_date": "20220430",
+      "evaluation_date": "20220501"
+    },
+    {
+      "source_version": 5,
+      "target_version": 6,
+      "update_dates": [
+        "20220428",
+        "20220429",
+        "20220430",
+        "20220501"
+      ],
+      "update_date": "20220501",
+      "evaluation_date": "20220502"
+    },
+    {
+      "source_version": 6,
+      "target_version": 7,
+      "update_dates": [
+        "20220429",
+        "20220430",
+        "20220501",
+        "20220502"
+      ],
+      "update_date": "20220502",
+      "evaluation_date": "20220503"
+    },
+    {
+      "source_version": 7,
+      "target_version": 8,
+      "update_dates": [
+        "20220430",
+        "20220501",
+        "20220502",
+        "20220503"
+      ],
+      "update_date": "20220503",
+      "evaluation_date": "20220504"
+    },
+    {
+      "source_version": 8,
+      "target_version": 9,
+      "update_dates": [
+        "20220501",
+        "20220502",
+        "20220503",
+        "20220504"
+      ],
+      "update_date": "20220504",
+      "evaluation_date": "20220505"
+    },
+    {
+      "source_version": 9,
+      "target_version": 10,
+      "update_dates": [
+        "20220502",
+        "20220503",
+        "20220504",
+        "20220505"
+      ],
+      "update_date": "20220505",
+      "evaluation_date": "20220506"
+    },
+    {
+      "source_version": 10,
+      "target_version": 11,
+      "update_dates": [
+        "20220503",
+        "20220504",
+        "20220505",
+        "20220506"
+      ],
+      "update_date": "20220506",
+      "evaluation_date": "20220507"
+    },
+    {
+      "source_version": 11,
+      "target_version": 12,
+      "update_dates": [
+        "20220504",
+        "20220505",
+        "20220506",
+        "20220507"
+      ],
+      "update_date": "20220507",
+      "evaluation_date": "20220508"
+    }
+  ]
+}

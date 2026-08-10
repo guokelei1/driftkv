@@ -109,6 +109,31 @@ def test_eval_context_records_pre_cap_length_and_tail_truncation():
     assert sample["history"]["token_truncated"]
 
 
+def test_as_of_timestamp_excludes_current_and_future_events():
+    interactions = pd.DataFrame(
+        {
+            "date": ["d1", "d1", "d2", "d3"],
+            "user_idx": [1, 1, 1, 1],
+            "item_idx": [1, 2, 3, 4],
+            "behavior": [1, 1, 1, 1],
+            "label": [1, 1, 1, 1],
+            "time_ms": [1000, 2000, 3000, 4000],
+        }
+    )
+    trace = KuaiRandTrace(interactions, 1, 4, 2, {}, {})
+    plan = StreamingDataPlan(trace, ["d1"], ["d2", "d3"], max_seq_len=8)
+    plan.init_base()
+    plan.ingest_day("d2")
+    plan.ingest_day("d3")
+
+    history = plan._build_seq(1, as_of_timestamp=3000)
+
+    assert history["item_ids"].tolist() == [1, 2]
+    assert history["timestamps"].tolist() == [1000, 2000]
+    assert history["available_length_before_token_cap"] == 2
+    assert not history["token_truncated"]
+
+
 def test_eval_user_limit_preserves_first_exposure_order():
     interactions = pd.DataFrame(
         {
@@ -278,6 +303,59 @@ def test_context_hashing_preserves_long_tail_rows_but_not_targets(tmp_path: Path
     assert trace.interactions.loc[
         ~trace.interactions["is_prediction_item"], "item_idx"
     ].between(2, 9).all()
+
+
+def test_engaged_only_prediction_catalog_preserves_unengaged_context(tmp_path: Path):
+    rows = []
+    for index, (date, video_id, clicked) in enumerate(
+        [
+            (20220408, 10, 0),
+            (20220408, 10, 0),
+            (20220408, 20, 1),
+            (20220409, 10, 1),
+            (20220409, 20, 1),
+        ]
+    ):
+        rows.append(
+            {
+                "user_id": 1,
+                "video_id": video_id,
+                "time_ms": 1000 * (index + 1),
+                "date": date,
+                "hourmin": 1200,
+                "is_click": clicked,
+                "is_like": 0,
+                "is_follow": 0,
+                "is_comment": 0,
+                "is_forward": 0,
+                "is_hate": 0,
+                "long_view": 0,
+                "play_time_ms": 1000,
+                "duration_ms": 1000,
+            }
+        )
+    path = tmp_path / "log.csv"
+    pd.DataFrame(rows).to_csv(path, index=False)
+
+    trace = load_kuairand(
+        [path],
+        min_interactions_per_user=1,
+        max_items=1,
+        fit_num_days=1,
+        context_hash_buckets=4,
+        prediction_items_from_engaged_only=True,
+    )
+
+    assert trace.item_map == {20: 1}
+    assert len(trace.interactions) == 5
+    assert trace.interactions["is_prediction_item"].tolist() == [
+        False,
+        False,
+        True,
+        False,
+        True,
+    ]
+    assert trace.interactions["label"].tolist() == [0, 0, 1, 0, 1]
 
 
 def test_history_window_prunes_old_events_without_token_truncation():
