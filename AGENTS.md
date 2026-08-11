@@ -17,8 +17,10 @@
 
 - `docs/08_core_insights_and_roadmap.md` is the authoritative research state.
 - `docs/eval_protocol.md` defines valid and comparable measurements.
+- `docs/10_design1_recursive_route.md` defines the active recursive D1 route.
 - `docs/BASELINE_REPRODUCTION.md` defines the only supported rebuild path.
 - `configs/evokv_root_cause/kuairand_large_baseline_registry_20260811_v0.json` is the machine-readable selected-baseline registry.
+- `configs/evokv_d1/development/kuairand_recursive_chain_design_v0.json` is the machine-readable D1 design contract.
 - `scripts/run_evokv_kuairand_large_baseline_rebuild.sh` is the canonical verify/resume/fresh entrypoint.
 - Historical scripts and result directories are not current facts unless one of these sources names them.
 
@@ -31,6 +33,14 @@
 - Capacity: one 23,396,297×512 physical embedding space, sharded over GPU0/GPU1; 47,960,055,552 parameter bytes or 44.666 GiB.
 - Selected NDCG@5 matrix: 26/28 positive cells and 7/7 positive adjacent cells.
 - This is single-seed development evidence: `scientific_result=false`, `formal_result=false`.
+
+## Current Design 1 route
+
+- Initialize an exact theta0 cache, then execute one recursive theta0-to-theta8 trajectory.
+- Theta0-to-theta1 is a reported bootstrap diagnostic; theta1-to-theta8 supplies seven primary edges backed by the selected 8x8 baseline.
+- Every method output is the next edge's source. No hidden exact reset is allowed after theta0.
+- Report one ordered edge table, not another selected method matrix: absolute Full Recompute, Recursive Reuse and Recursive Method quality, valid gap recovery, lineage, migrated valid tokens/bytes, analytical work and separate measured GPU time.
+- Method fitting and tuning records must be disjoint from frozen qualification queries. Fitted features and deployed per-record actions are label-free; candidate-level aggregate quality on a disjoint development split may select hyperparameters.
 
 ## Experimental invariants
 

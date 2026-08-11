@@ -1,0 +1,223 @@
+{
+  "schema": "evokv_kuairand_recursive_d1_design_contract_v0",
+  "status": "ready_for_mechanism_design",
+  "created_at": "2026-08-11",
+  "scientific_result": false,
+  "formal_result": false,
+  "purpose": "Develop and evaluate one recursively deployed D1 cache-maintenance trajectory from theta0 through theta8 on the selected KuaiRand large-model baseline",
+  "bindings": {
+    "baseline_registry": {
+      "path": "configs/evokv_root_cause/kuairand_large_baseline_registry_20260811_v0.json",
+      "sha256": "11dff30ced39a2bcdc247345eeb33aea5548d685ecf341a604bba24e3f6b9823"
+    },
+    "reference_matrix": {
+      "path": "results/root_cause_campaign/kuairand_latest_query_large_capacity_lift_theta1_theta8_20260811_v37/theta1_theta8_matrix.json",
+      "sha256": "90501b84cbcc84956f6e0b1b536a43478ba3a075be4974de9b342183d00b3dc4",
+      "role": "opportunity evidence and edge-local endpoint reference, not the D1 output shape"
+    },
+    "evaluation_protocol": "docs/eval_protocol.md"
+  },
+  "execution": {
+    "allowed_devices": [
+      0,
+      1
+    ],
+    "world_size": 2,
+    "maximum_concurrent_jobs": 1,
+    "retain_full_kv_payload_between_stages": false,
+    "output_root": "results/design1/kuairand_recursive_chain_v0"
+  },
+  "serving_invariant": {
+    "concurrent_serving_models": 1,
+    "model_versions_are_sequential_updates": true,
+    "model_routing": false,
+    "cache_lineage_may_span_versions": true
+  },
+  "model_sequence": {
+    "initial_cache": {
+      "model_version": 0,
+      "state": "exact",
+      "checkpoint_role": "natural_theta0_bootstrap",
+      "checkpoint_path": "results/root_cause_campaign/kuairand_latest_item_query_fullusers_h512_l8_20260810_v10/checkpoints/seed_53117/theta0.pt"
+    },
+    "large_model_versions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "large_model_parameter_bytes": 47960055552,
+    "cache_geometry": {
+      "layers": 8,
+      "hidden_size": 512,
+      "heads": 8,
+      "maximum_valid_tokens": 512
+    },
+    "source_state_rule": "the deployed D1 output of edge theta_s_to_theta_t is the only cache source for edge theta_t_to_theta_t_plus_1",
+    "exact_reset_policy": "forbidden_after_initial_theta0",
+    "bootstrap_edge": {
+      "source_version": 0,
+      "target_version": 1,
+      "update_date": "20220422",
+      "evaluation_date": "20220423",
+      "evidence_role": "reported_bootstrap_diagnostic_outside_the_selected_8x8_primary_claim"
+    },
+    "primary_edges": [
+      {
+        "source_version": 1,
+        "target_version": 2,
+        "update_date": "20220423",
+        "evaluation_date": "20220424"
+      },
+      {
+        "source_version": 2,
+        "target_version": 3,
+        "update_date": "20220424",
+        "evaluation_date": "20220425"
+      },
+      {
+        "source_version": 3,
+        "target_version": 4,
+        "update_date": "20220425",
+        "evaluation_date": "20220426"
+      },
+      {
+        "source_version": 4,
+        "target_version": 5,
+        "update_date": "20220426",
+        "evaluation_date": "20220427"
+      },
+      {
+        "source_version": 5,
+        "target_version": 6,
+        "update_date": "20220427",
+        "evaluation_date": "20220428"
+      },
+      {
+        "source_version": 6,
+        "target_version": 7,
+        "update_date": "20220428",
+        "evaluation_date": "20220429"
+      },
+      {
+        "source_version": 7,
+        "target_version": 8,
+        "update_date": "20220429",
+        "evaluation_date": "20220430"
+      }
+    ]
+  },
+  "method_interface": {
+    "status": "open_design_space",
+    "input": "previous deployed prefix K/V, immutable lineage metadata, current model, and label-free update-side fitting data",
+    "output": "current-version-compatible prefix K/V plus explicit lineage and work accounting",
+    "allowed_action_families": [
+      "cache_transport",
+      "partial_exact_recompute",
+      "recent_token_replay",
+      "compositions_of_the_above"
+    ],
+    "forbidden_selection_inputs": [
+      "evaluation_positive_items",
+      "evaluation_candidate_labels",
+      "per_query_realized_ndcg",
+      "per_query_realized_mrr",
+      "per_query_realized_hit_rate"
+    ],
+    "fit_evaluation_separation": "method fitting and hyperparameter selection must use records disjoint from the frozen qualification queries",
+    "development_selection": "candidate-level aggregate quality may be used on a disjoint development split; labels and realized gains may never enter the fitted transport features or deployed per-record action policy",
+    "candidate_logging": "retain every attempted candidate summary, including negative results; never replace or delete cells after observing quality"
+  },
+  "comparisons": {
+    "required_endpoints": [
+      "full_recompute",
+      "recursive_reuse",
+      "recursive_method"
+    ],
+    "diagnostic_endpoint": "edge_local_reuse_from_exact_source",
+    "same_request_requirement": "all endpoints share current model, users, valid histories, query tokens, positives, and 99 frozen negatives",
+    "primary_metric": "ndcg_at_5",
+    "reported_metrics": [
+      "ndcg_at_5",
+      "mrr",
+      "hit_rate_at_5"
+    ],
+    "gap_recovery_percent": "100 * (recursive_method - recursive_reuse) / (full_recompute - recursive_reuse)",
+    "gap_recovery_validity": "report only when full_recompute_minus_recursive_reuse is positive; otherwise report NA and preserve all absolute endpoints",
+    "result_shape": "one ordered edge table and one cumulative summary, never another selected 8x8 method matrix"
+  },
+  "required_edge_accounting": {
+    "quality": [
+      "absolute endpoint values for every reported metric",
+      "method minus reuse",
+      "full recompute minus method",
+      "valid gap recovery when defined"
+    ],
+    "lineage": [
+      "source and target model version",
+      "source cache origin and migration depth",
+      "proof that the previous method output was consumed",
+      "exact reset count"
+    ],
+    "semantic_work": [
+      "records and valid prefix tokens",
+      "carried tokens",
+      "transported tokens",
+      "exactly recomputed tokens",
+      "replayed and appended tokens"
+    ],
+    "bytes": [
+      "K/V bytes read",
+      "K/V bytes written",
+      "method parameter bytes",
+      "peak temporary bytes"
+    ],
+    "compute": [
+      "algorithm-derived analytical operations from executed tensor shapes",
+      "all-recompute analytical operations on the same records",
+      "analytical work ratio",
+      "measured GPU time as a separate non-substitutable field"
+    ]
+  },
+  "development_stages": [
+    {
+      "stage": "A",
+      "name": "foundation_preflight",
+      "boundary": "verify theta0, all theta1-theta8 checkpoints, matrix bindings, cache geometry, and disk/GPU contract"
+    },
+    {
+      "stage": "B",
+      "name": "single_edge_mechanism_canary",
+      "boundary": "run theta0_to_theta1 and theta1_to_theta2 on a small disjoint fit/development split; reject semantic or lineage failures before scaling"
+    },
+    {
+      "stage": "C",
+      "name": "recursive_prefix_validation",
+      "boundary": "continue the same deployed state through theta3 with no exact reset and compare recursive endpoints"
+    },
+    {
+      "stage": "D",
+      "name": "full_recursive_chain",
+      "boundary": "freeze one candidate and execute theta0_to_theta8 once, preserving every edge and cumulative summary"
+    },
+    {
+      "stage": "E",
+      "name": "cost_validation",
+      "boundary": "measure the frozen method on GPU0/GPU1 and compare theoretical accounting with observed time without changing quality semantics"
+    }
+  ],
+  "promotion_boundary": {
+    "current_round": "single-seed mechanism development only",
+    "selection_unit": "whole recursive trajectory rather than individually cherry-picked edges",
+    "formal_promotion_requires": [
+      "protocol frozen before repeats",
+      "independent training seeds",
+      "seed-level statistics",
+      "a separately locked cross-dataset confirmation"
+    ]
+  }
+}

@@ -1,0 +1,267 @@
+{
+  "schema": "evokv_kuairand_large_hotkv_scaling_config_v0",
+  "protocol": "evokv_kuairand_large_hotkv_scaling_v0",
+  "status": "ready_for_execution",
+  "scientific_result": false,
+  "formal_result": false,
+  "baseline": {
+    "registry": {
+      "path": "configs/evokv_root_cause/kuairand_large_baseline_registry_20260811_v0.json",
+      "sha256": "11dff30ced39a2bcdc247345eeb33aea5548d685ecf341a604bba24e3f6b9823"
+    },
+    "large_config": {
+      "path": "configs/evokv_root_cause/kuairand_latest_query_large_capacity_lift_theta1_theta8_20260811_v37.json",
+      "sha256": "0d32b7d6cbbd327957b792056bbea79a62806037e66cb5f23d097f6fa5bcc649"
+    },
+    "checkpoint_manifest": {
+      "path": "checkpoints/evokv_kuairand_latest_query_large_capacity_lift_theta1_theta8_v37/theta_8/manifest.json",
+      "sha256": "4d1788a7144f28d011fade84e409ea9287301b1ed7192fc8246ad08d09f2aba3"
+    },
+    "checkpoint_version": 8,
+    "required_global_model_parameter_bytes": 47960055552
+  },
+  "timing": {
+    "primary_scope": "hot_hbm_hstu_core_only",
+    "methods": [
+      "reuse",
+      "recompute"
+    ],
+    "suffix_tokens": 2,
+    "both_operations_return_full_target_kv": true,
+    "cache_residency": "hbm_before_timing",
+    "input_residency": "hbm_before_timing",
+    "cuda_synchronized": true,
+    "rank_aggregation": "elementwise_max",
+    "method_order": "alternating_per_batch_and_repeat",
+    "synthetic_core_weights": "timing_only_no_training_or_quality_claim",
+    "excluded": [
+      "data_loading",
+      "model_loading",
+      "checkpoint_loading",
+      "source_cache_generation",
+      "cpu_to_gpu_transfer",
+      "embedding_lookup",
+      "candidate_scoring",
+      "metric_computation",
+      "result_serialization"
+    ]
+  },
+  "profiles": {
+    "canary": {
+      "name": "canary",
+      "common": {
+        "maximum_sequence_tokens": 2048,
+        "head_dim": 64,
+        "seed": 271828
+      },
+      "checkpoint_anchor": {
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "requests": 32,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "standalone_latency": {
+        "sequence_tokens": [
+          128,
+          512,
+          2048
+        ],
+        "local_batch_size": 1,
+        "requests": 2,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "sequence_scaling": {
+        "sequence_tokens": [
+          128,
+          512,
+          2048
+        ],
+        "local_batch_size": 8,
+        "requests": 32,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "request_scaling": {
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "request_counts": [
+          16,
+          32
+        ],
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "depth_length_scaling": {
+        "layers": [
+          4,
+          8,
+          24
+        ],
+        "sequence_tokens": [
+          128,
+          512,
+          2048
+        ],
+        "local_batch_size": 8,
+        "requests": 16,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "width_scaling": {
+        "layers": 8,
+        "hidden_sizes": [
+          256,
+          512,
+          1024
+        ],
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "requests": 16,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "context_capacity_scaling": {
+        "layers": 8,
+        "hidden_size": 512,
+        "maximum_sequence_tokens": [
+          512,
+          4096
+        ],
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "requests": 16,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      }
+    },
+    "full": {
+      "name": "full",
+      "common": {
+        "maximum_sequence_tokens": 2048,
+        "head_dim": 64,
+        "seed": 271828
+      },
+      "checkpoint_anchor": {
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "requests": 256,
+        "warmup_iterations": 3,
+        "measured_repeats": 5
+      },
+      "standalone_latency": {
+        "sequence_tokens": [
+          32,
+          64,
+          128,
+          256,
+          512,
+          1024,
+          2048
+        ],
+        "local_batch_size": 1,
+        "requests": 2,
+        "warmup_iterations": 3,
+        "measured_repeats": 9
+      },
+      "sequence_scaling": {
+        "sequence_tokens": [
+          32,
+          64,
+          128,
+          256,
+          512,
+          1024,
+          2048
+        ],
+        "local_batch_size": 8,
+        "requests": 256,
+        "warmup_iterations": 2,
+        "measured_repeats": 5
+      },
+      "request_scaling": {
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "request_counts": [
+          16,
+          64,
+          256,
+          1024
+        ],
+        "warmup_iterations": 2,
+        "measured_repeats": 5
+      },
+      "depth_length_scaling": {
+        "layers": [
+          4,
+          8,
+          16,
+          24
+        ],
+        "sequence_tokens": [
+          128,
+          512,
+          1024,
+          2048
+        ],
+        "local_batch_size": 8,
+        "requests": 64,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "width_scaling": {
+        "layers": 8,
+        "hidden_sizes": [
+          256,
+          512,
+          768,
+          1024
+        ],
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "requests": 64,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      },
+      "context_capacity_scaling": {
+        "layers": 8,
+        "hidden_size": 512,
+        "maximum_sequence_tokens": [
+          512,
+          1024,
+          2048,
+          4096
+        ],
+        "sequence_tokens": 512,
+        "local_batch_size": 8,
+        "requests": 64,
+        "warmup_iterations": 2,
+        "measured_repeats": 3
+      }
+    }
+  },
+  "execution": {
+    "world_size": 2,
+    "devices": [
+      0,
+      1
+    ],
+    "minimum_free_bytes_per_gpu": 45000000000
+  },
+  "outputs": {
+    "root": "results/design1/kuairand_large_hotkv_scaling_20260811_v0"
+  },
+  "implementation": [
+    {
+      "path": "src/hstu_kvcache/streaming/kuairand_hotkv_scaling.py",
+      "bytes": 36626,
+      "sha256": "0859f79665c9cc2e68da5cef5f9d33ecf555153396916cf188dd99dceadad59a"
+    },
+    {
+      "path": "scripts/benchmark_evokv_kuairand_hotkv_scaling.py",
+      "bytes": 774,
+      "sha256": "b859d73242701853fa1ad74f6533b44eb4b630c2be44c5069a3d1df9f1b2d679"
+    }
+  ]
+}

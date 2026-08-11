@@ -136,3 +136,36 @@ GPU0/GPU1 对 θ1–θ8 重新执行完整 lineage 前向，再由 `scripts/rend
 - 大模型 active-row lift 误差为 0，矩阵 JSON 与 lineage SHA-256 绑定。
 
 重新运行产生的 manifest 可能因运行元数据而不与参考 manifest 字节相同；验证器把参考 hash 匹配作为审计信息，同时以配置、payload 自描述哈希、模型几何和最终数值判断重建是否有效。若要核对每个 payload 的自描述哈希，使用 `verify-full`。
+
+## 9. 复现热 HBM 核心耗时
+
+大模型链验证通过后，可运行一次真实 θ8←θ7 stale-cache 校验：
+
+```bash
+scripts/run_evokv_kuairand_large_hotkv_timing.sh canary
+```
+
+不要重复运行 7 条同形状版本边。正式成本实验只加载 θ8 一次，先运行包含最大形状的 22 点 canary：
+
+```bash
+scripts/run_evokv_kuairand_large_hotkv_scaling.sh canary
+```
+
+再运行 40 点正式扫描：
+
+```bash
+scripts/run_evokv_kuairand_large_hotkv_scaling.sh full
+```
+
+冻结配置为 `configs/evokv_d1/development/kuairand_large_hotkv_scaling_20260811_v0.json`。完整结果写入 `results/design1/kuairand_large_hotkv_scaling_20260811_v0/full/result.json`，每个点的双 rank 原始样本写入同目录 `points/`。参考完整结果 SHA-256 为 `e2c0e13a59db9ee098edb7300a053c921d834012f0219856023e9e94171f6fac`；参考 GPU 阶段含未计时设置共 159.4 秒，最大每卡 allocated bytes 为 29,795,053,568。
+
+该脚本只使用 GPU0/GPU1，执行前验证基线清单、θ8 manifest、配置/实现哈希和两卡空闲状态；40 个点可逐点安全复用。它不训练或保存新 checkpoint，synthetic 权重只授权计时，不授权推荐质量结论。具体包含与排除项以 [评测协议](eval_protocol.md) 第 6 节为准。
+
+40 点结果存在后，可无 GPU 地复现 1000 万用户 A40 卡时规划：
+
+```bash
+python scripts/estimate_evokv_a40_population_card_hours.py \
+  --config configs/evokv_d1/development/a40_population_card_hours_20260811_v0.json
+```
+
+结果写入 `results/design1/kuairand_a40_population_card_hours_20260811_v0/result.json`。估算器验证源结果和自身实现哈希，固定 FP16 长期 cache、FP32 source+target 双缓冲、10% 容量余量、local batch 8 与 70% sustained-efficiency 规划系数。精简后的 C2/C4/C6/C7 来自实测点，C8 是明确标记的分解外推；两类不得混写成同等级实测证据。

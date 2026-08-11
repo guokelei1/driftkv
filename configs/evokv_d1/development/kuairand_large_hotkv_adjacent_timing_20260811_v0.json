@@ -1,0 +1,109 @@
+{
+  "protocol": "evokv_kuairand_large_hotkv_adjacent_timing_v0",
+  "status": "ready_for_execution",
+  "scientific_result": false,
+  "formal_result": false,
+  "baseline": {
+    "registry": {
+      "path": "configs/evokv_root_cause/kuairand_large_baseline_registry_20260811_v0.json",
+      "sha256": "11dff30ced39a2bcdc247345eeb33aea5548d685ecf341a604bba24e3f6b9823"
+    },
+    "large_config": {
+      "path": "configs/evokv_root_cause/kuairand_latest_query_large_capacity_lift_theta1_theta8_20260811_v37.json",
+      "sha256": "0d32b7d6cbbd327957b792056bbea79a62806037e66cb5f23d097f6fa5bcc649"
+    },
+    "versions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "global_model_parameter_bytes": 47960055552,
+    "embedding_capacity_mapping": "strided_hash_v0"
+  },
+  "implementation": [
+    {
+      "path": "src/hstu_kvcache/streaming/kuairand_hotkv_timing.py",
+      "bytes": 31538,
+      "sha256": "0afd1795d6d481fa12c7cb716f6cecc30c09c0654160b4638bb8ec08979f2d83"
+    },
+    {
+      "path": "scripts/benchmark_evokv_kuairand_large_hotkv.py",
+      "bytes": 876,
+      "sha256": "d8777a4cf4c29c7d64959a2273730b27e245336e4b43b3fa19805e0a6bee1a0c"
+    }
+  ],
+  "timing": {
+    "primary_scope": "hot_hbm_hstu_core_only",
+    "methods": [
+      "reuse",
+      "recompute"
+    ],
+    "cache_residency": "hbm_before_timing",
+    "input_residency": "hbm_before_timing",
+    "cuda_synchronized": true,
+    "rank_aggregation": "elementwise_max",
+    "method_order": "alternating_per_batch_and_repeat",
+    "reuse_operation": "resident source-version prefix KV plus current-version latest item and query suffix",
+    "recompute_operation": "current-version full valid history plus query forward",
+    "both_operations_return_full_target_KV": true,
+    "excluded": [
+      "data_loading",
+      "model_loading",
+      "checkpoint_loading",
+      "source_cache_generation",
+      "cpu_to_gpu_transfer",
+      "embedding_lookup",
+      "candidate_scoring",
+      "metric_computation",
+      "result_serialization"
+    ]
+  },
+  "profiles": {
+    "canary": {
+      "name": "canary",
+      "target_versions": [
+        8
+      ],
+      "history_length": 511,
+      "users_per_edge": 32,
+      "local_batch_size": 8,
+      "warmup_iterations": 2,
+      "measured_repeats": 3,
+      "selection_seed": 112358
+    },
+    "full": {
+      "name": "full",
+      "target_versions": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "history_length": 511,
+      "users_per_edge": 256,
+      "local_batch_size": 8,
+      "warmup_iterations": 3,
+      "measured_repeats": 7,
+      "selection_seed": 112358
+    }
+  },
+  "execution": {
+    "world_size": 2,
+    "devices": [
+      0,
+      1
+    ],
+    "maximum_used_memory_preflight_mib": 512
+  },
+  "outputs": {
+    "root": "results/design1/kuairand_large_hotkv_adjacent_timing_20260811_v0"
+  }
+}
