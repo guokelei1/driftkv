@@ -1,80 +1,64 @@
 # Repository agent notes
 
-## Environment
+## Current direction
 
-- Python 3.13.12, PyTorch 2.12.1, CUDA 13.1.
-- Four NVIDIA A40 GPUs exist, but only GPU0/GPU1 are currently available.
-- Use at most one two-rank job. GPU2/GPU3 and four-rank jobs require explicit new user authorization.
+This repository is being rebuilt around the 37D EvoKV route. The active question is when a persistent user KV state can be reused across a model release, when it needs approximate or selective evolution, and when it must be recomputed exactly.
 
-## Commands
+The current research route is defined by:
 
-- Install: `pip install -e .`
-- Tests: `pytest`
-- Lint: `ruff check src tests scripts`
-- Do not run `mypy` unless explicitly requested.
+- `docs/current_route.md` — concise execution boundary and next steps;
+- `docs/newset.md` — full 37D route specification;
+- `docs/legacy/README.md` — what was deliberately removed and what may not be revived.
 
-## Sources of truth
+There is currently no frozen experiment contract, no active runner, and no formal result. Do not reconstruct or revive the deleted D1/D2/D3 exploration routes.
 
-- `docs/08_core_insights_and_roadmap.md` is the authoritative research state.
-- `docs/eval_protocol.md` defines valid and comparable measurements.
-- `docs/10_design1_recursive_route.md` defines the active recursive D1 route.
-- `docs/BASELINE_REPRODUCTION.md` defines the only supported rebuild path.
-- `configs/evokv_root_cause/kuairand_large_baseline_registry_20260811_v0.json` is the machine-readable selected-baseline registry.
-- `configs/evokv_d1/development/kuairand_recursive_chain_design_v0.json` is the machine-readable D1 design contract.
-- `scripts/run_evokv_kuairand_large_baseline_rebuild.sh` is the canonical verify/resume/fresh entrypoint.
-- Historical scripts and result directories are not current facts unless one of these sources names them.
+## Repository state
 
-## Current selected baseline
+The repository intentionally keeps only:
 
-- Dataset: KuaiRand-1K standard logs only.
-- Versions: θ1–θ8; θ0 is bootstrap only.
-- Model: video/author, latest-item query, 8L/H512/8 heads, max length 512.
-- Evaluation: one positive plus 99 frozen negatives; NDCG@5 primary, MRR and HR@5 reported.
-- Capacity: one 23,396,297×512 physical embedding space, sharded over GPU0/GPU1; 47,960,055,552 parameter bytes or 44.666 GiB.
-- Selected NDCG@5 matrix: 26/28 positive cells and 7/7 positive adjacent cells.
-- This is single-seed development evidence: `scientific_result=false`, `formal_result=false`.
+- reusable HSTU model and persistent K/V primitives under `src/hstu_kvcache/models/`;
+- raw KuaiRand loading and chronological streaming-plan primitives under `src/hstu_kvcache/data/`;
+- small JSON/timing helpers under `src/hstu_kvcache/utils/`;
+- a small amount of raw KuaiRand data under `data/kuairand/`;
+- route documents and empty placeholders for future `configs/`, `scripts/`, and `tests/`.
 
-## Current Design 1 route
-
-- Initialize an exact theta0 cache, then execute one recursive theta0-to-theta8 trajectory.
-- Theta0-to-theta1 is a reported bootstrap diagnostic; theta1-to-theta8 supplies seven primary edges backed by the selected 8x8 baseline.
-- Every method output is the next edge's source. No hidden exact reset is allowed after theta0.
-- Report one ordered edge table, not another selected method matrix: absolute Full Recompute, Recursive Reuse and Recursive Method quality, valid gap recovery, lineage, migrated valid tokens/bytes, analytical work and separate measured GPU time.
-- Method fitting and tuning records must be disjoint from frozen qualification queries. Fitted features and deployed per-record actions are label-free; candidate-level aggregate quality on a disjoint development split may select hyperparameters.
-
-## Experimental invariants
-
-- Exactly one current model serves at a time. Old version labels describe K/V lineage only.
-- Train on an update date and evaluate on the next natural date; never train on evaluation targets.
-- Compare Reuse and Recompute on identical users, histories, current model, query and candidates.
-- Reuse means old-version prefix K/V plus current-model latest token/query. Recompute means a full current-model forward on the same valid history.
-- Preserve natural sequence lengths and exclude padding from semantic K/V extents.
-- Full recomputation is the cache-fidelity reference, not a guaranteed ranking-quality upper bound.
-- Report absolute endpoints and `100 * (Recompute - Reuse) / Reuse` without clipping or scaling.
-- Never perturb K/V, duplicate identical embeddings to claim capacity, delete negative cells, or combine incompatible protocols.
-- Training seed is the replication unit; user-level samples within one model are diagnostics.
-
-## Long experiments
-
-- Before any experiment expected to exceed five minutes, create and validate a user-runnable orchestration script.
-- Do not start such an experiment unless the user explicitly asks the agent to run it.
-- Bundle dependent training, evaluation and validation into one resumable round with frozen configuration, resource preflights, explicit logs and machine-readable outputs.
-- Preserve reusable checkpoints and compact records. Do not retain full K/V payloads between stages.
-- Stop at genuine result-dependent boundaries; do not silently change the protocol after seeing results.
-- Short canaries, lint and tests may run directly.
+Deleted results, checkpoints, logs, generated data, old configurations, experiment runners, and historical tests are not available inputs. Do not add compatibility shims for them.
 
 ## Code layout
 
-- `src/hstu_kvcache/models/`: HSTU model and first-class K/V output.
-- `src/hstu_kvcache/streaming/kuairand_query_transition.py`: θ0 workload/training semantics.
-- `src/hstu_kvcache/streaming/kuairand_projected_persistent.py`: sequential natural model chain.
-- `src/hstu_kvcache/streaming/kuairand_capacity_lift.py`: function-preserving large-capacity lift.
-- `scripts/verify_evokv_kuairand_large_baseline.py`: static, semantic and payload verification.
+- `src/hstu_kvcache/models/attention.py`: pointwise HSTU attention and cache-aware forward.
+- `src/hstu_kvcache/models/block.py`: normalized attention block, gating and residual path.
+- `src/hstu_kvcache/models/embeddings.py`: behavior, item and temporal encoders.
+- `src/hstu_kvcache/models/hstu.py`: HSTU model with full and incremental KV execution.
+- `src/hstu_kvcache/models/kv_cache.py`: persistent batched K/V value object.
+- `src/hstu_kvcache/data/kuairand.py`: raw KuaiRand loader and batch utilities.
+- `src/hstu_kvcache/data/streaming_plan.py`: chronological base/stream data plan.
 
-## Repository conventions
+Keep the core model modules independent of experiment orchestration. New profiler/controller code belongs in a new, minimal module only after its contract is defined in the current route.
 
-- Use `rg`/`rg --files` for search and `apply_patch` for edits.
+## Development rules
+
+- Use `rg` or `rg --files` for search.
+- Use `apply_patch` for source and documentation edits.
 - Preserve unrelated dirty-worktree changes.
-- No code comments unless requested.
-- Keep HSTU modules decoupled so attention, block and layer changes remain localized.
-- Start structural sweeps at one seed and small scale; reproduce only candidates that change the frontier.
+- Read a file before deleting or substantially changing it; delete only code that is tied to a removed route or has no reusable API.
+- Do not add experiment runners, result registries, checkpoint retention logic, or dataset-specific corpus builders before the 37D workload and evaluation contract are frozen.
+- Do not fabricate or preserve historical result claims. Negative gaps, failed workload regions, and model-release regressions are valid observations, not values to be hidden.
+- Keep model scoring raw and protocol decisions label-free; no post-hoc score mixing, metric scaling, selected-edge reporting, or target-KV fitting.
+
+## Verification
+
+The current minimal package should at least support:
+
+```bash
+PYTHONPATH=src python -c "from hstu_kvcache.models import HSTU, HSTUKVCache; from hstu_kvcache.data import KuaiRandTrace, StreamingDataPlan"
+```
+
+No current experiment suite is expected to run. Add focused tests only when a new 37D component has been specified and implemented.
+
+## Resources and safety
+
+- Do not launch long experiments unless explicitly requested.
+- Use the minimum data and compute needed for a canary.
+- Do not retain large checkpoints, logs, generated results, or processed datasets by default.
+- Before any destructive cleanup, confirm the exact target and prefer a recoverable staging move before releasing space.

@@ -150,6 +150,7 @@ class HSTU(nn.Module):
         return_kv: bool = False,
         return_hidden: bool = True,
         lengths: torch.Tensor | None = None,
+        first_layer_residual_reset_mask: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, HSTUKVCache | None]:
         if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
             raise ValueError("embedded inputs must have shape [batch, sequence, hidden]")
@@ -161,13 +162,22 @@ class HSTU(nn.Module):
             lengths = lengths.to(x.device)
             valid = torch.arange(L, device=x.device).unsqueeze(0) < lengths.unsqueeze(1)
             x = x * valid.unsqueeze(-1)
+        reset_residual = None
+        if first_layer_residual_reset_mask is not None:
+            if first_layer_residual_reset_mask.shape != x.shape[:2]:
+                raise ValueError("first-layer residual reset mask shape differs")
+            reset_residual = x * first_layer_residual_reset_mask.to(
+                device=x.device, dtype=x.dtype
+            ).unsqueeze(-1)
         kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
-        for blk in self.blocks:
+        for layer, blk in enumerate(self.blocks):
             if return_kv:
                 x, (k, v) = blk(x, attn_mask=None, return_kv=True)
                 kvs.append((k, v))
             else:
                 x = blk(x, attn_mask=None, return_kv=False)
+            if layer == 0 and reset_residual is not None:
+                x = x - reset_residual
             if valid is not None:
                 x = x * valid.unsqueeze(-1)
         x = self.final_norm(x)
@@ -294,17 +304,27 @@ class HSTU(nn.Module):
         self,
         cached_kv: HSTUKVCache,
         x: torch.Tensor,
+        first_layer_residual_reset_mask: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, HSTUKVCache]:
         if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
             raise ValueError("embedded suffix must have shape [batch, sequence, hidden]")
         if cached_kv.k.shape[1] != x.shape[0]:
             raise ValueError("cached K/V and embedded suffix batch dimensions differ")
+        reset_residual = None
+        if first_layer_residual_reset_mask is not None:
+            if first_layer_residual_reset_mask.shape != x.shape[:2]:
+                raise ValueError("first-layer residual reset mask shape differs")
+            reset_residual = x * first_layer_residual_reset_mask.to(
+                device=x.device, dtype=x.dtype
+            ).unsqueeze(-1)
         m = x.shape[1]
         new_kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
         for li, blk in enumerate(self.blocks):
             cached_k = cached_kv.k[li]
             cached_v = cached_kv.v[li]
             x, (k_all, v_all) = blk.forward_with_cache(x, cached_k, cached_v)
+            if li == 0 and reset_residual is not None:
+                x = x - reset_residual
             new_kvs.append((k_all, v_all))
         x = self.final_norm(x)
         updated_kv = HSTUKVCache.from_layer_list(
