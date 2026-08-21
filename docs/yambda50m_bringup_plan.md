@@ -2,6 +2,8 @@
 
 Updated: 2026-08-17
 
+> **Historical completed plan.** 本文记录 Yambda 平台如何建立及哪些早期输出被 invalidated，不能作为当前执行入口。当前状态与授权以 [项目全程 Compact](project_compact.md) 和 [当前路线](current_route.md) 为准。
+
 This is an implementation plan for data bring-up and a minimal HSTU workload. The original v1 calendar-time interpretation was invalidated; v2 is the timestamp-corrected canary contract and must not be used to claim formal paper results.
 
 ## Decision

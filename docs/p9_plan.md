@@ -1,35 +1,71 @@
 # P9: Staleness Tomography and Action-Space Qualification
 
-P8 已证明 F workload 的 H 与跨版本 S 在 development 中存在。P9 不再调整基础模型链，也不训练
-controller；它只回答陈旧性位于哪里、哪些合法动作可恢复，以及 state-level action 是否值得做。
+P9 的目的不是继续证明 `S` 或把 gap 调大，而是将局部陈旧结构转化为依赖合法、质量保持且成本低于 Exact-All 的真实动作。
 
-## 冻结边界
+## 已完成
 
-- 固定 P8 的模型、seed、workload、release recipe、评分和结果；禁止为放大 S 调基础链。
-- M0-F 是主隔离模型；M1-F 是共享状态 companion；M1-N/R 只作共享状态对照。
-- `feedback_history_strata_v2` 只前向用于 P9，绝不回写 P7.8。
-- rare-dislike companion 在每个 P9 action 上完整报告；不用 future label 选择状态或训练决策。
+- **P9.0**：P8 evidence seal。
+- **P9.1**：24-cell 用户级 H/S 分布、尾部和 cohort 描述；`v1` 的零值 tail 定义已判无效，后续只用 `v2`。
+- **P9.2**：24/24 layer-only 与 segment-only diagnostic scan。R0 recovery 为零；R1/R2 结构跨 seed 可重复。详见 [P9.2 结果摘要](p9_2_result_summary.md)。
 
-## 执行顺序
+P9.2 的 exact-KV splice 全部是 `diagnostic intervention, not executable migration action`。
 
-1. **P9.0 — P8 evidence seal**：记录 P8 全矩阵 hash、model/seed/release role 与结果摘要。
-2. **P9.1 — H/S distribution**：全 P8 cells 做用户级 mean/P50/P90/P95/P99、H-S joint、
-   prefix length/activity/state age/feedback cohort 分桶，区分普遍小风险与少数高风险状态。
-3. **P9.2 — coarse tomography**：全部 P8 cell、全部 seed 做 layer-only 与 frozen history-segment-only
-   recovery scan（oldest half、middle、recent-128/32/8/1）。所有任意 KV exact 拼接均标为
-   *diagnostic, not executable action*。
-4. **P9.3 — 2-D tomography**：对 R0、M0-F R1、M0-F R2、M1-F R2 四个按 release semantics
-   预选的代表 cell 做 layer × segment map；发现必须回放到全 P8 cells/seed。
-5. **P9.4 — executable actions**：只实现 dependency-closed 的 No-op、合法 tail/layer/segment
-   recompute 与 Exact；不能从仅保存的 K/V 假装执行缺少 hidden boundary 的 patch。
-6. **P9.5 — action frontier**：在同一 exact-equivalent token-layer work 下比较 No-op、Exact、
-   uniform legal partial、random allocation、version-level best action 与 near-optimal state×action
-   allocation，并记录 bytes、history read、measured time 和 F quality companions。
+## 当前收口任务
 
-## P9 停止门
+### P9.2-Q：quality companions
 
-- 若 partial action 推开 fidelity–work frontier，且风险/恢复存在异质性：人工授权 P10
-  budget-aware state scheduler。
-- 若只有 Exact 有效：保留 No-op/Exact 的 release-level selector，收缩 selective migration 叙事。
-- 若风险近似均匀：只做 release-level action，不训练 state-level controller。
-- 未经新的人工授权，不训练 controller、θ3 或 blind edge。
+在不重跑模型、不改变区域的前提下，将已有 diagnostic logits 与封存 F quality labels 按请求连接，统一计算：
+
+- aggregate log loss；
+- ROC-AUC；
+- dislike PR-AUC；
+- Brier；
+- dislike-only log loss。
+
+这一步验证“恢复 JS”是否也恢复任务质量；不得用 label 选择 state/action。
+
+### P9.1-C：risk concentration
+
+对每个 model × release × seed 计算 Top 1%/5%/10% 用户贡献的总 `S`、Lorenz/集中度 companion，以及 risk 与 candidate action recovery 的联合分布。只有风险与收益均有异质性，用户级 scheduler 才可能有价值。
+
+## 后续顺序
+
+### P9.3：代表语义的 2-D tomography
+
+预先固定四类语义格子：
+
+1. R0 negative control；
+2. M0-F R1 edge1 routine update；
+3. M0-F R2 encoder refresh；
+4. M1-F R2 shared-state refresh。
+
+三个 seed 全部保留，扫描 layer × frozen history segment。选择依据是发布语义和模型角色，不是 P9.2 最大数字。任何发现的动作必须回放到完整 P8 matrix。
+
+### P9.4：dependency-closed executor
+
+对候选 tail/layer/segment 动作明确列出：
+
+- 输入 raw history 与边界 hidden state；
+- 必须重算的上游/下游层；
+- old KV reads、new KV writes；
+- 是否可由线上真实持久化状态执行。
+
+缺少 hidden boundary 时，不能用直接拼接 exact KV 代替 executor。优先实现最小的 No-op、合法 tail/interval partial 和 Exact。
+
+### P9.5：fidelity–cost frontier
+
+记录每个合法 action 的：
+
+- exact-equivalent token-layer work；
+- old-KV read、new-KV write、raw-history read bytes；
+- batched runtime 与 rollout completion estimate；
+- target-free fidelity 与全部 F quality companions。
+
+比较 Reuse All、Exact All、uniform legal partial、version-level best action、random state allocation 与 state×action near-optimal allocation。先做 oracle/near-optimal frontier，不训练 controller。
+
+## 停止门
+
+- Partial 明显推开 frontier，且 state-level allocation 优于 version-level policy：人工授权 P10 scheduler。
+- Partial 有效但风险近似均匀：只做 release-level action selector。
+- 只有 Exact 有效：保留 No-op/Exact，收缩 selective migration 叙事。
+- 未经人工授权，不训练 controller、theta3、blind edge，也不扩大模型规模。

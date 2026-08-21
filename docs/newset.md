@@ -1,12 +1,16 @@
 # EvoKV 37D 完整技术规格
 
-更新日期：2026-08-21。本文补充 [论文设计](paper_design.md)，给出技术协议；若与历史记录冲突，以本文和 [当前路线](current_route.md) 为准。
+更新日期：2026-08-21。本文保留 37D 的完整技术协议与协议演变；当前事实和执行授权以[项目全程 Compact](project_compact.md)与[当前路线](current_route.md)为准。本文中 P7 以前的 Q_main、neutral-readout、旧 oracle/ranker 数值仅用于解释协议为何被替换，不是当前系统结果。
 
 > **执行状态更新（2026-08-21）。** P8 的 F-workload R0/R1/R2 release chain 已完成：R0
 > 处于数值 identity floor，R1 两条边与 R2 均出现跨版本 S，且 M1-F R2 还出现稳定的 F quality
 > 损失。基础链永久冻结；当前只授权 P9 staleness tomography、dependency-closed partial action
 > 和 fidelity–work frontier。controller、θ3 与 blind qualification 仍暂停，见
 > [当前路线](current_route.md)、[P8 结果摘要](p8_result_summary.md) 与 [P9 计划](p9_plan.md)。
+
+> **P9 更新。** P9.0、P9.1 和 24/24 coarse tomography cells 已完成。最佳诊断区域可恢复
+> 约 78%–99% stale error，但 arbitrary exact-KV splice 不是合法迁移动作。当前先补齐 splice
+> quality companions 与用户风险集中度，再做预选语义格子的二维 map、依赖闭包和真实成本 frontier。
 
 > **执行状态更新（2026-08-18）。** release evaluator 曾将传给
 > `forward_with_cache` 的首个 suffix/readout token 的 time delta 重置为
@@ -38,7 +42,7 @@ Current Suffix Only  θ_t, post-release append only
 
 同模型 Full/Append 必须在冻结 precision tolerance 内一致。identity 与 output-only transition 不应产生 cache/hidden/score drift；cache-producer update 必须能产生可测 drift。
 
-## 2. Population 与时间协议
+## 2. Population 与时间协议（通用规则；Q_main 内容为历史协议）
 
 主总体是 `T_snapshot` 前已经物化的全部 exact-parent 状态，不是发布后恰好请求的用户。Yambda 主定义不设 TTL 或 recent-activity 门槛；这些仅用于 sensitivity cohort。冻结 snapshot 必须记录：
 
@@ -50,7 +54,7 @@ Current Suffix Only  θ_t, post-release append only
 
 Yambda-50M v2 的时间单位是秒（5 秒精度），主 update window 为 1d，3d 仅 robustness。每条边的 release 必须位于其 update window 结束加 30 分钟后；update-window 行为属于 parent-model prefix，不属于 current-model suffix。
 
-## 3. Two-manifest protocol
+## 3. Two-manifest protocol（通用 label separation；候选细节为历史协议）
 
 ### Quality manifest
 
@@ -107,20 +111,17 @@ b ∈ {0, .1, .25, .5, .75, 1}
 
 ## 7. Scheduler development 与 qualification
 
-development panels 的状态选择已在 held-out panels 上通过 full-snapshot budget opportunity：frontier area 为 0.584 / 0.553，随机为 0.988 / 0.967，且长度/活跃度规则更差。该门只授权 metadata-only ranker development；它不构成 learned-controller 或 blind qualification 结论。panel-free score-distortion audit 仍必须在 θ3 前完成。现在在 development edges 上训练连续 risk ranker：
+旧 Q_main metadata ranker 和 frontier 已随协议失效永久降级，不能作为当前 scheduler 证据。当前 controller 尚未授权。
 
-```text
-θ0→θ1 train, θ1→θ2 test
-θ1→θ2 train, θ0→θ1 test
-```
+P9 必须先证明：
 
-首轮仅使用白名单 metadata 的 Ridge、Elastic Net、深度 3 树和小型 GBDT；小型 GBDT 的 held-out-panel frontier area 为 0.671 / 0.702，随机为 0.969 / 0.989，优于长度和活跃度规则。该 scheduler 是明示的 benefit/cost greedy approximation，并非 knapsack oracle；它只通过 development gate，尚未冻结模型、normalization 或 controller contract。
+1. dependency-closed partial action 在同一 exact-equivalent work 下推开 No-op/Exact frontier；
+2. state-level near-optimal allocation 明显优于 version-level uniform action；
+3. 风险与 action recovery 对用户确有可预测异质性。
 
-panel-free companion 是在每个用户冻结的 `Q_main` top-1000 rank-decay support 上计算的 catalog-weighted score distortion。它对 held-out multi-panel regret 的 Spearman 为 0.400 / 0.500，按该 distortion 排序的 held-out frontier area 为 0.641 / 0.603；因此可作为不依赖 100-way panel 边界的诊断，但不取代 multi-panel Top-K regret primary。large-catalog gold-standard audit 与 append dilution 仍是 θ3 前的冻结门。
+只有三项成立，才冻结 P10 controller contract。输入只能来自发布时可得的 prefix length、state age、pre-release activity、history statistics、old-KV cheap sketch、release type、cache-producing parameter delta 和已计费 probe。目标是每个 action 的边际 fidelity benefit/cost，不是 future-label safe/unsafe 分类。
 
-仅使用发布前 feature。第一版白名单是 prefix length、last activity age、events in 1/7/30d、recent unique item/artist、repeat/organic ratio；不得使用 future served status、append count、proxy delay、future candidate/target 或 Current Full output。主验证必须双向跨边（`θ0→θ1` train / `θ1→θ2` test，反向亦然），主比较是 budget frontier area、oracle gap、P95/P99 fidelity、work ratio 和 downstream quality validation，而不是随机用户切分上的 MSE。
-
-冻结模型、特征、预算、risk ranker 和 executor 后，训练 `θ3`；`θ2→θ3` 仅用于 blind qualification，不据其结果调节策略。
+方法、动作、成本和 controller 全部冻结后，才允许新时间边 blind qualification；不得根据 blind edge 调策略。
 
 ## 8. Executor 路线
 
@@ -142,7 +143,8 @@ companions：KV read/write、history input、storage-tier transfer、worker-hour
 - timestamp 乘五的 v1 日历审计失效；
 - right-aligned medium batch 结果失效；
 - 将 update-window start 当 release 的两边 screen 失效；
-- 当前 batch-fixed v3 结果是 development evidence，尚非 paper qualification。
+- batch-fixed v3 的旧 Q_main release-fidelity、frontier 与 controller 输出因 temporal-input contract 错误而失效；后来的 P7-P9 结果来自重新冻结的 N/R/F、F release chain 和正确 lineage。
+- P7-P9 仍是 development evidence，尚非 paper qualification。
 
 ## 11. 禁止项
 

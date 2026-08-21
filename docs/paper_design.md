@@ -1,6 +1,6 @@
 # EvoKV 论文设计：发布期预算化状态收敛
 
-更新日期：2026-08-18。本文是当前论文边界的正式定义。
+更新日期：2026-08-21。本文定义稳定的论文问题边界；当前证据状态和执行授权见[项目全程 Compact](project_compact.md)与[当前路线](current_route.md)。P7/P8 已建立 F workload 的 `H → S → quality` development 链，P9 正在验证合法 partial action；controller 与 paper qualification 尚未授权。
 
 ## 一句话定义
 
@@ -46,7 +46,7 @@ Yambda 可以提供时间、用户状态、发布切换和离线排名评测；�
 
 在少量发布前 canary states 上离线运行 Current Full、Reuse 和预定义 partial paths，构造版本级与状态级风险画像。Exact 只用于小样本 profiling ground truth；不用于拟合任意自由度 old-KV→new-KV mapper。
 
-### 2. Budget-aware state scheduler
+### 2. Budget-aware state scheduler（P9 frontier 通过后才授权）
 
 预测连续风险 `D^_u`，并按“预期 semantic benefit / exact-equivalent cost”排序，在任意预算点选择状态动作。主特征必须在发布时得到，例如：
 
@@ -66,7 +66,7 @@ Yambda 可以提供时间、用户状态、发布切换和离线排名评测；�
 
 ### Primary fidelity
 
-Current-model Top-K regret：用 Current Full 分数衡量迁移路径 Top-K 相对 Current Full Top-K 的模型效用损失。它不使用 future label，并对近似同分项交换较不敏感。
+主 fidelity 必须匹配冻结 workload。当前 F 是显式 like/dislike 的 Bernoulli candidate-conditioned task，主 endpoint 使用 Current Full 与 action 输出的 Bernoulli JS，并同步报告 normalized score RMS、absolute probability shift 和 tails。未来多候选 workload 可使用 Current-model Top-K regret。两者都不使用 future label 做状态选择。
 
 ### Fidelity companions
 
@@ -110,14 +110,14 @@ zero-append cutover 是最保守的 fidelity endpoint：旧 prefix 占比最高�
 ## 研究问题
 
 1. **RQ1 — Characterization**：哪些预定义 release 类型与状态群体兼容，哪些不兼容？是否存在版本、用户、层与 cutover/dilution 异质性？
-2. **RQ2 — Oracle opportunity**：同一 exact-equivalent budget 下，state-level oracle 是否优于 Reuse All、Exact All、version-level gate、随机、长度/活跃度优先？
-3. **RQ3 — Scheduler**：只用发布前 feature 的连续 risk ranker 能否逼近 oracle frontier，并跨版本泛化？
-4. **RQ4 — Executor**：Fast Migration / Selective Recompute 能否把 no-op/exact frontier 向更低工作量推进？
+2. **RQ2 — Executor**：dependency-closed Partial 能否把 No-op/Exact frontier 推向更低工作量，并同步恢复任务质量？
+3. **RQ3 — Allocation opportunity**：同一预算下，state×action near-optimal allocation 是否优于 version-level uniform action？
+4. **RQ4 — Scheduler**：若 state-level opportunity 成立，只用发布前 feature 的 benefit/cost 预测能否逼近该 frontier 并跨版本泛化？
 5. **RQ5 — Rollout**：在连续发布与有限 worker/IO 容量下，能否避免 state-version debt 累积？
 
 ## 实验纪律
 
-- `θ0→θ1` 与 `θ1→θ2` 仅为 controller development；冻结后 `θ2→θ3` 是 blind qualification。
+- P8 的 R0/R1/R2 边只提供现象和 action-space development substrate，不得直接训练或证明 controller；方法、executor、frontier 和任何 controller 全部冻结后，新的未查看时间边才承担 blind qualification。
 - 模型发布质量与状态兼容性分开报告；EvoKV 不负责 model admission。
 - quality manifest 可以 target-inject，profiler manifest 不可 target-inject。
 - active snapshot 必须只依赖 pre-release materialization；主定义不设 TTL，TTL/activity 仅作 sensitivity cohort；不可按未来 served users 定义。

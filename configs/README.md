@@ -1,5 +1,16 @@
-# Configs
+# Experiment contracts
 
-当前 37D 路线不复活旧实验配置。Yambda-50M 的 timestamp-corrected development contract 位于 `contracts/yambda50m_v2.yaml`。CC 的 P5 seen-aware 合同位于 `contracts/cc_p5_seenmix_v1.yaml`（failed gate，不得改判）；P6 identifiability 合同位于 `contracts/cc_p6_identifiability_v1.yaml`（分支 B / next-item No-Go）。P7 的 Yambda multi-regime 审计边界位于 `contracts/p7_yambda_stateful_suite_v1.yaml`，P8 的冻结 release-chain 合同位于 `contracts/f_release_chain_contract_v1.yaml`。P8 已给出 development H/S 证据，但仍不是正式论文 qualification；当前只进入 P9 tomography 与 action-space qualification。
+`contracts/` is the machine-readable evidence boundary. A result contract records what happened; it does not authorize later stages unless the current route says so.
 
-旧的 D1/D2/D3、foundation、root-cause 和 CohortKV 配置已清理。后续实验必须围绕当前 contract、candidate manifest 和 lineage 重新建立。
+## Active chain
+
+- `p7_*`: N/R/F workload, compact manifests, Frozen Base, theta0 training, and one-time H qualification.
+- `f_release_chain_contract_v1.yaml`: frozen F R0/R1/R2 release definitions and admission rules.
+- P8 result/seal contracts: frozen development H/S evidence; the underlying models and releases must not be tuned further.
+- `p9_tomography_contract_v1.yaml`: frozen P9 scope, GPU allowlist, diagnostic interventions, mandatory quality companions, and authorization gates.
+
+P9.0-P9.2 are complete. The immediate work is P9.2 quality-companion closure and risk concentration, followed by the preselected P9.3 semantic cells. Do not mutate a frozen contract after observing scores; create a versioned prospective addendum when a new executable action is ready.
+
+## Retired boundaries
+
+P5/P6 next-listen identifiability contracts and their failed gates remain auditable but may not be requalified. Older Yambda contracts preserve implementation/invalidation history only. Deleted D1/D2/D3, foundation, root-cause, and CohortKV configurations must not be reconstructed.
