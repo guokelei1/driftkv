@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from .block import HSTUBlock, HSTUBlockConfig
-from .embeddings import BehaviorEncoder, ItemEmbedding, TemporalEncoder
+from .embeddings import BehaviorEncoder, ItemEmbedding, QueryTokenEncoder, TemporalEncoder
 from .kv_cache import HSTUKVCache
 
 
@@ -32,6 +32,11 @@ class HSTUConfig:
     block_variant: str = "legacy"
     relative_position_bias: bool = False
     causal_diagonal: str = "inclusive"
+    # CC query fields are independent from behavior/PAD/MASK embeddings.
+    num_query_types: int = 1
+    num_query_actions: int = 1
+    query_type_id: int = 0
+    query_action_id: int = 0
 
     def __post_init__(self) -> None:
         if self.num_items < 1:
@@ -48,6 +53,10 @@ class HSTUConfig:
             raise ValueError("hstu_reference block configuration differs")
         if self.causal_diagonal not in ("inclusive", "exclusive"):
             raise ValueError("causal_diagonal differs")
+        if self.num_query_types < 1 or not 0 <= self.query_type_id < self.num_query_types:
+            raise ValueError("query_type_id must index the query type table")
+        if self.num_query_actions < 1 or not 0 <= self.query_action_id < self.num_query_actions:
+            raise ValueError("query_action_id must index the reserved query action table")
 
 
 class HSTU(nn.Module):
@@ -76,9 +85,19 @@ class HSTU(nn.Module):
             else ItemEmbedding(int(cfg.num_prediction_items), h)
         )
         self.behavior_emb = BehaviorEncoder(cfg.num_behaviors, h)
+        self.query_encoder = QueryTokenEncoder(
+            h,
+            num_query_types=cfg.num_query_types,
+            num_query_actions=cfg.num_query_actions,
+        )
         self.temporal_enc = TemporalEncoder(h, cfg.temporal_num_freqs, cfg.temporal_max_period)
         self.in_proj = nn.Linear(h, h, bias=False)
         self.input_dropout = nn.Dropout(cfg.input_dropout)
+        # CC scores must not recover candidate identity from a second lookup
+        # at the output head. The candidate enters through the transient query
+        # token; this shared scalar head makes the item-embedding ablation a
+        # meaningful shortcut audit.
+        self.cc_score_head = nn.Linear(h, 1, bias=True)
 
         self.blocks = nn.ModuleList(
             [self._make_block(cfg, h) for _ in range(cfg.num_layers)]
@@ -144,6 +163,69 @@ class HSTU(nn.Module):
         x = self.in_proj(x)
         return self.input_dropout(x)
 
+    def embed_query_tokens(
+        self,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        item_vectors: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Build transient CC query tokens for ``[batch, candidates]``.
+
+        The candidate item, shared query type, reserved query action and query
+        time are the only inputs. No future label, organic/played-ratio
+        feature, or persistent-cache write is performed here.
+        """
+        if candidate_ids.ndim != 2:
+            raise ValueError("candidate_ids must have shape [batch, candidates]")
+        batch, candidates = candidate_ids.shape
+        if item_vectors is None:
+            item_vectors = self.lookup_item_embeddings(candidate_ids)
+        if item_vectors.shape != (batch, candidates, self.cfg.hidden_size):
+            raise ValueError("item_vectors must have shape [B, C, hidden]")
+
+        def _expand_ids(
+            values: torch.Tensor | None,
+            default: int,
+            name: str,
+        ) -> torch.Tensor:
+            if values is None:
+                return torch.full(
+                    (batch, candidates),
+                    default,
+                    dtype=torch.long,
+                    device=candidate_ids.device,
+                )
+            values = values.to(device=candidate_ids.device, dtype=torch.long)
+            if values.shape == (batch,):
+                return values[:, None].expand(batch, candidates)
+            if values.shape == (batch, candidates):
+                return values
+            raise ValueError(f"{name} must have shape [B] or [B, C]")
+
+        query_time_deltas = query_time_deltas.to(
+            device=candidate_ids.device,
+            dtype=item_vectors.dtype,
+        )
+        if query_time_deltas.shape == (batch,):
+            query_time_deltas = query_time_deltas[:, None].expand(batch, candidates)
+        elif query_time_deltas.shape != (batch, candidates):
+            raise ValueError("query_time_deltas must have shape [B] or [B, C]")
+        query_type_ids = _expand_ids(query_type_ids, self.cfg.query_type_id, "query_type_ids")
+        query_action_ids = _expand_ids(
+            query_action_ids,
+            self.cfg.query_action_id,
+            "query_action_ids",
+        )
+        x = self.query_encoder(
+            item_vectors,
+            query_type_ids,
+            query_action_ids,
+            self.temporal_enc(query_time_deltas),
+        )
+        return self.input_dropout(self.in_proj(x))
+
     def forward_embedded(
         self,
         x: torch.Tensor,
@@ -151,6 +233,8 @@ class HSTU(nn.Module):
         return_hidden: bool = True,
         lengths: torch.Tensor | None = None,
         first_layer_residual_reset_mask: torch.Tensor | None = None,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ) -> tuple[torch.Tensor, HSTUKVCache | None]:
         if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
             raise ValueError("embedded inputs must have shape [batch, sequence, hidden]")
@@ -172,10 +256,22 @@ class HSTU(nn.Module):
         kvs: list[tuple[torch.Tensor, torch.Tensor]] = []
         for layer, blk in enumerate(self.blocks):
             if return_kv:
-                x, (k, v) = blk(x, attn_mask=None, return_kv=True)
+                x, (k, v) = blk(
+                    x,
+                    attn_mask=None,
+                    return_kv=True,
+                    residual_scale=residual_scale,
+                    attention_scale=attention_scale,
+                )
                 kvs.append((k, v))
             else:
-                x = blk(x, attn_mask=None, return_kv=False)
+                x = blk(
+                    x,
+                    attn_mask=None,
+                    return_kv=False,
+                    residual_scale=residual_scale,
+                    attention_scale=attention_scale,
+                )
             if layer == 0 and reset_residual is not None:
                 x = x - reset_residual
             if valid is not None:
@@ -198,12 +294,16 @@ class HSTU(nn.Module):
         return_kv: bool = False,
         return_hidden: bool = True,
         lengths: torch.Tensor | None = None,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ) -> tuple[torch.Tensor, HSTUKVCache | None]:
         return self.forward_embedded(
             self.embed_inputs(item_ids, behaviors, time_deltas),
             return_kv=return_kv,
             return_hidden=return_hidden,
             lengths=lengths,
+            residual_scale=residual_scale,
+            attention_scale=attention_scale,
         )
 
     @torch.no_grad()
@@ -213,6 +313,8 @@ class HSTU(nn.Module):
         behaviors: torch.Tensor,
         time_deltas: torch.Tensor,
         lengths: torch.Tensor | None = None,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ) -> HSTUKVCache:
         """Convenience: return only the derived KV cache F(theta, x_u).
 
@@ -229,6 +331,8 @@ class HSTU(nn.Module):
                 return_kv=True,
                 return_hidden=False,
                 lengths=lengths,
+                residual_scale=residual_scale,
+                attention_scale=attention_scale,
             )
         finally:
             if was_training:
@@ -299,12 +403,270 @@ class HSTU(nn.Module):
             return self.item_emb.score(hidden, candidate_ids)
         return self.output_emb.score(hidden, candidate_ids)
 
-    @torch.no_grad()
-    def forward_with_cache_embedded(
+    @staticmethod
+    def _cc_lengths(
+        lengths: torch.Tensor | None,
+        batch: int,
+        width: int,
+        device: torch.device,
+    ) -> torch.Tensor:
+        if lengths is None:
+            return torch.full((batch,), width, dtype=torch.long, device=device)
+        lengths = lengths.to(device=device, dtype=torch.long)
+        if lengths.shape != (batch,):
+            raise ValueError("prefix lengths must have shape [B]")
+        if bool((lengths < 0).any()) or bool((lengths > width).any()):
+            raise ValueError("prefix lengths must be between zero and the padded width")
+        return lengths
+
+    def _score_cc_from_prefix_cache(
+        self,
+        prefix_kv: HSTUKVCache,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        prefix_lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+        *,
+        training_append: bool,
+    ) -> torch.Tensor:
+        """Append one independent transient query per flattened candidate."""
+        if candidate_ids.ndim != 2:
+            raise ValueError("candidate_ids must have shape [B, C]")
+        batch, candidates = candidate_ids.shape
+        if candidates < 1:
+            raise ValueError("candidate_ids must contain at least one candidate")
+        if prefix_kv.k.ndim != 4 or prefix_kv.v.shape != prefix_kv.k.shape:
+            raise ValueError("prefix_kv must contain [layers, B, L, width] K/V tensors")
+        if prefix_kv.k.shape[1] != batch:
+            raise ValueError("prefix cache and candidates have different batch sizes")
+        width = prefix_kv.k.shape[2]
+        lengths = self._cc_lengths(prefix_lengths, batch, width, candidate_ids.device)
+        if prefix_kv.seq_len < width:
+            raise ValueError("prefix cache seq_len is smaller than its tensor width")
+        if candidate_item_vectors is not None:
+            if candidate_item_vectors.shape != (
+                batch,
+                candidates,
+                self.cfg.hidden_size,
+            ):
+                raise ValueError("candidate_item_vectors must have shape [B, C, hidden]")
+            candidate_item_vectors = candidate_item_vectors.to(
+                device=candidate_ids.device,
+                dtype=prefix_kv.k.dtype,
+            )
+
+        # Normalise once so every grouped append uses exactly the same query
+        # timestamp contract. ``embed_query_tokens`` performs the detailed
+        # [B]/[B,C] validation and broadcasting.
+        query_time_deltas = query_time_deltas.to(device=candidate_ids.device)
+        if query_time_deltas.shape == (batch,):
+            query_time_deltas = query_time_deltas[:, None].expand(batch, candidates)
+        elif query_time_deltas.shape != (batch, candidates):
+            raise ValueError("query_time_deltas must have shape [B] or [B, C]")
+
+        # Grouping by true prefix length avoids changing relative-position
+        # distances for right-padded users. Within each group, [B,C] is
+        # flattened to B*C one-token sequences, so candidates never attend to
+        # one another.
+        scores = None
+        unique_lengths = torch.unique(lengths, sorted=True).tolist()
+        for length_value in unique_lengths:
+            length = int(length_value)
+            rows = torch.nonzero(lengths == length, as_tuple=False).flatten()
+            group_candidates = candidate_ids.index_select(0, rows)
+            group_times = query_time_deltas.index_select(0, rows)
+            group_types = (
+                None
+                if query_type_ids is None
+                else query_type_ids.index_select(0, rows)
+            )
+            group_actions = (
+                None
+                if query_action_ids is None
+                else query_action_ids.index_select(0, rows)
+            )
+            group_item_vectors = (
+                None
+                if candidate_item_vectors is None
+                else candidate_item_vectors.index_select(0, rows)
+            )
+            group_k = prefix_kv.k.index_select(1, rows)[:, :, :length, :]
+            group_v = prefix_kv.v.index_select(1, rows)[:, :, :length, :]
+            group_cache = HSTUKVCache(
+                k=group_k.repeat_interleave(candidates, dim=1),
+                v=group_v.repeat_interleave(candidates, dim=1),
+                seq_len=length,
+            )
+            query = self.embed_query_tokens(
+                group_candidates,
+                group_times,
+                query_type_ids=group_types,
+                query_action_ids=group_actions,
+                item_vectors=group_item_vectors,
+            ).reshape(-1, 1, self.cfg.hidden_size)
+            if training_append:
+                hidden, _ = self.forward_with_cache_embedded_grad(group_cache, query)
+            else:
+                hidden, _ = self.forward_with_cache_embedded(group_cache, query)
+            group_scores = self.cc_score_head(hidden[:, 0, :]).squeeze(-1)
+            group_scores = group_scores.reshape(rows.numel(), candidates)
+            if scores is None:
+                scores = group_scores.new_empty((batch, candidates))
+            scores = scores.index_copy(0, rows, group_scores)
+        assert scores is not None
+        return scores
+
+    def score_cc_full(
+        self,
+        prefix_item_ids: torch.Tensor,
+        prefix_behaviors: torch.Tensor,
+        prefix_time_deltas: torch.Tensor,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Current-Full CC conditional reranking scores ``[B, C]``.
+
+        The current model computes each user's prefix KV once. Each candidate
+        is then appended as a one-token transient query and the resulting KV
+        is discarded, so the persistent prefix remains unchanged.
+        """
+        if prefix_item_ids.ndim != 2:
+            raise ValueError("prefix_item_ids must have shape [B, L]")
+        if prefix_behaviors.shape != prefix_item_ids.shape:
+            raise ValueError("prefix behaviors and items have different shapes")
+        if prefix_time_deltas.shape != prefix_item_ids.shape:
+            raise ValueError("prefix time deltas and items have different shapes")
+        if candidate_ids.shape[0] != prefix_item_ids.shape[0]:
+            raise ValueError("prefix and candidate batches differ")
+        _, current_prefix = self.forward(
+            prefix_item_ids,
+            prefix_behaviors,
+            prefix_time_deltas,
+            return_kv=True,
+            return_hidden=False,
+            lengths=lengths,
+        )
+        assert current_prefix is not None
+        return self._score_cc_from_prefix_cache(
+            current_prefix,
+            candidate_ids,
+            query_time_deltas,
+            prefix_lengths=lengths,
+            query_type_ids=query_type_ids,
+            query_action_ids=query_action_ids,
+            candidate_item_vectors=candidate_item_vectors,
+            training_append=torch.is_grad_enabled(),
+        )
+
+    def score_cc_full_chunked(
+        self,
+        prefix_item_ids: torch.Tensor,
+        prefix_behaviors: torch.Tensor,
+        prefix_time_deltas: torch.Tensor,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        *,
+        chunk_size: int,
+        lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, ...]:
+        """Score a complete candidate universe in exact independent chunks.
+
+        The prefix is encoded exactly once. Returned chunks preserve candidate
+        order and can be concatenated or passed to the streaming listwise-loss
+        helper. The method never caps or samples candidates.
+        """
+        if not isinstance(chunk_size, int) or chunk_size < 1:
+            raise ValueError("chunk_size must be a positive integer")
+        if prefix_item_ids.ndim != 2:
+            raise ValueError("prefix_item_ids must have shape [B, L]")
+        if prefix_behaviors.shape != prefix_item_ids.shape:
+            raise ValueError("prefix behaviors and items have different shapes")
+        if prefix_time_deltas.shape != prefix_item_ids.shape:
+            raise ValueError("prefix time deltas and items have different shapes")
+        if candidate_ids.ndim != 2 or candidate_ids.shape[0] != prefix_item_ids.shape[0]:
+            raise ValueError("candidate_ids must have shape [B, C]")
+        if candidate_ids.shape[1] < 1:
+            raise ValueError("candidate_ids must contain at least one candidate")
+        _, current_prefix = self.forward(
+            prefix_item_ids,
+            prefix_behaviors,
+            prefix_time_deltas,
+            return_kv=True,
+            return_hidden=False,
+            lengths=lengths,
+        )
+        assert current_prefix is not None
+
+        def sliced(values: torch.Tensor | None, start: int, end: int) -> torch.Tensor | None:
+            if values is None or values.ndim == 1:
+                return values
+            if values.ndim >= 2 and values.shape[1] == candidate_ids.shape[1]:
+                return values[:, start:end]
+            return values
+
+        output = []
+        for start in range(0, candidate_ids.shape[1], chunk_size):
+            end = min(start + chunk_size, candidate_ids.shape[1])
+            output.append(
+                self._score_cc_from_prefix_cache(
+                    current_prefix,
+                    candidate_ids[:, start:end],
+                    sliced(query_time_deltas, start, end),
+                    prefix_lengths=lengths,
+                    query_type_ids=sliced(query_type_ids, start, end),
+                    query_action_ids=sliced(query_action_ids, start, end),
+                    candidate_item_vectors=sliced(candidate_item_vectors, start, end),
+                    training_append=torch.is_grad_enabled(),
+                )
+            )
+        return tuple(output)
+
+    def score_cc_reuse(
+        self,
+        parent_prefix_kv: HSTUKVCache,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        prefix_lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Reuse parent-prefix KV and score transient current-model queries."""
+        return self._score_cc_from_prefix_cache(
+            parent_prefix_kv,
+            candidate_ids,
+            query_time_deltas,
+            prefix_lengths=prefix_lengths,
+            query_type_ids=query_type_ids,
+            query_action_ids=query_action_ids,
+            candidate_item_vectors=candidate_item_vectors,
+            training_append=torch.is_grad_enabled(),
+        )
+
+    # Explicit aliases make the two protocol paths easy to find without
+    # changing the pre-existing hidden-state ``score_candidates`` API.
+    def score_candidates_full(self, *args, **kwargs) -> torch.Tensor:
+        return self.score_cc_full(*args, **kwargs)
+
+    def score_candidates_reuse(self, *args, **kwargs) -> torch.Tensor:
+        return self.score_cc_reuse(*args, **kwargs)
+
+    def _forward_with_cache_embedded_impl(
         self,
         cached_kv: HSTUKVCache,
         x: torch.Tensor,
         first_layer_residual_reset_mask: torch.Tensor | None = None,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ) -> tuple[torch.Tensor, HSTUKVCache]:
         if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
             raise ValueError("embedded suffix must have shape [batch, sequence, hidden]")
@@ -322,7 +684,13 @@ class HSTU(nn.Module):
         for li, blk in enumerate(self.blocks):
             cached_k = cached_kv.k[li]
             cached_v = cached_kv.v[li]
-            x, (k_all, v_all) = blk.forward_with_cache(x, cached_k, cached_v)
+            x, (k_all, v_all) = blk.forward_with_cache(
+                x,
+                cached_k,
+                cached_v,
+                residual_scale=residual_scale,
+                attention_scale=attention_scale,
+            )
             if li == 0 and reset_residual is not None:
                 x = x - reset_residual
             new_kvs.append((k_all, v_all))
@@ -332,6 +700,45 @@ class HSTU(nn.Module):
             seq_len=cached_kv.seq_len + m,
         )
         return x, updated_kv
+
+    @torch.no_grad()
+    def forward_with_cache_embedded(
+        self,
+        cached_kv: HSTUKVCache,
+        x: torch.Tensor,
+        first_layer_residual_reset_mask: torch.Tensor | None = None,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        return self._forward_with_cache_embedded_impl(
+            cached_kv,
+            x,
+            first_layer_residual_reset_mask=first_layer_residual_reset_mask,
+            residual_scale=residual_scale,
+            attention_scale=attention_scale,
+        )
+
+    def forward_with_cache_embedded_grad(
+        self,
+        cached_kv: HSTUKVCache,
+        x: torch.Tensor,
+        first_layer_residual_reset_mask: torch.Tensor | None = None,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        """Training-capable transient append used by CC qualification.
+
+        The public inference append remains no-grad. CC theta-0 training uses
+        this explicit variant so gradients can flow through both the current
+        prefix and the candidate query token.
+        """
+        return self._forward_with_cache_embedded_impl(
+            cached_kv,
+            x,
+            first_layer_residual_reset_mask=first_layer_residual_reset_mask,
+            residual_scale=residual_scale,
+            attention_scale=attention_scale,
+        )
 
     @torch.no_grad()
     def forward_with_cache_embedded_new_kv(
@@ -410,6 +817,8 @@ class HSTU(nn.Module):
         new_item_ids: torch.Tensor,
         new_behaviors: torch.Tensor,
         new_time_deltas: torch.Tensor,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ) -> tuple[torch.Tensor, HSTUKVCache]:
         was_training = self.training
         self.eval()
@@ -421,6 +830,8 @@ class HSTU(nn.Module):
                     new_behaviors,
                     new_time_deltas,
                 ),
+                residual_scale=residual_scale,
+                attention_scale=attention_scale,
             )
         finally:
             if was_training:

@@ -1,0 +1,165 @@
+contract: f_release_chain_contract_v1
+date_frozen: 2026-08-20
+status: frozen_before_any_P8_model_update_or_staleness_score_coverage_erratum_applied
+depends_on: [p7_8_h_qualification_result_v1]
+evidence_target: development_F_workload_by_release_type_H_S_matrix
+
+input_hashes:
+  p7_8_result: 3ba9ab4aea22942801c87dab34c576e02f722744212327819a2965a57a1f1ce2
+  theta0_bundle: 07549be6359980df352768a4dbd17e7e466487c920f04af17f80d5ad94e7ba80
+  frozen_base_bundle: 4221f0b95245bb6b3a735c86d4cdb2603c6a7d8b173c7cac7c3dd5e28a64e42c
+  coverage_audit: 2487e650cdc15225f231b080a45d69e5a8f1cd77246d4041dc2ff6d2c75301ab
+  feedback_history_strata_v2_code: 785525830f0668be9ecfe63c7f262f57178d64ba7cb6ce17133fcba3ff64eee2
+
+authorization:
+  prospective_manifest_materialization: true
+  R0_then_R1_then_R2_execution: true_with_blocking_gates
+  theta3_blind_qualification: false
+  tomography: false
+  migration_actions_or_controller: false
+  stop_after: P8_H_S_adjudication
+
+model_roles:
+  primary_isolation_model: M0-F
+  shared_state_companion: M1
+  shared_workload_companions: [M1-N, M1-R]
+  M0_N_or_M0_R_release_chain: prohibited
+  seeds: [17, 37, 71]
+  seed_filtering_by_P7_H_or_future_S: prohibited
+  all_seed_and_release_admitted_views_required: true
+
+time_windows_seconds:
+  theta0_cutoff: 18748800
+  update1_train: [18748800, 19785600]       # day 217..229
+  update1_admission_dev: [19785600, 19958400] # day 229..231
+  edge1_evaluation: [19958400, 20563200]    # day 231..238
+  update2_train: [19958400, 20995200]       # day 231..243
+  update2_admission_dev: [20995200, 21168000] # day 243..245
+  edge2_evaluation: [21168000, 21772800]    # day 245..252
+  strict_causality: update_and_admission_end_at_or_before_release_cutover
+  edge1_cutover: 19958400
+  edge2_cutover: 21168000
+
+prospective_data:
+  feedback_history_strata: feedback_history_strata_v2
+  P7_8_backfill_or_rewrite: prohibited
+  training_unique_query_budget_per_task:
+    update1: 2176
+    update2: 2304
+  budget_selection: all_R_rankable_queries_in_12_day_train_window_then_equal_N_F_count
+  N_selection: deterministic_one_query_per_hash_selected_user_then_query
+  F_selection: deterministic_one_query_per_hash_selected_user_then_query_label_free_selection
+  R_selection: all_complete_familiar_universe_rankable_queries_no_candidate_sampling
+  admission_dev: all_eligible_requests_under_frozen_workload_rules
+  evaluation:
+    N: one_deterministic_natural_query_per_eligible_user
+    R: [fidelity_all_eligible, quality_rankable, fidelity_rankable_companion]
+    F: [all_quality, identical_label_stripped_fidelity]
+  base_features_and_frozen_base: unchanged_from_P7
+
+release_types:
+  R0_output_only:
+    parent: theta0
+    child: theta1_R0
+    train_window: update1_train
+    admission_window: update1_admission_dev
+    trainable_parameters:
+      - query_encoder.type_embedding
+      - query_encoder.action_embedding
+      - cc_score_head
+    frozen_cache_producing_parameters: [item_emb, behavior_emb, temporal_enc, in_proj, blocks, final_norm]
+    M0_schedule: F_only
+    M1_schedule: frozen_round_robin_N_R_F_equal_task_weight
+    edge: theta0_to_theta1_R0_on_edge1_evaluation
+    blocking_expectation: Full_vs_Reuse_at_numeric_floor
+  R1_routine_continual:
+    warm_start: parent_selected_checkpoint
+    optimizer: fresh_AdamW_same_P7_hyperparameters
+    trainable_parameters: complete_CC_model_including_cache_path
+    M0_schedule: F_only
+    M1_schedule: frozen_round_robin_N_R_F_equal_task_weight
+    edges:
+      - {parent: theta0, child: theta1_R1, train: update1_train, admission: update1_admission_dev, evaluation: edge1_evaluation}
+      - {parent: theta1_R1, child: theta2_R1, train: update2_train, admission: update2_admission_dev, evaluation: edge2_evaluation}
+  R2_periodic_encoder_refresh:
+    parent: theta0
+    child: theta1_R2
+    initialization: same_seed_specific_fresh_initialization_as_theta0
+    optimizer: fresh_AdamW_same_P7_hyperparameters
+    cumulative_training_queries: P7_residual_train_union_update1_train
+    admission_window: update1_admission_dev
+    architecture_base_objectives_and_schedule: unchanged
+    edge: theta0_to_theta1_R2_on_edge1_evaluation
+    artificial_KV_projection_perturbation: prohibited
+
+training_and_checkpoint_selection:
+  history: Full512_only
+  epochs: 3
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  deployment_score: stopgrad_frozen_base_plus_CC_residual
+  residual_coefficient: 1
+  checkpoint_selection:
+    M0_F: minimum_F_admission_dev_deployment_logloss
+    M1: minimum_equal_one_third_N_R_F_admission_dev_deployment_loss
+    eligible_epochs: [1, 2, 3]
+    tie_break: earliest_epoch
+  selection_must_not_use: [H, S, Reuse, evaluation_window, future_label, controller_result]
+
+model_admission:
+  evaluated_before_edge_staleness_reveal: true
+  M0_F: Current_Full_admission_dev_loss_better_than_Frozen_Base
+  M1: every_task_better_than_no_information_and_R_or_F_better_than_Frozen_Base
+  per_task_M1_noninferiority_gate_added_post_hoc: false
+  report_Current_Full_minus_Previous_Full: true
+  rejected_edges_retained_as_model_update_diagnostics: true
+  only_admitted_edges_enter_primary_state_transition_matrix: true
+
+lineage_and_scoring:
+  snapshot: active_state_at_release_cutover
+  query_history: last_512_strictly_causal_listens
+  rolling_context: retain_latest_parent_prefix_tokens_so_parent_prefix_plus_current_suffix_equals_Current_Full_last512
+  parent_prefix_KV: computed_once_by_parent_at_cutover
+  post_cutover_suffix: appended_with_current_model_before_transient_query
+  no_pre_cutover_parent_token_after_rolling_cap: request_excluded_from_reuse_population
+  candidate_query: transient_and_not_written_to_persistent_KV
+  precision: float32
+  paths: [Base_Only, Previous_Full, Current_Recent32, Current_Full512, Reuse_Parent_KV]
+  identical_query_candidate_base_logits_across_paths: required
+
+metrics:
+  H: Current_Full512_vs_Current_Recent32
+  S: Current_Full512_vs_Reuse_Parent_KV
+  target_free_primary: Bernoulli_JS_divergence
+  target_free_companions: [normalized_score_RMS, absolute_probability_difference, P95_JS, P99_JS]
+  exposure_ratio: S_divided_by_H_plus_1e-8_companion_only
+  F_quality: [aggregate_logloss, ROC_AUC, dislike_PR_AUC, Brier, dislike_only_logloss]
+  M1_N_R_quality_and_fidelity: same_definitions_as_P7_8
+  statistics:
+    within_seed: user_cluster_bootstrap_2000
+    across_seed: equal_seed_hierarchical_bootstrap_10000
+    confidence_interval: percentile_95
+    namespace: p8-HS-bootstrap-v1
+
+blocking_and_adjudication:
+  R0:
+    every_seed_cache_tensor_identity_required: true
+    every_seed_S_JS_upper_bound: max_of_1e-8_and_10x_FP32_identity_canary
+    failure_action: stop_before_R1_R2_and_audit_lineage
+  edge_staleness_candidate:
+    - current_model_H_primary_aggregate_CI_above_P7_numeric_floor
+    - S_primary_aggregate_CI_above_R0_floor
+    - at_least_two_seed_S_points_above_R0_floor
+    - edge_is_release_admitted
+    - target_free_and_quality_companions_all_reported
+  tomography_authorization_requires:
+    - at_least_one_R1_or_R2_release_type_meets_edge_staleness_candidate
+    - direction_stable_in_at_least_two_seeds
+    - no_target_or_label_used_for_state_selection
+    - new_explicit_human_authorization
+
+mandatory_caveats:
+  dislike_only_logloss: report_every_model_seed_edge_no_retroactive_gate
+  P7_8_invalid_history_position_companion: never_backfill
+  feedback_history_strata_v2: prospective_P8_only
+  Current_Full: execution_semantics_reference_not_future_quality_upper_bound

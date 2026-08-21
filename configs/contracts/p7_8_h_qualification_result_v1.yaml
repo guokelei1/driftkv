@@ -1,0 +1,117 @@
+result: p7_8_h_qualification_result_v1
+date: 2026-08-20
+contract: p7_8_h_qualification_contract_v1
+contract_sha256: c11f798cf9fbe8f24e794b6ab96f9a6bf4dbca58cc71557309bfd65473bef19d
+run_plan: p7_8_qualification_run_plan_v1
+run_plan_sha256: 1f7bc0176e3cbd8e30c7b0ca5d69a0e36fd5a5892c31898ac9061e73590bf683
+status: passed_F_long_state_H_qualification
+evidence_level: one_time_out_of_time_H_qualification_not_staleness
+adjudication_branch: A_primary_M0_workload_passed
+
+execution:
+  checkpoints_scored: 12
+  seeds: [17, 37, 71]
+  raw_score_files: 42
+  qualification_inference_precision: float32
+  compact_summary_included: false
+  raw_scores_sealed_before_metrics: true
+  raw_score_seal_sha256: a59a76df8ff055e96d7ebc7de1cae4a8599b6723ba89958c8f89697a7a4a7427
+  all_seed_results_reported: true
+  release_admitted_subset: identical_to_all_12_under_frozen_P7_7_admission
+  seed_filtered_by_H_S_or_controller: false
+
+primary_results:
+  M0_R:
+    classification: no_qualified_long_state_object
+    positive_seed_count: 0
+    target_free_JS:
+      equal_seed_mean: 0.000009103146003243635
+      hierarchical_CI95: [0.00000007121683957236702, 0.00002680285515421159]
+    pairwise_target_AUC_gain:
+      equal_seed_mean: 0.00010914934848674534
+      hierarchical_CI95: [-0.00004795604428266481, 0.00038284146602013435]
+      seed_points: [0.000008947381052975172, -0.00004306158282783822, 0.0003615622472350991]
+    interpretation: output_changes_exist_but_no_stable_quality_value_beyond_Recent32
+    quality_population:
+      eligible_session_starts: 2688
+      rankable_familiar_returns: 1281
+      conditional_coverage: 0.4765625
+  M0_F:
+    classification: provisional_2_of_3
+    positive_seeds: [17, 37]
+    nonqualified_seed: 71
+    target_free_JS:
+      equal_seed_mean: 0.0005352635781346985
+      hierarchical_CI95: [0.0003455248523332683, 0.0006569603164609173]
+      seed_points: [0.0006574034157660679, 0.0003435243147158625, 0.0006048630039221653]
+    Recent_minus_Full_log_loss_gain:
+      equal_seed_mean: 0.0020365110026063357
+      hierarchical_CI95: [0.0003418705493676336, 0.0034051879532487526]
+      seed_points: [0.0025499882580787663, 0.0028896077073601307, 0.0006699370423801093]
+      seed71_user_CI95: [-0.0016516618922595347, 0.0026642697436886588]
+    ROC_AUC_gain:
+      equal_seed_mean: 0.02298604551193036
+      hierarchical_CI95: [0.01520833901231443, 0.030681266512933892]
+    dislike_PR_AUC_gain:
+      equal_seed_mean: 0.018208554935893
+      hierarchical_CI95: [0.011214984001638523, 0.026664731122438137]
+    Brier_gain:
+      equal_seed_mean: 0.0003817218295236872
+      hierarchical_CI95: [0.000016252547416579154, 0.0007143169187227804]
+    interpretation: long_state_value_is_positive_in_aggregate_but_training_seed_sensitive
+
+controls_and_companions:
+  M0_N:
+    role: negative_control
+    classification: no_qualified_long_state_object
+    target_free_JS_CI_above_floor: true
+    pairwise_target_AUC_gain_CI95: [-0.00021483264370947288, 0.00009911093614431877]
+    interpretation: long_history_changes_outputs_but_has_no_stable_quality_increment
+  M1_N:
+    classification: isolated_mechanism_case_1_of_3
+    positive_seed: 37
+    version_chain_claim_authorized: false
+  M1_R:
+    classification: no_qualified_long_state_object
+    positive_seed_count: 0
+    pairwise_target_AUC_gain_CI95: [-0.00024556216234135206, 0.00034798258636485927]
+  M1_F:
+    classification: robust_3_of_3
+    positive_seeds: [17, 37, 71]
+    target_free_JS:
+      equal_seed_mean: 0.00034253041597690084
+      hierarchical_CI95: [0.00014669235704553588, 0.0006663757554065809]
+    Recent_minus_Full_log_loss_gain:
+      equal_seed_mean: 0.0027898519614517002
+      hierarchical_CI95: [0.0013867034408909685, 0.004664306097345415]
+    ROC_AUC_gain_CI95: [0.013583188419421268, 0.03621851658567338]
+    dislike_PR_AUC_gain_CI95: [0.009422115443592876, 0.026968136379356508]
+    interpretation: robust_multitask_shared_long_state_companion
+
+F_cohort_caveats:
+  valid_pre_registered_cohorts_reported: true
+  dislike_log_loss_effect:
+    M0_F_seed_points: [-0.06998784243645673, -0.036214680987838685, -0.08865501986252174]
+    M1_F_seed_points: [-0.005231247810551986, -0.02645800922935922, -0.024893142678151486]
+    interpretation: Full improves aggregate_log_loss_and_dislike_PR_AUC_but_dislike_only_log_loss_worsens
+  history_position_companion:
+    status: invalid_not_used_for_gate
+    audit: results/p7/h_qualification/post_reveal_audit_v1.json
+    reason: raw_evaluator_could_not_distinguish_never_seen_from_seen_only_before_512
+
+artifacts:
+  development_identity_canary: {path: results/p7/h_qualification/development_identity_canary_v1.json, sha256: 8ffac76d2d21d64fcc2dc33cdc0a776e042cf3b26ff572e14aba2bae228a97f8}
+  raw_score_seal: {path: results/p7/h_qualification/raw_score_seal_v1.json, sha256: a59a76df8ff055e96d7ebc7de1cae4a8599b6723ba89958c8f89697a7a4a7427}
+  adjudication_report: {path: results/p7/h_qualification/adjudication_report_v1.json, sha256: 4ebb18dd3aae4761a8bc7c5e03295cfc7cb13795961c376ab921e31802aae8b1}
+  adjudication_summary: {path: results/p7/h_qualification/adjudication_summary_v1.json, sha256: 18aeb4ff37899e9a9d25c4b377c5d2fca484fde79a0ee891d4ad765c81d82ae3}
+  post_reveal_audit: {path: results/p7/h_qualification/post_reveal_audit_v1.json, sha256: 19fb8fe6610806971ccce93407d202874b2c81afb3cd6d5c66275fd14827fad7}
+
+authorization_after_this_result:
+  P7_8: complete
+  F_development_version_chain: eligible_pending_explicit_human_authorization
+  primary_chain_condition: M0_F
+  robust_companion: M1_F
+  R_version_chain: not_authorized
+  N_version_chain: not_authorized_as_long_state_workload
+  theta1_theta2_started: false
+  staleness_tomography_controller: prohibited_pending_next_contract

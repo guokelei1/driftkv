@@ -10,7 +10,14 @@ are localised edits:
 
 from .attention import PointwiseAttention, PointwiseAttentionConfig
 from .block import HSTUBlock, HSTUBlockConfig
-from .embeddings import BehaviorEncoder, ItemEmbedding, TemporalEncoder
+from .cc import (
+    FrozenLinearBaseRanker,
+    combine_base_and_cc_residual,
+    conditional_reranking_loss,
+    exact_chunked_listwise_cross_entropy,
+    masked_listwise_cross_entropy,
+)
+from .embeddings import BehaviorEncoder, ItemEmbedding, QueryTokenEncoder, TemporalEncoder
 from .hstu import HSTU, HSTUConfig
 from .kv_cache import HSTUKVCache
 from .rmsnorm import RMSNorm
@@ -20,8 +27,14 @@ __all__ = [
     "PointwiseAttentionConfig",
     "HSTUBlock",
     "HSTUBlockConfig",
+    "conditional_reranking_loss",
+    "FrozenLinearBaseRanker",
+    "combine_base_and_cc_residual",
+    "exact_chunked_listwise_cross_entropy",
+    "masked_listwise_cross_entropy",
     "BehaviorEncoder",
     "ItemEmbedding",
+    "QueryTokenEncoder",
     "TemporalEncoder",
     "HSTU",
     "HSTUConfig",

@@ -1,0 +1,291 @@
+contract: p7_4_training_contract_v1
+status: p7_5_canary_passed_materialization_contract_delegated
+depends_on: p7_workload_suite_v1
+date_frozen: 2026-08-19
+
+authorization:
+  hstu_training: false
+  base_fitting: false
+  full_manifest_generation: false
+  compact_full_manifest_generation: delegated_to_p7_5_materialization_contract_v1
+  allowed_now: [build_and_seal_compact_manifests_under_child_contract]
+
+p7_5_result:
+  status: passed_contract_canary_only
+  metadata: data/manifests/p7_canary/p7_manifest_canary_v1.meta.json
+  metadata_sha256: 83be77d81f6f3c7bcb54c2212e4253e51b4e3bc7ab2f0c9db90bbb3c37404ff9
+  qualification_exclusion_sha256: 908a612dfbf714801b2b0d6dd39e8590c8ef4f225265557af4670597f3d2f0fc
+  rows_per_manifest: 128
+  unique_users_per_manifest: 128
+  manifests:
+    N_quality: {sha256: 4f6e2043757c4fb473afd09eb56e34bb1ba757e5098de1e3521027fcf7eeb2d7,
+                candidate_count: 100, source_split: residual_train}
+    N_fidelity: {sha256: 77994957ab766c16a5ecf2a9821c6ab02c6e229b8665a8fcabfa84bae1c932a5,
+                 candidate_count: 100, source: existing_target_free_release_panel}
+    R_quality: {sha256: 8088f9e8430d39e1fcf05baa1f022777d5887e7b3e11408a41716d736b5fa3e1,
+                candidate_count_min_median_max: [4, 291.5, 510]}
+    R_fidelity: {sha256: 09813606c19ec2c200dcb5af2d6724923ec679069440f07fc497f9f7f065b855,
+                 candidate_count_min_median_max: [15, 335, 510]}
+    F_quality: {sha256: 8ab27a636d262d5cb47e5a495b4c5b5a65e8ed4123cd912880ea0bd967ab4181,
+                natural_labels: {like: 117, dislike: 11}}
+    F_fidelity: {sha256: 90ae5f3b52452cfa5fb792844058b0b65aa804a1c7019f3629ee91018a384a4d}
+  invariants:
+    all_histories_strictly_causal: true
+    quality_and_fidelity_separate: true
+    fidelity_has_no_label_or_target_fields: true
+    R_complete_universe_no_sampling: true
+    R_target_occurs_once_without_injection: true
+    F_coincident_listen_excluded: true
+    full_recent_base_feature_source_identical: true
+  qualification_status: not_generated_not_opened_not_scored
+  evidence_level: interface_and_manifest_contract_only_not_H_or_quality
+
+next_contract_required_before_full_manifests:
+  status: satisfied_by_p7_5_materialization_contract_v1
+  reason: >-
+    Naively materializing every N base-fit or qualification query with 100
+    candidates would create a large redundant corpus and would conflict with
+    the repository retention policy. Freeze deterministic user-level
+    evaluation sampling, streaming base fitting, sharding, and retention
+    before generating any full manifest.
+  must_define:
+    - N_R_F_training_row_selection_under_frozen_K_3939
+    - user_level_dev_and_qualification_evaluation_sampling
+    - streaming_base_fit_without_large_jsonl_materialization
+    - shard_size_and_checksums
+    - temporary_artifact_cleanup_and_retention
+
+p7_4_result:
+  split_coverage_artifact: results/data_audit/yambda50m_p7/split_coverage_audit_v1.json
+  split_coverage_artifact_sha256: 2cd6891dd6f7c0c0938aa7b29db2f7d894e56ffb6b6c52f499a9cd2a4baf53d1
+  users_with_listens: 9238
+  R:
+    base_fit:
+      {eligible_requests: 51645, rankable_requests: 21700, eligible_users: 6376,
+       rankable_users: 5142, rankable_coverage: 0.4201762029}
+    residual_train:
+      {eligible_requests: 8407, rankable_requests: 3939, eligible_users: 4587,
+       rankable_users: 2728, rankable_coverage: 0.4685381230}
+    development:
+      {eligible_requests: 2596, rankable_requests: 1189, rankable_users: 1138,
+       rankable_coverage: 0.4580123267}
+    qualification:
+      {eligible_requests: 2688, rankable_requests: 1281, rankable_users: 1218,
+       rankable_coverage: 0.4765625}
+    candidate_count:
+      residual_train: {p50: 324, p90: 468, p95: 486, p99: 503, max: 512}
+      development: {p50: 328, p90: 467, p95: 485, p99: 503, max: 512}
+      qualification: {p50: 330, p90: 468, p95: 486, p99: 505, max: 512}
+  F:
+    residual_train: {queries: 64063, users: 4101, dislike_fraction: 0.1265160857}
+    development: {queries: 18668, users: 2687, dislike_fraction: 0.1010284980}
+    qualification: {queries: 19967, users: 2822, dislike_fraction: 0.0934041168}
+    development_prior_30m_fraction: 0.3234411828
+    qualification_prior_30m_fraction: 0.3269895327
+  N:
+    residual_train: {queries: 3618562, users: 6722}
+    development: {queries: 1133116, users: 5905}
+    qualification: {queries: 1206751, users: 6081}
+    candidate_feature_coverage_status: requires_P7_5_Qmain_canary
+  per_task_unique_query_budget_K: 3939
+  equal_training_compute_claim: false
+  interpretation: >-
+    All fixed splits have sufficient request and user coverage for canaries.
+    R quality is explicitly conditional: only 42%-48% of all eligible 3-day
+    session starts return to the complete familiar universe. This denominator
+    is mandatory in every quality table and is not a failure of the workload.
+  exact_chunking:
+    status: focused_regressions_passed
+    tested_chunk_sizes: [1, intermediate, full]
+    tested_candidate_permutation: true
+    tested_prefix_computed_once: true
+    tested_streaming_logsumexp_loss: true
+    tested_padding_mask_and_request_mean: true
+
+base_fitter_v1:
+  capacity: task_specific_convex_linear
+  intercept: true
+  interaction_terms: false
+  trees_or_non_linear_fusion: false
+  residual_mixing_coefficient: fixed_1
+  objectives:
+    N: request_mean_listwise_softmax_ce
+    R: request_mean_listwise_softmax_ce_over_complete_familiar_universe
+    F: user_weighted_binary_logistic_loss_on_observed_like_dislike
+  labels:
+    F_natural_like_dislike_ratio: true
+    F_oversampling: false
+    F_synthetic_unobserved_negatives: false
+  feature_transforms:
+    counts: log1p
+    recency_seconds: log1p
+    proposal_rank_if_defined: log1p
+    continuous_clip_quantiles_from_base_fit_only: [0.005, 0.995]
+    standardization_mean_std_from_base_fit_only: true
+    std_floor: 1.0e-8
+    missing_continuous_value_after_transform: 0.0
+    missing_indicator_required: true
+  schemas:
+    N:
+      - log1p_item_count
+      - log1p_artist_count
+      - log1p_item_recency_seconds
+      - log1p_artist_recency_seconds
+      - log1p_global_popularity_at_base_fit_cutoff
+      - item_history_missing
+      - artist_history_or_mapping_missing
+    R:
+      - log1p_item_count
+      - log1p_artist_count
+      - log1p_item_recency_seconds
+      - log1p_artist_recency_seconds
+      - log1p_global_popularity_at_base_fit_cutoff
+      - log1p_causal_proposal_rank
+      - artist_missing
+    F:
+      - log1p_item_count
+      - log1p_artist_count
+      - log1p_item_recency_seconds
+      - log1p_artist_recency_seconds
+      - log1p_global_popularity_at_base_fit_cutoff
+      - item_history_missing
+      - artist_history_or_mapping_missing
+  proposal_rank_availability:
+    N: >-
+      Omitted. The retained legacy N quality/fidelity sources do not preserve
+      one common causal proposal-rank field, and P7 must not reconstruct one
+      from the injected target or panel position.
+    R: deterministic_count_recency_item_id_rank_is_defined
+    F: not_defined_for_observed_feedback_candidate
+  regularization:
+    kind: l2_coefficients_only
+    convention: loss_plus_lambda_over_2_times_squared_l2
+    lambda_grid: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+  blocked_cv_inside_base_fit:
+    base_fit_seconds: [0, 15552000]
+    blocks_days: [[0, 45], [45, 90], [90, 135], [135, 180]]
+    forward_folds:
+      - {train_days: [0, 45], validate_days: [45, 90]}
+      - {train_days: [0, 90], validate_days: [90, 135]}
+      - {train_days: [0, 135], validate_days: [135, 180]}
+    selection: minimum_equal_fold_mean_primary_loss
+    tie_break: larger_lambda
+    refit_after_selection: all_base_fit
+  solver:
+    family: deterministic_scipy_lbfgsb
+    max_iterations: 1000
+    ftol: 1.0e-12
+    gtol: 1.0e-8
+  weighting:
+    loss_unit: request
+    each_user_equal_total_weight_within_task: true
+    candidate_rows_never_weight_requests: true
+  freeze_artifacts:
+    - feature_schema
+    - clipping_bounds
+    - scaler_mean_std
+    - selected_lambda
+    - coefficients_and_intercept
+    - base_fit_row_and_user_manifest_hash
+    - fitter_contract_hash
+
+split_coverage_audit_v1:
+  script: scripts/audit_p7_split_coverage.py
+  splits_seconds:
+    base_fit: [0, 15552000]
+    residual_train: [15552000, 17539200]
+    development: [17539200, 18144000]
+    qualification: [18144000, 18748800]
+  per_workload_report:
+    - query_count
+    - unique_users
+    - per_participating_user_query_p50_p90_p99
+    - target_strata
+    - candidate_count_p50_p90_p95_p99_max
+    - history_length_p50_p90_p95_p99_max
+    - base_feature_missing_and_zero_popularity_rate
+  R_required_denominator: rankable_familiar_return_over_all_eligible_3day_session_starts
+  F_required_cohorts:
+    - label_ratio
+    - prior_30m_same_item
+    - non_prior_30m
+    - latest_item
+    - organic
+    - recommendation_driven
+  inferential_unit: user
+
+return_variable_candidate_contract_v1:
+  primary_candidate_universe: complete_unique_items_in_causal_512_prefix
+  sampling_or_quality_based_cap: forbidden
+  history_prefix_computations_per_request: 1
+  candidate_attention: independent_transient_query_rows
+  execution: exact_microbatch_chunks
+  cross_chunk_normalizer: streaming_logsumexp
+  padding_logit: negative_infinity
+  loss_reduction: request_mean_then_user_equal_total_weight
+  invariants:
+    - score_matches_unchunked_for_chunk_sizes_1_intermediate_and_full
+    - loss_matches_unchunked_listwise_ce
+    - chunk_and_candidate_order_do_not_change_aligned_scores_or_loss
+    - padding_never_changes_loss
+    - target_is_present_exactly_once
+    - candidate_count_never_changes_request_weight
+  system_cap_policy: >-
+    No cap is currently authorized. If a canary exceeds the frozen memory
+    envelope, a new contract may set a cap from memory measurements only,
+    before model-quality results are observed.
+
+m0_m1_objective_contract_v1:
+  shared:
+    architecture: 4_layers_hidden128_4_heads_context512
+    base_scorer: same_task_specific_frozen_base
+    candidate_protocol: same_per_workload
+    query_type_table: three_types_N_R_F
+    optimizer: adamw_lr_0.0002_weight_decay_0.0001
+    seeds: [17, 37, 71]
+    checkpoint_rule: final_registered_step_only
+    qualification_early_stopping: forbidden
+    qualification_model_selection: forbidden
+    per_task_unique_query_budget_rule: >-
+      K equals the number of quality-evaluable rankable R residual_train
+      requests after the frozen coverage audit. Every task/model sees exactly
+      K deterministic request samples per seed; N/F are user-balanced sampled
+      without using labels or H, and R uses every rankable request once.
+    frozen_unique_query_K: 3939
+    compute_matching:
+      strict_compute_matched: false
+      reason: candidate_count_and_history_work_differ_by_task
+      M1_extra_cross_task_supervision_is_intended_treatment: true
+      budget_table_required_before_training: true
+  M0:
+    models: [single_task_N, single_task_R, single_task_F]
+    encoder_sharing_across_tasks: false
+    objective: one_task_only
+  M1:
+    models: [shared_multitask_N_R_F]
+    encoder_sharing_across_tasks: true
+    task_sampling: exact_equal_K_requests_per_task
+    objective: one_third_times_sum_of_request_normalized_N_R_F_losses
+    per_task_user_equal_total_weight: true
+  only_primary_difference: independent_single_task_encoder_vs_shared_multitask_encoder
+  forbidden_auxiliary_objectives:
+    - full_beats_recent_loss
+    - old_history_attention_reward
+    - H_maximization
+    - history_only_score
+    - state_distillation_designed_to_increase_H
+
+base_dev_sanity_when_later_authorized:
+  N_R: [listwise_log_loss, target_pairwise_auc, ndcg, hr, mrr]
+  F: [log_loss, roc_auc, dislike_pr_auc, macro_calibration, per_class_calibration]
+  controls: [random_for_N_R, majority_for_F, registered_single_features]
+  compare_full_vs_recent: false
+  qualification_opened: false
+
+forbidden:
+  - alter_time_splits_from_H
+  - select_lambda_on_development_or_qualification
+  - oversample_dislikes
+  - generate_unobserved_feedback_negatives
+  - sample_R_candidates_for_the_primary_protocol
+  - train_HSTU_before_P7_5_manifest_canary_passes

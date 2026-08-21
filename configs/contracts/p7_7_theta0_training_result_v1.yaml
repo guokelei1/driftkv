@@ -1,0 +1,120 @@
+result: p7_7_theta0_training_result_v1
+date: 2026-08-20
+contract: p7_7_theta0_training_contract_v1
+contract_sha256: 8ead5b0ee25ad2aaafa5c8fa174d59ceadea88cba96f97a1c367067496492837
+status: passed_frozen_theta0_and_development_sanity
+evidence_level: development_full512_only_not_H_not_qualification
+
+inputs:
+  residual_train_index_sha256: 5a24def8a2ef9e51fc78f52b5a0882564e2661bb291392ff40e02b36eb3645ea
+  development_index_sha256: 7685c1fb42b445e1c8f31cd1b8e852630d87e68e9e40d3b668c3f382f8a20e93
+  qualification_index_sha256: 61f86afefe2dd32eca33b625fd7af1338fdd1f4850550ca4a3d968d1170a3857
+  frozen_base_bundle_sha256: 4221f0b95245bb6b3a735c86d4cdb2603c6a7d8b173c7cac7c3dd5e28a64e42c
+  qualification_read_or_scored: false
+  recent32_or_H_evaluated: false
+
+training:
+  models: [M0-N, M0-R, M0-F, M1]
+  seeds: [17, 37, 71]
+  formal_runs: 12
+  context: Full-512 only
+  deployment_score: stopgrad_frozen_base_plus_CC_residual
+  selected_checkpoint_per_model_seed: true
+  checkpoint_selection: frozen_development_objective_only
+  retained_nonselected_checkpoints: false
+  preflight:
+    status: passed
+    fixed_real_queries_per_task: 32
+    qualification_locked: true
+
+selected_epochs:
+  M0-N: {17: 2, 37: 2, 71: 2}
+  M0-R: {17: 1, 37: 1, 71: 2}
+  M0-F: {17: 1, 37: 2, 71: 2}
+  M1: {17: 1, 37: 2, 71: 2}
+
+development_sanity:
+  M0-N:
+    task: N
+    frozen_base_loss: 3.936390996524381
+    deployment_loss_mean: 3.4588259912028407
+    loss_reduction_mean: 0.47756500532154017
+    loss_reduction_range: [0.44976731033066786, 0.5208640227774053]
+    all_seeds_better_than_base: true
+  M0-R:
+    task: R
+    frozen_base_loss: 5.006009232809339
+    deployment_loss_mean: 5.002213368865573
+    loss_reduction_mean: 0.0037958639437653354
+    loss_reduction_range: [0.0002830764426082766, 0.010507407842077043]
+    all_seeds_better_than_base: true
+    interpretation: positive_but_small_development_increment_not_H_evidence
+  M0-F:
+    task: F
+    frozen_base_loss: 0.3290655234407522
+    deployment_loss_mean: 0.312287293482306
+    loss_reduction_mean: 0.01677822995844619
+    loss_reduction_range: [0.015935856948235905, 0.017371760058101426]
+    all_seeds_better_than_base: true
+  M1:
+    N:
+      deployment_loss_mean: 3.5908798177128554
+      loss_reduction_mean: 0.3455111788115257
+      all_seeds_better_than_base: true
+    R:
+      deployment_loss_mean: 5.044738549619093
+      loss_reduction_mean: -0.038729316809754145
+      seeds_better_than_base: [17]
+      seeds_worse_than_base: [37, 71]
+      all_seeds_better_than_no_information: true
+      interpretation: multitask_R_interference_observed_and_retained
+    F:
+      deployment_loss_mean: 0.31196781021493486
+      loss_reduction_mean: 0.017097713225817306
+      all_seeds_better_than_base: true
+    contract_gate_R_or_F_positive_increment_each_seed: passed_via_F_all_seeds
+    one_checkpoint_per_seed_executes_all_tasks: passed
+  all_models_tasks_finite_nonzero_residual: passed
+  base_bundle_hash_unchanged: passed
+  qualification_locked_before_during_after: passed
+
+budget_per_seed:
+  each_task_unique_queries: 3939
+  each_task_query_presentations: 11817
+  M1_and_three_M0_aggregate:
+    unique_queries: 11817
+    query_presentations: 35451
+    candidate_rows: 4674759
+    history_tokens: 16781295
+    token_layer_work: 85824216
+    optimizer_steps: 4437
+  M1_vs_each_task_specific_M0_compute_matched: false
+  M1_vs_three_M0_aggregate_frozen_work_counters_matched: true
+
+gates:
+  four_way_real_data_preflight: passed
+  twelve_formal_runs_completed: passed
+  M0_each_seed_better_than_frozen_base: passed
+  M1_each_task_nonzero_residual_and_gradient: passed
+  M1_R_or_F_positive_increment_each_seed: passed
+  M1_every_task_better_than_no_information: passed
+  frozen_budget_conservation: passed
+  checkpoint_byte_hashes: passed
+  qualification_read_or_scoring: prohibited_and_not_performed
+  H_claim: prohibited_not_established
+
+artifacts:
+  M0_N_training: {path: results/p7/theta0_training/m0_n_theta0_train_v1.json, sha256: 14326867f850d07175554f9e6236c77f8dbd03be5c45364487c415bc782b7a77}
+  M0_R_training: {path: results/p7/theta0_training/m0_r_theta0_train_v1.json, sha256: bedb370a016bc680c37dd2ee61fe6eb5aa78c52e4549affb128344e633b41472}
+  M0_F_training: {path: results/p7/theta0_training/m0_f_theta0_train_v1.json, sha256: 34d6ae7038966a4bf859812525e59a0c1c82e218396a8dbdcf51461e2998c8ea}
+  M1_training: {path: results/p7/theta0_training/m1_theta0_train_v1.json, sha256: bbc95ac4064740e4db33aff42cae70f1c82bfc77b69c00ff2dd8158e95e4f742}
+  development_sanity: {path: results/p7/theta0_training/theta0_dev_sanity_v1.json, sha256: b364498e1fab4803a13094ff130b49fee5dcf5ab74f5be6d2a535c36a5c550b2}
+  budget_audit: {path: results/p7/theta0_training/theta0_training_budget_audit_v1.json, sha256: c2c1df5c2921824e92e76789b33544d55fcfdca09cd9c0f48b2ad9cdaeb71e75}
+  frozen_bundle: {path: results/p7/theta0_training/frozen_theta0_bundle_v1/bundle_manifest.json, sha256: 07549be6359980df352768a4dbd17e7e466487c920f04af17f80d5ad94e7ba80}
+
+authorization_after_this_result:
+  P7_7: complete
+  P7_8_one_time_H_qualification: next_stage_eligible_pending_explicit_authorization
+  qualification_loader: locked_pending_explicit_P7_8_authorization
+  theta1_theta2: prohibited
+  staleness_or_controller: prohibited

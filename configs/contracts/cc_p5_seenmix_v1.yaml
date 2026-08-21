@@ -1,0 +1,139 @@
+contract: cc_p5_seenmix_v1
+status: protocol_validity_failed_shortcut_audit
+authorizes:
+  cc_theta1_theta2: false
+  controller: false
+  tomography: false
+  theta3: false
+supersedes_for_cc_qualification:
+  - Q_main_rank_decay_v1_cc_causal quality gates
+  - cc_theta0_gate2_v1
+  - cc_theta0_v2_gate2_v1
+
+# P5.0 — permanent freeze of P4 as development diagnosis.
+p4:
+  evaluator_consistency: passed
+  likelihood_vs_topk_conflict: real
+  dense_training_regime_effect: mixed
+  candidate_protocol:
+    status: confounded
+    confounder: seen_membership_and_long_term_count_shortcut
+  compact_summary_result:
+    status: protocol_conditioned_diagnostic
+    cannot_support_state_sufficiency_claim: true
+  cc_theta1_theta2_authorized: false
+  development_only_gates:
+    - data/manifests/yambda50m_v2_theta0_qualification_candidates.jsonl
+    - data/manifests/cc_theta0_v2_qualification_candidates.jsonl
+  cannot_restore_qualification_by_rescoring_old_gates: true
+
+# Authorization chain. Do not skip.
+authorization_chain:
+  - protocol_validity
+  - H
+  - S
+  - heterogeneity
+  - opportunity
+  - design
+
+# Quotas are chosen only from coverage. They are not chosen to enlarge
+# Full-Recent-32 gaps. Concrete integers are written back after P5.1.
+quotas:
+  status: frozen_from_coverage
+  competitor_slots: 99
+  quality_panel_size: 100
+  fidelity_panel_size: 99
+  min_discovery: 32
+  recent_window: 32
+  old_window: 480
+  max_history: 512
+  search:
+    m_old: [24, 16, 12, 8, 4]
+    m_recent: [16, 12, 8, 4]
+    order: descending_m_old_then_descending_m_recent
+    rule: first_grid_point_meeting_coverage
+  no_cross_stratum_backfill: true
+  drop_incomplete_requests: true
+  frozen:
+    m_recent: 16
+    m_old: 24
+    m_discovery: 59
+    selected_by: first_grid_point_meeting_coverage
+    full_quota_coverage: 0.9406996587030717
+
+feasibility_gates:
+  development_queries: [v1_window, v2_window]
+  min_full_quota_coverage: 0.80
+  max_incomplete_rate: 0.20
+  min_requests_after_complete_case: 1500
+  # Backfill is forbidden across strata. Incomplete rate is the backfill
+  # substitute: those requests are dropped, not filled from another pool.
+  max_cross_stratum_backfill: 0.0
+
+shortcut_gates:
+  fit_split: v1_window
+  eval_split: v2_window
+  features:
+    - seen_flag
+    - recent_flag
+    - old_flag
+    - log1p_item_count
+    - log1p_artist_count
+    - last_seen_recency_days
+    - log1p_global_popularity
+    - proposal_rank
+  max_seenmix_simple_auc: 0.75
+  max_matched_simple_auc: 0.60
+  min_old_minus_seenmix_auc: 0.05
+  waive_delta_if_old_auc_lt: 0.65
+  min_matched_complete_requests: 400
+
+matched_diagnostic:
+  name: Q_history_matched_diag_v1
+  competitor_slots: 32
+  require_same_seen_stratum: true
+  bins:
+    item_count: [0, 1, 2, 4, 8]
+    recency_seconds: [0, 3600, 86400, 604800]
+    popularity_log10: [0, 1, 2, 3, 4]
+  not_a_serving_workload: true
+
+v3_gates:
+  # Used only after protocol_validity passes and a new unopened window is scored.
+  A_correctness:
+    full_ce_below_random: true
+    full_pairwise_auc_gt: 0.5
+    evaluator_consistency: required
+  B_history_semantics:
+    manifest: Q_fidelity_seenmix_v1
+    target_injected: false
+    metric: mean_score_rms_and_topk_disagreement
+    require_above_identity_floor: true
+    require_cross_panel_repeatable: true
+    panel_count: 8
+  C_ranking_sanity:
+    primary: pairwise_target_auc
+    require_full_minus_recent32_ci_not_stable_negative: true
+    ndcg_hr_mrr: companions_must_not_all_drop_on_both_windows
+    ce: companion_only
+  D_state_necessity:
+    compare: [Recent-32, Recent-32-plus-compact, Full-512]
+    decision: human_adjudication_after_report
+
+unopened_qualification_window:
+  update_index: 2
+  status: sealed_until_protocol_validity
+  must_not_be_used_for_quota_or_shortcut_decisions: true
+
+model_if_authorized:
+  layers: 4
+  hidden_size: 128
+  heads: 4
+  context: 512
+  supervision: dense_causal_anchors
+  loss: candidate_set_ce
+  optimizer: adamw_2e-4_wd_1e-4
+  epochs: 1
+  batch_size: 16
+  world_size: 4
+  only_material_change: Q_train_seenmix_v1

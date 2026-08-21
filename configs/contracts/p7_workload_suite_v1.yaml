@@ -1,0 +1,135 @@
+contract: p7_workload_suite_v1
+status: p7_5_canary_and_materialization_contract_frozen_training_not_authorized
+depends_on: p7_yambda_stateful_suite_v1
+evidence_level: preregistered_development_contract
+
+authorization:
+  implement_base_and_residual: true
+  build_canary_rows: true
+  build_full_manifests: false
+  train_m0_m1: false
+  train_release_chain: false
+
+p7_3_implementation:
+  frozen_base_scorer: src/hstu_kvcache/models/cc.py
+  workload_request_primitives: src/hstu_kvcache/data/stateful_workloads.py
+  focused_regressions: tests/test_p7_stateful_workload_contract.py
+  full_test_result: 38_passed
+  lint_result: passed_for_p7_files
+  remaining_before_full_manifests:
+    - build_and_seal_compact_manifests_under_p7_5_materialization_contract_v1
+
+shared:
+  dataset: yambda50m_v2
+  persistent_prefix:
+    max_tokens: 512
+    strictly_before_query_timestamp: true
+    shared_across_query_types: true
+  recent_path_tokens: 32
+  candidate_query:
+    transient: true
+    writes_persistent_kv: false
+    fields: [candidate_item_embedding, query_type_embedding, request_timestamp_embedding]
+  query_types: [QUERY_NEXT, QUERY_RETURN, QUERY_FEEDBACK]
+  score: frozen_base_logit_plus_cc_residual_logit
+  residual_coefficient: 1.0
+  residual_coefficient_tunable: false
+  base_invariance: >-
+    Candidate universe, raw base features, fitted base parameters, and base
+    logits are materialized from the full causal request before Full/Recent
+    model-path comparison and must be bitwise identical across truncations.
+  time_split_seconds:
+    base_fit: [0, 15552000]          # [0d, 180d)
+    residual_train: [15552000, 17539200] # [180d, 203d)
+    development: [17539200, 18144000]    # [203d, 210d)
+    qualification: [18144000, 18748800]  # [210d, 217d)
+  base_features:
+    - log1p_item_count
+    - log1p_artist_count
+    - item_last_seen_recency
+    - artist_last_seen_recency
+    - log1p_global_popularity_at_causal_cutoff
+    - proposal_rank_if_defined
+  base_fit_policy:
+    fit_on_base_fit_only: true
+    freeze_before_residual_train: true
+    no_quality_or_fidelity_manifest_refit: true
+  manifests:
+    quality_and_fidelity_separate: true
+    fidelity_must_not_contain_label: true
+    all_fields_causal_at_query: true
+
+workload_natural_next_v1:
+  role: short_term_noop_negative_control
+  query_type: QUERY_NEXT
+  retained_protocol: natural_next_listen_with_frozen_q_main
+  long_kv_qualification: no_go
+  may_show_h_or_s_near_zero: true
+  cannot_trigger_candidate_redesign: true
+  quality_target_injection: existing_protocol_only
+  fidelity_target_injection: false
+
+workload_return_to_familiar_v1:
+  role: primary_long_state_mechanism_candidate
+  query_type: QUERY_RETURN
+  request_eligibility:
+    inactivity_gap_seconds_at_least: 259200
+    prefix_has_at_least_two_unique_items: true
+    eligibility_uses_query_time_information_only: true
+  candidate_universe:
+    definition: all_unique_items_in_full_causal_512_token_prefix
+    recent_stratum: appears_in_last_32_tokens
+    old_stratum: appears_in_tokens_33_through_512_but_not_last_32
+    other_candidates_are_competing_not_observed_negative_feedback: true
+    deterministic_proposal_rank: descending_item_count_then_ascending_recency_then_item_id
+  quality:
+    label: first_observed_listen_at_eligible_session_start
+    evaluable_only_if_label_is_in_candidate_universe: true
+    conditioning_must_be_reported: familiar_return_given_eligible_session_start
+    target_injection: false
+    report_service_request_coverage_denominator: true
+  fidelity:
+    requests: all_query_time_eligible_session_starts
+    candidates: same_history_derived_candidate_universe
+    target_injection: false
+    label_present: false
+
+workload_long_horizon_feedback_v1:
+  role: long_horizon_preference_mechanism_candidate
+  query_type: QUERY_FEEDBACK
+  selected_variant: explicit_like_dislike
+  request_eligibility:
+    event_type: [like, dislike]
+    require_at_least_one_listen_strictly_before_feedback_timestamp: true
+    coincident_listen_excluded_from_prefix: true
+  candidate: feedback_event_item_as_observed_request_input
+  label: {like: 1, dislike: 0}
+  loss: binary_logistic
+  evaluation:
+    primary: user_grouped_rank_auc_with_time_order_preserved
+    companions: [log_loss, pairwise_accuracy, calibration_error]
+    report_history_position_cohorts:
+      [recent_seen, old_seen, seen_only_before_512, unseen]
+    report_shortcut_cohorts: [latest_item, prior_target_listen_within_30m, coincident_listen]
+  quality:
+    target_injection: not_applicable_candidate_is_request_input
+  fidelity:
+    strip_feedback_label: true
+    retain_observed_candidate_and_query_timestamp: true
+    label_present: false
+
+p7_3_required_regressions:
+  - base_score_identical_across_empty_recent_full_and_compact_paths
+  - candidate_universe_identical_across_history_truncation_paths
+  - only_cc_state_changes_between_full_and_recent
+  - candidate_query_does_not_change_persistent_state
+  - coincident_feedback_event_is_not_in_causal_prefix
+  - quality_manifest_contains_labels_and_fidelity_manifest_does_not
+
+forbidden:
+  - tune_inactivity_gap_from_h_or_s
+  - replace_explicit_feedback_from_h_or_s
+  - fit_residual_coefficient
+  - recompute_base_features_from_truncated_history
+  - call_competing_return_candidates_negative_feedback
+  - use_feedback_label_in_fidelity_manifest

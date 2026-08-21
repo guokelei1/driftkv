@@ -1,0 +1,223 @@
+contract: yambda50m_v2
+status: release_lineage_temporal_continuity_repair_required
+supersedes: configs/contracts/yambda50m_v1.yaml
+
+data:
+  source_manifest: data/manifests/yambda50m_v2.json
+  primary_event: listens
+  positive_rule: played_ratio_pct > 50
+  user_statistics_unit: one_user_one_paired_difference
+  item_catalog: ids_observed_in_listens_50m
+  artist_mapping: artist_item_mapping.parquet_filtered_to_observed_items
+
+time:
+  timestamp_representation: seconds_rounded_to_5_seconds
+  observed_span_days: 300.9259259259
+  release_gap_seconds: 1800
+  foundation_anchor_candidates_days: [180, 210, 225, 240, 255, 270]
+  primary_update_window: 1d
+  robustness_update_window: 3d
+  nearline_exploratory_window: 12h
+  excluded_long_window: 7d
+  foundation_days: 210
+
+endpoints:
+  first_legal_request: first_request_after_release_gap_with_known_user
+  dilution_requests: [1, 2, 4, 8, 16]
+  online_lineage: old_prefix_then_current_model_append_in_timestamp_order
+
+release_budgeted_state_convergence:
+  transition_mode: pre_cutover_background
+  request_time_controller_required: false
+  population_primary: all_materialized_states_at_release
+  served_user_subset: fidelity_evaluation_only
+  future_request_features_allowed: false
+  current_full_is_fidelity_reference: true
+  current_full_is_ranking_upper_bound: false
+  actions: [no_op_reuse, fast_migration, selective_recompute, exact_recompute]
+  primary_budget: exact_equivalent_token_layer_work
+  budget_sweep: [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
+  budget_companions: [kv_read_bytes, kv_write_bytes, migration_makespan]
+  primary_fidelity: current_model_topk_regret
+  fidelity_companions:
+    [top10_overlap_loss, margin_weighted_pairwise_disagreement, js_divergence, normalized_score_rms]
+  diagnostic_operating_points:
+    top10_overlap_loss: [0.2, 0.5]
+  active_cache_snapshot:
+    status: frozen_release_snapshot_v1
+    definition: all materialized exact-parent persistent states at release
+    must_use_pre_release_information_only: true
+    require_future_request: false
+    require_future_append: false
+    require_future_target: false
+    primary_ttl: none
+    min_effective_prefix_tokens: 1
+    model_history_cap: 512
+    weighting:
+      primary: uniform_per_state
+      companion: pre_release_activity_weighted
+    sensitivity_cohorts: [last_activity_within_1d, last_activity_1d_to_7d, last_activity_7d_to_30d, last_activity_over_30d]
+    served_user_subset_is_not_population_definition: true
+    artifacts:
+      theta0_theta1: data/manifests/yambda50m_v2_release_snapshot_theta0_theta1.parquet
+      theta1_theta2: data/manifests/yambda50m_v2_release_snapshot_theta1_theta2.parquet
+  cutover_probe_validity:
+    status: invalidated_pending_continuous_suffix_delta_rerun
+    trace_endpoint: first_observed_post_release_listening_event_proxy
+    target_injection: false
+    primary_metric: current_model_topk_regret
+    artifact: results/data_audit/yambda50m_v2/cutover_probe_validity_v2.json
+    invalidated_artifact: results/data_audit/yambda50m_v2/cutover_probe_validity_v1.json
+    invalidated_reason: proxy timestamp was not bounded by the next scheduled release
+    proxy_must_be_before_next_release: true
+    development_gate:
+      require_positive_spearman_on_both_edges: true
+      require_top10_and_top20_recall_strictly_above_random_on_both_edges: true
+      require_cross_panel_generalization: true
+    q_main_multi_panel:
+      distribution: Q_main_rank_decay_v1
+      primary: mean_current_model_topk_regret
+      companion: cvar90_current_model_topk_regret
+      development_panels: [0, 15]
+      heldout_panels: [16, 31]
+      reliability_artifact: results/data_audit/yambda50m_v2/multi_panel_risk_v1.json
+      external_validity_artifact: results/data_audit/yambda50m_v2/external_validity_v3.json
+      reliability_gate:
+        status: passed_on_both_development_edges
+        split_half_spearman: [0.9599513, 0.9509034]
+        split_half_top10_recall: [0.8742058, 0.8808619]
+      external_validity:
+        status: passed_as_informative_not_precise_surrogate_on_strict_observed_active_cohort
+        strict_proxy_coverage: [0.4490341, 0.4326996]
+        spearman: [0.1649130, 0.2428689]
+        top10_enrichment_over_random: [4.6045198, 5.5555556]
+        limitation: not_a_serving_request_claim_and_not_generalized_to_unobserved_states
+  budget_knapsack_frontier:
+    status: invalidated_pending_continuous_suffix_delta_rerun
+    artifact: results/data_audit/yambda50m_v2/release_snapshot_budget_oracle_v1.json
+    solver: scipy_highs_milp
+    oracle_label_policy: only_points_with_zero_mip_gap_are_exact_oracles
+    limitation: candidate_panel_A_conditioned_not_general_candidate_distribution_opportunity
+  q_main:
+    status: candidate_distribution_frozen_measurements_invalidated_pending_continuous_suffix_delta_rerun
+    name: Q_main_rank_decay_v1
+    catalog_cutoff: foundation_end
+    user_conditioned_seen_filter: pre_foundation_listen_plus
+    candidate_pool_size: 1000
+    sampling: weighted_without_replacement
+    rank_decay_power: 0.5
+    panel_size: 100
+    panel_count: 32
+    split: {development_panel_id_range_inclusive: [0, 15], heldout_panel_id_range_inclusive: [16, 31]}
+    global_seed: 20260818
+    target_injection: false
+    provenance_audit: results/data_audit/yambda50m_v2/panel_provenance_v1.json
+    output_pattern: data/manifests/yambda50m_v2_qmain32_v2_{edge}.parquet
+    heldout_opportunity_artifact: results/data_audit/yambda50m_v2/qmain_heldout_panel_frontier_v1.json
+    heldout_opportunity:
+      status: invalidated_pending_continuous_suffix_delta_rerun
+      evaluation: development_panel_selection_heldout_panel_fidelity
+      frontier_area_development_selected: [0.5839278, 0.5532880]
+      frontier_area_random: [0.9878041, 0.9672929]
+      limitation: development_only_no_learned_controller_or_blind_qualification_claim
+    panel_free_score_distortion:
+      status: invalidated_pending_continuous_suffix_delta_rerun
+      artifact: results/data_audit/yambda50m_v2/panel_free_score_distortion_v1.json
+      support: user_conditioned_pre_release_Q_main_top1000_rank_decay
+      spearman_vs_heldout_multi_panel_regret: [0.4002692, 0.5001191]
+      heldout_panel_frontier_area: [0.6412604, 0.6028854]
+      limitation: large_catalog_gold_standard_audit_still_pending
+    large_candidate_audit:
+      status: invalidated_pending_continuous_suffix_delta_rerun
+      subset_manifest: results/data_audit/yambda50m_v2/large_candidate_audit_subset_v1.json
+      metric_artifact: results/data_audit/yambda50m_v2/large_candidate_metric_audit_v1.json
+      controller_transfer_artifact: results/data_audit/yambda50m_v2/large_candidate_controller_transfer_v1.json
+      qmain_top1000_spearman_vs_multi_panel: [0.9309016, 0.9335138]
+      qmain_top1000_top10_recall_vs_multi_panel: [0.8653846, 0.8269231]
+      rank_decay_top10000_extension_spearman: [0.8228469, 0.8477743]
+  dilution_curve:
+    status: neutral_readout_bypass_observed_development_tomography_continues
+    artifact: results/data_audit/yambda50m_v2/dilution_curve_v2.json
+    cap_timing_audit: results/data_audit/yambda50m_v2/dilution_curve_cap_timing_audit_v1.json
+    complete_case_states: [2419, 2291]
+    interpretation: >-
+      continuous-lineage fixed-query audit on complete no-cap cohorts finds
+      that one current token makes Suffix Only approximate Full while Full is
+      nearly unchanged by masking that token; this is neutral-readout prefix
+      bypass, not evidence of old-KV repair.
+    repair_bypass_fixed_query_artifacts:
+      theta0_theta1: results/data_audit/yambda50m_v2/repair_bypass_fixed_query_v1_complete_nocap_v1_theta0_theta1.json
+      theta1_theta2: results/data_audit/yambda50m_v2/repair_bypass_fixed_query_v1_complete_nocap_v1_theta1_theta2.json
+    complete_case_no_cap_states: [126, 128]
+  next_controller_stage:
+    status: paused_for_state_staleness_tomography_theta3_preserved
+    ranker_target: current_model_topk_regret_at_cutover
+    ranker_kind: metadata_only_continuous_risk_ranker
+    feature_whitelist:
+      [effective_prefix_length, raw_prefix_length, last_activity_age_seconds,
+       events_last_1d, events_last_7d, events_last_30d,
+       unique_items_last_7d, unique_artists_last_7d,
+       repeat_ratio_last_7d, organic_ratio_last_7d]
+    forbidden_features:
+      [future_served_status, future_append_count, first_proxy_delay,
+       future_item, future_candidate, future_target, current_full_output]
+    validation: bidirectional_cross_edge
+    scheduler: predicted_benefit_under_exact_equivalent_work_budget
+    scheduler_implementation: benefit_cost_greedy_for_learned_models_development_only
+    metadata_ranker_development:
+      artifact: results/data_audit/yambda50m_v2/metadata_risk_ranker_cross_edge_v1.json
+      selected_candidate: hgb_80_leaf8
+      cross_edge_frontier_area:
+        theta0_theta1_to_theta1_theta2: 0.6713223
+        theta1_theta2_to_theta0_theta1: 0.7019864
+      random_frontier_area: [0.9694676, 0.9887448]
+      status: invalidated_pending_continuous_suffix_delta_rerun
+      caveat: prior labels violated temporal continuity at the cache boundary
+    required_before_theta3: [readout_audit, staleness_influence_map, version_debt_audit, scale_ladder_audit, behavior_strata_audit, rerun_ranker_or_workload_redefinition, controller_cost_accounting]
+
+candidate_protocol:
+  status: quality_and_target_independent_profiler_manifests_frozen
+  quality:
+    protocol: base_popularity_conditional_reranking
+    target_injection: true
+  profiler:
+    protocol: fixed_base_popularity_target_independent_panel
+    target_injection: false
+    cutover_probe_theta0_theta1: data/manifests/yambda50m_v2_cutover_probe_theta0_theta1.jsonl
+    cutover_probe_theta1_theta2: data/manifests/yambda50m_v2_cutover_probe_theta1_theta2.jsonl
+  sanity_manifest: data/manifests/yambda50m_v2_canary_candidates.jsonl
+  dev_manifest: data/manifests/yambda50m_v2_theta0_dev_candidates.jsonl
+  qualification_manifest: data/manifests/yambda50m_v2_theta0_qualification_candidates.jsonl
+  edge2_dev_manifest: data/manifests/yambda50m_v2_edge2_dev_candidates.jsonl
+  edge2_qualification_manifest: data/manifests/yambda50m_v2_edge2_qualification_candidates.jsonl
+  profiler_edge1_manifest: data/manifests/yambda50m_v2_edge1_profiler_candidates.jsonl
+  profiler_edge2_manifest: data/manifests/yambda50m_v2_edge2_profiler_candidates.jsonl
+  sanity_manifest_paper_eligible: false
+  candidate_size: 100
+  retriever_cutoff: foundation_end
+  candidates_frozen_before_model_comparison: true
+
+model_canary:
+  versions: [theta0, theta1, theta2]
+  baselines: [random, popularity, no_history_hstu, full_history_hstu]
+  state_paths: [current_full, previous_full, reuse, current_suffix_only]
+  claims_allowed: [history_sensitive_execution, cache_lineage_correctness, recompute_cost_measurement]
+  claims_disallowed: [sota_algorithm_comparison, every_edge_positive_gap]
+  success_conditions:
+    require_history_conditioned_gain: true
+    require_natural_order_beats_shuffle: false
+    require_beats_sasrec: false
+    require_all_edges_positive_gap: false
+    no_op_is_valid_result: true
+    heterogeneous_compatibility_is_primary_opportunity: true
+  chain_mode: one_hop_exact_parent
+  invalidated_chain_result: results/data_audit/yambda50m_v2/two_edge_chain_screen.json
+  invalidated_lineage_v2_result: results/data_audit/yambda50m_v2/two_edge_chain_lineage_v2_screen.json
+  invalidated_reason: >-
+    legacy medium-model collate right-aligned events while HSTU lengths and
+    last-hidden semantics require leading valid tokens; earlier release-lineage
+    screen also treated update-window events as current-model append.
+  chain_result: results/data_audit/yambda50m_v2/two_edge_chain_batchfix_v3_screen.json
+  compatibility_profile: results/data_audit/yambda50m_v2/compatibility_profile_batchfix_v3_screen.json
+  oracle_frontier: results/data_audit/yambda50m_v2/noop_exact_oracle_frontier_v1.json
+  next_stage: budget_based_oracle_frontier_and_pre_release_risk_ranker_development

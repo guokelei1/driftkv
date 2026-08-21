@@ -43,6 +43,50 @@ class BehaviorEncoder(nn.Module):
         return self.embed(behavior)
 
 
+class QueryTokenEncoder(nn.Module):
+    """Encode a transient candidate-conditioned CC query token.
+
+    Query tokens deliberately use tables separate from ``BehaviorEncoder``.
+    In particular, ``action_embedding`` has no padding index: the configured
+    action ID is a reserved query action, not PAD or MASK.  The encoder does
+    not retain state; callers may append its output to a prefix for scoring
+    and discard the resulting one-token cache.
+    """
+
+    def __init__(
+        self,
+        hidden_size: int,
+        num_query_types: int = 1,
+        num_query_actions: int = 1,
+    ) -> None:
+        super().__init__()
+        if num_query_types < 1 or num_query_actions < 1:
+            raise ValueError("query embedding table sizes must be positive")
+        self.type_embedding = nn.Embedding(num_query_types, hidden_size)
+        # Do not set padding_idx: RESERVED_QUERY_ACTION is independent of PAD/MASK.
+        self.action_embedding = nn.Embedding(num_query_actions, hidden_size)
+
+    def forward(
+        self,
+        item_vectors: torch.Tensor,
+        query_type_ids: torch.Tensor,
+        query_action_ids: torch.Tensor,
+        time_embedding: torch.Tensor,
+    ) -> torch.Tensor:
+        if item_vectors.shape != time_embedding.shape:
+            raise ValueError("query item and time embeddings must have the same shape")
+        if item_vectors.shape[:-1] != query_type_ids.shape:
+            raise ValueError("query type IDs and query items have incompatible shapes")
+        if item_vectors.shape[:-1] != query_action_ids.shape:
+            raise ValueError("query action IDs and query items have incompatible shapes")
+        return (
+            item_vectors
+            + self.type_embedding(query_type_ids)
+            + self.action_embedding(query_action_ids)
+            + time_embedding
+        )
+
+
 class ItemEmbedding(nn.Module):
     """Shared item embedding table used both as input feature and as output head.
 

@@ -1,0 +1,30 @@
+dataset:
+  name: yambda50m
+  repo_id: yandex/yambda
+  repo_type: dataset
+  revision: dd6f3a19eef5866e346c3270e098baa641a44948
+  format: flat
+  size: 50m
+  root: data/raw/yambda
+  files:
+    - flat/50m/listens.parquet
+    - flat/50m/likes.parquet
+    - flat/50m/dislikes.parquet
+    - artist_item_mapping.parquet
+    - README.md
+
+events:
+  primary: listens
+  positive_rule: played_ratio_pct > 50
+  timestamp_unit: 5_second_bins_per_dataset_card
+  require_sorted_by: [uid, timestamp]
+
+audit:
+  update_window_candidates: [1d, 3d, 7d]
+  base_window_days: 300
+  release_gap_minutes: 30
+  dilution_requests: [1, 2, 4, 8, 16]
+  output_dir: results/data_audit/yambda50m_v1
+
+protocol_status: invalidated_for_calendar_time_analysis
+superseded_by: configs/datasets/yambda50m_v2.yaml

@@ -1,0 +1,68 @@
+result: p7_5_full_result_v1
+date: 2026-08-19
+contract: p7_5_materialization_contract_v1
+status: passed_verified_and_sealed_unscored
+evidence_level: data_and_execution_interface_only_not_H_or_quality
+
+artifacts:
+  root: data/manifests/p7_full_v1
+  materialization_summary:
+    path: data/manifests/p7_full_v1/materialization_summary.json
+    sha256: 8b63887d19e271f78ca08a546fb1e4d7179e859468318f001d192c30487d3e5f
+  qualification_seal:
+    path: data/manifests/p7_full_v1/qualification_seal_v1.json
+    sha256: 7bd77b5afb8fc7d00c3479f0ee9e751dab32776a4d27e8530ebe8bc0596e24b1
+  coverage_conservation:
+    path: data/manifests/p7_full_v1/coverage_conservation_v1.json
+    sha256: 9a79d0c3f14a6c36dd943f3d279fb8ed993e1ac388e2fa240b560af66d0d596a
+  roundtrip_equivalence:
+    path: data/manifests/p7_full_v1/roundtrip_equivalence_v1.json
+    sha256: ea2e15492a7424f4d940e664a739d8bc5b64fc378aba9599e314f86121b770fe
+  m0_m1_budget:
+    path: data/manifests/p7_full_v1/m0_m1_budget_v1.json
+    sha256: 967e65670fb1ba29c7c04e2f961c203777c76a33c37d7186443b706444f8a8ac
+
+materialization:
+  unique_query_specs: 124214
+  compressed_size_mib_approx: 225
+  qualification_scored: false
+  base_fitted: false
+  hstu_trained: false
+  residual_train_unique_queries_per_task: {N: 3939, R: 3939, F: 3939}
+
+R_population_separation:
+  residual_train: {eligible: 8407, rankable: 3939, quality_coverage: 0.46853812299274417}
+  development: {eligible: 2596, rankable: 1189, quality_coverage: 0.45801232665639446}
+  qualification: {eligible: 2688, rankable: 1281, quality_coverage: 0.4765625}
+  main_fidelity_population: all_eligible_with_nonempty_familiar_universe
+  quality_population: rankable_familiar_return_only
+  rankable_fidelity_population: companion_only
+
+verification:
+  compact_vs_raw_expanded_samples: 28
+  roundtrip_status: passed
+  serial_vs_threaded_loading: passed
+  shard_order_request_set_invariance: passed
+  fidelity_rows_with_all_target_values_null: 142263
+  qualification_default_loader_guard: passed
+  public_fidelity_projection_removes_target_columns: passed
+  canary_exact_request_exclusions: 128
+
+budget_interpretation:
+  per_task_unique_query_budget: 3939
+  m1_vs_each_task_specific_m0:
+    compute_matched: false
+    interpretation: M1 receives additional cross-task supervision
+  m1_vs_three_m0_models_aggregate:
+    query_and_token_layer_work_matched: true
+    interpretation: one_shared_multitask_model_vs_three_task_specific_models
+  query_presentations_reported_as: one_frozen_manifest_pass_per_seed
+  training_repetition_schedule: not_authorized_in_P7_5
+  M1_extra_cross_task_supervision: intended_treatment
+
+authorization_after_this_result:
+  P7_5_full: complete
+  P7_6_base_fit: next_stage_eligible_but_not_executed_in_this_task
+  P7_7_M0_M1_theta0_training: prohibited
+  qualification_scoring: prohibited
+  theta1_theta2: prohibited

@@ -65,6 +65,8 @@ class HSTUBlock(nn.Module):
         x: torch.Tensor,
         attn_mask: torch.Tensor | None = None,
         return_kv: bool = False,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ):
         residual = x
         x_norm = self.norm(x)
@@ -88,7 +90,7 @@ class HSTUBlock(nn.Module):
         else:
             out = attn_out
 
-        x = residual + out
+        x = residual_scale * residual + attention_scale * out
         if return_kv:
             return x, (k, v)
         return x
@@ -98,6 +100,8 @@ class HSTUBlock(nn.Module):
         x_new: torch.Tensor,
         cached_k: torch.Tensor,
         cached_v: torch.Tensor,
+        residual_scale: float = 1.0,
+        attention_scale: float = 1.0,
     ):
         """Incremental forward: prefix KV from old model + new positions with current model.
 
@@ -125,7 +129,7 @@ class HSTUBlock(nn.Module):
         else:
             out = attn_out
 
-        x_new_out = residual + out
+        x_new_out = residual_scale * residual + attention_scale * out
         return x_new_out, (k_all, v_all)
 
     def forward_with_cache_new_kv(

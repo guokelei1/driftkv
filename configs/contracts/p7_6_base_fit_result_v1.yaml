@@ -1,0 +1,103 @@
+result: p7_6_base_fit_result_v1
+date: 2026-08-19
+contract: p7_6_base_fit_contract_v1
+contract_sha256: c53644fe2837b666bfae4841e74a6f73a9837b9f4753d5592191c3efb1b08520
+status: passed_frozen_base_and_development_sanity
+evidence_level: development_base_only_not_H_not_qualification
+
+inputs:
+  base_fit_manifest_sha256: 9872429928b801259e8d1cd87407026508c863a2413b39674f798a95dbeb7a0b
+  development_manifest_sha256: 7685c1fb42b445e1c8f31cd1b8e852630d87e68e9e40d3b668c3f382f8a20e93
+  qualification_index_sha256: 61f86afefe2dd32eca33b625fd7af1338fdd1f4850550ca4a3d968d1170a3857
+  qualification_read_or_scored: false
+
+fit:
+  N:
+    queries: 24435
+    users: 7345
+    candidate_rows: 2443500
+    selected_l2: 0.001
+    lambda_at_grid_boundary: false
+  R:
+    queries: 11640
+    users: 5142
+    candidate_rows: 3190051
+    selected_l2: 0.01
+    lambda_at_grid_boundary: false
+  F:
+    queries: 15949
+    users: 5580
+    candidate_rows: 15949
+    selected_l2: 0.01
+    lambda_at_grid_boundary: false
+    natural_like_prevalence: 0.8671390055802871
+
+streaming_equivalence:
+  status: passed
+  requests_per_task: 128
+  N_coefficient_max_abs_delta: 2.220446049250313e-16
+  R_coefficient_max_abs_delta: 2.853858815932142e-10
+  F_coefficient_max_abs_delta: 4.440892098500626e-16
+  maximum_development_score_abs_delta: 1.9548132002000784e-9
+
+development_sanity:
+  N:
+    users: 5905
+    random_listwise_ce: 4.605170185988093
+    frozen_base_listwise_ce: 3.93639098288047
+    within_request_pairwise_auc: 0.7308008108177456
+    conditional_ndcg_at_10: 0.2945316599140096
+  R:
+    all_eligible_session_starts: 2596
+    rankable_familiar_returns: 1189
+    conditional_coverage: 0.45801232665639446
+    users: 1138
+    random_listwise_ce: 5.534747289891543
+    frozen_base_listwise_ce: 5.006009217618513
+    within_request_pairwise_auc: 0.7362038739838882
+    conditional_ndcg_at_10: 0.15075560199582158
+  F:
+    users: 2687
+    development_queries: 18668
+    base_fit_prevalence_control_log_loss: 0.3320749273830682
+    frozen_base_log_loss: 0.3260611914592067
+    roc_auc: 0.6801213439688765
+    pr_auc_like: 0.9410166446458581
+    pr_auc_dislike: 0.18643029743008585
+    brier: 0.09048722088880365
+  bootstrap_unit: user
+  interpretation: sanity_only_base_strength_is_not_an_H_result
+
+gates:
+  streaming_equivalence: passed
+  all_parameters_and_scores_finite: passed
+  base_beats_intercept_primary_dev_loss: passed
+  candidate_score_variance_positive: passed
+  R_complete_universe_preserved: passed
+  F_label_direction_valid: passed
+  base_identical_recent32_full512: passed_by_materialized_feature_contract
+  deployment_scorer_matches_clipped_fitter_formula:
+    status: passed
+    float32_atol: 1.0e-6
+    scorer_code_sha256: 1eb25e74001f80e9b1b46582b1415d28a6effd55ee573005983a7166fe30eedc
+  qualification_locked_before_and_after: passed
+
+artifacts:
+  summary: {path: results/p7/base_fit/p7_6_summary_v1.json, sha256: 9211edb6170af92790fd2772f0b60f53470608d8ca39774ec523f51b7e8b275f}
+  coverage: {path: results/p7/base_fit/base_fit_coverage_v1.json, sha256: 5c2f8e809c719d206c316ec1023ca339bd16cd569836e81db7262cc49d616668}
+  streaming_equivalence: {path: results/p7/base_fit/base_streaming_equivalence_v1.json, sha256: 6e14aaaa6b287c705a1ba0ca8966b3cc164523791b0965440d8735668b1b6755}
+  N: {path: results/p7/base_fit/base_n_v1.json, sha256: 45300143b4ed73c91b4440d43bcc767b39554c706b2011bc5749178141fa3c07}
+  R: {path: results/p7/base_fit/base_r_v1.json, sha256: c9b695fb126ee6d766f30c2fd9bb2ed8728e372cdd8fe75c0f8102633ec522d6}
+  F: {path: results/p7/base_fit/base_f_v1.json, sha256: 856b02d616521cab24a07a75e48f7b397746c39424ddf79775739be96bc101cb}
+  development_sanity: {path: results/p7/base_fit/base_dev_sanity_v1.json, sha256: 2a253f6dc17e9d91b167de75f74e7121fd20e9dd4ecae6398d17939196e84cdc}
+  parameters: {path: results/p7/base_fit/base_parameters_v1.json, sha256: 6141dd96af65ac9ed6714346ceb52151434e6c7cc092f3b55d69db6d57d48e84}
+  feature_schema: {path: results/p7/base_fit/base_feature_schema_v1.json, sha256: 4ad52e6b3666d7432ca2f7528118e0af5f972718570925e99b02d5d3de62ba1b}
+  cv_trace: {path: results/p7/base_fit/base_cv_trace_v1.json, sha256: 504737eaa1b098beea1f454fc3a281d53dbb7f0be74fba0fe4405786dc806a96}
+  frozen_bundle: {path: results/p7/base_fit/frozen_base_bundle_v1/bundle_manifest.json, sha256: 4221f0b95245bb6b3a735c86d4cdb2603c6a7d8b173c7cac7c3dd5e28a64e42c}
+
+authorization_after_this_result:
+  P7_6: complete
+  P7_7_M0_M1_theta0_training: next_stage_eligible_pending_explicit_authorization
+  qualification_scoring: prohibited
+  theta1_theta2: prohibited
+  staleness_or_controller: prohibited

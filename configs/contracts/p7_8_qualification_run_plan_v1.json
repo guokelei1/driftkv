@@ -1,0 +1,60 @@
+{
+  "plan": "p7_8_qualification_run_plan_v1",
+  "date_sealed": "2026-08-20",
+  "status": "sealed_before_qualification_unlock",
+  "code_commit": "2c477fcb7deb2ee9672a12d14c5a0f5a189cb06b",
+  "evaluation_contract": "configs/contracts/p7_8_h_qualification_contract_v1.yaml",
+  "evaluation_contract_sha256": "c11f798cf9fbe8f24e794b6ab96f9a6bf4dbca58cc71557309bfd65473bef19d",
+  "raw_evaluator": "scripts/eval_p7_h_raw.py",
+  "raw_evaluator_sha256": "b6e1e7363d24dafb22faf70ef271c502a0a5d94cc5d920af247981db2548d1ec",
+  "raw_sealer": "scripts/seal_p7_h_raw.py",
+  "raw_sealer_sha256": "90a1875c23df3d7c7e40eb850fa7ab653781c79d9afe29d924d91c4f31a650e8",
+  "adjudicator": "scripts/adjudicate_p7_h.py",
+  "adjudicator_sha256": "88ea5911df3b6fef3746db811b71ac365f4671d651e98e19c6ecf7447e717309",
+  "development_identity_canary": "results/p7/h_qualification/development_identity_canary_v1.json",
+  "development_identity_canary_sha256": "8ffac76d2d21d64fcc2dc33cdc0a776e042cf3b26ff572e14aba2bae228a97f8",
+  "qualification_index_sha256": "61f86afefe2dd32eca33b625fd7af1338fdd1f4850550ca4a3d968d1170a3857",
+  "qualification_seal_sha256": "7bd77b5afb8fc7d00c3479f0ee9e751dab32776a4d27e8530ebe8bc0596e24b1",
+  "frozen_base_bundle_sha256": "4221f0b95245bb6b3a735c86d4cdb2603c6a7d8b173c7cac7c3dd5e28a64e42c",
+  "qualification_inference_precision": "float32",
+  "numeric_floors": {
+    "output_js_divergence": 1e-08,
+    "normalized_score_rms": 2.537072494890804e-05,
+    "pairwise_inversion": 1e-07,
+    "top10_overlap_loss": 1e-07,
+    "absolute_probability_difference": 1e-07
+  },
+  "model_roles": {
+    "primary": ["m0_r:R", "m0_f:F"],
+    "negative_control": ["m0_n:N"],
+    "multitask_companion": ["m1:N", "m1:R", "m1:F"]
+  },
+  "seed_policy": {
+    "qualification_scope": "all_12_frozen_checkpoints",
+    "release_admitted_subset": "all_12_under_frozen_P7_7_gate",
+    "filter_by_H_S_or_controller": false,
+    "per_seed_user_bootstrap_replicates": 2000,
+    "seed_equal_hierarchical_replicates": 10000
+  },
+  "checkpoints": {
+    "m0_n_seed17": {"path": "results/p7/theta0_training/runs/m0_n_seed17/theta0_selected.pt", "sha256": "a8731a6b00e67aa2793f4e425f718816779157820ea5d903291d9d2c8c541716"},
+    "m0_n_seed37": {"path": "results/p7/theta0_training/runs/m0_n_seed37/theta0_selected.pt", "sha256": "3166cf0aa0f5e1ad4150e40af4800dd45541fb61986a44b688e5491117832e8e"},
+    "m0_n_seed71": {"path": "results/p7/theta0_training/runs/m0_n_seed71/theta0_selected.pt", "sha256": "33668a1169f7eca3d78dc4e1476cf2ee8e7a35309f531e67269339b21ef9a116"},
+    "m0_r_seed17": {"path": "results/p7/theta0_training/runs/m0_r_seed17/theta0_selected.pt", "sha256": "266285920bfd40ee079382e493502791635e847cf81d80e874162e29f0572120"},
+    "m0_r_seed37": {"path": "results/p7/theta0_training/runs/m0_r_seed37/theta0_selected.pt", "sha256": "c0d46de31463e9f62e1c6e2c66cccc7692d98d54fc3012ef5fa0e847555f5e2a"},
+    "m0_r_seed71": {"path": "results/p7/theta0_training/runs/m0_r_seed71/theta0_selected.pt", "sha256": "ebfc70ad113d6897351c9a61926e101c715eaf6c127d93b5f8686a4a8d1be957"},
+    "m0_f_seed17": {"path": "results/p7/theta0_training/runs/m0_f_seed17/theta0_selected.pt", "sha256": "c5250537493fadd6ea2bfcd572a01bc4fedc660dcb029d46dcbf17a30d759004"},
+    "m0_f_seed37": {"path": "results/p7/theta0_training/runs/m0_f_seed37/theta0_selected.pt", "sha256": "843824861efaf217e76895ec6565e1d6f67487cade7ac5ec7eefc3ea8a9387dc"},
+    "m0_f_seed71": {"path": "results/p7/theta0_training/runs/m0_f_seed71/theta0_selected.pt", "sha256": "f012264c1d9323f637d359c2fb9ceca6ea085b349ed48be3529b1952df60889a"},
+    "m1_seed17": {"path": "results/p7/theta0_training/runs/m1_seed17/theta0_selected.pt", "sha256": "c074663ae8d2887ddff9cac902e9bcc1af277a5e5eaba7555e5b62c887586da5"},
+    "m1_seed37": {"path": "results/p7/theta0_training/runs/m1_seed37/theta0_selected.pt", "sha256": "0bec0afd61bd8430c00c4b8700b4e4cf17bcb5b5d3177e9d88e14dfd6646fe0e"},
+    "m1_seed71": {"path": "results/p7/theta0_training/runs/m1_seed71/theta0_selected.pt", "sha256": "a8c12a2c2556c2789aa3a3bc40469cd0cbe6dbd16bd088de50a7d25a1fa5df21"}
+  },
+  "reveal_order": [
+    "score_all_12_checkpoints_to_raw_parquet",
+    "seal_and_hash_all_42_raw_files",
+    "compute_metrics_with_frozen_adjudicator",
+    "write_adjudication_report_and_stop"
+  ],
+  "post_reveal_actions_authorized": []
+}

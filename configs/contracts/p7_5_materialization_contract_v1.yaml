@@ -1,0 +1,185 @@
+contract: p7_5_materialization_contract_v1
+status: frozen_compact_manifest_generation_authorized
+depends_on: p7_4_training_contract_v1
+date_frozen: 2026-08-19
+
+authorization:
+  compact_full_manifest_generation: true
+  base_fitting: false
+  hstu_training: false
+  qualification_scoring: false
+  allowed_next: [build_and_seal_compact_manifests]
+
+principles:
+  inferential_unit: user
+  selection_must_not_use: [H, S, model_score, label_value, target_item_identity]
+  histories_reconstructed_from_frozen_raw_source: true
+  repeated_512_token_histories_in_manifest: forbidden
+  jsonl_allowed_only_for_small_canaries: true
+  full_format: parquet_zstd
+
+N_frozen_candidate_protocol:
+  name: Q_main_rank_decay_v1_cc_causal
+  pool_size: 1000
+  panel_size: 100
+  decay: 0.5
+  ranked_pool: user_seen_count_recency_then_causally_visible_catalog_first_seen
+  quality:
+    exclude_positive_from_pool: true
+    sample_competitors_without_replacement: 99
+    inject_positive_once: true
+  fidelity:
+    target_or_label_access: false
+    sample_without_replacement: 100
+    target_injection: false
+  deterministic_seed_namespaces: [p7-N-quality-v1, p7-N-fidelity-v1]
+  protocol_or_parameter_search: forbidden
+
+base_fit_anchor_universe:
+  reason: >-
+    The raw N base-fit interval contains 24M next events. Convex base fitting
+    uses deterministic dense-enough user/time anchors rather than treating
+    repeated requests as independent evidence or materializing 2.4B candidate
+    rows. Refit-on-all-base-fit means all rows in this frozen anchor universe.
+  blocks_days: [[0, 45], [45, 90], [90, 135], [135, 180]]
+  per_user_per_block:
+    N: one_query
+    R: one_quality_evaluable_rankable_return_if_available
+    F: one_causal_feedback_query_if_available
+  query_selection: minimum_sha256_of_seed_uid_query_timestamp
+  selection_seed: p7-base-anchor-v1
+  F_label_not_used_for_selection: true
+  user_weighting: equal_total_weight_within_task
+  blocked_cv_uses_same_four_blocks: true
+  final_refit: every_row_in_frozen_anchor_universe
+
+residual_train_selection:
+  per_task_unique_query_budget: 3939
+  equal_compute_claim: false
+  R:
+    universe: all_3939_quality_evaluable_rankable_requests
+    sampling: none
+  N:
+    first_stage: select_3939_users_by_sha256_seed_uid
+    second_stage: one_query_per_selected_user_by_sha256_seed_uid_timestamp
+    seed: p7-residual-N-v1
+  F:
+    first_stage: select_3939_users_by_sha256_seed_uid
+    second_stage: one_query_per_selected_user_by_sha256_seed_uid_timestamp
+    seed: p7-residual-F-v1
+    label_not_used: true
+  stored_request_weight: inverse_queries_selected_for_user_then_normalized
+
+development_evaluation:
+  N:
+    users: every_eligible_user
+    requests_per_user: one_deterministic_query
+    query_selection: minimum_sha256_of_seed_uid_query_timestamp
+    seed: p7-dev-N-v1
+  R:
+    fidelity_all_eligible: every_eligible_3day_session_start_with_nonempty_familiar_universe
+    fidelity_rankable_companion: rankable_subset_of_the_same_target_free_population
+    quality_rankable: every_rankable_familiar_return
+    required_denominator: all_eligible_3day_session_starts
+  F:
+    requests: every_causal_feedback_query
+    aggregation: per_user_first_then_across_users
+    retain_natural_label_ratio: true
+
+qualification_evaluation:
+  N:
+    users: every_eligible_user
+    requests_per_user: one_deterministic_query
+    query_selection: minimum_sha256_of_seed_uid_query_timestamp
+    seed: p7-qualification-N-v1
+  R:
+    fidelity_all_eligible: every_eligible_3day_session_start_with_nonempty_familiar_universe
+    fidelity_rankable_companion: rankable_subset_of_the_same_target_free_population
+    quality_rankable: every_rankable_familiar_return
+    required_denominator: all_eligible_3day_session_starts
+  F:
+    requests: every_causal_feedback_query
+    aggregation: per_user_first_then_across_users
+  seal_rule:
+    generate_after_development_schema_is_validated: true
+    write_content_and_schema_hashes_immediately: true
+    read_for_scoring_before_P7_7_training_complete: forbidden
+    use_for_selection_or_early_stopping: forbidden
+
+compact_schema:
+  request_table:
+    required:
+      - workload
+      - split
+      - manifest_kind
+      - request_id
+      - uid
+      - query_timestamp
+      - raw_user_row_start
+      - raw_prefix_end_exclusive
+      - effective_prefix_length
+      - candidate_offset
+      - candidate_count
+      - base_feature_schema_hash
+      - request_weight
+    quality_only: [label_or_target_index]
+    forbidden_in_fidelity: [label, target_item_id, positive_item_id, target_index]
+  candidate_table:
+    required:
+      - candidate_set_id
+      - candidate_position
+      - candidate_item_id
+      - base_features
+    R_complete_universe: true
+  history_contract:
+    reconstruct_last_512_strictly_before_query: true
+    raw_source_revision_and_sha_required: true
+    query_timestamp_ties_excluded: true
+  fidelity_physical_schema:
+    common_nullable_columns_allowed: true
+    label_target_and_shortcut_values_must_be_null: true
+    public_fidelity_loader_projects_forbidden_columns_out: true
+
+sharding_and_retention:
+  format: parquet
+  compression: zstd
+  target_uncompressed_shard_bytes: 268435456
+  each_shard_requires: [row_count, min_max_timestamp, schema_hash, sha256]
+  manifest_index_requires: [ordered_shards, total_rows, total_users, source_hashes, contract_hash]
+  temporary_files:
+    directory: system_temporary_directory
+    delete_after_final_hash_and_validation: true
+  retain:
+    - compact_request_and_candidate_manifests
+    - schema_and_content_hash_index
+    - small_canaries
+  do_not_retain:
+    - repeated_history_payloads
+    - uncompressed_intermediate_candidates
+    - duplicate_sorted_raw_data
+
+streaming_base_fit_v1:
+  input: frozen_base_fit_anchor_request_ids
+  history_and_features: reconstructed_streaming_from_raw
+  objective_accumulation: request_then_user_weighted
+  full_candidate_materialization_in_memory: forbidden
+  R_candidate_chunks: exact_complete_universe
+  optimizer_multiple_passes_over_anchor_index: allowed
+  fitted_artifact_authorized_only_after_manifest_hash_review: true
+
+pre_base_fit_gates:
+  - compact_manifest_schema_validation
+  - reconstruction_matches_canary_history_and_features
+  - request_and_user_count_conservation
+  - R_target_once_and_no_sampling
+  - fidelity_forbidden_fields_absent
+  - qualification_index_sealed_and_unread
+  - no_shard_exceeds_system_memory_envelope
+  - m0_m1_budget_table_records_queries_presentations_candidates_history_and_token_layer_work
+
+forbidden:
+  - expand_all_N_raw_queries_to_jsonl
+  - choose_evaluation_requests_from_model_results
+  - sample_R_primary_candidates
+  - open_qualification_to_debug_base_or_HSTU
+  - retain_redundant_history_corpora
