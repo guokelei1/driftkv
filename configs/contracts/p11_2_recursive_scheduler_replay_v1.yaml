@@ -1,0 +1,82 @@
+contract: p11_2_recursive_scheduler_replay_v1
+status: frozen_before_recursive_scheduler_assignment
+purpose: apply_the_frozen_P10_scheduler_algorithm_to_true_recursive_lineage_without_retuning
+
+inputs:
+  p10_scheduler_freeze_sha256: b569a8713cdeafb37786e065b69567d1122760612c4d49d42274c7615dc1cf88
+  p10_profiler_contract_sha256: ad22926d63f652c063629024715e2feba7d423cbd1a6caa5998107574165375c
+  p11_1_contract_sha256: 75d543aff9cf4b5e58222ed1757534a859466d14d4697337bf998e85ebe8927f
+  p11_1_adjudication_sha256: e2ed245f0dfc7b80681b3f50c9ea363af429d8bc5e40e262cbb6fb525196ab31
+  edge2_state_manifest_sha256: 5aa590325e9d52161ab148821fe7c539622f0a2d5a8d16eb19e4387502d49124
+
+scope:
+  release_id: r1_recursive_age2
+  models: [m0_f, m1]
+  seeds: [17, 37, 71]
+  population: p11_1_edge1_edge2_intersection
+  states: 8229
+  input_metric: per_state_logit_MSE_to_CurrentExact
+  quality_labels: prohibited
+  GPUs: not_required
+  cpu_workers: 6
+
+action_mapping:
+  noop: recursive_noop
+  layer0_recent128: recursive_layer0_recent128
+  layer0_middle: recursive_layer0_middle
+  layer0_full: recursive_layer0_full
+  hybrid_tail128: recursive_hybrid_tail128
+  exact_all: recursive_exact_all
+
+frozen_scheduler:
+  primary_probe_rate: 0.01
+  companion_probe_rate: 0.02
+  probe_selection: ascending_sha256_of_release_id_model_seed_uid
+  sampled_terminal_action: exact_all
+  charged_probe_actions: [layer0_recent128, layer0_middle, layer0_full, hybrid_tail128, exact_all]
+  features:
+    - log1p_effective_prefix_length
+    - log1p_last_activity_age_seconds
+    - log1p_events_last_1d
+    - log1p_events_last_7d
+    - log1p_events_last_30d
+    - log1p_unique_items_last_7d
+    - organic_ratio_last_7d
+    - repeat_ratio_last_7d
+  predictor: {preprocessing: StandardScaler, family: Ridge, alpha: 1.0, solver: lsqr}
+  target: sampled_recursive_noop_MSE_minus_sampled_action_MSE
+  target_scale: sample_mean_recursive_noop_MSE
+  budgets_exact_fraction: [0.05, 0.10, 0.25]
+  allocator: per_state_predicted_upper_concave_hull_then_global_greedy
+  tie_break: {state: ascending_uid, action: frozen_action_order}
+
+same_cost_companions:
+  - all_feasible_uniform_actions
+  - random_exact_20_repetitions
+  - longest_effective_prefix_first_exact
+  - oldest_state_first_exact
+  - most_active_30d_first_exact
+  - most_unique_items_7d_first_exact
+  - offline_near_optimal_upper_bound
+
+canary:
+  model: m1
+  seed: 17
+  states: 256
+  gates:
+    - deterministic_repeat_assignments
+    - no_forbidden_assignment_columns
+    - sampled_users_are_exact_all
+    - charged_cost_does_not_exceed_budget
+    - no_unsampled_actual_loss_enters_features_or_output
+
+sealing:
+  assignments_before_same_cost_adjudication: required
+  forbidden_assignment_columns: [label, target, future, mse, actual_loss, quality]
+
+prohibited:
+  - predictor_or_feature_retuning
+  - action_set_change
+  - selected_seed_reporting
+  - future_quality_labels
+  - theta3_blind_edge

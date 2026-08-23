@@ -2,49 +2,75 @@
 
 ## Current direction
 
-This repository implements the 37D EvoKV route: release-time convergence of persistent user K/V state under bounded compute and I/O. The current question is no longer whether staleness exists. P7/P8 established a development `H -> S -> quality` chain for the Yambda-50M Explicit Feedback workload, and P9.2 located diagnostic layer/history-position recovery structure.
+This repository implements the 37D EvoKV route: release-time convergence of
+persistent user K/V state under bounded compute and I/O.
 
-The active systems question is whether that structure can become dependency-closed partial migration with a real cost advantage over Exact-All.
+The 4L/H128/context512 Yambda-50M development round is complete through P11.4:
+F long-state H, release-dependent S, dependency-closed partial actions,
+full-population frontier, sparse-probe Ridge scheduler, grouped executor, true
+theta0→theta1→theta2 recursive lineage and sealed rolling-quality validation.
+
+The active task is to seal the completed stack as EvoKV v1, reproduce its
+H→S→legal-partial→same-cost-scheduler chain at 8L/H256/context1024, then freeze
+and execute a genuinely blind theta3 temporal qualification. Do not tune the
+completed P7–P11 substrate.
 
 Authoritative entry points:
 
-- `docs/project_compact.md`: end-to-end project state and evidence boundary;
-- `docs/current_route.md`: concise current authorization and next steps;
-- `docs/p9_plan.md`: active tomography/action-space plan;
-- `docs/newset.md`: full 37D technical protocol;
-- `docs/legacy/README.md`: retired routes and claims that may not be revived.
+- `docs/current_route.md`: concise authorization and next step;
+- `docs/evidence_summary_through_p11.md`: complete development evidence;
+- `docs/scaling_extension.md`: scale-point stages and stopping gates;
+- `docs/paper_design.md`: problem and contribution boundary;
+- `docs/newset.md`: full 37D protocol;
+- `docs/archive/`: completed phase details, not current execution entry points;
+- `docs/legacy/`: retired routes and claims that may not be revived.
 
 ## Evidence and authorization
 
-- P7: long-state value `H` qualified on F; N is the short-term negative control and R did not qualify.
-- P8: R0 is a strict No-op control; R1/R2 establish cross-version `S`; M1-R2 also establishes task-quality harm from Reuse.
-- P9.0/P9.1/P9.2: evidence seal, user-level H/S distributions, and all 24 coarse tomography cells are complete.
-- Current work: diagnostic-action quality companions, risk concentration, representative 2-D tomography, dependency-closure audit, legal executor, and No-op/Partial/Exact frontier.
-- Not authorized: controller training, theta3/blind qualification, tuning the P8 model/release chain, or paper-level claims.
+- P7–P11 contracts, hashes, raw seals, negative results and invalidation records
+  are frozen and must be preserved.
+- Scale S0–S2 is complete: EvoKV v1 seal, resource/coverage audit, real-data
+  correctness, four-rank FSDP optimizer-step and checkpoint round-trip canaries.
+- The queue is ready at S3 M0-F seed17, but long training still requires the
+  user's explicit launch.
+- Scale S3+ long training requires a prospective contract, resource estimate,
+  passing canary and explicit user launch.
+- Theta3 remains untouched. Its data/release/admission/metric/failure contract
+  must be sealed before training or reading any theta3 result.
 
-Diagnostic exact-KV splices are interventions, not executable actions. Only dependency-closed actions with measured token-layer work, I/O, history reads, and runtime may enter a system frontier.
+Diagnostic exact-KV splices are interventions, not executable actions. Only the
+frozen dependency-closed actions may enter scale frontiers; do not add actions or
+predictor complexity on the scale development point.
 
 ## Code layout
 
-- `src/hstu_kvcache/models/`: HSTU, candidate-conditioned residual scoring, and persistent K/V primitives.
-- `src/hstu_kvcache/data/`: KuaiRand and Yambda readers, workload/manifests, compact materialization, release snapshots, and P7/P8 data contracts.
-- `configs/contracts/`: frozen workload, training, qualification, release-chain, and P9 contracts/results.
-- `scripts/`: active P9 entry points plus retained P5-P8 evidence-generation/audit tools.
-- `tests/`: focused regression tests for time causality, cache lineage, manifests, frozen base, P7/P8, and P9.
-- `results/`: development evidence and sealed artifacts; presence does not imply paper qualification.
+- `src/hstu_kvcache/models/`: HSTU, CC residual scoring, persistent K/V and
+  dependency-closed transitions.
+- `src/hstu_kvcache/data/`: Yambda/KuaiRand readers, manifests, release snapshots
+  and P7/P8 data primitives.
+- `configs/contracts/`: immutable P7–P11 evidence and prospective scale contracts.
+- `scripts/`: frozen reproduction chain plus future small `scale_*` entry points.
+- `tests/`: time causality, cache lineage, manifests, base, P7–P11 and executor.
+- `results/`: development evidence; presence does not imply paper qualification.
 
-Keep core model modules independent from orchestration. Add profiler/executor/scheduler modules only after their contract is defined; a scheduler remains unauthorized until the P9 frontier demonstrates a state-level opportunity.
+Keep model modules independent from orchestration. Reuse current primitives;
+do not clone the full pipeline for the scale point.
 
 ## Development rules
 
 - Use `rg` or `rg --files` for search and `apply_patch` for edits.
 - Preserve unrelated dirty-worktree changes.
-- Read before deleting. Retire obsolete evidence in documentation instead of silently rewriting history.
-- Do not revive deleted D1/D2/D3 routes, old controller/frontier numbers, neutral-readout repair claims, or sampled next-listen candidate engineering.
-- Do not tune workloads, releases, history lengths, task weights, seeds, or metrics using qualification outcomes.
-- Keep model scoring raw and protocol decisions label-free: no post-hoc score mixing, selected-edge reporting, future-label scheduling, artificial K/V perturbation, or target-KV fitting.
-- Keep model admission separate from cache compatibility. A quality-qualified model with low `H` or `S` is a valid No-op condition.
-- Report all frozen seeds. Independent training seeds, not requests, are the formal repeat unit.
+- Read before deleting. Archive completed evidence instead of silently rewriting
+  history.
+- Do not revive deleted D1/D2/D3, KuaiRand mainline, neutral-readout repair,
+  sampled next-listen candidates, old Q_main/controller/frontier or P4 routes.
+- Do not tune workload, release, history, task weights, seeds, metrics, action
+  set, predictor or probe rate using qualification/scale outcomes.
+- Keep protocol decisions label-free: no future-label scheduling, score mixing,
+  selected-edge reporting, artificial K/V perturbation or target-KV fitting.
+- Keep model admission separate from cache compatibility; low H/S is a valid
+  No-op condition.
+- Report all frozen seeds. Training seed, not request count, is the repeat unit.
 
 ## Verification
 
@@ -55,11 +81,15 @@ PYTHONPATH=src python -c "from hstu_kvcache.models import HSTU, HSTUKVCache; fro
 PYTHONPATH=src pytest -q
 ```
 
-Use focused canaries before long runs. For the current P9 work, use only GPU 0 and 1 unless the user changes the allocation; parallelize CPU-only joins and aggregation when safe.
+The user expanded the current scale allowlist to GPU 0/1/2/3. The 8L model uses
+one four-rank FSDP job at a time; seeds/releases are queued serially. Parallelize
+CPU joins and aggregation when safe. Every long scale job needs a focused canary first.
 
 ## Safety and storage
 
-- Do not launch long experiments unless requested or already authorized by the current route.
-- Preserve frozen contracts, hashes, raw-score seals, negative results, and invalidation records.
-- Do not retain redundant large temporary artifacts by default.
-- Before destructive cleanup, resolve exact targets and prefer a recoverable staging move.
+- Do not launch long experiments without the required authorization.
+- Preserve frozen contracts, hashes, seals, negative results and invalidations.
+- Do not retain redundant checkpoints, expanded manifests, logs or temporary
+  results by default.
+- Before destructive cleanup, resolve exact targets; generated bytecode/cache is
+  safe to regenerate, while evidence artifacts are not.

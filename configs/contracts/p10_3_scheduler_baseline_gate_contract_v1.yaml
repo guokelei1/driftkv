@@ -1,0 +1,72 @@
+contract: p10_3_scheduler_baseline_gate_contract_v1
+status: frozen_before_metadata_baseline_computation
+purpose: determine_whether_the_1pct_Ridge_state_policy_adds_value_over_equal_cost_nonlearning_baselines
+
+inputs:
+  p10_0_target_free_sha256: e715999404a5883edc92ecf1b6db3c4b2ca74f0c94b193d35f6a5c1e4a7bc1c1
+  p10_0_policy_seal_sha256: f35c26dfb88e02b4b215cf7652ba7e26672f71f793db33ccf7f5ae58f19bc01e
+  p10_1_quality_sha256: 1e88f2cc9a94254e9b0921c3bb781db8dfddbf87e9bf03b77d3ff999064c1440
+  p10_2_runtime_sha256: 3edf02b66613340240d86fb90aac356dcfef9b837c69367f9d58a4317994a27c
+  p9_11_oracle_frontier_sha256: 0efe2dd920f91c23bf47353aa7171ee010e608a521daf11a5c1210b2a19107a4
+  edge1_state_manifest_sha256: d12d4c5352a549f1a4fec638000e59e251c3b2f6c6e45c687bd7bc230b7bab95
+  edge2_state_manifest_sha256: 5aa590325e9d52161ab148821fe7c539622f0a2d5a8d16eb19e4387502d49124
+
+primary_policy:
+  sample_fraction: 0.01
+  rationale: lower_charged_probe_overhead_and_sparse_profiler_system_role
+  budgets_exact_fraction: [0.05, 0.10, 0.25]
+  predictor_and_actions: unchanged_from_P10_0
+
+companion_policy:
+  sample_fraction: 0.02
+  complete_reporting_required: true
+  universal_production_rate_claim: prohibited
+
+equal_cost_baselines:
+  release_level_best_frozen_uniform_action: required
+  all_feasible_uniform_partial_actions: required
+  random_Exact:
+    repetitions: 20
+    source: P9_11
+  metadata_only_zero_probe_Exact:
+    strategies:
+      - longest_effective_prefix_first
+      - oldest_state_first
+      - most_active_30d_first
+      - most_unique_items_7d_first
+    tie_break: ascending_uid
+  strongest_nonlearning_baseline:
+    definition: maximum_target_free_recovery_over_the_above_fixed_deterministic_baselines
+    selection_role: conservative_descriptive_comparator_not_a_deployable_tuned_policy
+  offline_oracle_upper_bound: P9_11_near_optimal
+
+uncertainty:
+  target_free_comparison: paired_user_bootstrap
+  repetitions: 2000
+  seed_source: sha256_cell_budget_baseline
+  quality_comparison: existing_P10_1_user_cluster_bootstrap
+  independent_repeat: training_seed
+
+dislike_attribution:
+  compare:
+    - CurrentExact_minus_Noop
+    - Policy_minus_CurrentExact
+    - Policy_minus_Noop
+  future_label_use: evaluation_only_after_policy_seal
+  predictor_refit: prohibited
+
+gate:
+  per_release_model_passes_if:
+    - at_least_one_budget_has_positive_equal_seed_mean_vs_strongest_nonlearning
+    - at_least_two_of_three_seed_points_are_positive_at_that_budget
+  global_passes_if:
+    - M1_R2_passes
+    - at_least_four_of_six_non_R0_release_model_conditions_pass
+    - R0_remains_metadata_Noop
+  bootstrap_CI_reported_not_hidden: true
+
+evidence_boundary:
+  development_configuration_selection: true
+  scheduler_freeze_only_after_gate: true
+  controller_complexity_search: prohibited
+  blind_edge: prohibited

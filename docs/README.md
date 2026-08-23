@@ -1,18 +1,14 @@
-# 文档索引
+# EvoKV 文档入口
 
-## 当前事实源
+当前只需阅读以下五份文档：
 
-1. [项目全程 Compact](project_compact.md)：问题演变、核心证据、未决问题与完整路线。
-2. [当前执行路线](current_route.md)：当前授权、停止门与最近任务。
-3. [P8 Development Result Summary](p8_result_summary.md)：冻结的 H/S release-chain 结果与限制。
-4. [P9.2 Result Summary](p9_2_result_summary.md)：全矩阵 coarse tomography 的结构性恢复结果与 diagnostic 边界。
-5. [P9 Plan](p9_plan.md)：quality closure、二维 tomography、合法 partial action 与 frontier。
-6. [论文设计](paper_design.md)：发布期预算化状态收敛的正式问题边界、指标与研究问题。
-7. [37D 完整技术规格](newset.md)：lineage、population、manifest、budget、scheduler 与 qualification 协议。
-8. [规模化扩展路线](scaling_extension.md)：Yambda-50M、Yambda-5B、VK-LSVD 与 RecFlow 的分阶段验证边界。
-9. [CC Workload Qualification v1](cc_workload_v1.md)：candidate-conditioned query、P5/P6 identifiability 裁决与 next-item No-Go。
-10. [Yambda Multi-Regime Stateful Workload Suite](yambda_stateful_workload_suite.md)：P7 的 N/R/F workload 与 Frozen Base + CC residual 合同。
+1. [当前执行路线](current_route.md)：现在能做什么、下一步做什么、哪些操作禁止。
+2. [截至 P11.4 的完整证据总结](evidence_summary_through_p11.md)：端到端实验、核心数字、已验证假设与限制。
+3. [规模化扩展路线](scaling_extension.md)：EvoKV v1 封存、8L/H256/context1024、probe sensitivity 和 θ3 blind qualification。
+4. [论文问题定义](paper_design.md)：发布期预算化状态收敛的系统抽象和研究问题。
+5. [37D 技术规格](newset.md)：完整 lineage、population、manifest、fidelity 和 budget 协议。
 
-## 历史资料
+已完成的 P7–P11 阶段报告、旧 bring-up 计划和 workload qualification 细节已移入
+[开发证据归档](archive/README.md)。它们用于审计和复现，不再作为当前执行入口。
 
-旧探索不定义当前路线。有效的失败诊断和 invalidation 记录仍保留以维护证据边界；清理范围见[历史资料边界](legacy/README.md)。
+失效路线和不可复活的结论见 [Legacy 边界](legacy/README.md)。

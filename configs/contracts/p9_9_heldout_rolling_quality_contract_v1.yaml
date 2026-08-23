@@ -1,0 +1,61 @@
+contract: p9_9_heldout_rolling_quality_contract_v1
+status: frozen_before_execution
+purpose: validate_legal_cutover_actions_on_all_frozen_future_F_quality_requests_under_true_uid_rolling_lineage
+
+inputs:
+  p9_8_contract_sha256: b91ec4f4305825b62446e5099195288cb7bd37b06edeec9e4e8896ed04acd0b0
+  p9_8_raw_seal_sha256: d1426a83e9ce186480aaf98a51ce7e314304e415252ea9909c708f19e96f49d8
+  p9_8_adjudication_sha256: 626cfd3840904cae1d20d1ee6484e6bce11334e9d319b9228fa032b5af237b0f
+  p9_7_uid_canary_sha256: 6714d070948296e029d181bed71057a173154030698d008193991fcbd8989bfa
+  state_transition_source_sha256: 3e9e921cbbe599233ea1e6060d0c5a8f9480047db58f5641f4aa11d458354e92
+  p8_materialization_summary_sha256: 5c6c88e02e29ddeba99a742bc3e5490191c3547a21d18075dd0162d4206218e7
+
+scope:
+  releases: [r0, r1_edge1, r1_edge2, r2]
+  models: [m0_f, m1]
+  seeds: [17, 37, 71]
+  cells: 24
+  view: F_quality
+  requests: all_frozen_request_ids_in_sealed_P8_F_quality_artifact
+  manifest_rows_excluded_before_P8_qualification: reported_not_reintroduced
+  cold_start_without_cutover_state: reported_and_excluded_from_migration_action_frontier
+  edge_mapping: {r0: edge1, r1_edge1: edge1, r1_edge2: edge2, r2: edge1}
+  actions: [noop, layer0_recent128, layer0_middle, layer0_full, hybrid_tail128, exact_all]
+  action_selection_uses_labels_or_future_activity: false
+
+lineage:
+  materialize_parent_state_once_at_release_cutover: true
+  transition_once_per_uid_per_action: true
+  append_every_listen_strictly_before_each_query: true
+  query_does_not_mutate_persistent_state: true
+  evict_before_each_append_at_context_cap: 512
+  reuse_transitioned_state_across_all_uid_queries: true
+
+execution:
+  vectorize_six_action_states_within_uid: true
+  batch_cutover_materialization_by_equal_prefix_length: true
+  cutover_batch_size: 16
+  precision: float32
+  CPU_threads: 24
+  GPU_allowlist: [0, 1]
+
+canary:
+  cells: [r0_m0_f_seed17, r2_m0_f_seed17]
+  users_per_cell: 64
+  selection: sha256_uid
+  exact_action_vs_current_online_max_abs_logit: 1.0e-5
+  r0_all_action_JS_max: 1.0e-8
+  migration_invocations_equal_users_times_actions: true
+
+metrics_after_raw_seal:
+  primary: aggregate_log_loss
+  companions: [ROC_AUC, dislike_PR_AUC, Brier, dislike_only_log_loss, Bernoulli_JS_to_CurrentExact]
+  user_bootstrap_unit: uid
+  seed_aggregation: equal_seed
+
+evidence_boundary:
+  quality_requests_do_not_define_migration_population_or_cost_denominator: true
+  labels_used_only_after_action_logits_are_written: true
+  scheduler: prohibited
+  theta3: prohibited
+  paper_qualification: false

@@ -1,0 +1,55 @@
+contract: p9_4_materialized_lineage_canary_v1
+status: frozen_before_execution
+purpose: validate_true_release_cutover_materialization_and_online_append_evict_semantics
+
+inputs:
+  p8_release_contract_sha256: 477bb3a6af07cb38bb6a80481dbb8d185768060dc75a247e71013ac86459a758
+  p9_4_lineage_audit_sha256: 481ad473eefa6559eb638e5b22f2efdc2b503357889cd7f890d64d2f926f3984
+  p9_4_request_local_raw_seal_sha256: 8b8b7e6076751517376b5ca8f8439066777f0a32d32660af5daf4cc2ddab452b
+  p8_materialization_summary_sha256: 5c6c88e02e29ddeba99a742bc3e5490191c3547a21d18075dd0162d4206218e7
+
+scope:
+  releases: [r0, r2]
+  model: m0_f
+  seed: 17
+  workload: F
+  views: [fidelity, quality]
+  selection_uses_labels_or_scores: false
+  per_view_buckets:
+    no_eviction: 8
+    eviction_short_suffix_1_to_32: 8
+    eviction_long_suffix_128_to_256: 2
+  deterministic_order: sha256_request_id
+
+lineage:
+  cutover_snapshot: last_512_strictly_pre_cutover_listens
+  parent_state: computed_once_by_parent_at_cutover
+  exact_current_state: computed_once_by_current_at_cutover
+  suffix: every_listen_from_cutover_inclusive_to_query_exclusive
+  append: one_event_at_a_time_under_current_model
+  rolling_cap: 512
+  eviction: before_each_append_when_cache_is_full
+  transient_query: scored_after_final_persistent_state_and_never_written
+  current_reference: exact_current_state_plus_identical_online_append_evict
+  reuse_reference: parent_state_plus_identical_online_append_evict
+
+actions:
+  - noop
+  - layer0_recent128
+  - layer0_middle
+  - layer0_full
+  - hybrid_tail128
+  - exact_all
+
+blocking_gates:
+  exact_all_vs_current_online_max_abs_logit: 1.0e-5
+  r0_noop_JS_max: 1.0e-8
+  r0_all_action_JS_max: 1.0e-8
+  raw_snapshot_and_suffix_counts_match_audit: true
+  qualification_or_theta3_access: prohibited
+
+interpretation:
+  old_P8_P9: request_conditioned_retained_prefix_diagnostic_only
+  canary_pass_authorizes: full_materialized_lineage_matrix_contract
+  canary_failure_action: redo_tomography_under_materialized_rolling_lineage
+  scheduler: prohibited

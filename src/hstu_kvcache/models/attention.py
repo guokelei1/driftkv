@@ -93,6 +93,23 @@ class PointwiseAttention(nn.Module):
             v = F.silu(v)
         return q, k, v
 
+    def project_kv(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Project normalized token states to cache-layout K/V without attention.
+
+        Layer-0 K/V for a token depends only on that token's normalized input.
+        Exposing this projection allows a dependency-closed state transition
+        to refresh selected layer-0 positions without pretending that upper
+        layer K/V have the same locality.
+        """
+        if x.ndim != 3 or x.shape[-1] != self.cfg.hidden_size:
+            raise ValueError("project_kv input must have shape [B, L, hidden]")
+        batch, length, _ = x.shape
+        _, k, v = self._project(x)
+        return (
+            k.transpose(1, 2).reshape(batch, length, self.inner),
+            v.transpose(1, 2).reshape(batch, length, self.inner),
+        )
+
     def _aggregate(
         self,
         q: torch.Tensor,

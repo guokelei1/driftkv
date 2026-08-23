@@ -1,12 +1,14 @@
 # EvoKV 37D 完整技术规格
 
-更新日期：2026-08-21。本文保留 37D 的完整技术协议与协议演变；当前事实和执行授权以[项目全程 Compact](project_compact.md)与[当前路线](current_route.md)为准。本文中 P7 以前的 Q_main、neutral-readout、旧 oracle/ranker 数值仅用于解释协议为何被替换，不是当前系统结果。
+更新日期：2026-08-22。本文保留 37D 的完整技术协议与协议演变；当前事实以
+[截至 P11.4 的统一总结](evidence_summary_through_p11.md)为准，执行授权以
+[当前路线](current_route.md)为准。本文中 P7 以前的 Q_main、neutral-readout、旧
+oracle/ranker 数值仅用于解释协议为何被替换，不是当前系统结果。
 
-> **执行状态更新（2026-08-21）。** P8 的 F-workload R0/R1/R2 release chain 已完成：R0
-> 处于数值 identity floor，R1 两条边与 R2 均出现跨版本 S，且 M1-F R2 还出现稳定的 F quality
-> 损失。基础链永久冻结；当前只授权 P9 staleness tomography、dependency-closed partial action
-> 和 fidelity–work frontier。controller、θ3 与 blind qualification 仍暂停，见
-> [当前路线](current_route.md)、[P8 结果摘要](p8_result_summary.md) 与 [P9 计划](p9_plan.md)。
+> **执行状态更新（2026-08-22）。** P7–P11 development full round 已完成，包含长期 H、
+> release-dependent S、合法 partial、全人群 frontier、冻结 sparse-probe Ridge scheduler、
+> grouped executor 和 true recursive quality。当前进入 8L/H256/context1024 规模验证准备；
+> θ3 与 blind qualification 仍暂停，见[当前路线](current_route.md)。
 
 > **P9 更新。** P9.0、P9.1 和 24/24 coarse tomography cells 已完成。最佳诊断区域可恢复
 > 约 78%–99% stale error，但 arbitrary exact-KV splice 不是合法迁移动作。当前先补齐 splice

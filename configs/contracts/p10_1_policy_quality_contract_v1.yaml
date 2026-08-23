@@ -1,0 +1,53 @@
+contract: p10_1_policy_quality_contract_v1
+status: frozen_after_target_free_policy_seal_and_before_policy_quality_join
+purpose: evaluate_previously_sealed_cheap_profiler_assignments_on_heldout_rolling_feedback_quality
+
+inputs:
+  p10_0_full_policy_seal_sha256: f35c26dfb88e02b4b215cf7652ba7e26672f71f793db33ccf7f5ae58f19bc01e
+  p9_9_heldout_quality_raw_seal_sha256: 6240f4720cb7159d95929da5399813bc704463ecb5eef41985e34b555f8412cc
+  p10_0_profiler_contract_sha256: ad22926d63f652c063629024715e2feba7d423cbd1a6caa5998107574165375c
+
+scope:
+  releases: [r0, r1_edge1, r1_edge2, r2]
+  models: [m0_f, m1]
+  seeds: [17, 37, 71]
+  sample_fractions: [0.01, 0.02]
+  budgets_exact_fraction: [0.05, 0.10, 0.25]
+  all_144_frozen_policies_required: true
+
+join:
+  key: [release, model, seed, uid, action]
+  one_cutover_action_per_uid: true
+  future_requests_do_not_change_action: true
+  missing_uid_or_action: fatal
+  policy_refit_after_labels: prohibited
+  policy_selection_after_labels: prohibited
+
+metrics:
+  primary: [log_loss, ROC_AUC, dislike_PR_AUC, Brier, dislike_only_log_loss]
+  fidelity_companion: [mean_Bernoulli_JS_to_CurrentExact]
+  comparisons: [policy_minus_CurrentExact, Noop_minus_policy]
+  request_weighting: same_as_P9_9
+  uncertainty: user_cluster_bootstrap_2000_for_logloss_differences
+  mandatory_logloss_slices:
+    - prior_30m_same_item
+    - non_prior_30m_same_item
+    - latest_item
+    - non_latest_item
+    - organic
+    - recommendation_driven
+
+adjudication:
+  target_free_profiler_is_promising_if:
+    - fidelity_recovery_is_positive_across_non_R0_seeds
+    - policy_quality_is_not_systematically_worse_than_Noop
+    - R2_M1_quality_harm_is_materially_recovered
+  controller_authorized_by_this_step: false
+  next_if_positive: freeze_minimal_budget_scheduler_design_without_blind_qualification
+
+evidence_boundary:
+  assignments_were_sealed_before_this_contract: true
+  heldout_labels_are_evaluation_only: true
+  dislike_only_caveat_mandatory: true
+  development_only: true
+  theta3_or_blind_qualification: prohibited

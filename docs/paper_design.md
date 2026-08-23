@@ -1,6 +1,10 @@
 # EvoKV 论文设计：发布期预算化状态收敛
 
-更新日期：2026-08-21。本文定义稳定的论文问题边界；当前证据状态和执行授权见[项目全程 Compact](project_compact.md)与[当前路线](current_route.md)。P7/P8 已建立 F workload 的 `H → S → quality` development 链，P9 正在验证合法 partial action；controller 与 paper qualification 尚未授权。
+更新日期：2026-08-22。本文定义稳定的论文问题边界；当前证据见
+[截至 P11.4 的统一总结](evidence_summary_through_p11.md)，执行授权见
+[当前路线](current_route.md)。P7–P11 已完成从 `H → S → legal partial → scheduler →
+recursive quality` 的 development 闭环；下一阶段是冻结方法的规模验证，paper
+qualification 仍未执行。
 
 ## 一句话定义
 
@@ -44,11 +48,19 @@ Yambda 可以提供时间、用户状态、发布切换和离线排名评测；�
 
 ### 1. Release compatibility profiler
 
-在少量发布前 canary states 上离线运行 Current Full、Reuse 和预定义 partial paths，构造版本级与状态级风险画像。Exact 只用于小样本 profiling ground truth；不用于拟合任意自由度 old-KV→new-KV mapper。
+EvoKV v1 使用 1% deterministic target-free sparse probe，在发布前 canary states 上离线
+运行 Current Full、Reuse 和冻结 partial paths，构造版本级与状态级风险画像。Exact 只用于
+小样本 profiling ground truth；不用于拟合任意自由度 old-KV→new-KV mapper。1% 是当前
+主配置，不宣称是百万/亿级人口的普适比例；规模点同步报告 fixed-count/capped-rate。
 
-### 2. Budget-aware state scheduler（P9 frontier 通过后才授权）
+### 2. Budget-aware state scheduler
 
-预测连续风险 `D^_u`，并按“预期 semantic benefit / exact-equivalent cost”排序，在任意预算点选择状态动作。主特征必须在发布时得到，例如：
+当前冻结实现使用发布时可得的 state features、`StandardScaler + Ridge(alpha=1.0)` 和
+concave-hull greedy allocator，预测各动作的连续收益，并按 benefit/cost 在
+5%/10%/25% exact-equivalent budget 下分配。它不使用未来 request 或 label。更复杂
+predictor 不属于下一阶段。
+
+合法特征类别包括：
 
 - effective prefix length、cache age、pre-release recent activity、history recency；
 - old KV layer-wise norm/sketch；
@@ -56,11 +68,14 @@ Yambda 可以提供时间、用户状态、发布切换和离线排名评测；�
 - pre-release canonical probe 的 reuse-only entropy、Top-K boundary margin；
 - estimated exact work 与 KV storage tier。
 
-第一版可采用规则、线性 ranker 或浅层树；目标不是训练 safe/unsafe 请求分类器。
+目标不是训练 safe/unsafe 请求分类器，也不根据 θ3 结果选择 feature 或 Ridge 参数。
 
 ### 3. State transition executor
 
-第一阶段只实现 `No-op` 与 `Exact`。随后引入 `Fast Migration`、`Selective Recompute`，按预计 fidelity gain / incremental work 进行多动作预算分配。
+EvoKV v1 已冻结六种 dependency-closed action：`No-op`、
+`Layer0-Recent128`、`Layer0-Middle`、`Layer0-Full`、`Hybrid-Tail128` 和
+`Exact-All`。Grouped executor 只优化执行效率，不改变 UID action。诊断性任意 KV splice
+不属于可执行动作，也不得进入成本 frontier。
 
 ## 主指标与预算
 
@@ -86,7 +101,8 @@ Current Full 是当前模型执行语义 reference，不是 future ranking quali
 work_ratio = EvoKV recompute + migration work / Exact-All work
 ```
 
-报告全区间 `[0, .1, .25, .5, .75, 1]`，而非选择一个人为“正确预算”。
+主 operating points 冻结为 `[.05, .10, .25]`；`0` 与 `1` 分别是 No-op/Exact endpoint，
+完整曲线作为 companion。不得根据新时间边选择一个最有利预算。
 
 ### System companions
 
@@ -109,15 +125,17 @@ zero-append cutover 是最保守的 fidelity endpoint：旧 prefix 占比最高�
 
 ## 研究问题
 
-1. **RQ1 — Characterization**：哪些预定义 release 类型与状态群体兼容，哪些不兼容？是否存在版本、用户、层与 cutover/dilution 异质性？
-2. **RQ2 — Executor**：dependency-closed Partial 能否把 No-op/Exact frontier 推向更低工作量，并同步恢复任务质量？
-3. **RQ3 — Allocation opportunity**：同一预算下，state×action near-optimal allocation 是否优于 version-level uniform action？
-4. **RQ4 — Scheduler**：若 state-level opportunity 成立，只用发布前 feature 的 benefit/cost 预测能否逼近该 frontier 并跨版本泛化？
-5. **RQ5 — Rollout**：在连续发布与有限 worker/IO 容量下，能否避免 state-version debt 累积？
+1. **RQ1 — Characterization**：哪些 workload、release 与状态兼容，哪些形成 H/S？
+2. **RQ2 — Executor**：dependency-closed Partial 能否以低于 Exact 的成本恢复 fidelity/quality？
+3. **RQ3 — Scheduler**：发布前 sparse probe + state features 能否在同成本下优于固定、元数据与随机基线？
+4. **RQ4 — Rollout**：连续 No-op 后的 version debt 是否保留，frozen policy 是否仍有效？
+5. **RQ5 — Qualification**：上述链条能否在 8L scale point 和未见 θ3 时间边复现？
 
 ## 实验纪律
 
-- P8 的 R0/R1/R2 边只提供现象和 action-space development substrate，不得直接训练或证明 controller；方法、executor、frontier 和任何 controller 全部冻结后，新的未查看时间边才承担 blind qualification。
+- P7–P11 是 development substrate；当前六动作、profiler、Ridge、allocator、executor、
+  budgets 和统计规则必须先封存为 EvoKV v1。8L 只做规模复现；θ3 才承担 frozen-policy
+  blind temporal qualification。
 - 模型发布质量与状态兼容性分开报告；EvoKV 不负责 model admission。
 - quality manifest 可以 target-inject，profiler manifest 不可 target-inject。
 - active snapshot 必须只依赖 pre-release materialization；主定义不设 TTL，TTL/activity 仅作 sensitivity cohort；不可按未来 served users 定义。
@@ -134,8 +152,17 @@ Yambda-50M 是机制开发平台：用于稳定协议、合法 lineage、风险�
 
 规模化资格分层如下：
 
-- 同源 Yambda-5B：在方法冻结后重新训练更大的 foundation 和版本链，承担“大模型、大数据”的主 qualification；
+- `8L/H256/context1024`：当前首个同源更大模型复现点，只复现
+  `H→S→legal partial→same-cost scheduler`；
+- θ3 blind edge：完全未查看时间边上的 frozen-policy temporal qualification；
+- 同源 Yambda-5B：上述通过后的大数据/状态规模扩展；
 - VK-LSVD：在百万到千万 materialized states 上验证 KV footprint、迁移工作量、I/O、调度吞吐和 state-version debt；
 - RecFlow：补充真实多阶段 candidate workload，检验 candidate set 对 compatibility risk 和 scheduler 的影响。
 
 可跨规模复用的是 snapshot、lineage、future-information exclusion、exact-equivalent work、动作接口和 accounting；用户级风险模式、节省比例、candidate-set 效应和 release regression 必须在新规模上重新验证。完整的分阶段准入条件和禁止外推的表述见[规模化扩展路线](scaling_extension.md)。
+
+## 论文图表骨架
+
+在 qualification 完成前只维护紧凑 paper jig，固定准备四类核心图表：系统图、
+N/R/F × R0/R1/R2 phase diagram、同成本成本—fidelity—quality frontier，以及并列展示
+development、8L、recursive lineage 和 θ3 blind 的 qualification 表。

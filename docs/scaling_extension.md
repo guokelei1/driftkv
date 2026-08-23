@@ -1,137 +1,281 @@
-# EvoKV 规模化扩展路线
+# EvoKV 下一阶段：冻结方法的规模验证
 
-更新日期：2026-08-18。
+更新日期：2026-08-22。
 
-本文定义 37D 路线从 Yambda-50M development platform 向更大模型、更大数据和更大 persistent-state population 扩展时的验证边界。它是当前路线和论文设计的规模化补充，不冻结新的实验 contract，也不提前授权长时间或大规模实验。
+## 目标
 
-## 1. 规模定位
+Yambda-50M、4L/H128/context512 已完成端到端 development 闭环。下一阶段不再
+寻找更大的 gap，也不重新设计方法，而是回答：
 
-Yambda-50M 当前承担的是**机制开发平台**，不是最终“大规模生成式推荐系统”结论的唯一依据。当前模型只有几百 MB，有效历史长度也约为 512；即使原始用户历史可以达到几千或几万条，也不能把自然历史长度直接写成模型已经验证过的 sequence scale。
+> 冻结的 workload、release、partial action、profiler 和 scheduler，在更深、更宽、
+> 更长上下文的模型上是否仍能执行，并保留相同方向的 H/S/frontier 结构？
 
-50M 阶段要回答的是：
+首个规模点固定为：
 
-- release-time snapshot 如何冻结；
-- Previous Full、Current Full、Reuse 和合法 partial path 如何定义 lineage；
-- scheduler 如何只使用发布时可得的信息；
-- exact-equivalent work 如何统一表达迁移预算；
-- No-op、局部迁移和 Exact 如何在有限预算下分配给整个 materialized-state population。
+```yaml
+dataset: Yambda-50M
+workload: F Explicit Feedback
+models: [M0-F, M1]
+seeds: [17, 37, 71]
+architecture:
+  layers: 8
+  hidden: 256
+  context: 1024
+base: reuse_frozen_feature_schema_and_fit_protocol
+GPUs: [0, 1, 2, 3]
+```
 
-因此，50M 的正确产物是稳定、可审计、可迁移的协议和机制，而不是把一个小 checkpoint 人工撑大后作为系统规模证据。
+这是同源模型规模验证，不冒充 Yambda-5B 或生产规模。
 
-## 2. 什么可以跨规模复用
+## 不随规模改变的内容
 
-从 50M 迁移到更大 workload 时，优先迁移 EvoKV 的系统抽象，而不是迁移小模型上的具体数值规律。
+- N/R/F 的任务语义及 F 主 workload；
+- Frozen Base + CC residual 部署分数；
+- Full/Recent、Current/Reuse 和 recursive lineage；
+- R0/R1/R2 release recipe；
+- seed 17/37/71；
+- action 的依赖语义；
+- 1% sparse probe、固定 Ridge 和 allocator；
+- 5%/10%/25% exact-equivalent token-layer budgets；
+- target-free assignment 先封存、quality 后 join；
+- dislike-only 指标完整报告。
 
-| 可迁移的抽象 | 规模迁移时仍需重新验证的事实 |
-| --- | --- |
-| 发布时冻结 materialized state 的规则 | 哪些用户或状态风险最高 |
-| 合法 Full/Reuse/partial lineage | Reuse 相对 Exact 的具体 regret、tail 和 downstream gap |
-| future-information exclusion | 哪些 metadata 最能预测风险 |
-| exact-equivalent work 与预算 frontier | 给定预算可节省的比例，例如 20% 或 40% |
-| No-op、局部迁移、Exact 的动作接口 | 风险是否随模型宽度、层数、候选集合或历史长度变化 |
-| state-version debt 与 rollout accounting | I/O、worker-hours、makespan 和吞吐的绝对规模 |
+允许因架构自然变化而重新计算的只有动作成本、KV bytes、batch size 和物理 runtime；
+不得据此改变动作选择算法。
 
-换句话说，协议、lineage、预算和控制器接口可以作为方法骨架复用；用户级风险排序、节省比例、候选集合效应以及模型 release regression 都必须在新规模上重新测量，不能从 50M 外推。
+## 分阶段执行
 
-## 3. 分阶段扩展路线
+### S0 — EvoKV v1 full-stack seal
 
-### 阶段 A：Yambda-50M——机制稳定与 development evidence
+封存 P11.1–P11.4 的合同、六种 dependency-closed actions、1% deterministic probe、
+state features、StandardScaler + Ridge(alpha=1.0)、5%/10%/25% budgets、成本核算、
+allocator、grouped executor、三个 seed 和统计方法。同时记录：
 
-继续使用当前同源 workload，完成现有路线尚未闭合的工作：
+```text
+code commit
+config / contract hashes
+manifest hashes
+Frozen Base hashes
+checkpoint hashes
+assignment / raw-result / adjudication hashes
+```
 
-1. 完成 multi-panel cutover label 和 external-validity gate；
-2. 生成 append `0/1/2/4/8/16` 的 dilution curve；
-3. 在 development edges 上冻结 metadata-only risk ranker、budget points、executor 和 accounting；
-4. 在 blind edge 上做 controller qualification；
-5. 再加入 partial path、3d robustness、independent seed 和 recursive lineage；
-6. 记录协议中与规模无关的接口、审计字段和失败条件。
+该封存版本命名为 **EvoKV v1**。之后不得用 4L、8L 或 θ3 结果继续调 predictor、
+action、feature、probe、budget 或分配逻辑。
 
-本阶段不承担“大模型、大数据”主 qualification，也不因为原始历史很长就宣称已验证 1K--4K sequence scale。
+### S1 — 静态资源与覆盖审计
 
-### 阶段 B：Yambda-5B——同源大模型与大数据主 qualification
+只计算：
 
-方法冻结后，将同一套 protocol、manifest、lineage、预算定义和评价指标迁移到 Yambda-5B。它与 Yambda-50M 属于同源体系，时间语义、行为定义和 release protocol 有机会直接复用，但仍须先完成新数据审计和新的 workload contract；“同源”不是跳过重验证的理由。
+- 参数量和 embedding/encoder/head 分解；
+- Full-1024 单 batch 显存、KV bytes/state；
+- 8L action 的 token-layer、attention-pair、read/write bytes；
+- Yambda 中 Full-1024、Recent-32 的历史覆盖率；
+- 预计 θ0、R0/R1/R2 和六 cell 的 GPU-hours、checkpoint 空间。
 
-这一阶段的目标是让模型和数据自然进入真正更大的范围，而不是通过无语义的 padding 凑参数。可探索的 foundation 配置包括：
+单卡 FP32 AdamW 已由真实一步 canary 判定 OOM；冻结执行改为一模型占四卡的
+FSDP FULL_SHARD。若四卡 canary 无法完成，不擅自减模型或 history。
 
-- 约 8 层；
-- hidden dimension 256 或 512；
-- 历史长度 1K--4K；
-- 随着 item vocabulary、embedding table、模型宽度和层数增长，模型进入数 GB 到几十 GB 的范围。
+### S2 — Correctness canary
 
-具体配置必须由显存、训练吞吐、有效历史覆盖和 workload contract 共同决定，不能在当前文档中预先把某一个配置当成冻结结果。Yambda-5B 阶段至少要重新确认：
+固定 M0-F seed17，仅做数十个用户/请求：
 
-- Full 与 incremental Append 的 correctness 和 precision tolerance；
-- 版本链、release cutover、snapshot population 和 OOV/catalog policy；
-- no-op/exact oracle frontier 与 50M 的方向是否一致；
-- 发布前 feature 的风险排序是否跨边、跨 seed、跨规模仍然有效；
-- 模型大小、有效历史长度、materialized-state 数量和迁移工作量的实际测量。
+- Full 与 incremental Append 等价；
+- rolling cap-1024 的逐事件 append/evict 正确；
+- Base logits 对 Recent/Full 完全相同；
+- candidate query 不写回 persistent state；
+- R0 cache identity；
+- Exact action 与 Current Full 对齐；
+- grouped executor 与逐 UID executor 数值等价。
 
-论文中的“大模型、大数据”主 qualification 应由这一阶段承担。50M 上观察到的规律可以作为 hypothesis 或 development evidence，但不能直接充当 5B 的结果。
+Canary 只修实现错误，不查看 H/S 是否“足够大”。
 
-### 阶段 C：VK-LSVD——population 与 system-scale 验证
+当前结果：通过。24.07 亿参数模型的单卡 FP32 AdamW 在 optimizer step OOM；四卡
+FSDP FULL_SHARD canary 通过，每卡 peak reserved 约 40.997GB（85.95% A40），余量约
+6.70GB。Full/Append、rolling cap、R0 identity、Exact、query immutability 全部通过；
+grouped-vs-serial 最大绝对差约 `4.41e-6`。训练器还完成了一个 logical batch、dev
+selection、约 9.63GB full checkpoint 写入/普通 HSTU key/shape round-trip，临时
+checkpoint 随后删除。
 
-在更大的用户和交互规模上，VK-LSVD 更适合承担 population/system-scale 验证：重点不只是单个模型 checkpoint 的大小，还包括百万到千万级 materialized states 下的：
+### S3 — θ0 长期 H scale gate
 
-- persistent KV footprint 和分层存储占用；
-- KV read/write 与 history input I/O；
-- migration work、worker-hours 和 pipeline makespan；
-- scheduler 吞吐、完成时间和连续 release 下的 state-version debt；
-- 不同状态数量、prefix length 分布和资源预算下的 rollout completion。
+训练且只训练 8L θ0 的 M0-F/M1、三个 seed。一次性比较：
 
-这一阶段可以验证系统压力和跨 population 场景的稳健性，但不能把新的用户规模自动写成模型质量或兼容性结论。数据是否具有可用时间语义、行为定义和 candidate/evaluation 条件，仍需先经过独立 audit。
+```text
+Base Only
+Base + Recent-32
+Base + Full-1024
+Base + frozen compact-summary companion
+```
 
-### 阶段 D：RecFlow——真实 candidate workload 补充
+完整报告 target-free H、log loss、ROC-AUC、dislike PR-AUC、Brier 和
+dislike-only log loss。若 M0-F/M1 都未保留长期 H，则停止规模版本链；不能改 history、
+task weight 或 checkpoint 来寻找正结果。
 
-RecFlow 更适合补充真实的多阶段 candidate workload。当前已知的研究风险是 compatibility risk 可能依赖 candidate set；因此，真实候选日志可以用来检查：
+执行采用预注册的分阶段顺序：先运行 M0-F seed17 θ0 并立即裁决 H；H 通过后先完成该
+seed 的 R0/R1/R2 最小版本链。只有 pilot chain 保留 `H→S→legal partial` 后，才补
+seed37/71 与 M1。Pilot 只能授权后续 replication，不能单独升级为三-seed正式结论。
 
-- 同一 persistent state 在不同 candidate set 下的 semantic risk 是否改变；
-- canonical probe、固定候选集与真实候选阶段之间的相关性；
-- multi-stage candidate filtering/reranking 对 migration frontier 的影响；
-- candidate workload 变化是否使原有 risk ranker 或预算策略失效。
+### S4 — R0/R1/R2 staleness scale gate
 
-RecFlow 是 candidate-protocol 和跨场景验证的补充，不替代 Yambda-5B 的同源大模型 qualification，也不应在没有数据审计的情况下被写成生产请求 SLO 证据。
+只有 S3 至少一个模型条件保留 H，才训练对应的 R0/R1/R2：
 
-## 4. 规模化时必须同时增长的维度
+- R0 必须保持数值地板，否则停止查 lineage；
+- R1 两边和 R2 原样复现，不调 update 强度；
+- 报告 H、S、S/H companion、tail 和 quality；
+- 所有三个 seed 保留。
 
-最终的“大规模”应是多维度共同成立，而不是一个几十 GB checkpoint 的单点展示：
+#### S3/S4 pilot 结果（2026-08-23）
 
-| 维度 | 50M 的角色 | 后续主验证 |
-| --- | --- | --- |
-| 数据交互量 | 机制开发与时间协议 | Yambda-5B；再到 VK-LSVD 的系统压力 |
-| 用户数量 | 小 population 的完整协议闭环 | Yambda-5B 的大数据 qualification；VK-LSVD 的百万--千万状态 |
-| item vocabulary / embedding | 当前 foundation 的真实配置 | Yambda-5B 的自然参数增长 |
-| 模型宽度、层数 | correctness、lineage、scheduler 开发 | 5B foundation 的数 GB--几十 GB 范围 |
-| 有效历史长度 | 当前约 512 的机制验证 | 5B 上重新验证 1K--4K；不得由原始历史长度替代 |
-| persistent KV 总量 | 小规模 state-level frontier | VK-LSVD 上的 footprint、I/O 和 rollout |
-| candidate workload | 固定、可审计的 profiler/quality manifest | RecFlow 的真实多阶段 candidate 补充 |
+M0-F seed17 已完成 `theta0 -> R1 edge1 -> R1 edge2` 以及从 theta0 分叉的 R2。
+本轮按用户指令只训练/评测 R1 与 R2，未运行 8L R0；因此不能把 4L 的 R0 identity
+直接写成规模复现结果。
 
-只有这些维度按阶段同步扩大，论文中的“大规模”才同时具有模型、数据、状态和系统含义。
+| Edge | H: Full1024 vs Recent32 JS | S: Exact rolling vs Reuse rolling JS | S/H | Reuse harm: log-loss gain |
+| --- | ---: | ---: | ---: | ---: |
+| R1 edge1 | 0.000850343 | 0.000148300 | 0.1744 | +0.00152275 `[0.00056077, 0.00245416]` |
+| R1 edge2 | 0.000122303 | 0.000034853 | 0.2850 | +0.00014571 `[-0.00036910, 0.00063620]` |
+| R2 | 0.000977428 | 0.000150880 | 0.1544 | +0.00113881 `[0.00013436, 0.00213231]` |
 
-## 5. 规模迁移的准入条件
+每条边的 H 和 S 都通过冻结的用户 bootstrap / panel 门。该结果表明 8L/H256/context1024
+上长期状态与真实 rolling-cache staleness 均保留；R1 edge1 和 R2 还复现了 aggregate
+任务质量伤害。它仍是单 seed development scale pilot：不能替代 M1、seed37/71、8L R0、
+冻结 partial/scheduler replay 或 blind qualification。
 
-规模迁移不是把脚本和 checkpoint 直接复制到新数据集。每个阶段至少需要以下证据链：
+封存 artifacts：
 
-1. **数据审计**：时间单位、行为定义、排序、重复、catalog/OOV、用户/item 覆盖和 candidate 条件已明确；
-2. **模型审计**：Full/Append correctness、有效历史覆盖、显存/存储占用和训练/推理成本已测量；
-3. **协议复现**：snapshot、release gap、manifest、lineage 和 future-information exclusion 与当前 contract 对齐；
-4. **机制重测**：oracle frontier、risk ranker、executor 和 state-version debt 在新规模上重新测量；
-5. **系统会计**：报告 state 数量、KV footprint、read/write、worker、makespan 和 completion，而不是只报告一个 checkpoint size；
-6. **证据分层**：development、scale qualification、system-scale validation 和 candidate-workload validation 分开标注，不跨阶段拼接成单一结果。
+- raw seal：`results/scale_8l_v1/hs_raw_seal_v1.json`；
+- adjudication：`results/scale_8l_v1/pilot/s4_*_m0_f_seed17_adjudication.json`；
+- result contract：`configs/contracts/scale_8l_hs_result_v1.yaml`。
 
-如果某一阶段无法满足这些条件，它可以作为数据或模型的 exploratory bring-up，但不能承担对应的论文规模结论。
+### S5 — Frozen partial 与 scheduler replay
 
-## 6. 论文中的规模化表述
+不做新 tomography 搜索，只回放冻结动作：
 
-推荐采用以下分层表述：
+- Layer0-Recent128；
+- Layer0-Middle；
+- Layer0-Full；
+- Hybrid-Tail128；
+- Exact-All。
 
-- Yambda-50M：验证科学问题、合法 cache lineage、风险定义、预算 oracle、scheduler 和 migration mechanism 的 development platform；
-- Yambda-5B：验证同一方法能否在同源大数据和真正更大 foundation 上成立，是“大模型、大数据”主 qualification；
-- VK-LSVD：验证百万到千万 materialized states 下的 population 和 system-scale 行为；
-- RecFlow：验证真实多阶段 candidate workload 对 compatibility risk 和 scheduler 的影响。
+由于总层数变为 8，Hybrid-Tail 的实际 token-layer/attention work 会自然变化，必须重新
+计费。随后使用原 1% Ridge scheduler，比较同成本 uniform、metadata、random Exact 和
+offline oracle；assignment 仍先封存。
 
-不能使用的表述包括：仅凭 50M 原始长历史声称已验证长序列；仅通过扩大 hidden dimension 或 embedding table 声称大型 workload；把 50M 的 risk pattern 或节省比例直接外推到 5B；把离线 candidate proxy 写成真实线上 P99、QPS 或业务 SLO。
+当前已准备一键、可恢复、失败即停的 S5/S6 pilot 队列。它依次补训练 8L R0、运行四个
+release 的 16-state canary、全人群六动作 target-free profiler、raw seal、action
+adjudication、1%/2%/fixed-count/capped-rate scheduler replay，以及 assignment 封存后的
+rolling quality validation。启动命令：
 
-## 7. 资源与执行纪律
+```bash
+PYTHONPATH=src:scripts python scripts/run_scale_8l_method_full.py --run
+```
 
-当前阶段仍遵守最小数据和最小计算原则。Yambda-5B、VK-LSVD 和 RecFlow 在方法和 contract 冻结前只是后续扩展候选，不应提前下载、训练或启动长实验。进入下一阶段后，也应先做 canary、schema/time audit、Full/Append correctness 和小规模 migration smoke，再决定是否扩大 population、模型和 worker 数量；默认不保留大 checkpoint、日志、生成数据或 processed corpus。
+状态查询：
+
+```bash
+PYTHONPATH=src:scripts python scripts/run_scale_8l_method_full.py --status
+```
+
+队列使用 GPU 0/1/2/3；R0 的四卡 FSDP 训练结束后，四个 action cell 分卡并行。任何
+Exact 等价、R0 identity、raw hash 或 lineage gate 失败都会停止，且不会访问 theta3。
+
+#### S5/S6 pilot 结果（2026-08-23）
+
+队列已全部完成。R0 cache-producing 参数变化为 0，所有 action 的最大 logit 差为
+`3.58e-7`。全人群 target-free recovery：
+
+| Edge | Recent128 | Middle | Layer0-Full | HybridTail128 |
+| --- | ---: | ---: | ---: | ---: |
+| R1 edge1 | 21.31% | 31.03% | 24.06% | 43.42% |
+| R1 edge2 | 50.16% | 74.87% | 68.30% | 55.97% |
+| R2 | 22.37% | 73.17% | 96.35% | 21.26% |
+
+1% Ridge 在 8/9 个 budget cells 中优于最强同成本非学习基线；唯一例外是 R2 25%，
+recovery 低 `1.19` 个百分点。5%/10%/25% policy 的 grouped transition runtime 为
+`2.97–13.74s`，对应各 edge Exact-All 的 `44.98–46.64s`。
+
+用户等权 rolling quality 只在强发布 R2 的高预算点形成清楚恢复：25% policy 相对 No-op
+改善 log loss `0.001234 [0.000117, 0.002311]`，与 Exact 差
+`-0.000095 [-0.000302, 0.000114]`。R1 的 policy fidelity 虽恢复，但质量 CI 未稳定优于
+No-op。该结果支持“冻结方法跨规模有效但 quality opportunity 依赖 release semantics”，
+不支持“每个 release、每个预算都提升质量”。
+
+### S6 — Probe population sensitivity
+
+主方法仍为 1%，但规模实验同步报告：
+
+```text
+rate_1pct
+fixed_count_64
+fixed_count_128
+fixed_count_256
+capped_rate_min(1pct, frozen_fixed_cap)
+```
+
+主配置仍为 1%。fixed count/cap 必须在执行前由 4L population 和资源规则冻结；全部
+sensitivity 都报告，不能根据 8L 或 θ3 结果选择一个替代主配置。本步骤只回答 profiler
+成本能否在百万/亿级人口下有界，不重新选择 predictor。
+
+## Scale-point 通过标准
+
+规模点不要求每个绝对数字复制 4L，也不要求 S 变大。通过意味着：
+
+1. correctness 与 R0 identity 完整通过；
+2. 至少一个事前冻结模型条件仍有长期 H；
+3. cache-producing release 中至少一个条件有可重复 S；
+4. 至少一个冻结 partial 在三 seed 聚合上正恢复；
+5. frozen scheduler 在相同成本下优于最强确定性非学习基线；
+6. quality companion 没有被隐藏，rare dislike caveat 原样报告。
+
+若只满足 H/S 而 scheduler 不通过，应报告“现象跨规模、方法未跨规模”；若 H 本身消失，
+应报告当前长期状态对象不随该模型规模保留，而不是在 scale window 上重新开发 workload。
+
+## B0 — θ3 blind contract
+
+8L scale point 完成并冻结后、训练或打开 θ3 结果之前，创建并封存：
+
+- θ3 训练/更新窗口、R0/R1/R2 recipe 和 model-admission gate；
+- H、R0 numeric identity、S 和 same-cost scheduler 判定；
+- aggregate quality non-inferiority/improvement criterion；
+- dislike PR-AUC、dislike-only log loss 与 calibration companions；
+- seed-level/clustered-bootstrap 统计；
+- token-layer work、KV/history I/O、batched runtime 报告方式；
+- H 消失、S 变弱、partial 失效、scheduler 优势消失或 quality 不稳定时的停止规则。
+
+## B1 — 一次性 θ3 qualification
+
+θ3 使用完全未查看的时间边，一次性执行 frozen EvoKV v1。Raw artifacts 先封存，再统一
+计算指标。揭盲后不得调整 action、feature、Ridge、probe、budget、阈值或判定。
+
+通过时，结论升级为：
+
+> reproduced on a previously unseen temporal release under a frozen policy.
+
+未通过时必须保留可定位的泛化边界，例如 H 保留但 S 弱、partial 保留但 scheduler 优势
+消失，或 fidelity 恢复但 quality companion 不稳定；不得在 θ3 上继续开发。
+
+## 更大数据
+
+Yambda-5B、VK-LSVD 和 RecFlow 属于 scale point 之后的扩展：
+
+- Yambda-5B：同源大数据/大模型主 qualification；
+- VK-LSVD：百万到千万 materialized-state 的 population/I/O/makespan；
+- RecFlow：真实多阶段 candidate workload 外部验证。
+
+它们都必须重新审计时间、行为、catalog、candidate 和 population，不能直接继承 50M 的
+风险排序或节省比例。
+
+## 当前授权边界
+
+S0–S2 已通过。S3 及以后属于长实验；资源预算、canary 和自动队列已经准备完毕，当前
+停在首次 `M0-F seed17` 四卡训练，仍需用户显式启动。
+
+## 论文同步产物
+
+在 scale/blind 完成前只维护紧凑 paper jig，并准备四个固定图表，不扩写长稿：
+
+1. 发布、persistent KV、No-op/Partial/Exact 和 budget allocator 的系统图；
+2. N/R/F × R0/R1/R2 的 workload/release phase diagram；
+3. No-op、fixed partial、metadata、Ridge、Exact-All 的成本—fidelity—quality frontier；
+4. development、8L scale、recursive lineage、θ3 blind 的 qualification 表。

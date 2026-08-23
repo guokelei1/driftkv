@@ -1,72 +1,156 @@
 # EvoKV 当前执行路线
 
-更新日期：2026-08-21。完整项目脉络见[项目全程 Compact](project_compact.md)，协议细节见[37D 技术规格](newset.md)。本文只定义当前事实、授权和下一步。
+更新日期：2026-08-23。完整 development 证据见
+[截至 P11.4 的统一总结](evidence_summary_through_p11.md)，下一轮规模实验见
+[规模化扩展路线](scaling_extension.md)。
 
-## 当前状态
+## 当前结论
 
-```yaml
-workload:
-  primary: Yambda-50M Explicit Feedback (F)
-  negative_control: Natural Next-Listen (N)
-  not_qualified: Return-to-Familiar (R)
+Yambda-50M、4L/H128/context512 上已经完成一轮端到端 development 实验：
 
-development_evidence:
-  long_state_H: established
-  cross_version_staleness_S: established
-  release_semantics_heterogeneity: established
-  quality_harm: strongest_in_M1_F_R2
-  diagnostic_local_recovery: established
-
-completed:
-  - P7 workload/base/theta0/H qualification
-  - P8 R0/R1/R2 release chain and H-S adjudication
-  - P9.0 evidence seal
-  - P9.1 user-level H-S distributions
-  - P9.2 24-cell coarse layer/segment tomography
-
-authorized_now:
-  - diagnostic splice quality companions
-  - user-risk concentration analysis
-  - representative layer-by-position tomography
-  - dependency-closure audit
-  - legal partial executor and cost frontier
-
-prohibited:
-  - tuning P8 models/releases to enlarge S
-  - controller training
-  - theta3 or blind qualification
-  - paper-qualified claims
+```text
+N/R/F workload 与 Frozen Base
+→ F 的长期状态 H
+→ R0/R1/R2 的 release-dependent S
+→ dependency-closed partial actions
+→ 全人群成本—fidelity frontier
+→ 1% target-free sparse profiler + Ridge scheduler
+→ grouped executor
+→ θ0→θ1→θ2 true recursive lineage
+→ 封存策略后的 rolling quality validation
 ```
 
-## 冻结结论
+关键状态：
 
-- F 是当前唯一进入版本链的长期状态 workload。N 是 No-op 负控制；R 未通过长期质量门。
-- P8 的模型、三个 seed、release recipe、lineage 和指标永久冻结，不再优化基础现象。
-- R0 最大 JS 为 `4.44e-15`；R1/R2 稳定非零；M1-R2 的 Reuse 对 log loss、ROC-AUC、dislike PR-AUC 和 Brier 均有稳定损害。
-- P9.2 的最佳诊断区域可恢复约 `78%–99%` stale error；recent-128 跨全部非 R0 条件和 seed 正恢复。
-- 任意 KV splice 只是诊断干预。部分 layer splice 会变差，未经依赖闭包与真实 executor 验证不得称为 migration action。
+```yaml
+development_full_round: complete
+F_long_state_H: established
+cross_version_S: established
+R0_noop_control: passed
+legal_partial_frontier: established
+minimal_scheduler: frozen_and_positive
+recursive_version_debt: established
+recursive_quality_recovery: positive_but_not_universal
 
-数值与 caveat 分别见 [P8 结果摘要](p8_result_summary.md) 和 [P9.2 结果摘要](p9_2_result_summary.md)。
+scale_8l_m0_f_seed17_H: passed
+scale_8l_m0_f_seed17_rolling_S:
+  r1_edge1: passed
+  r1_edge2: passed
+  r2: passed
+scale_8l_R0: passed
+scale_8l_frozen_partial_actions: passed
+scale_8l_scheduler_fidelity_frontier: positive_8_of_9_budget_cells_vs_strongest_nonlearning
+scale_8l_policy_quality:
+  R1: fidelity_positive_quality_not_stable
+  R2_25pct: improves_over_Noop_and_matches_Exact
+scale_cross_seed_or_M1: not_yet
 
-## 紧接着要做的事
+next_phase: scale_replication_scope_adjudication_before_theta3_contract
+theta3_blind_edge: untouched
+paper_qualification: not_yet
+```
 
-1. **P9.2 companion closure**：将已封存 diagnostic logits 与 F quality labels 连接，统一计算 aggregate log loss、ROC-AUC、dislike PR-AUC、Brier 与 dislike-only log loss。不得据结果更换区域。
-2. **Risk concentration**：计算 Top 1%/5%/10% 用户贡献的总 `S`，区分普遍小风险与少量高风险状态。
-3. **P9.3 2-D map**：固定 R0、M0-F R1 edge1、M0-F R2、M1-F R2，三个 seed全部保留，扫描 layer × position。
-4. **Dependency closure**：列出每个候选动作所需 raw history、hidden boundary、K/V 读写和下游重算范围。
-5. **Executor + frontier**：只让合法动作进入 No-op / Partial / Exact 的 fidelity–work、I/O 和 runtime frontier。
+## 冻结方法
 
-P9 结束后人工裁决：若 state-level action 推开 frontier，才进入 P10 scheduler；若 uniform/version-level policy 已足够，则收缩为 release-level selector；若只有 Exact 有效，则保留 No-op/Exact 系统。
+- Workload：F Explicit Feedback；N 是短期负控制，R 未通过长期资格。
+- 模型：M0-F 单任务与 M1 N/R/F 共享多任务；seed 17/37/71 全部保留。
+- Release：R0 output-only、R1 routine continual、R2 encoder refresh。
+- 动作：No-op、Layer0-Recent128、Layer0-Middle、Layer0-Full、
+  Hybrid-Tail128、Exact-All。
+- Scheduler：1% deterministic target-free probes 为主，2% companion；固定
+  cutover features、StandardScaler + Ridge(alpha=1)、5%/10%/25% token-layer
+  budgets、concave-hull greedy allocator。
+- Executor：按 prefix length 和 operation signature grouping；不得改变 UID action。
 
-## 证据纪律
+以上方法统一命名为 **EvoKV v1**。在规模训练前必须封存代码 commit、全部配置与
+合同、manifest、Frozen Base、模型 checkpoint、assignment/raw-result hashes 和统计
+实现。此后不得再根据 θ0–θ2、规模点或 θ3 的结果修改。
 
-- Current Full 是当前模型执行参考，不是 future-ranking 理论上界。
-- 发布质量 gate 与 cache compatibility gate 分开；低 `H/S` 的合格模型是合法 No-op。
-- 全部冻结 seed 与负结果保留；不能按 `H`、`S` 或 controller 效果筛 seed。
-- scheduler/profiler 不能读取 future label、future activity 或 target K/V。
-- dislike-only calibration 是强制 companion，不能隐藏，也不回写改变 P7/P8 gate。
-- P5/P6 的 next-listen No-Go、neutral-readout bypass 和所有已记录实现错误均不得翻案。
+## 下一步：更大模型复现点
+
+先运行一个预注册的同源规模点：
+
+```text
+8 layers / hidden 256 / context 1024
+Yambda-50M F workload
+M0-F + M1
+seed 17/37/71
+R0/R1/R2
+```
+
+规模点只复现以下冻结证据链，不重新探索：
+
+```text
+H → S → legal partial recovery → same-cost scheduler advantage
+```
+
+1. Full/Append 与 rolling-cap correctness；
+2. F 的 Full-1024 vs Recent-32 长期 H；
+3. R0 是否仍处于数值地板，R1/R2 是否仍有 S；
+4. 冻结动作的 recovery 与 exact-equivalent cost；
+5. 冻结 scheduler 相对同成本基线的 target-free frontier；
+6. 代表性 rolling quality companions；
+7. 1% probe 与预先冻结的 fixed-count/capped-rate sensitivity。
+
+S0–S4 pilot 已完成。资源/覆盖、真实 rolling correctness、四卡 FSDP backward/AdamW、
+trainer/checkpoint round-trip、M0-F seed17 的长期 H，以及 R1 两边和 R2 的 rolling S
+均通过。用户本轮只启动了 R1/R2，因此 **8L R0 尚未复现**，4L R0 仍是当前唯一严格
+No-op 负控制。当前结果只能授权冻结 action replay，不能升级为跨 seed 或 paper 结论。
+
+8L M0-F seed17 的关键规模结果：
+
+| Edge | H JS | S JS | S/H | Exact 相对 Reuse 的 log-loss gain |
+| --- | ---: | ---: | ---: | ---: |
+| R1 edge1 | 8.503e-4 | 1.483e-4 | 17.44% | +0.001523，CI 为正 |
+| R1 edge2 | 1.223e-4 | 3.485e-5 | 28.50% | +0.000146，CI 跨 0 |
+| R2 | 9.774e-4 | 1.509e-4 | 15.44% | +0.001139，CI 为正 |
+
+三条边的 H/S 用户 bootstrap CI 均高于数值地板。R1 edge1 与 R2 还复现了 stale Reuse
+对 aggregate log loss 的稳定伤害；R1 edge2 证明 S 存在，但 aggregate log-loss 质量
+影响尚不稳定。dislike-only log loss caveat 在规模点继续存在，必须完整报告。
+
+S5/S6 的 M0-F seed17 方法 pilot 也已完成：R0 全动作处于数值地板；最佳冻结 partial
+在 R1-edge1、R1-edge2、R2 分别恢复 `43.4% / 74.9% / 96.35%` 的全人群
+target-free stale MSE。1% Ridge 在 9 个 release×budget 点中的 8 个优于最强同成本
+非学习基线。按 5%/10%/25% logical budget，实测 grouped transition runtime 相对
+Exact-All 节省约 `69.5%–93.4%`。
+
+Rolling quality 并非所有边都同步改善：R1 两边主要是 fidelity 结果；R2 的 25% policy
+相对 No-op 的用户等权 log-loss gain 为 `0.001234`，95% CI
+`[0.000117, 0.002311]`，同时与 Exact 的差异 CI 跨 0。第一版未按 request_weight
+汇总的 quality 表已显式作废，正式 scale quality 结果为
+`results/scale_8l_v1/policy_quality_adjudication_v2.json`。
+
+## 规模点之后：θ3 blind qualification
+
+规模点完成后、训练或读取 θ3 结果之前，必须冻结 blind contract。合同至少写死：
+
+- θ3 数据窗口、release recipe、model-admission gate；
+- H、R0 identity、R1/R2 staleness 和同成本 scheduler 的主判定；
+- aggregate quality non-inferiority/improvement 规则；
+- dislike PR-AUC、dislike-only log loss 等强制 companion；
+- logical work、I/O、runtime 和统计汇总方式；
+- 各种失败形态的裁决与报告规则。
+
+θ3 是新的、尚未查看的时间发布边。揭盲后不得修改 action、feature、Ridge、probe、
+budget、阈值或指标。通过后证据才能从 `established in development` 升级为
+`reproduced on a previously unseen temporal release under a frozen policy`。
+
+## 当前禁止
+
+- 调整 P8 release recipe 或训练幅度来放大 S；
+- 重新设计 N/R/F、history length、task weights 或 candidate protocol；
+- 按 H/S/quality 筛 seed；
+- 增加新 action、复杂 predictor、GBDT 或 target-KV mapper；
+- 使用 future request/label 做发布期动作选择；
+- 启动 θ3 或宣称 paper qualification；
+- 将 Current Full 写成 future quality 理论上界；
+- 隐藏 dislike-only calibration caveat。
 
 ## 资源边界
 
-当前 GPU 实验仅使用 GPU 0/1；CPU join、aggregation 和 bootstrap 应安全多线程。长任务仍需遵循冻结 contract，并先通过 focused canary。
+- 当前规模实验 GPU allowlist 为 0/1/2/3；24 亿参数训练采用单模型四卡 FSDP，
+  seed/版本由队列串行推进；
+- CPU-only join/aggregation/bootstrap 应安全多线程；
+- 长任务先 canary，再冻结合同，再启动自动队列；
+- 不默认保留重复 checkpoint、临时展开数据或重复 raw artifacts。

@@ -42,8 +42,8 @@ class P7Request:
 
     def __post_init__(self) -> None:
         length = len(self.history_items)
-        if not 1 <= length <= 512:
-            raise ValueError("P7 training histories must contain 1..512 events")
+        if not 1 <= length <= 1024:
+            raise ValueError("stateful-workload histories must contain 1..1024 events")
         if self.history_behaviors.shape != (length,) or self.history_time_deltas.shape != (length,):
             raise ValueError("history arrays differ")
         if self.history_timestamps is not None and self.history_timestamps.shape != (length,):
@@ -155,8 +155,18 @@ def load_p7_requests(
     *,
     manifest_kind: str | None = None,
     qualification_unlock: QualificationUnlock | None = None,
+    history_limit: int | None = None,
 ) -> list[P7Request]:
-    """Load one compact P7 view while enforcing the qualification guard."""
+    """Load one compact P7 view while enforcing the qualification guard.
+
+    ``history_limit=None`` preserves the sealed manifest's materialized history
+    length.  A larger explicit limit is reserved for prospective scale
+    reproduction: it reconstructs more causal history from the same raw user
+    pointer without changing query, candidates, labels, weights, or Base
+    features.
+    """
+    if history_limit is not None and not 1 <= history_limit <= 1024:
+        raise ValueError("history_limit must be within 1..1024")
     manifest_root = Path(manifest_root)
     index_path = manifest_root / split / "manifest.index.json"
     index = load_compact_index(index_path, qualification_unlock=qualification_unlock)
@@ -175,8 +185,17 @@ def load_p7_requests(
     raw = _RawRowReader(Path(raw_listens))
     output = []
     for index, row in enumerate(table.to_pylist()):
-        length = int(row["effective_prefix_length"])
+        manifest_length = int(row["effective_prefix_length"])
         end = int(row["raw_prefix_end_exclusive"])
+        if history_limit is None:
+            length = manifest_length
+        else:
+            user_start = int(row["raw_user_row_start"])
+            if not user_start <= end:
+                raise AssertionError("raw user history pointer is invalid")
+            length = min(int(history_limit), end - user_start)
+            if length < manifest_length:
+                raise ValueError("history_limit may not truncate the sealed manifest history")
         history = raw.rows(end - length, end)
         history_uids = history["uid"].to_numpy(zero_copy_only=False).astype(np.int64)
         if not np.all(history_uids == int(row["uid"])):

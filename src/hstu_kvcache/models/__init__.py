@@ -21,8 +21,19 @@ from .embeddings import BehaviorEncoder, ItemEmbedding, QueryTokenEncoder, Tempo
 from .hstu import HSTU, HSTUConfig
 from .kv_cache import HSTUKVCache
 from .rmsnorm import RMSNorm
+from .state_transition import (
+    append_with_rolling_cap,
+    TransitionWork,
+    frozen_segment,
+    hybrid_tail_refresh,
+    project_exact_layer0_segment,
+    retain_latest_cache,
+    transition_work,
+    truncate_cache,
+)
 
 __all__ = [
+    "append_with_rolling_cap",
     "PointwiseAttention",
     "PointwiseAttentionConfig",
     "HSTUBlock",
@@ -40,4 +51,11 @@ __all__ = [
     "HSTUConfig",
     "HSTUKVCache",
     "RMSNorm",
+    "TransitionWork",
+    "frozen_segment",
+    "hybrid_tail_refresh",
+    "project_exact_layer0_segment",
+    "retain_latest_cache",
+    "transition_work",
+    "truncate_cache",
 ]

@@ -1,0 +1,55 @@
+contract: p10_2_mixed_policy_runtime_contract_v1
+status: frozen_before_mixed_policy_runtime_canary
+purpose: validate_that_P10_logical_budget_translates_to_batched_mixed_action_rollout_savings
+
+inputs:
+  p10_0_policy_seal_sha256: f35c26dfb88e02b4b215cf7652ba7e26672f71f793db33ccf7f5ae58f19bc01e
+  p10_0_target_free_result_sha256: e715999404a5883edc92ecf1b6db3c4b2ca74f0c94b193d35f6a5c1e4a7bc1c1
+  p9_10_uniform_runtime_sha256: 0e83108e4045814e9fb9863ccdc95dd207ce1dc966618c5d52a4169974d28ac2
+  state_transition_source_sha256: 3e9e921cbbe599233ea1e6060d0c5a8f9480047db58f5641f4aa11d458354e92
+  population_materialization_sha256: f44dc812fcb1735cc684f41eebbde10b0b54e576c327984c466cf41ba73c8235
+
+scope:
+  sample_fractions: [0.01, 0.02]
+  full_conditions:
+    - {release: r2, model: m1, seed: 17, sample_fraction: 0.01, budgets: [0.05, 0.10, 0.25]}
+    - {release: r2, model: m1, seed: 17, sample_fraction: 0.02, budgets: [0.05, 0.10, 0.25]}
+    - {release: r2, model: m0_f, seed: 17, sample_fraction: 0.01, budgets: [0.10]}
+    - {release: r2, model: m0_f, seed: 17, sample_fraction: 0.02, budgets: [0.10]}
+    - {release: r1_edge2, model: m1, seed: 17, sample_fraction: 0.01, budgets: [0.10]}
+    - {release: r1_edge2, model: m1, seed: 17, sample_fraction: 0.02, budgets: [0.10]}
+  condition_selection: release_semantic_and_budget_curve_not_quality_selected
+  GPU_allowlist: [0, 1]
+
+execution:
+  exact_prefix_length_batching: true
+  batch_size: 16
+  repetitions: 3
+  noop_has_zero_kernel_work: true
+  sampled_state_operations: all_five_charged_probe_actions_with_Exact_result_retained
+  unsampled_state_operations: sealed_selected_action_only
+  parent_cache_reference_build: excluded_and_reported_separately
+  raw_reconstruction_and_H2D: excluded_and_reported_separately
+  prototype_PyTorch_not_production_kernel: true
+
+canary:
+  condition: {release: r2, model: m1, seed: 17, sample_fraction: 0.01, budget: 0.10}
+  states: 128
+  selection: sha256_uid
+  repetitions: 2
+  gates:
+    - finite_nonnegative_timings
+    - every_operation_matches_sealed_policy
+    - measured_logical_token_layers_match_assignment_budget
+    - GPU_is_0_or_1
+
+adjudication:
+  compare_to: [P9_10_Exact_All, P9_10_uniform_actions, logical_token_layer_fraction]
+  controller_authorized_by_this_step: false
+  next_if_positive: freeze_minimal_budget_scheduler_contract
+
+evidence_boundary:
+  quality_labels_read: false
+  policy_assignment_changed: false
+  storage_throughput_claim: prohibited
+  blind_qualification: prohibited

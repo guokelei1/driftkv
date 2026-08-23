@@ -1,0 +1,36 @@
+contract: p9_7_uid_executor_canary_v1
+status: frozen_before_execution
+purpose: prove_one_cutover_migration_is_shared_by_multiple_future_queries_per_uid
+
+inputs:
+  population_contract_sha256: 12799e6f40a9a9713e88ff9055a757ae9a51d61204c57859498612f42d5598b5
+  materialization_summary_sha256: f44dc812fcb1735cc684f41eebbde10b0b54e576c327984c466cf41ba73c8235
+  population_audit_sha256: 227d922d650b0bc71ef33a6b76ea2f4199105b0b9378969ddf0aac0472bbb5e7
+  p9_5_result_sha256: 19093e668e9b546ad62d759ef16a1ff5eae9b9edf6594c23d29845c55a4759e4
+
+scope:
+  release: r2
+  edge: edge1
+  model: m0_f
+  seed: 17
+  view: fidelity
+  users: 8
+  queries_per_user: 2
+  user_selection: sha256_uid_among_users_with_at_least_two_frozen_requests
+  query_selection: first_two_chronological_requests
+  selection_role: implementation_canary_only_not_policy_training
+
+actions: [noop, layer0_recent128, layer0_middle, layer0_full, hybrid_tail128, exact_all]
+
+gates:
+  shared_vs_independent_max_abs_logit: 1.0e-5
+  exact_action_vs_current_online_max_abs_logit: 1.0e-5
+  query_does_not_mutate_persistent_state: exact_tensor_identity
+  migration_invocations: exactly_once_per_uid_action
+  listen_append: exactly_once_per_uid_action_event
+  no_future_request_or_label_policy_feature: true
+
+authorization:
+  full_uid_keyed_executor: after_canary_pass
+  all_state_exact_probe: false
+  scheduler: false

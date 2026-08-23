@@ -1,0 +1,55 @@
+result: p9_4_materialized_lineage_canary_result_v1
+status: passed
+evidence_level: development_canary
+
+sealed_inputs:
+  contract_sha256: 2ace9dea5b5c7c9e8417ba502f456ae3387af5b28d938cb56c1847db6925f864
+  evaluator_sha256: 684ca940a7f62a698f43b684f84111a565cec207bf79b407616ee9f40f9c65ff
+  lineage_audit_sha256: 481ad473eefa6559eb638e5b22f2efdc2b503357889cd7f890d64d2f926f3984
+  raw_parquet_sha256: ae6cc428ad7d86ecdb408f9116e02691b6991b6a690e0803fdbe3b2f1bb16675
+  result_json_sha256: 493a442dfcf9b8d4bafd400657dc3a8c744b4ee05f1e1197af1d96dff29577d0
+
+scope:
+  model: m0_f
+  seed: 17
+  releases: [r0, r2]
+  views: [fidelity, quality]
+  requests_per_release_view: 18
+  total_unique_request_evaluations: 72
+  actions: 6
+
+blocking_gates:
+  exact_all_vs_current_online_max_abs_logit: 0.0
+  r0_noop_JS_max: 0.0
+  r0_all_action_JS_max: 0.0
+  snapshot_or_suffix_count_mismatches: 0
+
+r2_fidelity:
+  noop_online_JS_mean: 0.0006484650494728802
+  request_local_JS_mean: 0.0006499650474901954
+  online_to_request_local_ratio: 0.997692186644332
+  current_online_vs_request_local_full_JS_mean: 6.04361407902994e-08
+  recovery_fraction:
+    layer0_recent128: 0.7265762098190686
+    layer0_middle: 0.9552901732456648
+    layer0_full: 0.9817328419315725
+    hybrid_tail128: 0.7900243183095529
+    exact_all: 1.0
+
+r2_quality_canary:
+  caveat: only_18_requests_not_a_statistical_quality_claim
+  noop_online_JS_mean: 0.0007264769809008056
+  recovery_fraction:
+    layer0_recent128: 0.8141258215958914
+    layer0_middle: 0.9204566073386723
+    layer0_full: 0.9842989427003519
+    hybrid_tail128: 0.8636371428896427
+
+adjudication:
+  authentic_rolling_lineage_semantics: passed
+  core_R2_staleness_retained: true
+  legal_partial_recovery_retained: true
+  old_request_local_results_role: mechanism_diagnostic
+  expanded_materialized_lineage_matrix: authorized
+  formal_frontier: pending_expanded_matrix_and_measured_cost
+  scheduler: prohibited

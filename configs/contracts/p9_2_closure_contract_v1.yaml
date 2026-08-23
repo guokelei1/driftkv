@@ -1,0 +1,63 @@
+contract: p9_2_closure_contract_v1
+date_frozen: 2026-08-21
+status: frozen_before_diagnostic_quality_or_risk_concentration_results
+depends_on: [p9_tomography_contract_v1]
+evidence_target: diagnostic_quality_companions_and_label_free_user_risk_concentration
+
+input_hashes:
+  p9_contract: 868fa9f39cfc73cc1a6f1781b99300243b3e681ba7052f76f43f082c11f9e529
+  p9_1_distribution_v2: 56f09de737b6b25322a7207cf2978a3d347b175bb389115e3d9b323c83c73155
+  p9_2_raw_seal: 31be42c2c4e7fc62248d302ab990499883a848b1281bec24d12ccb20201bf6fb
+  p9_2_coarse_result: ad31ac43345e3e8358cf450e034cc67dadfb5a7fbf00870d73214e919c089f9b
+  p8_r0_raw_seal: 705cbba5e62d3e52eb76f45fa09f2276c42a4a3f84eadf58c06333d4b1148df9
+  p8_r1_edge1_raw_seal: ee17c849713800ac85cc40660523d6bf729d3612f86e4f7eb2455eef752d6485
+  p8_r1_edge2_raw_seal: e19334209315d116191229f711402bb968aa6263ee504c68aece53ca43dc6ac6
+  p8_r2_raw_seal: 8f856e7e86a748a574ee2ff199512944f94270a92024f84e75aa10f92df5baee
+
+scope:
+  workload: F
+  releases: [r0, r1_edge1, r1_edge2, r2]
+  models: [m0_f, m1]
+  seeds: [17, 37, 71]
+  actions: [layer_0, layer_1, layer_2, layer_3, oldest_half, middle, recent_128, recent_32, recent_8, recent_1]
+  all_24_cells_and_all_actions_required: true
+
+quality_join:
+  source_views: [F_fidelity, F_quality]
+  mapping: frozen_row_ordinal_after_exact_shared_field_verification
+  exact_shared_fields: [uid, query_timestamp, candidate_position, candidate_id, prefix_tokens_at_cutover, suffix_tokens_after_cutover]
+  exact_score_fields: [base_logit, previous_full_logit, current_recent32_logit, current_full512_logit, reuse_parent_kv_logit]
+  tomography_request_id_must_match_fidelity_request_id: true
+  one_candidate_per_request: true
+  join_tolerance: 0.0
+  label_may_not_select_state_or_action: true
+
+quality_metrics:
+  lower_is_better: [aggregate_logloss, Brier, dislike_only_logloss]
+  higher_is_better: [ROC_AUC, dislike_PR_AUC]
+  reporting:
+    - absolute_Current_Full_Reuse_and_Action
+    - Full_minus_Reuse_gain
+    - Action_minus_Reuse_gain
+    - Action_gap_to_Current_Full
+    - each_seed_and_equal_seed_mean
+  quality_recovery_ratio_is_companion_only: true
+  diagnostic_action_is_not_executable: true
+
+risk_concentration:
+  source: F_fidelity_only
+  state_unit: uid_equal_weighted_mean_request_S
+  metric: Bernoulli_JS_Current_Full_vs_Reuse
+  top_fractions: [0.01, 0.05, 0.10]
+  ties: descending_risk_then_ascending_uid
+  companions: [Gini, effective_risk_user_count, above_numeric_floor_share, diagnostic_recovery_capture]
+  diagnostic_recovery_capture_is_not_a_cost_frontier: true
+
+authorization:
+  read_existing_sealed_logits: true
+  run_cpu_only_analysis: true
+  rerun_or_retrain_models: false
+  choose_actions_or_cells_using_quality: false
+  executable_partial_action: false
+  controller: false
+  p9_3: pending_closure_review

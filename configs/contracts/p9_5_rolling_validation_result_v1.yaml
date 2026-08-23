@@ -1,0 +1,70 @@
+result: p9_5_rolling_validation_result_v1
+status: passed
+evidence_level: expanded_development_validation_not_full_population
+
+sealed_inputs:
+  contract_sha256: a04f8ba8d29541bd7a191eb12a858c3279afc83cdbefb95787eb1955eb6c279d
+  evaluator_sha256: 03619bdd0f11cf4da9334c1b6c859e06adf5d3757a1bcc939a2dbc273dc93858
+  raw_seal_sha256: 74fa978939cad80eff5c5a7c46745ff840859a5bf376974f5432aba2a1ce7c0b
+  adjudication_sha256: 5a965ff85023c79efe3b137a27f0f3171b020a1b5b09af646f14689c563b8940
+
+scope:
+  cells: 24
+  releases: 4
+  models: 2
+  seeds: 3
+  request_evaluations: 1920
+  requests_per_cell_view: 40
+  all_cells_passed: true
+
+findings:
+  R0:
+    all_action_JS: 0.0
+  R1_edge1:
+    M0_F_recovery_from_equal_seed_JS_means:
+      layer0_recent128: 0.3379
+      layer0_middle: 0.3731
+      layer0_full: 0.2045
+      hybrid_tail128: 0.5394
+    M1_recovery_from_equal_seed_JS_means:
+      layer0_recent128: 0.4472
+      layer0_middle: 0.6778
+      layer0_full: 0.8739
+      hybrid_tail128: 0.5558
+    caveat: M0_F_layer0_actions_include_one_negative_recovery_seed
+  R1_edge2:
+    M0_F_recovery_from_equal_seed_JS_means:
+      layer0_recent128: 0.1365
+      layer0_middle: 0.2269
+      layer0_full: 0.3723
+      hybrid_tail128: 0.3843
+    M1_recovery_from_equal_seed_JS_means:
+      layer0_recent128: 0.6031
+      layer0_middle: 0.7833
+      layer0_full: 0.9793
+      hybrid_tail128: 0.6030
+  R2:
+    M0_F_noop_JS_equal_seed_mean: 0.00045156444353646906
+    M0_F_recovery_from_equal_seed_JS_means:
+      layer0_recent128: 0.8037
+      layer0_middle: 0.9558
+      layer0_full: 0.9920
+      hybrid_tail128: 0.8337
+    M1_noop_JS_equal_seed_mean: 0.0018543075702676822
+    M1_recovery_from_equal_seed_JS_means:
+      layer0_recent128: 0.8907
+      layer0_middle: 0.9227
+      layer0_full: 0.8942
+      hybrid_tail128: 0.9466
+    caveat: M1_layer0_actions_have_one_negative_recovery_seed_but_hybrid_tail128_is_3_of_3_positive
+
+lineage_robustness:
+  online_to_request_local_S: approximately_equal_in_most_cells
+  current_online_vs_request_local_full: far_below_non_R0_staleness
+  request_local_diagnostics_replaced_as_deployable_frontier: false
+
+authorization:
+  full_population_state_keyed_executor: authorized
+  migration_cost_benchmark: authorized
+  formal_frontier: pending_full_population_and_cost
+  scheduler: prohibited

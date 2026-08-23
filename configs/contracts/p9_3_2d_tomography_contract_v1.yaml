@@ -1,0 +1,53 @@
+contract: p9_3_2d_tomography_contract_v1
+date_frozen: 2026-08-21
+status: frozen_before_any_2d_score
+depends_on: [p9_tomography_contract_v1, p9_2_closure_contract_v1]
+evidence_target: diagnostic_layer_by_history_position_structure
+
+input_hashes:
+  p8_evidence_seal: fc6fb924eb8f0cbe7a4433a03ffb81869eba9461578bf6949358436eafba76da
+  p9_2_raw_seal: 31be42c2c4e7fc62248d302ab990499883a848b1281bec24d12ccb20201bf6fb
+  p9_2_quality_companions: 3d9b44fb9964cb410e30a2a298c894d39ad7d0ab1df70be9afde364272cbd462
+  p9_1_risk_concentration: 4b27973257acb25d9d26362a987e1b79e546d74ebe9e1e03b906b23f79389189
+  p9_2_closure_result: aca09e9d855a1ec981affee1cabcae443798f4f12f92a30806a7a0fbeb74ed74
+
+scope:
+  workload: F
+  seeds: [17, 37, 71]
+  semantic_cells:
+    - {release: r0, model: m0_f, role: output_only_negative_control}
+    - {release: r1_edge1, model: m0_f, role: isolated_routine_update_first_edge}
+    - {release: r2, model: m0_f, role: isolated_encoder_refresh}
+    - {release: r2, model: m1, role: shared_state_encoder_refresh}
+  cell_selection_uses_release_semantics_not_P9_scores: true
+  total_seed_cells: 12
+
+actions:
+  layers: [0, 1, 2, 3]
+  segments: [oldest_half, middle, recent_128, recent_32, recent_8, recent_1]
+  cartesian_product_required: true
+  actions_per_cell: 24
+  operation: copy_current_exact_KV_only_for_selected_layer_and_parent_prefix_segment
+  status: diagnostic_not_executable
+
+required_invariants:
+  - Current_Full_and_Reuse_match_sealed_P8_baselines
+  - R0_all_2d_recovery_is_at_numeric_floor
+  - Empty_region_matches_Reuse
+  - Full_region_all_layers_matches_Current_Full
+  - candidate_query_is_transient
+  - all_three_seeds_retained
+
+execution:
+  physical_gpu_allowlist: [0, 1]
+  deterministic_job_order: [r0_m0_f, r1_edge1_m0_f, r2_m0_f, r2_m1]
+  canary_before_full: true
+  no_quality_labels_in_scoring: true
+
+authorization:
+  p9_3_diagnostic_2d: true
+  select_executable_action_from_2d_splice: false
+  p9_4_dependency_closure: pending_P9_3_adjudication
+  p9_5_frontier: false
+  controller: false
+  theta3_or_blind_edge: false

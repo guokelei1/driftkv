@@ -1,0 +1,38 @@
+contract: p9_6_transition_cost_contract_v1
+status: frozen_before_execution
+purpose: measure_state_keyed_logical_cost_and_batched_GPU_transition_runtime
+
+inputs:
+  p9_5_result_contract_sha256: 19093e668e9b546ad62d759ef16a1ff5eae9b9edf6594c23d29845c55a4759e4
+  p9_5_adjudication_sha256: 5a965ff85023c79efe3b137a27f0f3171b020a1b5b09af646f14689c563b8940
+  state_transition_source_sha256: 3e9e921cbbe599233ea1e6060d0c5a8f9480047db58f5641f4aa11d458354e92
+
+logical_population:
+  unit: unique_user_state_at_cutover
+  releases: [edge1, edge2]
+  source: label_free_F_fidelity_population
+  duplicate_queries_per_user_count_once: true
+  model_shape: {layers: 4, hidden: 128, dtype: float32, context: 512}
+  raw_token_accounting: in_memory_item_int64_behavior_int64_delta_float32
+
+runtime_canary:
+  release: r2
+  model: m0_f
+  seed: 17
+  users: 64
+  eligibility: exactly_512_pre_cutover_tokens
+  selection: sha256_uid
+  batch_size: 16
+  warmup_batches: 1
+  measured_repetitions: 3
+  device: cuda0_or_cuda1_only
+  excludes: [checkpoint_load, raw_storage_read, host_to_device_copy, post_cutover_append, query_scoring]
+  includes: migration_action_GPU_kernels_and_output_cache_materialization
+
+actions: [noop, layer0_recent128, layer0_middle, layer0_full, hybrid_tail128, exact_all]
+
+interpretation:
+  prototype_runtime_not_production_throughput: true
+  logical_bytes_reported_separately: true
+  formal_frontier: pending_full_population_fidelity_join
+  scheduler: prohibited

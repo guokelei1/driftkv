@@ -1,0 +1,69 @@
+contract: p11_1_recursive_population_contract_v1
+status: frozen_before_batched_canary_or_full_population_execution
+purpose: quantify_true_recursive_version_debt_and_replay_frozen_legal_actions_without_labels
+
+inputs:
+  full_stack_freeze_sha256: ee870bf7548e84ab720f68b631a72ac797c136e0c1094369ca267081a203f7e0
+  p11_0_contract_sha256: 0dedd9abc34d850da29d28ea77bbb68f5fa698f432268f1c83d3c7e9b9a1f363
+  p11_0_result_sha256: c883627dfa67ed5aed5e76255298821dbf87f78ff828ee5dc819d334c79b1ccc
+  p11_0_raw_sha256: c3f459a6013b69085b9009984834bdd02e574470a4eba9e3670f3fa87164880f
+  edge1_manifest_sha256: ce856aa3c66253dee58d95227beb45b255f4dd7b3af55d9c776adb797cfe3194
+  edge2_manifest_sha256: 8434556e5688a4d984f4f718830c2275a6998f9744ce3a9745fb0b1b87ba9b90
+  edge2_probe_sha256: a1c76d2e9c42c5d07d206e01ac028799139ccb03ac0cf50dfc3156e6d3c1b2f0
+
+scope:
+  workload: F_target_free_cutover_probes
+  models: [m0_f, m1]
+  seeds: [17, 37, 71]
+  population: edge1_edge2_materialized_uid_intersection
+  expected_population: 8229
+  GPUs: [0, 1]
+  reference: theta2_full_on_edge2_prefix
+  lineages:
+    one_hop: theta1_full_on_edge2_prefix_scored_by_theta2
+    direct_age2_diagnostic: theta0_full_on_edge2_prefix_scored_by_theta2
+    recursive_noop: theta0_materialized_at_edge1_then_all_events_appended_under_theta1_with_cap512
+  recursive_actions:
+    - noop
+    - layer0_recent128
+    - layer0_middle
+    - layer0_full
+    - hybrid_tail128
+    - exact_all
+
+execution:
+  population_chunk_size: 128
+  model_batch_size: 32
+  rolling_cap: 512
+  uid_order: ascending_raw_edge2_prefix_for_full_population
+  canary_users: 32
+  canary_selection: ascending_sha256_uid_matching_p11_0
+  append_semantics: evict_before_each_chronological_event_append
+  output: per_uid_target_free_metrics_only
+
+metrics:
+  - logit_MSE
+  - normalized_logit_RMS
+  - Bernoulli_JS
+  - mean_absolute_probability_shift
+  - max_absolute_logit_shift
+
+gates:
+  canary_per_uid_MSE_tolerance: 1.0e-6
+  canary_per_uid_JS_tolerance: 1.0e-7
+  exact_all_max_absolute_logit: 1.0e-5
+  final_cache_length_matches_edge2_manifest: true
+  all_metrics_finite: true
+
+interpretation:
+  direct_age2_is_deployable: false
+  recursive_noop_is_deployable_lineage: true
+  legal_action_replay_uses_recursive_parent_state: true
+  qualification_or_quality_claim: false
+
+prohibited:
+  - theta3_blind_edge
+  - future_labels
+  - scheduler_or_action_retuning
+  - direct_age2_as_production_lineage
+  - selected_seed_reporting

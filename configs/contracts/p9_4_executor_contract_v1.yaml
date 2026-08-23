@@ -1,0 +1,73 @@
+contract: p9_4_executor_contract_v1
+date_frozen: 2026-08-21
+status: frozen_before_any_executable_action_score
+depends_on: [p9_3_2d_tomography_contract_v1]
+evidence_target: dependency_closed_partial_state_transition
+
+input_hashes:
+  p9_3_result: a4aa33b40dfe0a5b240e039a5e5768252c8b854965deedc0ff2b27383db34c64
+  p9_3_raw_seal: 53a7e3f158086cd9ce15401bd562d625ea8999b84ade0a952711b1ce03fee40f
+  p9_3_target_free: f25f3176492314e4e6487b1eaef8c19f376e29e42c4a049f68f7f31929ea9845
+  p9_3_quality: 3caea778876379cedc6e26592d8cdcded5dad7000535479fa7cf12faf2e8ccb1
+
+scope:
+  workload: F
+  releases: [r0, r1_edge1, r1_edge2, r2]
+  models: [m0_f, m1]
+  seeds: [17, 37, 71]
+  all_24_F_cells_required_after_canary: true
+  physical_gpu_allowlist: [0, 1]
+
+actions:
+  - name: noop
+    semantics: reuse_parent_prefix_KV
+  - name: layer0_recent128
+    semantics: exact_current_layer0_KV_projection_for_parent_prefix_tail_128
+  - name: layer0_middle
+    semantics: exact_current_layer0_KV_projection_for_frozen_middle_segment
+  - name: layer0_full
+    semantics: exact_current_layer0_KV_projection_for_all_parent_prefix_positions
+  - name: hybrid_tail32
+    semantics: truncate_parent_KV_before_tail_and_incrementally_replay_raw_tail_with_current_model
+  - name: hybrid_tail128
+    semantics: truncate_parent_KV_before_tail_and_incrementally_replay_raw_tail_with_current_model
+  - name: exact_all
+    semantics: current_model_full_parent_prefix_recompute
+
+layer0_projection:
+  current_model_components: [item_behavior_time_embedding, input_projection, layer0_norm, layer0_K_projection, layer0_V_projection]
+  attention_aggregation_required: false
+  first_segment_delta_uses_original_predecessor_timestamp: true
+  exact_match_to_CurrentFull_layer0_KV_required: true
+
+hybrid_tail:
+  input: [parent_KV_truncated_before_tail, raw_tail_events]
+  executor: current_model_forward_with_cache
+  output_semantics: current_tail_conditioned_on_parent_prefix
+  prohibited_claim: exact_CurrentFull_tail_KV
+
+cost_accounting:
+  primary: recomputed_token_layers
+  companions: [projection_tokens, attention_pair_work, old_KV_read_bytes, new_KV_write_bytes, raw_history_read_bytes, batched_runtime]
+  token_layers:
+    layer0_segment: segment_tokens
+    hybrid_tail: tail_tokens_times_num_layers
+    exact_all: prefix_tokens_times_num_layers
+  no_posthoc_combined_cost_scalar: true
+
+canary_gates:
+  - layer0_projected_KV_matches_compute_kv_exact_region
+  - untouched_KV_is_bitwise_parent
+  - noop_matches_Reuse
+  - exact_all_matches_CurrentFull
+  - hybrid_tail_is_deterministic
+  - R0_all_actions_at_numeric_floor
+  - candidate_query_remains_transient
+
+authorization:
+  implement_minimal_executor: true
+  run_canary: true
+  full_24_cell_replay: pending_canary
+  frontier: pending_full_replay
+  controller: false
+  theta3_or_blind_edge: false
