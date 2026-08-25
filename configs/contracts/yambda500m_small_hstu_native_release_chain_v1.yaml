@@ -1,0 +1,71 @@
+contract: yambda500m_small_hstu_native_release_chain_v1
+date_frozen: 2026-08-25
+status: prospective_release_chain_candidate_v1
+purpose: construct_the_first_HSTU_native_full_only_admitted_small_release_edge
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  versions: [v0, v1]
+  gpus: [0, 1, 2, 3]
+  world_size: 4
+  fsdp: FULL_SHARD
+  architecture: hstu_native_cc
+  frozen_base_in_deployment: prohibited
+  theta3_read_or_trained: false
+  contains_reuse_before_admission: false
+
+frozen_inputs:
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/small/dataset.json
+  dataset_manifest_sha256: 316f68d04b8ae257a0f968768acb72e95cdec89057b5c8f01fb3a81cad0f0268
+  item_mapping: data/processed/yambda500m_unified_v1/scales/small/item_mapping.parquet
+  item_mapping_sha256: 45c02d3f4d896bd24a8ff976370c363cf8e4efd2ddd8829781babb287ade6328
+  quality_manifest: data/manifests/yambda500m_small_five_version_v1/requests_quality.parquet
+  quality_manifest_sha256: 87d61cfddbc383dd5b3fb7429dc8b42dc02821c02495756b6b4d54866840ac6f
+  fidelity_manifest: data/manifests/yambda500m_small_five_version_v1/requests_fidelity.parquet
+  fidelity_manifest_sha256: c2cf71f4c0f4b911967f7f8771d00d1218ea951cab217ddd3fc2aa8752b208a6
+
+model_and_mapping:
+  known_item_embedding_rows: 781678
+  unknown_history_scheme: stable_blake2b_64_hash_buckets
+  oov_buckets: 256
+  total_item_embedding_rows: 781934
+  hash_namespace: evokv-oov-v1
+  known_ids_preserved: true
+  target_known_filter: unchanged
+  score: HSTU_cc_score_head_only
+
+training:
+  windows: {v0: foundation, v1: update1}
+  passes: 1
+  candidate_epoch_options: [1, 2, 3]
+  learning_rates: {v0: 0.0002, v1: 0.00005}
+  weight_decay: 0.0001
+  optimizer: fresh_AdamW
+  optimizer_state_continuation: deferred_not_claimed
+  request_order: chronological_timestamp_uid_request_id
+  per_request_weight: globally_normalized_inverse_requests_per_user_within_window
+  checkpoints: final_whole_epoch_only
+  v1_train_days_half_open: [217, 222]
+  v1_causal_validation_days_half_open: [222, 224]
+
+admission:
+  execution_semantics: request_local_full
+  primary: user_equal_paired_parent_minus_current_log_loss
+  primary_requirement: bootstrap_95pct_lower_bound_gt_zero
+  safety_requirements:
+    - event_weighted_parent_minus_current_log_loss_gt_zero
+    - current_brier_not_worse_than_parent
+  companions: [ROC_AUC, dislike_PR_AUC]
+  selection: final_checkpoint_only
+  forbidden_inputs: [reuse, recursive, JS, KV_distance, readout_drift, margin, release_debt, future_after_day224_labels]
+  on_reject: retain_candidate_audit_and_continue_from_v0_with_later_accumulated_window
+  on_accept: seal_checkpoint_hash_and_unlock_onehop_reuse_only
+
+authorization:
+  focused_four_gpu_canary: true
+  formal_v0_training: true
+  formal_v1_candidate_training: true
+  formal_full_only_admission: true
+  reuse_evaluation_requires_admission_seal: true
+  medium_large_training: false

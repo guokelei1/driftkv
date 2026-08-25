@@ -1,0 +1,22 @@
+contract: yambda500m_small_hstu_native_d14_full_only_e2_completion_v1
+date_frozen: 2026-08-25
+status: posthoc_diagnostic_only
+purpose: fill_the_previously_unmeasured_E2_full_only_release_gain_column_for_the_fixed_D14_matrix
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  source_matrix_contract: configs/contracts/yambda500m_small_hstu_native_rolling_recipe_matrix_v3.yaml
+  training_days: 14
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  evaluation_days: [2]
+  execution_semantics: parent_full_vs_current_full_only
+  contains_reuse: false
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  gpus: [0, 1, 2, 3]
+
+authorization:
+  reuse_existing_release_only_evaluator: true
+  formal_four_gpu_diagnostic: true

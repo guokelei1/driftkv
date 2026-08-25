@@ -5,38 +5,44 @@
 This repository implements the 37D EvoKV route: release-time convergence of
 persistent user K/V state under bounded compute and I/O.
 
-The 4L/H128/context512 Yambda-50M development round is complete through P11.4:
-F long-state H, release-dependent S, dependency-closed partial actions,
-full-population frontier, sparse-probe Ridge scheduler, grouped executor, true
-theta0→theta1→theta2 recursive lineage and sealed rolling-quality validation.
+The current paper mainline is HSTU-native recommendation-model state
+compatibility across model releases. The current motivation is that a new model
+can improve Full quality while persistent K/V produced by the parent model
+prevents that improvement from being fully realized. The repository documents
+this through one conceptual design, one concrete experimental design and one
+sealed motivation/observation record.
 
-The active task is to seal the completed stack as EvoKV v1, reproduce its
-H→S→legal-partial→same-cost-scheduler chain at 8L/H256/context1024, then freeze
-and execute a genuinely blind theta3 temporal qualification. Do not tune the
-completed P7–P11 substrate.
+A secondary RecFlow track remains prospective only; it is not part of the
+current motivation result and has no long-training authorization.
 
 Authoritative entry points:
 
-- `docs/current_route.md`: concise authorization and next step;
-- `docs/evidence_summary_through_p11.md`: complete development evidence;
-- `docs/scaling_extension.md`: scale-point stages and stopping gates;
-- `docs/paper_design.md`: problem and contribution boundary;
-- `docs/newset.md`: full 37D protocol;
-- `docs/archive/`: completed phase details, not current execution entry points;
-- `docs/legacy/`: retired routes and claims that may not be revived.
+- `docs/README.md`: document map and maintenance rules;
+- `docs/paper_design.md`: stable conceptual paper design and comparison boundary;
+- `docs/experimental_design.md`: concrete architecture, data, version training,
+  evaluation and phase plan;
+- `docs/motivation_observations.md`: current observed motivation and results.
 
 ## Evidence and authorization
 
-- P7–P11 contracts, hashes, raw seals, negative results and invalidation records
-  are frozen and must be preserved.
-- Scale S0–S2 is complete: EvoKV v1 seal, resource/coverage audit, real-data
-  correctness, four-rank FSDP optimizer-step and checkpoint round-trip canaries.
-- The queue is ready at S3 M0-F seed17, but long training still requires the
-  user's explicit launch.
-- Scale S3+ long training requires a prospective contract, resource estimate,
-  passing canary and explicit user launch.
+- Current motivation contracts, hashes, raw seals and adjudications must be
+  preserved. Retired-branch documents and historical control code were removed
+  during the 2026-08-25 cleanup; the remaining result scope is recorded in
+  `results/checkpoint_cleanup_2026-08-24.md` and must not be silently recreated.
+- The Yambda-50M 8L/H256/context1024 F-only seed17 architecture pilot is
+  complete and positive, but it is not a Yambda-500M population-scale result.
+- The obsolete 8L M1 N/R/F seed17 run was stopped before its first checkpoint
+  for a cost-only scope change; it has no H/S/quality interpretation.
+- Current implementation scope is Yambda-500M audit, fixed-UID population,
+  compact item mapping, manifests, HSTU-native foundation, Full-only release
+  evaluation and motivation correctness canaries.
+- Any Medium/Large long training requires a prospective contract, resource
+  estimate, passing canary and explicit user launch.
 - Theta3 remains untouched. Its data/release/admission/metric/failure contract
   must be sealed before training or reading any theta3 result.
+- RecFlow checkpoint names are `phi0..phi3` and must not be conflated with the
+  untouched Yambda theta3. RecFlow Medium training remains gated by D0/D1 audit,
+  a prospective contract, canary, resources and explicit launch.
 
 Diagnostic exact-KV splices are interventions, not executable actions. Only the
 frozen dependency-closed actions may enter scale frontiers; do not add actions or
@@ -44,13 +50,13 @@ predictor complexity on the scale development point.
 
 ## Code layout
 
-- `src/hstu_kvcache/models/`: HSTU, CC residual scoring, persistent K/V and
-  dependency-closed transitions.
-- `src/hstu_kvcache/data/`: Yambda/KuaiRand readers, manifests, release snapshots
-  and P7/P8 data primitives.
-- `configs/contracts/`: immutable P7–P11 evidence and prospective scale contracts.
-- `scripts/`: frozen reproduction chain plus future small `scale_*` entry points.
-- `tests/`: time causality, cache lineage, manifests, base, P7–P11 and executor.
+- `src/hstu_kvcache/models/`: HSTU, persistent K/V and dependency-closed
+  transitions.
+- `src/hstu_kvcache/data/`: Yambda readers, manifests, release windows,
+  population maps and frozen workload/release data primitives.
+- `configs/contracts/`: immutable development evidence and prospective scale contracts.
+- `scripts/`: current data, foundation, Full-only and motivation entry points only.
+- `tests/`: current motivation time causality, cache lineage, manifests and executor.
 - `results/`: development evidence; presence does not imply paper qualification.
 
 Keep model modules independent from orchestration. Reuse current primitives;
@@ -60,8 +66,8 @@ do not clone the full pipeline for the scale point.
 
 - Use `rg` or `rg --files` for search and `apply_patch` for edits.
 - Preserve unrelated dirty-worktree changes.
-- Read before deleting. Archive completed evidence instead of silently rewriting
-  history.
+- Read before deleting. Remove obsolete execution code explicitly and keep the
+  current motivation contracts, hashes and results internally consistent.
 - Do not revive deleted D1/D2/D3, KuaiRand mainline, neutral-readout repair,
   sampled next-listen candidates, old Q_main/controller/frontier or P4 routes.
 - Do not tune workload, release, history, task weights, seeds, metrics, action
@@ -70,20 +76,29 @@ do not clone the full pipeline for the scale point.
   selected-edge reporting, artificial K/V perturbation or target-KV fitting.
 - Keep model admission separate from cache compatibility; low H/S is a valid
   No-op condition.
+- Do not treat a fixed training endpoint as a release. Seal Parent/Current
+  Full-only admission first; only then unlock Reuse evaluation for that edge.
+- Build the lineage incrementally. A rejected candidate leaves the serving
+  parent and cache lineage unchanged.
 - Report all frozen seeds. Training seed, not request count, is the repeat unit.
+- For RecFlow, audit request-group boundaries before calling them sessions;
+  rebuild long history from chronological realshow events, exclude the complete
+  target request from the prefix, and never treat unexposed stage candidates as
+  observed user negatives or persistent-history events.
 
 ## Verification
 
 At minimum run:
 
 ```bash
-PYTHONPATH=src python -c "from hstu_kvcache.models import HSTU, HSTUKVCache; from hstu_kvcache.data import YambdaTrace, StreamingDataPlan"
+PYTHONPATH=src python -c "from hstu_kvcache.models import HSTU, HSTUKVCache; from hstu_kvcache.data import YambdaTrace"
 PYTHONPATH=src pytest -q
 ```
 
-The user expanded the current scale allowlist to GPU 0/1/2/3. The 8L model uses
+The user expanded the scale allowlist to GPU 0/1/2/3. A scale model uses at most
 one four-rank FSDP job at a time; seeds/releases are queued serially. Parallelize
-CPU joins and aggregation when safe. Every long scale job needs a focused canary first.
+CPU mapping, joins and aggregation when safe. Every long scale job needs a
+focused canary first.
 
 ## Safety and storage
 

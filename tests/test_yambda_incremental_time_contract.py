@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import torch
 
 from hstu_kvcache.data import event_time_deltas
 from hstu_kvcache.models import HSTU, HSTUConfig
 
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-from train_yambda_two_edges import compact_history_tensors  # noqa: E402
+def compact_history_tensors(history, item_map, device, *, previous_timestamp=None):
+    items = torch.tensor([[item_map[item] for item, _, _ in history]], dtype=torch.long, device=device)
+    behaviors = torch.tensor([[behavior for _, _, behavior in history]], dtype=torch.long, device=device)
+    deltas = torch.from_numpy(
+        event_time_deltas(history, previous_timestamp=previous_timestamp)
+    ).to(device)
+    lengths = torch.tensor([len(history)], dtype=torch.long, device=device)
+    return items, behaviors, deltas[None, :], lengths
 
 
 def test_first_incremental_token_keeps_delta_from_cached_prefix() -> None:

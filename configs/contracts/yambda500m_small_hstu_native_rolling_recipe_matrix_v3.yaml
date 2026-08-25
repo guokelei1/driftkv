@@ -1,0 +1,65 @@
+contract: yambda500m_small_hstu_native_rolling_recipe_matrix_v3
+date_frozen: 2026-08-25
+status: prospective_release_recipe_matrix_v3
+purpose: label_blind_rolling_scan_of_update_duration_and_maximal_data_bounded_release_chain_length_for_upstream_HSTU_native_recipe
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  parent_model: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt
+  parent_model_sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27
+  fixed_initial_version: v0
+  # Every count includes fixed v0.  All final E-day observations must finish
+  # before the physical source boundary Day<301.
+  total_versions_including_v0_by_training_days:
+    "1": 60
+    "4": 20
+    "7": 12
+    "14": 6
+  training_days: [1, 4, 7, 14]
+  evaluation_days_by_training_days:
+    "1": [1]
+    "4": [1, 4]
+    "7": [1, 4, 7]
+    "14": [1, 4, 7, 14]
+  rolling_semantics: evaluation_after_each_release_overlaps_next_update_training_data
+  candidate_admission_or_reuse_during_scan: prohibited
+  gpus: [0, 1, 2, 3]
+  world_size: 4
+
+frozen_inputs:
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/small/dataset.json
+  dataset_manifest_sha256: 316f68d04b8ae257a0f968768acb72e95cdec89057b5c8f01fb3a81cad0f0268
+  item_mapping: data/processed/yambda500m_unified_v1/scales/small/item_mapping.parquet
+  item_mapping_sha256: 45c02d3f4d896bd24a8ff976370c363cf8e4efd2ddd8829781babb287ade6328
+
+windows_days_half_open:
+  foundation_end_day: 217
+  maximum_timestamp_exclusive_day: 301
+  source_data_last_day_inclusive: 300
+
+training:
+  passes: 1
+  candidate_epoch_options: [1, 2, 3]
+  matrix_epoch: 1
+  learning_rate: 0.00005
+  weight_decay: 0.0001
+  optimizer: fresh_AdamW
+  checkpoints: final_whole_epoch_only
+  oov_buckets: 256
+
+evaluation:
+  execution_semantics: request_local_full
+  metrics: [ROC_AUC, dislike_PR_AUC, log_loss, Brier, user_equal_paired_parent_minus_current_log_loss]
+  metric_reporting: current_minus_parent_only
+  label_use: reporting_only_after_full_only_raw_seal
+  reuse: prohibited
+  admission: prohibited
+  emit_core_delta_matrix_after_each_adjudicated_edge: true
+
+authorization:
+  build_manifest_through_day301: true
+  focused_four_gpu_canary_per_recipe: true
+  formal_four_gpu_training_serially: requires_explicit_user_launch
+  formal_full_only_evaluation_serially: requires_explicit_user_launch

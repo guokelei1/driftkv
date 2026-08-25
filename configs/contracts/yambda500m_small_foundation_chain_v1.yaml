@@ -1,0 +1,142 @@
+contract: yambda500m_small_foundation_chain_v1
+date_frozen: 2026-08-24
+status: immutable_prospective_implementation_and_canary_authorized_training_not_authorized
+purpose: build_the_small_foundation_model_and_cache_lineage_before_evokv_design
+
+inputs:
+  discussion_spec: docs/experimental_design.md
+  discussion_spec_sha256: 637a4a10a95c8785dd602e3a7d4c5f9a17833040b3900a56912742a277813db9
+  unified_scale_contract: configs/contracts/yambda500m_unified_scales_v1.yaml
+  unified_scale_contract_sha256: 7451d6042e86f24a15b24d31266b46c53d82035c2d1b5b1f5e96eb4d06f22fd0
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/small/dataset.json
+  dataset_manifest_sha256: 316f68d04b8ae257a0f968768acb72e95cdec89057b5c8f01fb3a81cad0f0268
+  item_mapping: data/processed/yambda500m_unified_v1/scales/small/item_mapping.parquet
+  item_mapping_sha256: 45c02d3f4d896bd24a8ff976370c363cf8e4efd2ddd8829781babb287ade6328
+
+scope:
+  scale: EvoKV-HSTU-S
+  users: 10000
+  workload: F_explicit_feedback_only
+  model: {layers: 4, hidden_size: 128, heads: 4, context: 512}
+  seed: 17
+  versions: [v0, v1, v2]
+  side_control: R0_output_only_from_v0
+  evokv_actions_scheduler_executor: prohibited
+
+windows_days_half_open:
+  base_fit_and_v0_train: [0, 217]
+  v0_observation_and_v1_R0_train: [217, 224]
+  edge1_evaluation_and_v2_train: [224, 231]
+  edge2_evaluation: [231, 238]
+  cadence_days: 7
+  fixed_endpoint: true
+  performance_admission: false
+
+base:
+  model: frozen_7_feature_logistic_regression
+  features: request_time_as_of_strictly_prior
+  item_mapping_may_be_frozen_at_day217: true
+  feature_values_may_not_use_day217_final_statistics_for_earlier_requests: true
+  chronological_forward_cv_within_training_window: true
+  final_refit: all_eligible_day0_217_requests
+  l2_grid: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+  frozen_for_all_versions_and_paths: true
+
+training:
+  seed: 17
+  passes: 1
+  intermediate_progress: [0.25, 0.5, 1.0]
+  recursive_parent_progress: 1.0
+  optimizer: fresh_AdamW_per_version
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  user_equal_total_weight_per_window: true
+  all_eligible_requests: true
+  early_stopping_or_gap_selection: prohibited
+
+causality:
+  prefix_predicate: event_timestamp_strictly_less_than_query_timestamp
+  timestamp_group_atomicity:
+    score_all_queries_from_common_pre_timestamp_state: true
+    append_same_timestamp_events_only_after_all_queries_are_scored: true
+    row_ordinal_may_not_change_prefix: true
+  query_mutates_persistent_state: false
+  rolling_eviction: before_each_append
+  report_history_OOV_token_fraction: true
+  report_target_OOV_fraction: true
+
+paths:
+  names:
+    - parent_full_request_local
+    - current_full_request_local
+    - parent_exact_rolling
+    - current_exact_rolling
+    - one_hop_reuse_rolling
+    - recursive_reuse_rolling
+  main_one_hop_comparison: one_hop_reuse_rolling_minus_current_exact_rolling
+  main_recursive_comparison: recursive_reuse_rolling_minus_current_exact_rolling
+  parent_exact_rolling:
+    purpose: execution_matched_parent_quality_reference_for_rho_erase
+    one_hop_edges_only: true
+  rho_erase_rolling:
+    numerator: one_hop_reuse_rolling_minus_current_exact_rolling
+    denominator: parent_exact_rolling_minus_current_exact_rolling
+    denominator_nonpositive: N_A
+
+score_views:
+  deployment_primary: frozen_base_plus_hstu_residual
+  companions: [base_only, hstu_residual_only]
+  residual_only_is_independently_trained_or_calibrated: false
+
+metrics:
+  headlines: [user_equal_paired_task_harm, Bernoulli_JS, release_debt]
+  task_companions:
+    - event_weighted_paired_task_harm
+    - D_positive_and_D_negative
+    - signed_margin_erosion
+    - validation_calibrated_harmful_and_beneficial_flip
+    - log_loss
+    - Brier
+    - ROC_AUC
+    - dislike_PR_AUC
+    - dislike_only_log_loss
+  mechanism_companions:
+    - readout_normalized_L2_and_cosine
+    - layer_position_KV_error
+  traffic_persistence:
+    name: traffic_weighted_debt_persistence_curve
+    observational_not_causal: true
+    axes: [append_count_since_cutover, time_since_cutover]
+  fixed_query_dilution:
+    causal_diagnostic: true
+    k: [0, 1, 2, 4, 8, 16]
+    hold_fixed: [uid, query, target, current_model, readout, cutover_prefix]
+    vary_only: post_cutover_current_model_append_count
+  uniform_effect_size_threshold: none
+
+controls_and_gates:
+  R0_at_numeric_floor: required
+  lightweight_H_full512_recent32_empty: required_once
+  correctness_incident_if_large_global_drop: true
+  foundation_go:
+    - R0_at_numeric_floor
+    - at_least_one_natural_edge_has_nonzero_target_free_JS
+    - same_edge_has_positive_user_equal_paired_task_harm
+    - harm_not_only_at_zero_append
+    - reproduced_on_second_edge_or_later_independent_seed
+
+raw_and_labels:
+  raw_scores_and_ids_sealed_before_label_join: true
+  all_fixed_metrics_computed_from_same_sealed_rows: true
+  labels_may_not_select: [window, edge, checkpoint, user, cohort, metric]
+  duplicate_rows: stable_dedup_and_report
+  conflicting_same_uid_item_timestamp_labels: exclude_all_and_report
+
+authorization:
+  code_implementation: true
+  correctness_canaries: true
+  request_and_snapshot_materialization: true
+  frozen_base_fit: false
+  any_real_HSTU_training: false
+  small_seed17_launch_requires_user_authorization_after_resources: true
+  medium_large_or_blind: prohibited

@@ -1,14 +1,17 @@
 # EvoKV 文档入口
 
-当前只需阅读以下五份文档：
+当前文档只保留四份，各自职责不同：
 
-1. [当前执行路线](current_route.md)：现在能做什么、下一步做什么、哪些操作禁止。
-2. [截至 P11.4 的完整证据总结](evidence_summary_through_p11.md)：端到端实验、核心数字、已验证假设与限制。
-3. [规模化扩展路线](scaling_extension.md)：EvoKV v1 封存、8L/H256/context1024、probe sensitivity 和 θ3 blind qualification。
-4. [论文问题定义](paper_design.md)：发布期预算化状态收敛的系统抽象和研究问题。
-5. [37D 技术规格](newset.md)：完整 lineage、population、manifest、fidelity 和 budget 协议。
+1. [论文总体设计](paper_design.md)：概念层问题定义、场景、大问题、相关工作、比较对象和目标指标。内容应稳定，避免写入某次实验的临时细节。
+2. [论文具体实验设计](experimental_design.md)：当前架构、数据、版本训练、对照路径、阶段目的、预期观察和后续规模/外部验证设计。
+3. [核心 Motivation 与 Observation](motivation_observations.md)：目前已经观察到的 HSTU-native motivation、D14/E14 数字、版本年龄结果、companion 和结论边界。
 
-已完成的 P7–P11 阶段报告、旧 bring-up 计划和 workload qualification 细节已移入
-[开发证据归档](archive/README.md)。它们用于审计和复现，不再作为当前执行入口。
+README 是仓库入口；上面三份文档是研究内容的唯一文档层次。代码、合同、脚本和测试的职责以仓库目录及其 README 为准，实验设计文档只引用它们，不再维护另一套路线文档。
 
-失效路线和不可复活的结论见 [Legacy 边界](legacy/README.md)。
+文档维护规则：
+
+- 总体设计只写相对稳定的概念和论文边界；
+- 具体实验设计写“如何做”和“希望观察什么”，不把预期写成结果；
+- 核心结果文档只写已经封存或可复核的 observation，不把未来设计写成已验证；
+- 新结果先更新核心 observation，再按需同步实验设计；不要重新创建阶段性路线文档；
+- 旧 archive、legacy、开发阶段报告和重复路线说明已删除。

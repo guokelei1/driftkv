@@ -1,0 +1,36 @@
+contract: yambda500m_small_hstu_native_d14_auc_release_debt_diagnostic_v2
+date_frozen: 2026-08-25
+status: posthoc_diagnostic_only
+purpose: measure_parent_current_release_gain_and_one_hop_reuse_AUC_debt_with_matched_rolling_state_semantics
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  source_matrix_contract: configs/contracts/yambda500m_small_hstu_native_rolling_recipe_matrix_v3.yaml
+  source_matrix_contract_sha256: 5453478df9c2cf0cb542be021b2c926f19881e850d833ce9d4f5b51cff51022a
+  training_days: 14
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  evaluation_days: [1, 2, 4, 7, 14]
+  execution_paths: [parent_exact_rolling, current_exact_rolling, one_hop_reuse_rolling]
+  recursive_reuse: prohibited
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  interpretation: posthoc_diagnostic_not_a_release_qualification_or_selected_edge_paper_claim
+  gpus: [0, 1, 2, 3]
+
+metrics:
+  current_minus_parent_ROC_AUC_pp: upstream_release_gain
+  current_minus_reuse_ROC_AUC_pp: one_hop_reuse_harm
+  reuse_harm_over_current_gain_percent: defined_only_when_current_minus_parent_ROC_AUC_pp_is_positive
+  signed_fraction: retained_for_nonpositive_or_mixed_edges_but_not_interpreted_as_release_gain_erasure
+
+frozen_inputs:
+  matrix_manifest: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+  matrix_manifest_sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  v0: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt
+  v0_sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27
+
+authorization:
+  focused_four_gpu_canary: true
+  formal_four_gpu_diagnostic: true

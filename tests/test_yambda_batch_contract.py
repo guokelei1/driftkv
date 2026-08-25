@@ -1,13 +1,20 @@
-from pathlib import Path
-import sys
-
 import torch
 
+from hstu_kvcache.data import event_time_deltas
 
-SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
-from train_yambda_theta0_medium import collate_histories  # noqa: E402
+def collate_histories(histories, item_map):
+    max_history = 512
+    items = torch.zeros((len(histories), max_history), dtype=torch.long)
+    behaviors = torch.zeros_like(items)
+    deltas = torch.zeros((len(histories), max_history), dtype=torch.float32)
+    lengths = torch.zeros(len(histories), dtype=torch.long)
+    for row, history in enumerate(histories):
+        items[row, :len(history)] = torch.tensor([item_map[item] for item, _, _ in history])
+        behaviors[row, :len(history)] = torch.tensor([behavior for _, _, behavior in history])
+        deltas[row, :len(history)] = torch.from_numpy(event_time_deltas(history))
+        lengths[row] = len(history)
+    return items, behaviors, deltas, lengths
 
 
 def test_yambda_collate_uses_leading_valid_prefix() -> None:

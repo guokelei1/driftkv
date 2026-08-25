@@ -1,0 +1,41 @@
+contract: yambda500m_small_seed17_launch_v1
+date_frozen: 2026-08-24
+status: user_authorized_code_and_direct_four_gpu_launch
+parent_contract: configs/contracts/yambda500m_small_foundation_chain_v1.yaml
+parent_contract_sha256: ec4010e849ef77561c137f2e1208507d12055938562bb874edcdfd58e763a704
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  default_versions: [v0, v1]
+  side_control: R0_output_only_from_v0
+  optional_same_recipe_extension: [v2]
+  v3_theta3_or_later: prohibited
+  gpus: [0, 1, 2, 3]
+  world_size: 4
+  fsdp: FULL_SHARD
+
+inputs_and_recipe:
+  requests: data/manifests/yambda500m_small_foundation_v1/requests_quality.parquet
+  base: results/yambda500m_small_seed17/base.json
+  windows: {v0: foundation, v1: update1, v2: update2}
+  passes: 1
+  request_order: chronological_timestamp_uid_request_id
+  per_request_weight: globally_normalized_inverse_requests_per_user_within_window
+  optimizer: AdamW
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  precision: bfloat16_compute_float32_reduction_and_optimizer
+  checkpoints_progress: [0.25, 0.5, 1.0]
+  recursive_parent: final_1.0_only
+
+execution:
+  build_missing_manifests: allowed
+  fit_frozen_base: allowed
+  train_v0_v1: allowed
+  train_R0_output_only_control: allowed
+  train_v2_only_when_explicitly_requested: allowed
+  overwrite_existing_artifacts: prohibited
+  resume_completed_version_by_hash: allowed
+  evaluate_or_read_theta3: prohibited
+  medium_large_training: prohibited

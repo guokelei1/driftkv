@@ -1,0 +1,34 @@
+contract: yambda500m_small_hstu_native_d14_onehop_reuse_completion_v2
+date_frozen: 2026-08-25
+status: posthoc_diagnostic_only
+purpose: complete_only_the_missing_D14_one_hop_Reuse_cells_without_changing_windows_checkpoints_or_cohort
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  source_matrix_contract: configs/contracts/yambda500m_small_hstu_native_rolling_recipe_matrix_v3.yaml
+  source_matrix_contract_sha256: 5453478df9c2cf0cb542be021b2c926f19881e850d833ce9d4f5b51cff51022a
+  training_days: 14
+  fixed_edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  fixed_evaluation_days: [1, 2, 4, 7, 14]
+  only_missing_cells:
+    - {evaluation_days: 2, edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]}
+    - {evaluation_days: 4, edges: [v4_to_v5]}
+    - {evaluation_days: 7, edges: [v2_to_v3, v3_to_v4, v4_to_v5]}
+    - {evaluation_days: 14, edges: [v2_to_v3, v3_to_v4, v4_to_v5]}
+  execution_semantics: current_exact_rolling_vs_one_hop_reuse_rolling
+  recursive_reuse: prohibited
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  gpus: [0, 1, 2, 3]
+
+frozen_inputs:
+  matrix_manifest: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+  matrix_manifest_sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  v0: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt
+  v0_sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27
+
+authorization:
+  focused_four_gpu_canary: true
+  formal_four_gpu_diagnostic: true

@@ -419,7 +419,7 @@ class HSTU(nn.Module):
             raise ValueError("prefix lengths must be between zero and the padded width")
         return lengths
 
-    def _score_cc_from_prefix_cache(
+    def _observe_cc_from_prefix_cache(
         self,
         prefix_kv: HSTUKVCache,
         candidate_ids: torch.Tensor,
@@ -430,8 +430,8 @@ class HSTU(nn.Module):
         candidate_item_vectors: torch.Tensor | None = None,
         *,
         training_append: bool,
-    ) -> torch.Tensor:
-        """Append one independent transient query per flattened candidate."""
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return scores and pre-head query readouts for a prefix cache."""
         if candidate_ids.ndim != 2:
             raise ValueError("candidate_ids must have shape [B, C]")
         batch, candidates = candidate_ids.shape
@@ -471,6 +471,7 @@ class HSTU(nn.Module):
         # flattened to B*C one-token sequences, so candidates never attend to
         # one another.
         scores = None
+        readouts = None
         unique_lengths = torch.unique(lengths, sorted=True).tolist()
         for length_value in unique_lengths:
             length = int(length_value)
@@ -512,10 +513,41 @@ class HSTU(nn.Module):
                 hidden, _ = self.forward_with_cache_embedded(group_cache, query)
             group_scores = self.cc_score_head(hidden[:, 0, :]).squeeze(-1)
             group_scores = group_scores.reshape(rows.numel(), candidates)
+            group_readouts = hidden[:, 0, :].reshape(
+                rows.numel(), candidates, self.cfg.hidden_size
+            )
             if scores is None:
                 scores = group_scores.new_empty((batch, candidates))
+                readouts = group_readouts.new_empty(
+                    (batch, candidates, self.cfg.hidden_size)
+                )
             scores = scores.index_copy(0, rows, group_scores)
-        assert scores is not None
+            readouts = readouts.index_copy(0, rows, group_readouts)
+        assert scores is not None and readouts is not None
+        return scores, readouts
+
+    def _score_cc_from_prefix_cache(
+        self,
+        prefix_kv: HSTUKVCache,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        prefix_lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+        *,
+        training_append: bool,
+    ) -> torch.Tensor:
+        scores, _ = self._observe_cc_from_prefix_cache(
+            prefix_kv,
+            candidate_ids,
+            query_time_deltas,
+            prefix_lengths=prefix_lengths,
+            query_type_ids=query_type_ids,
+            query_action_ids=query_action_ids,
+            candidate_item_vectors=candidate_item_vectors,
+            training_append=training_append,
+        )
         return scores
 
     def score_cc_full(
@@ -646,6 +678,61 @@ class HSTU(nn.Module):
             candidate_ids,
             query_time_deltas,
             prefix_lengths=prefix_lengths,
+            query_type_ids=query_type_ids,
+            query_action_ids=query_action_ids,
+            candidate_item_vectors=candidate_item_vectors,
+            training_append=torch.is_grad_enabled(),
+        )
+
+    def observe_cc_reuse(
+        self,
+        parent_prefix_kv: HSTUKVCache,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        prefix_lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Score a reused prefix and expose the pre-head readout without mutation."""
+        return self._observe_cc_from_prefix_cache(
+            parent_prefix_kv,
+            candidate_ids,
+            query_time_deltas,
+            prefix_lengths=prefix_lengths,
+            query_type_ids=query_type_ids,
+            query_action_ids=query_action_ids,
+            candidate_item_vectors=candidate_item_vectors,
+            training_append=torch.is_grad_enabled(),
+        )
+
+    def observe_cc_full(
+        self,
+        prefix_item_ids: torch.Tensor,
+        prefix_behaviors: torch.Tensor,
+        prefix_time_deltas: torch.Tensor,
+        candidate_ids: torch.Tensor,
+        query_time_deltas: torch.Tensor,
+        lengths: torch.Tensor | None = None,
+        query_type_ids: torch.Tensor | None = None,
+        query_action_ids: torch.Tensor | None = None,
+        candidate_item_vectors: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Current-Full scores and pre-head query readouts."""
+        _, current_prefix = self.forward(
+            prefix_item_ids,
+            prefix_behaviors,
+            prefix_time_deltas,
+            return_kv=True,
+            return_hidden=False,
+            lengths=lengths,
+        )
+        assert current_prefix is not None
+        return self._observe_cc_from_prefix_cache(
+            current_prefix,
+            candidate_ids,
+            query_time_deltas,
+            prefix_lengths=lengths,
             query_type_ids=query_type_ids,
             query_action_ids=query_action_ids,
             candidate_item_vectors=candidate_item_vectors,
