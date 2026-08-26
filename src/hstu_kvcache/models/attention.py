@@ -217,6 +217,8 @@ class PointwiseAttention(nn.Module):
         cached_v: torch.Tensor,
     ):
         B, m, _ = x_new.shape
+        if m == 1:
+            return self.forward_one_with_cache_new_kv(x_new, cached_k, cached_v)
         n = cached_k.shape[1]
         q, k_new, v_new = self._project(x_new)
         k_cached = cached_k.view(
@@ -247,6 +249,55 @@ class PointwiseAttention(nn.Module):
         k_new_flat = k_new.transpose(1, 2).reshape(B, m, self.inner)
         v_new_flat = v_new.transpose(1, 2).reshape(B, m, self.inner)
         return out, (k_new_flat, v_new_flat)
+
+    def forward_one_with_cache_new_kv(
+        self,
+        x_new: torch.Tensor,
+        cached_k: torch.Tensor,
+        cached_v: torch.Tensor,
+    ):
+        """Append one token without materialising a copied full K/V cache.
+
+        The ordinary incremental path concatenates old and new K/V in order to
+        return the whole updated cache. Serving storage normally keeps the
+        prefix in place and writes only the new K/V row. This inference path
+        computes the mathematically identical one-token attention result while
+        returning only that row.
+        """
+        B, m, _ = x_new.shape
+        if m != 1:
+            raise ValueError("append-only attention requires exactly one new token")
+        n = cached_k.shape[1]
+        q, k_new, v_new = self._project(x_new)
+        k_cached = cached_k.view(B, n, self.num_heads, self.head_dim).transpose(1, 2)
+        v_cached = cached_v.view(B, n, self.num_heads, self.head_dim).transpose(1, 2)
+        query_positions = torch.tensor([n], device=x_new.device)
+        prefix_positions = torch.arange(n, device=x_new.device)
+
+        prefix_weights = torch.matmul(q, k_cached.transpose(-2, -1)) * self.scale
+        prefix_bias = self._relative_position_bias(
+            query_positions, prefix_positions, prefix_weights.dtype
+        )
+        if prefix_bias is not None:
+            prefix_weights = prefix_weights + prefix_bias
+        prefix_weights = self.attn_dropout(self._activate(prefix_weights))
+        out = torch.matmul(prefix_weights, v_cached)
+
+        self_weights = (q * k_new).sum(dim=-1, keepdim=True) * self.scale
+        self_bias = self._relative_position_bias(
+            query_positions, query_positions, self_weights.dtype
+        )
+        if self_bias is not None:
+            self_weights = self_weights + self_bias
+        self_weights = self.attn_dropout(self._activate(self_weights))
+        out = out + self_weights * v_new
+        return (
+            self._finish(out),
+            (
+                k_new.transpose(1, 2).reshape(B, 1, self.inner),
+                v_new.transpose(1, 2).reshape(B, 1, self.inner),
+            ),
+        )
 
     def forward_stale_kv(
         self,

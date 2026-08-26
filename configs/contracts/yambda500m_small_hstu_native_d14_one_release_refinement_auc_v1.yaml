@@ -1,0 +1,90 @@
+contract: yambda500m_small_hstu_native_d14_one_release_refinement_auc_v1
+date_frozen: 2026-08-26
+status: prospective_one_release_design_diagnostic
+purpose: add_one_fixed_EvoKV_refinement_path_to_the_existing_full_population_D14_E14_one_hop_AUC_comparison
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  training_days: 14
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  evaluation_days: [14]
+  execution_paths:
+    - parent_exact_rolling
+    - current_exact_rolling
+    - one_hop_reuse_rolling
+    - evokv_cast_group_patch_scale_r128_c64_rolling
+  recursive_reuse: prohibited
+  continuous_state_evolution: out_of_scope
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  gpus: [0, 1, 2, 3]
+
+fixed_plan:
+  selection_inputs: [history_length, producer_version, current_version]
+  future_labels: prohibited
+  target_current_kv_fitting: prohibited
+  cast:
+    scope_for_full_history: oldest_384_positions
+    construction: parameter_only_joint_layerwise_KV_map
+  contextual_repair:
+    evidence_scope_for_full_history: most_recent_128_positions
+    grouping: adjacent_pairs
+    carriers_for_full_history: 64
+    patch: current_model_dependency_closed_carrier_replay
+    scale: represented_pair_mass_2
+  short_history_rule: repair_min_128_or_all_available_evidence_with_one_carrier_per_adjacent_pair
+  execution_layout: leading_zero_KV_padding_preserves_nominal_rolling_width_and_is_evicted_first
+  layout_precondition: frozen_checkpoints_have_no_relative_position_bias
+
+metrics:
+  requested_headline:
+    reuse_gain_retained: (AUC_reuse_minus_AUC_old)/(AUC_recompute_minus_AUC_old)
+    our_gain_retained: (AUC_our_minus_AUC_old)/(AUC_recompute_minus_AUC_old)
+    reference_semantics: preserve_the_preexisting_D14_full_only_release_gain_plus_rolling_harm_cross_reference
+  companions:
+    - current_minus_our_ROC_AUC_pp
+    - our_minus_reuse_ROC_AUC_pp
+    - reuse_harm_recovered_fraction
+    - matched_rolling_parent_current_reuse_our_ratios
+    - log_loss
+    - Brier
+    - Bernoulli_JS
+  reporting:
+    all_five_edges: required
+    nonpositive_or_near_zero_release_gain: retain_signed_value_but_do_not_interpret_as_percent_release_gain
+
+protocol:
+  raw_first: required
+  labels_before_raw_seal: prohibited
+  request_alignment: exact_request_id_match_to_existing_E14_one_hop_raw
+  baseline_replay_check: current_and_reuse_logits_must_match_existing_sealed_raw_within_2e-5
+  focused_four_rank_canary: required
+  overwrite_existing_evidence: prohibited
+
+frozen_inputs:
+  matrix_manifest: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+  matrix_manifest_sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+  prior_full_only_gain_table:
+    path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_onehop_reuse_completion_v2/auc_release_gain_coverage_table.json
+    sha256: b6bdf667b3e20d6a9f9db622538e6ce715971daf4f37286c6ba902813e654721
+  prior_E14_rolling_raw:
+    v0_to_v1: {sha256: 7539f811a46d4c1dfd44e0962377311f36191fc680aa7d5c6d8badd3106788fc}
+    v1_to_v2: {sha256: 23c223d246fec45cc71240782d8646efcf91997bfd2383eb157365151cabef56}
+    v2_to_v3: {sha256: 01700e6c5fe1ad4cd1bfbfb47dde3a955ef2ba367628c93d293c93a362047c5d}
+    v3_to_v4: {sha256: 2f27e2f389c4ed320cf0f8a7bc08f2747a4f427637bf8039c4ae1a4513d52123}
+    v4_to_v5: {sha256: d6e8ba251153f7f23e845a0151296444001c4504da7b691856018d6c719feebc}
+
+authorization:
+  focused_four_gpu_canary: true
+  formal_four_gpu_inference_diagnostic: true
+  new_training: false
+  continuous_evaluation: false

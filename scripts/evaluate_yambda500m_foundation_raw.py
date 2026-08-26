@@ -289,7 +289,9 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                                manifest_hash, cutover, lineage_models,
                                event_end_exclusive: int | None = None,
                                include_request_local: bool = True,
-                               include_parent_exact: bool = False):
+                               include_parent_exact: bool = False,
+                               refinement_cast_maps=None,
+                               query_chunk_size: int | None = None):
     """Vectorize independent user timelines whose cutover caches are all full."""
     batch = len(uids); device = next(current.parameters()).device
     raw = [history.rows[uid] for uid in uids]
@@ -310,6 +312,22 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
         "current_exact_rolling": current_cache,
         "one_hop_reuse_rolling": clone_cache(parent_cache),
     }
+    refinement_path = None
+    if refinement_cast_maps is not None:
+        from insight.one_release_refinement import OUR_PATH, build_fixed_refinement_cache
+
+        caches[OUR_PATH], layout = build_fixed_refinement_cache(
+            parent_cache=parent_cache,
+            current=current,
+            item_ids=items,
+            behaviors=behaviors,
+            time_deltas=deltas,
+            cast_maps=refinement_cast_maps,
+        )
+        if (layout.nominal_positions, layout.cast_positions, layout.repair_evidence,
+                layout.carriers, layout.padding_positions) != (512, 384, 128, 64, 64):
+            raise RuntimeError("full-cache refinement layout differs from frozen r=128,c=64")
+        refinement_path = OUR_PATH
     if edge == "v0_to_r0":
         # Producer identity proves the reused and exact rolling states are bitwise
         # identical; retain one state and copy observations after canary validation.
@@ -318,14 +336,17 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
     else:
         if len(lineage_models) == 1:
             # On the first natural edge recursive lineage is definitionally one-hop.
-            current_path_names = ("current_exact_rolling", "one_hop_reuse_rolling")
+            current_path_names = ["current_exact_rolling", "one_hop_reuse_rolling"]
         else:
             caches["recursive_reuse_rolling"] = batched_recursive_cache(
                 raw, lineage_models, cutover, device
             )
-            current_path_names = (
+            current_path_names = [
                 "current_exact_rolling", "one_hop_reuse_rolling", "recursive_reuse_rolling"
-            )
+            ]
+        if refinement_path is not None:
+            current_path_names.append(refinement_path)
+        current_path_names = tuple(current_path_names)
     last_times = np.asarray([int(value[0][-1]) for value in prefix], dtype=np.int64)
     append_counts = np.zeros(batch, dtype=np.int64); evictions = np.zeros(batch, dtype=np.int64)
     actions = []
@@ -401,15 +422,62 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
             [float(timestamp-last_times[index]) for index, timestamp in zip(owner, query_times, strict=True)],
             device=device,
         )
-        if include_request_local or include_parent_exact:
-            parent_scores, parent_readouts = parent.observe_cc_reuse(
-                select_cache(caches["parent_exact_rolling"], owner), candidates, query_deltas
+        if query_chunk_size is not None and query_chunk_size < 1:
+            raise ValueError("query_chunk_size must be positive")
+        if query_chunk_size is not None and len(query_entries) > query_chunk_size:
+            if include_request_local:
+                raise RuntimeError("chunked query reads do not support request-local Full paths")
+            parent_score_parts, parent_readout_parts = [], []
+            current_score_parts = {name: [] for name in current_path_names}
+            current_readout_parts = {name: [] for name in current_path_names}
+            for query_start in range(0, len(query_entries), query_chunk_size):
+                query_stop = min(query_start + query_chunk_size, len(query_entries))
+                chunk_owner = owner[query_start:query_stop]
+                chunk_candidates = candidates[query_start:query_stop]
+                chunk_deltas = query_deltas[query_start:query_stop]
+                if include_parent_exact:
+                    scores, readouts = parent.observe_cc_reuse(
+                        select_cache(caches["parent_exact_rolling"], chunk_owner),
+                        chunk_candidates,
+                        chunk_deltas,
+                    )
+                    parent_score_parts.append(scores.cpu())
+                    parent_readout_parts.append(readouts.cpu())
+                current_states = [
+                    select_cache(caches[name], chunk_owner) for name in current_path_names
+                ]
+                scores, readouts = current.observe_cc_reuse(
+                    stacked_cache(current_states),
+                    chunk_candidates.repeat(len(current_path_names), 1),
+                    chunk_deltas.repeat(len(current_path_names)),
+                )
+                chunk_count = query_stop - query_start
+                for offset, name in enumerate(current_path_names):
+                    current_score_parts[name].append(
+                        scores[offset * chunk_count:(offset + 1) * chunk_count].cpu()
+                    )
+                    current_readout_parts[name].append(
+                        readouts[offset * chunk_count:(offset + 1) * chunk_count].cpu()
+                    )
+            if include_parent_exact:
+                parent_scores = torch.cat(parent_score_parts)
+                parent_readouts = torch.cat(parent_readout_parts)
+            current_scores = torch.cat([
+                torch.cat(current_score_parts[name]) for name in current_path_names
+            ])
+            current_readouts = torch.cat([
+                torch.cat(current_readout_parts[name]) for name in current_path_names
+            ])
+        else:
+            if include_request_local or include_parent_exact:
+                parent_scores, parent_readouts = parent.observe_cc_reuse(
+                    select_cache(caches["parent_exact_rolling"], owner), candidates, query_deltas
+                )
+            current_states = [select_cache(caches[name], owner) for name in current_path_names]
+            current_scores, current_readouts = current.observe_cc_reuse(
+                stacked_cache(current_states), candidates.repeat(len(current_path_names), 1),
+                query_deltas.repeat(len(current_path_names))
             )
-        current_states = [select_cache(caches[name], owner) for name in current_path_names]
-        current_scores, current_readouts = current.observe_cc_reuse(
-            stacked_cache(current_states), candidates.repeat(len(current_path_names), 1),
-            query_deltas.repeat(len(current_path_names))
-        )
         if include_request_local:
             full_payload = []
             for index, query_time, _ in query_entries:
@@ -436,7 +504,13 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
             )
         count = len(query_entries)
         for row_index, (index, query_time, request) in enumerate(query_entries):
-            observations = {"current_exact_rolling": (current_scores[row_index, 0], current_readouts[row_index, 0])}
+            observations = {
+                name: (
+                    current_scores[offset * count + row_index, 0],
+                    current_readouts[offset * count + row_index, 0],
+                )
+                for offset, name in enumerate(current_path_names)
+            }
             if include_request_local:
                 observations.update({
                     "parent_full_request_local": (parent_full_scores[row_index, 0], parent_full_readouts[row_index, 0]),
@@ -446,19 +520,7 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                 observations["parent_exact_rolling"] = (parent_scores[row_index, 0], parent_readouts[row_index, 0])
             if edge == "v0_to_r0":
                 observations["one_hop_reuse_rolling"] = observations["current_exact_rolling"]
-            else:
-                one_hop_offset = current_path_names.index("one_hop_reuse_rolling")
-                observations["one_hop_reuse_rolling"] = (
-                    current_scores[one_hop_offset*count+row_index, 0],
-                    current_readouts[one_hop_offset*count+row_index, 0],
-                )
-            if include_request_local and "recursive_reuse_rolling" in current_path_names:
-                recursive_offset = current_path_names.index("recursive_reuse_rolling")
-                observations["recursive_reuse_rolling"] = (
-                    current_scores[recursive_offset*count+row_index, 0],
-                    current_readouts[recursive_offset*count+row_index, 0],
-                )
-            elif include_request_local:
+            if include_request_local and "recursive_reuse_rolling" not in current_path_names:
                 observations["recursive_reuse_rolling"] = observations["one_hop_reuse_rolling"]
             reference = observations["current_exact_rolling"][1].float().cpu()
             for path, (score, readout) in observations.items():

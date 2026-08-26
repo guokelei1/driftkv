@@ -89,6 +89,46 @@ endpoint or residual/Base queues.
 Keep model, data, transition and accounting primitives independent from orchestration.
 No Medium/Large long queue is authorized yet.
 
+## Random-weight release-cost benchmark (implementation only; no quality claim)
+
+`benchmark_release_cost.py` is a standalone, GPU-gated cost measurement for
+the paper motivation table. Its small code directory is
+`src/hstu_kvcache/benchmark/`; it has no dependency on training, release
+admission, or the Yambda population. It constructs and persists a deterministic
+random HSTU checkpoint, then compares two GPU operations on the same batch:
+
+- `recompute`: Current prefill from token 1 through token `L`;
+- `reuse`: Current append of token `L`, starting from the already existing
+  tokens 1 through `L-1` K/V cache.
+
+The default is deliberately a plan-only command and does not initialize CUDA:
+
+```bash
+PYTHONPATH=src python scripts/benchmark_release_cost.py
+```
+
+The checkpoint-preparation step is also CPU-only:
+
+```bash
+PYTHONPATH=src python scripts/benchmark_release_cost.py --prepare-model
+```
+
+Only an explicit later launch may use an A40. The default batch is 16 users;
+the default is 50 repeated CUDA-event timings of that batch. The timing boundary
+is GPU execution only: checkpoint loading, synthetic-input construction,
+host/device transfers, cache construction and writeback are outside it. The
+mean batch time is linearly reported as A40 card-hours for 10,000,000 users.
+It does not claim to measure cache compatibility or accuracy.
+
+```bash
+PYTHONPATH=src python scripts/benchmark_release_cost.py \
+  --configuration 4L_context512_H128_heads4 --sequence-length 256 --batch-size 16 --run
+```
+
+Do not run the final command until a GPU is explicitly available for this
+focused canary. Results are written only by `--run` under
+`results/release_cost_random_weight_v1/`.
+
 ## Retired tools
 
 Retired Q_main, neutral-readout, metadata-controller, large-candidate and old

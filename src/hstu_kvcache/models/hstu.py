@@ -925,6 +925,31 @@ class HSTU(nn.Module):
                 self.train()
 
     @torch.no_grad()
+    def forward_with_cache_new_kv(
+        self,
+        cached_kv: HSTUKVCache,
+        new_item_ids: torch.Tensor,
+        new_behaviors: torch.Tensor,
+        new_time_deltas: torch.Tensor,
+    ) -> tuple[torch.Tensor, HSTUKVCache]:
+        """Append new tokens while returning only their K/V rows.
+
+        For a one-token suffix this avoids copying the retained prefix K/V,
+        matching append-only/paged serving state rather than a dense-cache
+        reconstruction benchmark.
+        """
+        was_training = self.training
+        self.eval()
+        try:
+            return self.forward_with_cache_embedded_new_kv(
+                cached_kv,
+                self.embed_inputs(new_item_ids, new_behaviors, new_time_deltas),
+            )
+        finally:
+            if was_training:
+                self.train()
+
+    @torch.no_grad()
     def forward_stale_kv(
         self,
         item_ids: torch.Tensor,
