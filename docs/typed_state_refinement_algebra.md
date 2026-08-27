@@ -325,16 +325,21 @@ points。carriers=128 时 mass=1，SCALE 退化为 identity。
 这不说明单一 scalar 能表示任意异质 evidence；8-state + mass16 仍可失败。它证明的是：
 payload、carrier density 和 represented mass 不能被合并成一个隐式状态语义。
 
-### 8.6 GROUP+SCALE 的成本目前只有结构证据
+### 8.6 完整计划的理论计算
 
 在 4-layer/context512、recent-128 scope 上，dense Tail-128 PATCH 重算 Exact-All 的
 25.0% token-layers，causal attention-pair work 为 Exact-All 的 43.7%。先将 128 条 evidence
 GROUP 成 64 carriers 再 PATCH/SCALE，两者分别下降到 12.5% 和 20.3%。GROUP 和
 SCALE 的附加工作对 carrier 数是线性的，不会在算子量上抵消减少的 causal replay。
 
-但当前还没有 CUDA 端到端时间、kernel utilization 和实际 KV 带宽结果；组合 CAST
-后的整体 plan 也必须与 Exact-All 同机实测。所以现在可以声称 structural work 下降，
-不能声称已证明 end-to-end latency 下降。
+按一乘一加为 2 FLOPs、理想 causal kernel 只计算有效 pair 的保守口径，完整 Exact-All 为
+0.625 GFLOPs/user；CAST384 为 0.201 GFLOPs，compact GROUP/PATCH/SCALE 为 0.099 GFLOPs，
+完整 Our 为 0.301 GFLOPs，即 Exact 的 48.0%、理论减少 52.0%。该主值已经包含 per-user CAST，
+但排除跨用户摊销的一次性 CAST-map 构造、memory I/O 和共同 serving work。
+
+当前 dense PyTorch graph 的对应比例为 34.1%，因为 Exact 仍计算 causal mask 上方的矩阵元素；它只
+作为实现图 companion，不作为 headline。两种 FLOP 口径都不能证明 CUDA latency、kernel utilization
+或实际 KV 带宽改善，这些属于 Design III Runtime。
 
 ## 9. Insight 如何推导流水线和底层语义
 
@@ -411,9 +416,10 @@ C(o) = (GPU work, raw-history I/O, state I/O, write bytes, storage, latency)
 ~~~
 
 第一版无需先实现 learned scheduler。可以事前固定一个 `(repair width r, carrier count c)`，并在
-每项资源上验证完整计划确实低于 Exact-All。未来若人口预算需要异质分配，编译器才使用
-held-out 验证过的 target-free marginal value。无论是否优化，都不用任意权重将 GPU、raw I/O
-和 storage 压成一个无法解释的总分。
+Design I 中验证完整计划的解析 FLOPs 低于 Exact-All；真实 GPU、raw I/O 和 storage 分量由
+Design III Runtime 分别实测。未来若人口预算需要异质分配，编译器才使用 held-out 验证过的
+target-free marginal value。无论是否优化，都不用任意权重将 GPU、raw I/O 和 storage 压成一个
+无法解释的总分。
 
 预算可以调整：
 
@@ -455,16 +461,17 @@ Normal/Warning/Invalid 分别对应保持、加固和 Rebase。`D_hat`、`tau/H`
    并将位置敏感性与可执行 causal-closure 成本分开报告。
 2. **CAST decomposition**：按 normalized layer bundle 和 token quartile 分解 CAST 贡献，不从
    aggregate CAST 直接外推“每层、每个 token 都有效”。
-3. **Combined real cost**：对 Exact-All、Tail-128、CAST+Tail-128 和
-   CAST+GROUP64+PATCH+SCALE 同机计量 CUDA time、raw-history I/O、state read/write、
-   persistent bytes 和 makespan，证明整体 plan 低于 Exact，而不只是局部 FLOPs 更少。
+3. **Full-plan theoretical cost**：已计入 CAST、compact PATCH 和 SCALE；Our 为 Exact 的
+   48.0% causal FLOPs。CUDA time、raw-history/state I/O、persistent bytes 和 makespan 延后到
+   Design III Runtime，不用理论值代替。
 4. **Rolling safety boundary**：固定计划的完整 AUC 已报告且在 v4->v5 失败；下一轮在新合同下
    验证事前安全判断/Exact fallback，不用该 qualification label 调 `r/c`。
 5. **外推边界**：在额外 seed/更大模型上验证三条 Insight；不从 Small/seed17 直接
    冻结 repair width、carrier density 或 mass 阈值。
 
-固定计划已证明 IR 可产生 rolling AUC 收益，但 4/5 改善和未测端到端成本尚未形成稳定
-quality-cost 次序。只有补上成本与失败边界，Design I 才能作为受控 transition 向 Continuous 交付。
+固定计划已证明 IR 可产生 rolling AUC 收益并理论减少 52.0% compute，但 4/5 改善尚未形成稳定
+跨 edge 次序。只有补上失败边界，Design I 才能作为受控 transition 向 Continuous 交付；实际性能
+由后续 Runtime 单独验证。
 target-free residual value、held-out threshold compiler 和 budget allocation 是可选增强，不是
 Design II 的前置条件。
 
@@ -478,7 +485,8 @@ Exact-All，但它们的唯一角色是检验新 IR 是否真的带来渐进 qua
 - `results/yambda500m_small_seed17/insight_refinement_algebra_v1/`；
 - `scripts/insight/probe_refinement_algebra.py`；
 - `results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/`；
-- `scripts/insight/run_one_release_auc.py`。
+- `scripts/insight/run_one_release_auc.py`；
+- `scripts/insight/summarize_one_release_quality_compute.py`。
 
 历史 capability 结果
 `results/yambda500m_small_seed17/insight_state_primitive_discovery_v6/` 作为负结果和原始数字证据保留，

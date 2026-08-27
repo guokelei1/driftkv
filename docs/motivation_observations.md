@@ -121,13 +121,25 @@ Reuse harm recovered
     / [AUC(Current Exact Rolling) - AUC(Reuse)]
 ~~~
 
-| 版本边 | 请求数 | Recompute AUC | Reuse AUC | Our AUC | Reuse 保留收益 | Our 保留收益 | Our - Reuse（pp） | Reuse harm 挽回 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| v0 -> v1 | 43,186 | 0.681769 | 0.678709 | 0.681432 | 74.5% | 97.2% | +0.272304 | 89.0% |
-| v1 -> v2 | 41,655 | 0.670493 | 0.668496 | 0.671611 | 68.1% | 117.9% | +0.311450 | 156.0% |
-| v2 -> v3 | 43,092 | 0.615001 | 0.613514 | 0.614609 | 52.1% | 87.3% | +0.109449 | 73.6% |
-| v3 -> v4 | 43,945 | 0.620994 | 0.619054 | 0.619960 | -318.7%* | -123.2%* | +0.090555 | 46.7% |
-| v4 -> v5 | 45,706 | 0.551858 | 0.551221 | 0.548563 | 71.1% | -49.4% | -0.265765 | -417.0% |
+| 版本边 | 请求数 | Recompute AUC | Reuse AUC | Our AUC | Reuse 保留收益 | Our 保留收益 | Our - Reuse（pp） | Reuse harm 挽回 | Our 理论 Compute |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| v0 -> v1 | 43,186 | 0.681769 | 0.678709 | 0.681432 | 74.5% | 97.2% | +0.272304 | 89.0% | 48.0% |
+| v1 -> v2 | 41,655 | 0.670493 | 0.668496 | 0.671611 | 68.1% | 117.9% | +0.311450 | 156.0% | 48.0% |
+| v2 -> v3 | 43,092 | 0.615001 | 0.613514 | 0.614609 | 52.1% | 87.3% | +0.109449 | 73.6% | 48.0% |
+| v3 -> v4 | 43,945 | 0.620994 | 0.619054 | 0.619960 | -318.7%* | -123.2%* | +0.090555 | 46.7% | 48.0% |
+| v4 -> v5 | 45,706 | 0.551858 | 0.551221 | 0.548563 | 71.1% | -49.4% | -0.265765 | -417.0% | 48.0% |
+
+理论 Compute 使用对 Exact 和 Our 都公平的理想 causal-attention 主导矩阵 FLOP 计数，并固定在完整
+512-position state：Recompute 为 0.625 GFLOPs/user（100%），Reuse 的 release-time neural
+recomputation 为 0，Our 为 0.301 GFLOPs/user（48.0%），即理论减少 52.0%。Our 中 CAST 为
+0.201 GFLOPs（相对 Exact 32.2%），compact GROUP/PATCH/SCALE 为 0.099 GFLOPs（15.9%）。
+embedding lookup、pointwise norm/activation、GROUP gather、state I/O 和一次性的 version-pair
+CAST-map 构造不计入该主导项；Reuse 的 0 也不表示其 state read、storage 或 serving cost 为零。
+
+作为实现图 companion，当前 PyTorch dense attention 会执行被 causal mask 掩掉的矩阵元素，因而
+Recompute/Our 分别为 0.893/0.305 GFLOPs，Our 是 34.1%。论文 Design I 采用更保守的 48.0%
+作为理论主值，不由此声称实际 GPU 时间降低；kernel、I/O、吞吐和 makespan 统一留给 Design III
+Runtime。
 
 正式 E14 population 上，五条 edge 都满足 `Recompute AUC > Reuse AUC`；此前小型 probe 中出现的
 方向反转不属于这组正式 motivation 数据。Our 在前四条 edge 改善 Reuse，前三条恢复最明显；
@@ -348,12 +360,14 @@ SCALE 只恢复 occurrence mass，不会凭空恢复过度压缩丢掉的具体�
 
 当前 4L/context512 结构计数中，dense Tail-128 重算 Exact-All 的 25.0% token-layers
 和 43.7% causal attention pairs；`GROUP(128->64)->PATCH->SCALE` 下降为 12.5% 和
-20.3%。这证明主要结构 work 下降，但还没有包含 CAST、kernel utilization、KV bandwidth
-和 makespan 的端到端成本证明。
+20.3%。加入 per-user CAST 后，完整固定计划的保守 causal FLOPs 为 Exact-All 的 48.0%，理论上
+减少 52.0%。该数字不包含 kernel utilization、KV bandwidth 和 makespan，也不替代 Design III
+Runtime 的实测。
 
 固定 `r=128,c=64` 的完整 rolling 评测现已完成：它在 4/5 edge 上提高 Reuse AUC，但在
-v4->v5 失败。因此 rolling quality 不再是“完全未测”的缺口；当前缺口变为解释该跨 edge 失效边界、
-在不使用 qualification label 调参的前提下预注册安全选择/回退，以及完成端到端成本资格。
+v4->v5 失败。因此 rolling quality 和理论 FLOPs 不再是“完全未测”的缺口；当前 Design I 缺口变为
+解释该跨 edge 失效边界，并在不使用 qualification label 调参的前提下预注册安全选择/回退。
+实际 GPU/I/O 性能属于后续 Runtime，而不是在这里用理论值替代。
 
 三个关键观察缺口仍保留：
 
@@ -470,6 +484,8 @@ bounded-debt plan selection、最大近似深度、sampled Current-Exact feedbac
 - configs/contracts/yambda500m_small_hstu_native_d14_one_release_refinement_auc_v1.yaml
 - scripts/insight/run_one_release_auc.py
 - scripts/insight/adjudicate_one_release_auc.py
+- scripts/insight/summarize_one_release_quality_compute.py
 - results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/auc_summary.md
+- results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/quality_compute_summary.md
 
 这些入口只负责复现固定合同和结果，不授权根据结果新增 edge、调 recipe 或改变最终系统设计。

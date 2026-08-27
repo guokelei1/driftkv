@@ -32,8 +32,9 @@ Current replay 可以使用更少 carrier，但必须保留 represented mass。�
 当前 Insight 只直接推出一次 `Parent -> Current` 转换。事前固定的
 `CAST384 + GROUP/PATCH 128->64 + SCALE2` 已完成五条 full-population rolling AUC：4/5 edge
 改善 Reuse，v4->v5 失败。它证明 Design I 有可执行任务收益，但不准入一个对所有 release 无条件
-采用的固定配置。下一小步不训练 scheduler，只补位置对照、CAST 贡献分解、组合实测成本和事前
-安全/回退边界。Design I 保持简单，不在这里堆叠复杂 allocation policy。
+采用的固定配置。完整计划的保守理论 FLOPs 为 Exact-All 的 48.0%，理论减少 52.0%；该值不预言
+GPU runtime。下一小步不训练 scheduler，只补位置对照、CAST 贡献分解和事前安全/回退边界。
+Design I 保持简单，不在这里堆叠复杂 allocation policy。
 
 One-Release 通过后，研究重心转向 Continuous：以 estimated compatibility debt 和最大近似深度
 限制 `v0 -> v1 -> v2 -> ...` 的误差累积，再用 sampled Current-Exact shadow 检测假设失效并触发
@@ -45,8 +46,8 @@ One-Release 通过后，研究重心转向 Continuous：以 estimated compatibil
 Background & Motivation
   -> short System Overview
   -> Insight-Driven One-Release Refinement
-     -> position / CAST decomposition / combined-cost reinforcement
-     -> fixed-plan rolling quality (complete, mixed) / end-to-end cost
+     -> position / CAST decomposition
+     -> fixed-plan rolling quality (complete, mixed) / theoretical FLOPs (complete)
   -> Debt-Bounded Continuous State Evolution
      -> bounded debt / Exact shadow / quality-triggered rebase
   -> GPU Transformation Runtime
@@ -316,8 +317,9 @@ evolution。这里的例子是待验证假设，不是当前结论。
   old/middle/recent/random-128 位置对照，所以不冻结“Tail 最敏感”；
 - aggregate layerwise CAST 已稳定正恢复；尚未分解 normalized layer bundle 和 token
   quartile 贡献，所以不外推每层/每位置同样可转换；
-- GROUP64+SCALE 已有 structural-work 优势和 matched quality 消融；尚未有包含 CAST、
-  kernel utilization 和 KV bandwidth 的端到端成本。
+- GROUP64+SCALE 已有 matched quality 消融；包含 CAST 的完整计划为 Exact 的 48.0% 保守
+  causal FLOPs。kernel utilization、KV bandwidth 和 wall time 是 Design III Runtime 问题，
+  不作为 Design I Insight 缺口。
 
 ### Phase 5：Design I — Pipeline qualification
 
@@ -332,30 +334,33 @@ Design Insights，Phase 5 验证它们直接推出的 CAST、compact contextual 
 - `results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/`。
 
 因此 rolling 任务质量不再是完全未测；结果同时否定了“该固定配置可以无条件用于所有 edge”。
-Phase 5 剩余三项关键补强仍不实现 scheduler：
+在 512-position state 上，理论 Recompute/Our 分别为 0.625/0.301 GFLOPs per user，Our 使用
+48.0% compute、理论减少 52.0%。Phase 5 剩余补强仍不实现 scheduler：
 
 1. 等宽 old/middle/recent/random-128 诊断性 region intervention，以及对应的 executable
    causal-closure work；
 2. CAST 的 normalized layer-bundle 和 token-quartile 贡献分解；
-3. Exact-All、Tail-128、CAST+Tail-128 和 CAST+GROUP64+PATCH+SCALE 的同机 CUDA/I/O/
-   persistent-byte 比较。
+3. 在新 prospective contract 下验证最小的事前安全判断/Exact fallback，不使用本次
+   qualification label 调整 `r/c`。
 
 诊断性 region/layer splice 只用于 Insight 因果定位，不加入已冻结的 scale action set。
-三项补强都复用现有 checkpoint 和已封存请求，只做 focused inference probe，不启动新长训练。
+前两项复用现有 checkpoint 和已封存请求，只做 focused inference probe，不启动新长训练；第三项
+必须使用独立 development evidence。
 机制和成本对照仍保留三个固定计划：
 
 - `CAST(stale)`；
 - `CAST + typed PATCH(residual scope)`；
 - `CAST(prefix) + GROUP -> PATCH -> SCALE + UNION`。
 
-对照为 No-op、Exact-All 和旧固定宏 baseline。每个计划必须同时报告 rolling AUC/log-loss、output
-fidelity、GPU/token-layer work、raw-history I/O、state read/write、storage 和 makespan。
+对照为 No-op、Exact-All 和旧固定宏 baseline。Design I 报告 rolling AUC/log-loss、output fidelity、
+解析 FLOPs 和结构 token/pair work；raw-history/state I/O、CUDA time、storage、throughput 和 makespan
+统一在 Design III Runtime 中实测。
 
-Design I 的完整完成条件仍是：一个事前固定的 `r/c` 组合或事前固定的安全回退合同，在 rolling
-AUC/log-loss 上不把失败 edge 隐藏掉，且端到端 GPU、raw-history I/O、state I/O 和 writeback 成本
-低于 Exact-All。当前完成了固定 transition 的执行与质量资格，但 v4->v5 反例和成本缺口意味着
-“always-on 固定配置”尚未通过。这里不要求先证明复杂 scheduler；最小的 edge/config safety contract
-和 Exact fallback 足以向 Continuous 层交付一跳 transition。
+Design I 的完整完成条件是：一个事前固定的 `r/c` 组合或事前固定的安全回退合同，在 rolling
+AUC/log-loss 上不隐藏失败 edge，并在解析 FLOPs 上低于 Exact-All。理论计算条件已经满足；
+v4->v5 反例意味着“always-on 固定配置”尚未通过。这里不要求先证明复杂 scheduler；最小的
+edge/config safety contract 和 Exact fallback 足以向 Continuous 层交付一跳 transition。理论 FLOPs
+不保证实际加速，后者由 Runtime 单独回答。
 
 不得用这五条 qualification label 调整 `r/c` 或选择报告 edge。若以后确实需要 population budget
 allocation，再在独立 development contract 下开放 target-free PATCH value estimator、threshold

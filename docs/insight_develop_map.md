@@ -114,11 +114,11 @@ coverage/mass；carrier density 作为 `(r,c)` 质量—成本轴，而不是无
 
 - **Task observation**：AUC/log-loss 和 release-gain erosion；
 - **Mechanism intervention**：CAST/PATCH/GROUP/SCALE 对 Current–Reuse output gap 的干预；
-- **System qualification**：完整 rolling quality、真实资源和 held-out seed/scale。
+- **System qualification**：完整 rolling quality、理论计算、真实 Runtime 资源和 held-out seed/scale。
 
 当前前两级已经足够闭合 **One-Release** instruction semantics。第三级中的固定计划 rolling quality
-已完成，真实资源、额外 seed/scale 和跨 edge 安全性尚未完成；这些证据还不能闭合 multi-release
-state evolution。
+和理论 FLOPs 已完成，额外 seed/scale 和跨 edge 安全性尚未完成；真实 GPU/I/O 由独立 Runtime
+章节负责。这些证据还不能闭合 multi-release state evolution。
 
 ## 2. 已观察的核心 Insight
 
@@ -134,7 +134,7 @@ state evolution。
 | same-scope CAST/PATCH | 同上 | Parent-generated tail residual 加到 CAST base 恢复 37.7%–79.6%，比较好单项多 10.3–23.5 points | 确认版本 base 与 contextual delta 可在同 scope 叠加 |
 | carrier-density refinement | 同上 | 8->16->32->64->128 的 40 个密度增量中 39 个非负 | 直推 `GROUP`，但不冻结单 seed 阈值 |
 | state-mass contract | 同上 | 8/16/32/64 carriers、两个顺序、五 edge 的 40/40 SCALE 消融均为正 | 直推 `SCALE` |
-| fixed one-release rolling qualification | 217,584 requests，5 edges | 固定 `CAST384 + GROUP/PATCH 128->64 + SCALE2` 在 4/5 edge 提高 Reuse AUC；v4->v5 失败 | 流水线可执行，但固定全局 `(r,c)` 不能无条件进入 Continuous |
+| fixed one-release rolling qualification | 217,584 requests，5 edges | 固定 `CAST384 + GROUP/PATCH 128->64 + SCALE2` 在 4/5 edge 提高 Reuse AUC；保守理论 compute 为 Exact 的 48.0%；v4->v5 失败 | 流水线可执行且理论计算减少 52.0%，但固定全局 `(r,c)` 不能无条件进入 Continuous |
 
 ### 2.1 固定流水线的完整任务质量结果
 
@@ -158,6 +158,11 @@ Full-only `Current-Parent` 发布收益作为分母时，前三条 edge 的 Our 
 一个固定 `(r=128,c=64)` 配置也不是普适 policy。该反例可以动机化未来的事前安全判断和
 Exact-shadow/Rebase，但不能用本次 qualification label 事后调 action。完整公式、逐 edge 表和协议见
 [核心 Motivation 与 Observation](motivation_observations.md#41-固定-one-release-方案的完整-rolling-auc)。
+
+在完整 512-position state 上，按理想 causal attention 的有效 pair 公平计数，Exact-All 为
+0.625 GFLOPs/user，固定计划为 0.301 GFLOPs/user，即使用 48.0% compute、理论减少 52.0%。其中
+CAST 占 Exact 的 32.2%，compact GROUP/PATCH/SCALE 占 15.9%。当前 dense PyTorch 图的 companion
+为 34.1%，但不作为主值，也不推出 GPU runtime 加速。
 
 ## 3. Insight -> Pipeline 与底层语义
 
@@ -274,6 +279,8 @@ recent/old Utility、repeat、diversity 和 user activity 的方向不稳定，�
 | 能进行编译优化 | 通过；被 exact PATCH 覆盖的 CAST scope 实测误差为 0 |
 | workload insight 不污染 instruction set | 通过；user/item/candidate 信号仅作为 scope/value 候选 |
 | 完整 recommendation-quality 资格 | **部分通过**；固定计划在完整 rolling AUC 上改善 4/5 edge，但 v4->v5 失败，尚无额外 seed/scale |
+| 理论计算优势 | **通过**；完整计划含 CAST 后为 Exact 的 48.0% causal FLOPs，理论减少 52.0% |
+| 实际 GPU/I/O 优势 | 留给 Design III Runtime；Design I 不用理论 FLOPs 代替 runtime 结论 |
 | target-free budget compiler | **未通过**；还没有 held-out residual-value estimator |
 
 因此当前准入的是一次四阶段流水线的 mechanism semantics 和底层 plan IR，不是
@@ -303,7 +310,7 @@ results/yambda500m_small_seed17/insight_refinement_algebra_v1/
 旧 primitive discovery 脚本的 reader bridge、Retire、Route 和大量动作组合不再执行。其历史结果保留为负证据，
 但不定义新代数。
 
-## 7. 结构成本已知什么
+## 7. 理论计算成本已知什么
 
 在当前 4-layer/context512 机制 probe 中，固定 recent-128 scope 的理论结构成本为：
 
@@ -314,9 +321,21 @@ results/yambda500m_small_seed17/insight_refinement_algebra_v1/
 | GROUP(128->64) -> PATCH -> SCALE | 12.5% | 20.3% |
 
 GROUP 本身是线性 coverage-map/gather；SCALE 为 64 个 carrier 的线性 read-contribution
-处理。因此它们不会在算子数量上把减少的 causal replay 全部吃回。但这张表不包含
-CAST 的 dense map、kernel launch、GPU utilization 和实际 KV 带宽，因而尚不是端到端
-latency 证明。
+处理。因此它们不会在算子数量上把减少的 causal replay 全部吃回。将 CAST 也计入后，完整
+512-token 固定计划为：
+
+| 组件 | 保守 causal FLOPs / user | 相对 Exact-All |
+| --- | ---: | ---: |
+| Exact-All | 0.625 GFLOPs | 100.0% |
+| Reuse state conversion | 0 | 0.0%* |
+| CAST 384 positions | 0.201 GFLOPs | 32.2% |
+| GROUP/PATCH 128->64 + SCALE | 0.099 GFLOPs | 15.9% |
+| **完整 Our** | **0.301 GFLOPs** | **48.0%** |
+
+`*` 这里只计算 release-time neural arithmetic，不计算 state read/storage。主值使用理想 causal kernel
+的有效 pair，因而不会利用当前 Exact dense mask 的额外浪费来夸大收益。当前 dense graph 的 Our
+比例为 34.1%，只作为实现图 companion。两种口径都不是 CUDA latency、GPU utilization、KV bandwidth
+或 makespan 证明；这些指标属于 Design III Runtime。
 
 ## 8. 接下来的关键补强
 
@@ -328,20 +347,19 @@ latency 证明。
 2. **CAST 贡献分解**：对 normalized layer bundle 和 token quartile 做 leave-one-region-out/
    cumulative CAST，区分“整体 CAST 有效”与“每层、每位置都有效”。未测 head 之前不声称
    head selection 已被否定。
-3. **GROUP+SCALE 组合实测成本**：固定 batch 和 scope，比较 Exact-All、dense Tail-128、
-   CAST+Tail-128 和 CAST+GROUP64+PATCH+SCALE 的 CUDA 时间、raw-history I/O、state
-   read/write bytes 和最终 persistent bytes。必须证明整体 plan 而非单个算子低于 Exact。
+3. **完整计划理论成本**：已计入 CAST、compact PATCH 和 SCALE；固定计划为 Exact 的 48.0%
+   causal FLOPs。CUDA 时间、raw-history/state I/O 和 makespan 不在 Design I 提前证明，统一交给
+   Design III Runtime。
 4. **跨 edge 失效边界**：rolling AUC 已完成且暴露 v4->v5 反例；下一轮只允许在新 prospective
    contract 下验证事前固定的安全判断或回退，不用本轮 label 反向调 `r/c`。
 
-前三项是当前三条 Insight 的直接补强；第四项来自已经完成的 Design I rolling 资格及其反例。
-固定计划已经证明“一次转换可以在正式任务指标上产生收益”，但还没有满足跨 edge 稳定性和完整
-quality-cost 条件。后续不把复杂 PATCH-value scheduler 当作前置条件；若人口预算或安全边界确实需要
+前两项是当前三条 Insight 的直接补强；第三项和 rolling AUC 已完成，第四项来自其真实反例。
+固定计划已经证明“一次转换可以在正式任务指标上产生收益，并理论减少 52.0% 计算”，但还没有满足
+跨 edge 稳定性。后续不把复杂 PATCH-value scheduler 当作前置条件；若人口预算或安全边界确实需要
 选择性分配，再在独立 development evidence 上寻找 held-out、label-free marginal-value proxy。
 
-位置、CAST 分解和局部 CUDA cost 都可复用现有五条 edge checkpoint 和已封存请求，
-是 focused inference probe，不需要新长训练。它们仍需报告全部 edge 和固定 cohort，不按结果选位置、
-layer 或 carrier density。
+位置和 CAST 分解都可复用现有五条 edge checkpoint 和已封存请求，是 focused inference probe，
+不需要新长训练。它们仍需报告全部 edge 和固定 cohort，不按结果选位置、layer 或 carrier density。
 
 Medium/Large 长训练、theta3 和 RecFlow Medium 仍保持现有门禁。新代数不授权新的 scale action、训练或
 qualification tuning。
@@ -367,7 +385,7 @@ Typed refined segments form one legal state view
 
 这条链已经可以从 Insight 正向推导四阶段流水线，并已用一个固定计划完成 full-population rolling
 AUC 执行，而不是只有算子名称后的事后解释。剩余未闭合的是 Tail 位置比较、CAST 粒度归因、
-端到端 GROUP+SCALE 成本，以及 v4->v5 所揭示的跨 edge 安全边界，不是继续发明新动作。
+以及 v4->v5 所揭示的跨 edge 安全边界，不是继续发明新动作。实际端到端性能由 Runtime 章节承接。
 target-free allocation 是可选增强；最小的保守回退则是进入 Continuous 前必须面对的可靠性问题。
 
 ## 10. 向 Continuous 和 Runtime 的交付边界

@@ -126,12 +126,13 @@ CAST 只处理 Parent/Current 之间可共享的版本变换，保持 evidence c
 ### 3.5 Cost-Aware Plan Selection
 
 `r` 控制需要 contextual repair 的 evidence 范围，`c` 控制实际执行 Current PATCH 的 carrier 数。
-第一版使用事前封存的少量固定 `(r,c)`，不要求先训练复杂 scheduler。每个计划分别报告 GPU work、
-raw-history I/O、state I/O、write bytes、storage、latency 和 rolling quality；只有完整计划低于
-Exact-All 且保持正质量恢复，才进入 Continuous。
+第一版使用事前封存的少量固定 `(r,c)`，不要求先训练复杂 scheduler。Design I 分别报告解析 FLOPs、
+结构 token/pair work 和 rolling quality；真实 CUDA time、raw-history/state I/O、write bytes、storage
+和 makespan 留给 Design III Runtime。理论计算减少不自动等于实际加速。
 
 当前第一条固定计划已经完成 full-population one-release rolling qualification，并暴露了一个真实
-失败 edge。它证明流水线可以形成任务质量收益，却不能被当作跨 release 的 always-on 配置。具体数字
+失败 edge；其完整理论 FLOPs 也已低于 Exact-All。它证明流水线可以形成任务质量收益和算法计算
+缩减，却不能被当作跨 release 的 always-on 配置。具体数字
 只记录在[核心 Motivation 与 Observation](motivation_observations.md)；本章据此保留一个很小的
 事前安全判断/Exact fallback 接口，而不提前扩展复杂 scheduler。
 
@@ -207,7 +208,7 @@ makespan 或 serving isolation，才作为独立系统贡献；否则只是实�
 - **RQ1：存在性** 新模型已经带来模型发布收益时，直接复用父版本 persistent state 是否会损害这个收益？
 - **RQ2：结构** 兼容性风险是否与用户、历史区域、序列组成、item/embedding 漂移、模型组件和版本年龄有关？
 - **RQ3：单次转换** 由“大范围 CAST + 局部 mass-aware compact replay”组成的简单固定流水线，
-  能否用低于 Exact-All 的端到端成本恢复足够多的 rolling quality？
+  能否用低于 Exact-All 的理论计算恢复足够多的 rolling quality？
 - **RQ4：连续演化** Debt-bounded incremental refinement 加 sampled Exact feedback，能否在多个
   release 中限制近似深度和质量偏差，并以低于每版 Exact-All 的摊销成本触发必要 Rebase？
 - **RQ5：物理执行** 异构的 typed transition plan 能否被编译成高吞吐 GPU workload，并在
@@ -275,9 +276,9 @@ Tail 优化：
 5. 将 typed transition plan 编译成可度量的 GPU 数据面，并在连续版本、不同状态年龄和更大人口上
    验证质量与摊销成本。
 
-当前完成度必须分开写：Motivation、Small/seed17 mechanism observation 和第一条固定 Design I 路径的
-完整 rolling qualification 已有证据；该固定路径跨 edge 结果混合，端到端成本与事前安全边界仍未
-闭合。Design II 与 Design III 仍是明确的研究路线。
+当前完成度必须分开写：Motivation、Small/seed17 mechanism observation、第一条固定 Design I 路径的
+完整 rolling qualification 和理论 FLOPs 已有证据；该固定路径跨 edge 结果混合，事前安全边界仍未
+闭合。真实 GPU/I/O 结果属于尚未实现的 Design III，而不是 Design I 的缺失理论值。
 当前不冻结 residual estimator、carrier-density 安全阈值、predictor、scheduler、debt estimator、
 `tau/H`、shadow rate、rebase policy 或 GPU executor。这些组件只能在相应实验后准入。
 

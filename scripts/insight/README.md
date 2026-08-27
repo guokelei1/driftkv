@@ -15,6 +15,7 @@ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src python scripts/insight/probe_embedding_hyb
 CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src python scripts/insight/probe_anchor_replay.py
 CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src python scripts/insight/probe_refinement_algebra.py
 PYTHONPATH=src:scripts python scripts/insight/run_one_release_auc.py
+PYTHONPATH=src:scripts python scripts/insight/summarize_one_release_quality_compute.py
 ```
 
 The scripts write only compact request features, aggregated tables, and short
@@ -28,3 +29,6 @@ the fixed one-hop `CAST384 + GROUP/PATCH 128->64 + SCALE2` path. It uses GPUs
 0/1/2/3, replays all five edges serially, seals raw output before label join,
 and writes the summary under
 `results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/`.
+The final command is arithmetic-only: it combines the sealed AUC summary with
+the fixed 4L/H128/context512 plan's conservative causal-FLOP count. It does not
+benchmark or claim GPU runtime.
