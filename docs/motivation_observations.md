@@ -1,6 +1,6 @@
 # 核心 Motivation 与 Observation
 
-更新日期：2026-08-26
+更新日期：2026-08-28
 
 本文是当前论文最详细的结果文档。它只记录已经观察到的 HSTU-native motivation 和版本化状态 observation；没有观察到的系统设计效果、最终 EvoKV action 或 scheduler 结论不写成已验证结果。
 
@@ -16,6 +16,25 @@
 - controlled dilution 表明少量 Current state 的重新锚定比单独 eviction 更能解释 gap 衰减；
 - pre-cutover tail replay 在不加入新行为信息时也能形成 Current-version anchor；
 - recommendation risk 对 candidate 是否为历史新颖项具有稳定差异，HSTU 机制则表现为 K/V 共同不兼容与 early/middle propagation；
+- 在固定 3,000 用户、五条版本边和每用户 64 个无标签 candidate probe 上，同一用户 state
+  的读取及 Exact−Reuse 差异几乎都落在一个 candidate-shared 方向；persistent state 更像被候选集
+  重复消费的 user-evidence compatibility field，而不是每个 candidate 独立检索的一组 token；
+- signed、逐 head、无 candidate normalization 的因果干预在 controlled 与真实 exposed candidate
+  bank 上均确认 shared component 主导 gap：受控五边 recovery 为 97.98%–99.64%，真实分布的
+  20/20 个 edge×width 组合均由 shared 优于 residual；
+- 一个与 Design 0 完全匹配 compute/carrier/raw-I/O/state-I/O 的 signed value-measure basis 在五边
+  label-free canary 上 0/5 不弱于 Design 0，按合同停止；结构正结果不能直接写成已成功的机制；
+- reader-stage 与跨请求实验把 correction 最早定位到 query-dependent `activated(qK)·V`，并证明
+  AV correction 在 bounded post-release 请求区间内五边持久；旧 compact-probe score canary 4/5
+  优于 Design 0，但保留 `v3→v4` 反例；
+- 最新 lightweight PRO 将 joint version map 推入一次固定 probe read，不再物化或写回 384-position
+  translated prefix。held-out 五边正确性/成本门通过：32-carrier 为 Full 理论 FLOPs 的 9.1%，
+  action 只写 512 scalar；随后冻结机制的五边全人口 rolling quality 在 217,584 个请求上完成：
+  相对 Reuse 的 AUC 5/5 正向、log-loss 3/5 正向，五边平均分别为 `+0.06641` pp 和
+  `−7.65e-5`。因此总体 Design viability 为正，但事前严格双门因 log-loss 未达 4/5 而未通过；
+- 专家建议的 progressive 增量已用另一批 held-out label-free 用户完成。双 probe 在 5/5 edge
+  几乎等价，纯幅值与 segment decay 门未过；C64 对 C32 relative L2 在 cutover/rolling 均 5/5
+  改善，但 absolute rolling direction 为 0/5 过门且 C48/C64 非单调，按事前规则保留 C32；
 - 完整活跃用户分析和 hybrid producer 诊断不支持 isolated item-embedding drift；主要来源是 contextual Transformer co-adaptation；
 - parameter-only joint state translation 与 Current residual rematerialization 在五条 edge 上稳定互补；
 - HSTU sidecar state 必须保留 aggregation mass；无权重压缩会系统性破坏读取语义；
@@ -330,9 +349,10 @@ unnormalised pointwise aggregation 下压缩、退休和路由必须遵守的接
 evidence-to-carrier coverage 和 aggregation mass。但 additive payload 不保证质量单调，8/16 carriers
 在部分 edge 仍为负 recovery，因此当前不冻结 residual threshold 或 carrier-density 安全阈值。
 
-### 6.7 最新 Insight 裁决：三条观察推导四阶段流水线
+### 6.7 Design 0 裁决：三条机制观察推导四阶段流水线
 
-上述结果不再以“四个并列原子操作”作为论文主叙事。当前更准确的三条 Insight 是：
+上述结果不再以“四个并列原子操作”作为论文主叙事。它们形成一条可执行的 **Design 0 / strong
+baseline**；当前更准确的三条机制观察是：
 
 1. **分布式失配与非对称修复**：只换 layer 0 不足，lower 3/4 layers 联合才恢复
    83.4%–96.0%；Tail-128 exact replay 在五条 edge 都有效，但只恢复
@@ -369,6 +389,61 @@ v4->v5 失败。因此 rolling quality 和理论 FLOPs 不再是“完全未测�
 解释该跨 edge 失效边界，并在不使用 qualification label 调参的前提下预注册安全选择/回退。
 实际 GPU/I/O 性能属于后续 Runtime，而不是在这里用理论值替代。
 
+### 6.8 3,000 用户推荐状态结构：candidate-broadcast evidence field
+
+为避免先前 32/64/128 用户的内部 probe 形成小样本结论，新的 prospective、label-free observation
+在固定 3,000 名用户（Small 人口的 30%）上复用完整 `v0→v1→...→v5` 链。每条边都取同一人口在
+cutover 前的 512 个事件，并为每名用户构造 64 个候选 probe；probe 不作为负样本，不与 label
+join。内部 influence trace 与模型原 score 的最大误差为 `7.15e-7`。
+
+该观察给出一个比 old/recent token sensitivity 更 recommendation-specific 的结构：
+
+- 64 个 candidate 的 layerwise history influence matrix 在 60,000/60,000 个
+  user-edge-layer 上均为 rank-1@90%；各 edge/layer 的第一共享方向平均携带
+  99.9681%–99.9992% influence energy；
+- Exact−Reuse influence delta 在 59,999/60,000 个 user-edge-layer 上为 rank-1@90%；
+  最终 query readout delta 在 15,000/15,000 个 user-edge 上均为 rank-1@90%，逐 edge 平均
+  effective rank 仅 1.0082–1.0198；
+- recent-repeat、old-only-repeat 与 novel-to-prefix probe 的读取 support 和绝对 logit shift 接近，
+  因此完整人口结果不支持为不同 candidate family 分别执行 request-time token Route。
+
+这里的 rank 不是参数矩阵 rank，而是固定一名用户、让 64 个 candidate 读取同一份历史时，候选×历史
+influence 或候选×readout-delta 矩阵的谱。它说明跨版本兼容性首先是“一份 user evidence 同时广播给
+候选集合”的问题；这正是推荐 ranking 中一份持久用户状态被大量 candidate 摊销读取的 workload
+结构，而不是文本生成中一条 query 对一份上下文的工作方式。
+
+同一实验用 UID-disjoint fit/held-out split 对 top-1,024 shared item 的 state delta 做分解：
+
+- item centroid 在 combined input 和 layer-0 K 上分别解释 59.5%–71.5% 和 55.7%–72.4%
+  held-out delta；加入 action type 后 layer-0 K 的解释率为 86.7%–92.6%；
+- item identity 相对全局 version shift 的额外解释率在 layer-0 K 仍有 9.5%–10.7%，不是孤立
+  embedding 完全无关；但经过第一层 `AV × U` update 后，item-centroid 解释率降至
+  20.8%–31.0%，更深 update 上相对全局 shift 的额外解释率仅 −0.4%–2.9%。
+
+因此更准确的 source decomposition 是：**共享 typed entity/action coordinate 在输入和 early K/V
+中很强，随后被 HSTU aggregation 与 U gate 转化为 user-context residual**。这修正了旧的
+“isolated embedding 弱，所以 item identity 不重要”表述；孤立 embedding 不是完整机制，但
+item/action 诱导的 functional drift 确实存在于 early state。
+
+相同 carrier budget 的 coreset 对照同时给出负边界。same-item-first 把 recent-128 配对中的
+same-item 比例从 3.29%–3.79% 提高到 29.55%–30.13%，typed rule 也将 same-action 比例提高到约
+98.2%；但二者相对 positional pair 的 mean probability gap 都只在 3/5 edge 更好，per-user win
+fraction 仅 42.2%–50.0%。因此 raw item/action equality 不是稳定的 contextual-state 可替代关系，
+当前不准入 semantic GROUP。
+
+当前最强的新 Insight 裁决是：
+
+> **Persistent HSTU state is a candidate-broadcast user-evidence compatibility field. Its early
+> cross-version change has a shared typed entity/action coordinate, while aggregation and gating
+> turn the remaining change into a user-context residual.**
+
+Design implication 是优先定位由 Current HSTU reader 形成、并被整个 candidate bank 共享的
+**user-level compatibility correction**；不是在线为每个 candidate 分别选 token。后续 signed causal
+与真实 exposed candidate 复核已把它从低秩 observation 升级为 reader structure，但没有证明历史
+token 存在可物化的线性 evidence basis。第一个 matched-cost history-V basis canary 失败，仍没有
+资格化新的 action、rolling quality 或 runtime。现有 `CAST + compact PATCH` 因而保留为 strong
+baseline，不再包装成已经最终收敛的论文核心。
+
 三个关键观察缺口仍保留：
 
 - 现有数据证明 recent state 具有高读取效用、Tail replay 稳定有效，但没有等宽
@@ -388,7 +463,103 @@ v4->v5 失败。因此 rolling quality 和理论 FLOPs 不再是“完全未测�
 - `results/yambda500m_small_seed17/insight_embedding_origin_v1/report.md`；
 - `results/yambda500m_small_seed17/insight_embedding_hybrid_v1/report.md`；
 - `results/yambda500m_small_seed17/insight_state_primitive_discovery_v6/report.md`；
-- `results/yambda500m_small_seed17/insight_refinement_algebra_v1/report.md`。
+- `results/yambda500m_small_seed17/insight_refinement_algebra_v1/report.md`；
+- `results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/adjudication.md`；
+- `results/yambda500m_small_seed17/insight_candidate_shared_causal_v1/adjudication/report.md`；
+- `results/yambda500m_small_seed17/insight_evidence_measure_basis_v1/canary/report.md`。
+- `configs/contracts/yambda500m_small_hstu_native_reader_compatibility_correction_v1.yaml`。
+
+### 6.9 Signed causal、真实候选与最小 basis 反例
+
+专家指出 contribution norm、candidate-wise normalization 与受控 bank 可能放大 candidate-shared
+方向。新的 prospective observation 因而使用 signed、逐 head 的 HSTU contribution，不做 candidate
+normalization，并显式执行 `Reuse+shared`、`Reuse+residual` 与完整 delta reconstruction。
+
+- 受控 3,000 用户、五 edge、width `8/16/32/64` 全部完成；width-64 的 shared-only probability-gap
+  recovery 为 97.98%–99.64%，shared 在 5/5 edge 上优于 residual；
+- 真实 same-UID/same-timestamp exposed candidates 覆盖五 edge、width `2/4/8/16`、24,407 个
+  bank 和 68,764 个 request-width observation；20/20 个 edge×width 组合由 shared 优于 residual，
+  recovery 为 98.72%–99.84%；
+- shared-only 到 Current Exact 的平均 absolute logit gap 为 `5.58e-5`，Reuse 为 `1.55e-2`；
+  20 个质量单元的最大 absolute AUC/log-loss delta 为 `9.39e-5`/`1.47e-6`；
+- raw score 均先封存再连接 label；full-delta reconstruction 最大误差为 `9.54e-7`。
+
+因此 norm/normalization artifact 和 controlled-bank-only 是不再成立的主要替代解释；shared/residual
+仍是 diagnostic oracle，不是 action。
+
+因果门后只冻结一个 matched-cost mechanism：每个相邻 pair 用 Current later-anchor key，并令
+`V = CAST(V_earlier) + Current(V_later)`；32 个 old joint CAST 等价预算重分配为 64 个 value-only
+CAST，使参数映射 FLOPs、Current 64 carriers、recent-128 raw I/O 和 448-position state layout 与
+Design 0 匹配。五 edge、每 edge 32 用户、共 1,598 个无标签 rolling request 的 canary 上，其 mean
+absolute logit gap 为 0/5 edge 不弱于 Design 0（分别恶化 1.4%–17.7%），未达到 4/5 gate，故没有
+启动 formal AUC/log-loss。这个负结果否定该 value-measure 公式，不否定 signed causal structure，
+也不授权基于 canary 调参或扩充 Route/GROUP/selector。
+
+### 6.10 Reader stage、跨请求持久性与 AV sidecar canary
+
+最新专家意见将 claim 收紧为 candidate-shared reader compatibility correction，并要求先定位形成
+阶段、再验证跨请求持久性。事前冻结的 stage oracle 在受控 3,000 用户与真实 exposed request 上
+均将最早稳定边界定位到 query-dependent `activated(qK)·V` prefix contribution；AV 是最早可用的
+post-aggregation 边界。这个结果不表示 raw K/V 或 history V 可线性替代。
+
+真实 E14 observation 合计覆盖 15,338 个 eligible request group；cutover 时有完整 512 条旧状态的
+用户形成 11,364 对相邻请求。AV correction 的五边中位 direction cosine 为 `0.9659–0.9827`，
+coverage-scaled prior-request recovery 为 `60.60%–84.06%`，按 `cosine≥0.90/recovery≥0.50`
+的冻结门 5/5 通过。全部时间、append 与 remaining-old buckets 均保留。
+
+两门后只执行一个 compact-probe AV broadcast residual。它用 `CAST384 + recent128 group-of-4 的
+32 个 Current carriers` 构造一次性 probe source，以 latest pre-cutover item 的固定单 probe 生成
+四层 AV sidecar，之后按 remaining-old coverage 对所有候选广播。五边 160 user-edge、1,805 个
+无标签请求上，它相对 Design 0 的 mean absolute logit gap 在 4/5 edge 改善，变化为
+`−36.7%/−54.2%/−62.9%/+11.0%/−58.0%`；`v3→v4` 是保留反例。该 score canary 通过 4/5
+progression gate，但合同禁止自动读取 label、启动 formal quality 或准入 action。
+
+### 6.11 无 translated-prefix 物化的 lightweight PRO
+
+最新专家意见指出，旧 sidecar 的持久化对象虽小，但生成器仍为每个用户物化 384 个 translated K/V；
+这部分单独占 Exact-All 32.2% FLOPs，使总成本约为 40.5%。因此新设计保留 joint version-map 语义，
+但把它推入固定 latest-item probe 的 AV aggregation：query 在 key-side 变换一次，Parent joint K/V
+直接流式参与加权和，value-side 在 history sum 后变换一次。action 内不生成或写回 translated prefix。
+
+recent-128 仍按事前 primary 压成 32 个 Current carrier。为避免多头 wide-state scan 对每个 carrier
+重复执行，carrier 在未变换的 Parent old-384 上做普通 dependency-closed replay；只有最终固定 probe
+执行 fused mapped read。完全等价地对所有 carrier 也做 lazy map 的 16/32 方案理论上分别为 Full 的
+20.6%/40.0%，已在执行前因不满足 `<20%` 目标而拒绝。冻结 lightweight 16/32 轴则为：
+
+| carriers | GFLOPs/user | Full 比例 | 理论减少 | conservative Parent streams | FP32 sidecar write |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 16 | 0.0326 | 5.2% | 94.8% | 5.0 MiB | 2.0 KiB |
+| 32（primary） | 0.0572 | 9.1% | 90.9% | 5.0 MiB | 2.0 KiB |
+
+第一份正确性合同错误地把 logit replay 的 `2e-5` absolute threshold 用于未归一化 AV tensor；其
+最大 absolute error 为 0.015625，故 v1 保留为失败。对应最大 relative L2 仅 `4.69e-6`、replay
+error 仅 `4.77e-7`。机制不变的 v2 明确保留该失败，改用由 FP32 reduction error bound 推导的
+`relative L2 <= 1e-4` 与 `replay abs <= 2e-5`，并换用 selector-order 下一批 32 用户。v2 五边通过：
+最大 relative L2 `4.73e-6`、replay error `3.58e-7`、action 内 translated positions 为 0。
+
+primary 32-carrier 新 sidecar 与旧 materialized extractor 的五边 direction cosine mean 为
+`0.9983–0.9993`，norm ratio median 为 `0.9828–0.9982`；16-carrier diagnostic 明显较弱。
+
+机制冻结后完成了五边 E14 全人口 rolling quality。正式 raw 逐边先封存，再与 Design 0 精确对齐
+请求并读取 label；共 217,584 个请求，基线最大重放误差 `9.54e-7`：
+
+| edge | PRO−Reuse AUC (pp) | PRO−Reuse log-loss | harm recovered | PRO−Design 0 AUC (pp) |
+| --- | ---: | ---: | ---: | ---: |
+| v0→v1 | +0.091723 | −0.00019437 | 30.0% | −0.180581 |
+| v1→v2 | +0.169338 | −0.00023962 | 84.8% | −0.142113 |
+| v2→v3 | +0.004930 | +0.00001871 | 3.3% | −0.104520 |
+| v3→v4 | +0.045681 | +0.00003750 | 23.5% | −0.044873 |
+| v4→v5 | +0.020374 | −0.00000476 | 32.0% | +0.286137 |
+
+AUC 为 5/5 正向，log-loss 为 3/5 正向；五边非加权平均为 `+0.066409` AUC pp 与
+`−0.00007651` log-loss。事前严格 gate 要求两项各 4/5，故 qualification 状态保留 FAIL；按用户
+确认的“均值为正且至少过半 edge 正向”研究推进标准，Design viability 为 PASS。两者不矛盾：
+前者决定当前固定版本是否直接进入 seed/runtime qualification，后者回答机制是否值得继续。
+
+`v3→v4` 的 Full-only AUC 更新只有 `0.046331` pp，且 Current Exact rolling log-loss 本身差于
+Reuse；PRO 在 AUC 上恢复、log-loss 位于 Reuse 与 Current 之间，反映排序与校准目标冲突，不是
+数值实现失败。当前不准入 serving action；本五边 label 已成为 development evidence，后续改动需在
+新 seed/新冻结 edge 验证，实际 GPU/I/O 仍未测。
 
 ## 7. 当前 observation 的系统含义
 
@@ -398,22 +569,34 @@ v4->v5 失败。因此 rolling quality 和理论 FLOPs 不再是“完全未测�
 Reuse harm 优先落在 Current 原本改善的请求上
   -> 风险对 novel-to-prefix candidate 更强
   -> mismatch 主要来自 contextual Transformer co-adaptation，而非孤立 embedding drift
+  -> shared item/action coordinate 在 early state 可跨用户泛化，AV×U 后转为 contextual residual
+  -> signed causal 与真实 exposed candidate 证明 Exact-Reuse 差异主要是共享方向
+  -> 朴素 CAST-value-measure + Current-anchor basis 在 matched-cost canary 0/5，不能直接可执行化
+  -> correction 最早在 query-dependent qK·V 形成，AV 跨真实请求 5/5 持久
+  -> 唯一 compact-probe AV sidecar 的无标签 score canary 4/5 通过，但仍有反例且未做 quality
+  -> lightweight PRO 将版本变换推入一次 probe read，translated-prefix 物化降为 0
+  -> held-out 正确性/成本门通过：32-carrier 为 Full 的 9.1%
+  -> 五边全人口 rolling：AUC 5/5、log-loss 3/5，平均两项均改善
+  -> 总体 Design viability 通过；严格双门未过，尚不准入 serving/seed/runtime qualification
   -> mismatch 跨层传播，Tail 是便宜有用但不完整的 causal repair boundary
   -> 共享版本变化由 CAST 翻译，用户上下文变化由局部 PATCH 重读
   -> GROUP 在 PATCH 前减少 Current carriers，SCALE 保留 represented occurrence mass
   -> typed refined states 通过 UNION -> COMMIT 形成合法 persistent view
 ~~~
 
-这条链条直接支持的机制不再是单一 Tail Replay，而是 insight-guided Versioned Neural-State
-Refinement Pipeline。当前证据支持 `CAST / PATCH / GROUP / SCALE`
-作为四个底层 instruction semantics，但论文主叙事是三条 Insight 和四阶段流水线；
+这条链条现在把主方法收敛为 candidate-amortized **Per-user Reader Offset**，而不是让 Design 0 与
+sidecar 并列。`CAST / PATCH / GROUP / SCALE` 及其固定组合继续作为历史强基线与 typed IR 证据；
+主 action 不物化 translated prefix，只在 reader 内融合版本 map、重放少量 contextual carrier 并
+持久化 AV sidecar。lightweight PRO 已完成正确性、成本和全人口质量：总体可行性为正，但严格
+qualification gate 未过，因此尚未推出可直接准入的 action；
 `SLICE / UNION / COMMIT` 属于寻址、组合和生命周期。Tail Replay、Translate-All 和 weighted Landmark-64
 都只是编译宏计划。该裁决准入 instruction set，不准入 scale scheduler、target-free residual estimator
 或固定阈值。
 
-在论文组织上，这三条 Insight 直接放入 `Insight-Driven State Refinement` 的 Design Insights 小节，
-并分别以 Design implication 接到 CAST、contextual PATCH 和 GROUP+SCALE；不再单独设置一个面向
-Continuous/Runtime 的通用 Insight 章节，也不增加重复的 Design Principles 层。
+在论文组织上，candidate-broadcast user evidence、typed coordinate→context residual 和 evidence
+mass 进入 `Insight-Driven State Refinement` 的 Design Insights 小节；现有 CAST、contextual PATCH
+和 GROUP+SCALE 作为 Design 0 mechanism 落地，不再把 operator 反向包装成 headline，也不增加
+重复的 Design Principles 层。
 
 这条证据链的直接终点是 **One-Release State Refinement**，不是完整 multi-release system。
 long-age direct Reuse harm 随 producer age 增大，说明持续版本化状态管理值得研究；但当前没有执行过
@@ -426,6 +609,8 @@ bounded-debt plan selection、最大近似深度、sampled Current-Exact feedbac
 - 不按 recent/old History Utility 象限冻结 semantic-region scheduler；
 - 不使用单一 K repair、单一 V repair 或 layer-0 hotspot；
 - 不使用 raw item-embedding drift 或 high-drift × fanout cohort 冻结 selective scheduler；
+- 不把 same-item 或 item-action equality 当作稳定 evidence substitutability，也不准入 semantic GROUP；
+- 不为 novel/repeat candidate family 分别执行 request-time token Route；
 - 不把 aggregate AUC harm 写成普遍的 pairwise inversion；
 - 不把自然 post-cutover append 当成稳定 action；它跨 edge 的恢复幅度明显波动。
 - 不把 tail replay 的 output-gap recovery 直接改写成最终线上质量收益。

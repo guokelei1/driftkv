@@ -1,16 +1,18 @@
 # EvoKV One-Release State Refinement 与 Typed Plan IR
 
-更新日期：2026-08-26
+更新日期：2026-08-27
 
-本文是论文第 3 章 `Insight-Driven State Refinement` 的底层 plan-IR companion。三条 Design
-Insights 与对应机制在同一章中直接衔接；本文只展开这些机制的 typed semantics。它替换旧的
+本文是论文第 3 章 `Insight-Driven State Refinement` 的底层 plan-IR companion。本文只展开
+Design 0 strong baseline 的 typed semantics。当前主方法已收敛为 lightweight PRO；它只借用
+version-map、coverage 和 mass 合同，不物化 Design 0 的 translated prefix state。本文替换旧的
 `Translate / Rematerialize / Synthesize / Retire / Route` 动作 catalog。旧 catalog 将完整
 修复算法、scope 选择、读取策略、组合算子和生命周期操作放在同一层，既不原子，
 也不能在同一段状态上渐进组合。
 
 论文主线不再将 `CAST / PATCH / GROUP / SCALE` 写成四条并列 headline insight，也不在 Insight
-和机制之间增加独立 Design Principles。面向读者的表述是三条 Insight 直接推导四阶段状态迁移
-流水线；本文保留四个 typed operator semantics，
+和机制之间增加独立 Design Principles。面向读者的 headline 已更新为 candidate-broadcast user
+evidence、typed coordinate→contextual residual 和 evidence mass；四阶段状态迁移流水线保留为
+Design 0 strong baseline。本文保留四个 typed operator semantics，
 是因为它们在底层分别改变不同状态语义，而不是因为它们必须成为四个系统阶段。
 
 底层 IR 将问题定义为：
@@ -65,9 +67,9 @@ S = (Omega, Z, producer_version, readable_version, mass, lineage)
 系统必须证明编译后的整体 plan 在目标资源上低于 Exact-All，而不能由“操作名很小”
 推出成本很小。
 
-## 3. 论文主线：三条 Insight 与四阶段流水线
+## 3. Design 0：三条机制观察与四阶段流水线
 
-当前最清楚的三条 Insight 是：
+推出当前 executable baseline 的三条机制观察是：
 
 1. **分布式失配与非对称修复**：单 layer-0 修复不足，而 dependency-closed Tail-128
    在五条 edge 都有效但只恢复 19.4%–25.8%。Tail 是当前便宜且有用的 causal boundary，
@@ -75,7 +77,8 @@ S = (Omega, Z, producer_version, readable_version, mass, lineage)
 2. **共享且可转换的版本变化**：parameter-only joint layerwise K/V CAST 在五条 edge
    恢复 21.6%–64.1%，说明 mismatch 包含无需 raw replay 的共享结构成分。
 3. **保持证据质量的紧凑重算**：Current repair 不必逐事件物化，但减少 carrier 后必须
-   保留 represented occurrence mass。GROUP 和 SCALE 是同一条论文 Insight 的两个底层语义。
+   保留 represented occurrence mass。GROUP 和 SCALE 是同一条机制观察的两个底层语义；
+   新的 3,000-user 结果同时否定 raw same-item/action equality 作为稳定 GROUP 关系。
 
 由此推导的执行流水线是：
 
@@ -397,9 +400,14 @@ weighting 和 failure analysis；当前没有稳定 target-free request route �
 
 准确裁决是：
 
-> 三条 Insight 已能初步推导四阶段 Pipeline，四个 typed semantics 足以作为稳定底层 IR；固定计划
-> 已证明该 IR 可以产生真实 rolling AUC 收益，也暴露了失败 edge。当前仍不准入 always-on 配置、
-> 预测器、阈值、scale scheduler 或已证明的端到端性能。
+> 三条机制观察已能推导 Design 0 四阶段 Pipeline，四个 typed semantics 足以作为稳定 baseline IR；
+> 固定计划已证明该 IR 可以产生真实 rolling AUC 收益，也暴露了失败 edge。新的
+> candidate-shared reader correction 已通过 signed causal、真实 candidate、stage 与 persistence
+> gate；第一个 signed value-measure basis canary 为 0/5，唯一 compact-probe AV sidecar 的
+> 无标签 score canary 为 4/5。lightweight PRO 已进一步取消 translated-prefix 物化并通过
+> held-out 正确性/成本门（32-carrier 为 Full 的 9.1%）；五边 formal quality 为 AUC 5/5、
+> log-loss 3/5，且均值两项改善。总体可行性通过，但严格双门未过，因此尚未资格化新 action。当前仍不
+> 准入 always-on 配置、预测器、阈值、scale scheduler 或已证明的端到端性能。
 
 ## 11. One-Release 计划选择与成本边界
 
@@ -454,20 +462,19 @@ Normal/Warning/Invalid 分别对应保持、加固和 Rebase。`D_hat`、`tau/H`
 
 ## 13. 下一步 One-Release 实验
 
-当前不再枚举新的大动作，也不立即训练 scheduler。下一轮先补三条 Insight 的直接证据，
-再做系统资格：
+当前不再枚举新的大动作，也不立即训练 scheduler。`CAST value measure + Current anchor residual`
+五边 canary 0/5；lightweight PRO 已成为唯一主候选，并完成正确性、成本和五边全人口质量验证。
+下一轮只保留 qualification 收口：
 
-1. **Position/closure**：对 old/middle/recent/random-128 做等宽诊断性 region intervention，
-   并将位置敏感性与可执行 causal-closure 成本分开报告。
-2. **CAST decomposition**：按 normalized layer bundle 和 token quartile 分解 CAST 贡献，不从
-   aggregate CAST 直接外推“每层、每个 token 都有效”。
-3. **Full-plan theoretical cost**：已计入 CAST、compact PATCH 和 SCALE；Our 为 Exact 的
-   48.0% causal FLOPs。CUDA time、raw-history/state I/O、persistent bytes 和 makespan 延后到
-   Design III Runtime，不用理论值代替。
-4. **Rolling safety boundary**：固定计划的完整 AUC 已报告且在 v4->v5 失败；下一轮在新合同下
-   验证事前安全判断/Exact fallback，不用该 qualification label 调 `r/c`。
-5. **外推边界**：在额外 seed/更大模型上验证三条 Insight；不从 Small/seed17 直接
-   冻结 repair width、carrier density 或 mass 阈值。
+1. **Full-plan cost**：Design 0 为 Exact 的 48.0% causal FLOPs，PRO 为 9.1%；CUDA time、
+   raw-history/state I/O、persistent bytes 和 makespan 仍需在 Design III Runtime 实测。
+2. **Rolling safety boundary**：PRO AUC 5/5、log-loss 3/5，总体 viability 通过但严格双门未过。
+   下一轮只验证 label-free No-op/Reuse/Exact fallback，不用本轮 label 调 `r/c`。
+3. **Lightweight PRO**：保留 v1 dimensionful gate 失败、v2 correctness/cost 通过以及 formal
+   mixed-positive 结果；不调 probe、group size、mass 或 coverage，不拟合 target K/V，也不加入
+   per-candidate Route。
+4. **独立外推**：若修改 admission/calibration 或机制，本五边只作 development evidence；新版本
+   必须在额外 training seed 或新冻结 release edge 上验证，不能在同一结果上重获无偏资格。
 
 固定计划已证明 IR 可产生 rolling AUC 收益并理论减少 52.0% compute，但 4/5 改善尚未形成稳定
 跨 edge 次序。只有补上失败边界，Design I 才能作为受控 transition 向 Continuous 交付；实际性能
@@ -483,6 +490,7 @@ Exact-All，但它们的唯一角色是检验新 IR 是否真的带来渐进 qua
 当前主结果：
 
 - `results/yambda500m_small_seed17/insight_refinement_algebra_v1/`；
+- `results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/adjudication.md`；
 - `scripts/insight/probe_refinement_algebra.py`；
 - `results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/`；
 - `scripts/insight/run_one_release_auc.py`；

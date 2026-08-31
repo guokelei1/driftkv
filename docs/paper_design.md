@@ -1,6 +1,6 @@
 # EvoKV 论文总体设计（概念层）
 
-更新日期：2026-08-26
+更新日期：2026-08-27
 
 本文只定义论文长期稳定的概念边界。它回答“在什么场景下解决什么问题、为什么这个问题重要、和哪些方向比较、用什么指标判断是否成功”，不记录某一次训练的超参数、版本窗口或具体结果。
 
@@ -55,50 +55,98 @@ Insight-Driven One-Release State Refinement
   -> GPU Transformation Runtime
 ~~~
 
-1. **One-Release Refinement** 根据三个与机制直接对应的 Insight，将一次 Parent state 转换为
-   Current-readable state；
+1. **One-Release Refinement** 以 candidate-amortized reader compatibility 为主要功能单位，
+   为每个用户一次性生成 Current-reader AV offset，并在 bounded post-release horizon 内由整个
+   candidate bank 摊销消费；
 2. **Continuous Evolution** 在这条流水线反复执行时限制 approximation debt，并用 sampled Exact
    feedback 触发加固或 Rebase；
 3. **GPU Runtime** 将单次与连续控制器产生的 typed plan 分桶、批处理并安全提交。
 
-这一节只给全局数据流，不单列 `Design Principles`。三个 Insight 只推导第一个设计，因此直接放入
-第 3 章；Continuous 和 Runtime 各自说明其额外控制与执行问题。
+这一节只给全局数据流，不单列 `Design Principles`。recommendation-specific Insight 与 Design 0
+机制观察直接放入第 3 章；Continuous 和 Runtime 各自说明其额外控制与执行问题。
 
 ## 3. Insight-Driven State Refinement
 
 ### 3.1 Design Insights
 
-#### Insight 1：分布式失配，Tail 有用但不完整
+#### Insight 1：跨版本误差形成 candidate-shared reader compatibility correction
 
-只修 layer 0 不充分，而多层联合干预恢复大部分 output gap；dependency-closed Tail replay 在所有
-已测 edge 都有正恢复，但单独只能恢复一部分。Tail 当前是便宜且合法的 causal repair boundary，
-尚未证明是等宽区域中最敏感的位置。
+推荐 ranking 不是一条 query 只读取一次 context；同一份 persistent user state 会被大量 candidate
+重复消费。在固定 3,000 用户、五条版本边和 64-candidate bank 上，candidate×history influence 与
+Exact−Reuse readout delta 几乎都由一个 candidate-shared 方向主导。后续 signed、逐 head、无
+candidate normalization 的因果干预在四种 controlled width 与真实 same-UID/same-timestamp exposed
+candidate bank 上均确认 shared-only 决定主要 score gap，排除了原始 norm/normalization 与受控 bank
+造成这一结构的主要替代解释。因此兼容性首先是一份用户证据对候选集合的广播失配，而不是每个
+candidate 独立的 token-retrieval failure。这里已证明的是 query-dependent reader correction，
+不是历史 token 可以线性物化为 evidence basis。
 
-**Design implication：** 排除单层或 Tail-only 修复；将大范围便宜修复与小范围
-dependency-closed contextual PATCH 组合。
+**Design implication：** correction 的最早稳定边界已定位到 query-dependent `activated(qK)·V`，
+AV sidecar 的跨真实请求方向与 coverage-scaled recovery 已在五边过门。主设计直接生成 per-user
+AV offset，不迁移完整 prefix state，也不采用 request-time per-candidate token Route。旧 compact-
+probe score canary 为 4/5；取消 translated-prefix 物化的 lightweight PRO 已通过 held-out 正确性/
+成本门，并在 217,584 个全人口请求上取得 AUC 5/5、log-loss 3/5、五边均值两项均改善。总体
+Design viability 已通过，但事前严格双门未过，因此还不是 serving-qualified action。
+按专家增量建议完成的 label-free error decomposition 与 C32/C48/C64 frontier 没有替换这一主设计：
+C64 对 C32 的 internal relative L2 在 cutover/rolling 均 5/5 改善，但 absolute rolling-direction
+门为 0/5，C48/C64 也不单调。按事前规则保留已验证质量的 C32 PRO，不在旧五边重测 quality。
 
-#### Insight 2：版本变化包含跨用户共享、可转换的成分
+#### Insight 2：typed entity coordinate 经过聚合变成 user-context residual
 
-parameter-only joint K/V mapping 在所有已测 edge 都能恢复一部分 mismatch，并且不读取 raw history、
-label 或 Current target K/V。这说明版本更新中存在可跨用户复用的转换结构。
+UID-disjoint factorization 表明，item/action coordinate 在 combined input 与 layer-0 K/V 中可跨用户
+泛化；但经过 HSTU pointwise aggregation 与 U gate 后，item-specific predictability 明显下降。
+parameter-only joint K/V mapping 的稳定正恢复与 same-scope contextual residual 的额外恢复进一步
+说明，共享 version coordinate 和用户上下文变化是互补的。
 
-**Design implication：** 为每个 Parent/Current 版本对构造一次共享 `CAST` operator，再批量应用到
-用户旧 state；上下文相关的剩余误差交给 PATCH。
+**Design implication：** 版本对共享的 joint coordinate map 可以推入少量 reader probe，而不必
+逐用户、逐位置物化 translated K/V。recent contextual carriers 只在 Current 模型中做 dependency-
+closed replay；isolated embedding replacement 不是完整接口。
 
-#### Insight 3：Current repair 可以紧凑物化，但不能丢掉证据质量
+#### Insight 3：历史是带 mass 的 evidence measure，raw identity 不等于可合并
 
 Current repair 使用少于原事件数的 carrier 仍能保持大部分 recovery；但不保留 represented mass 时，
-HSTU 的非归一化聚合会系统性改变。过低 carrier density 仍会丢失异质语义。
+HSTU 的非归一化聚合会系统性改变。过低 carrier density 仍会丢失异质语义。人口级 matched-budget
+对照还显示：same-item/item-action pairing 显著增加语义匹配，却不能跨五条 edge 稳定胜过 positional
+pairing，因此 contextual/functional substitutability 不能由 raw identity 代替。
 
 **Design implication：** 先 `GROUP` evidence、再对较少 carrier 执行 expensive `PATCH`，并用
-`SCALE` 显式保留 coverage/mass；SCALE 不能补偿过度 GROUP。
+`SCALE` 显式保留 coverage/mass；SCALE 不能补偿过度 GROUP，未来 compact state 的 carrier
+关系必须由 contextual function 验证，而不是只看 item/action equality。
 
-三条 Insight 直接映射到机制，不再增加独立的 Design Principles 层。完整证据、反例和未闭合缺口见
+三条 Insight 不再被包装为四个 operator 的同义改写。现有 `CAST + compact PATCH` 是历史 strong
+baseline（Design 0），不是主方法的前置阶段；candidate-shared reader correction 的定位与持久性验证已经完成。一个
+matched-cost 的 `CAST signed value measure + Current anchor residual` 最小实现已在五边 canary
+上 0/5 不弱于 Design 0，不能准入。这个反例说明共享 reader effect 不能直接退化为历史 V 相加、
+PCA/SVD 或固定 anchor 换名；它不构成 history basis 存在性的证据。后续 stage/persistence gate
+通过后，直接来自 Current reader AV 的 compact-probe sidecar 已取得 4/5 score canary 正结果，
+同时保留 `v3→v4` 反例。进一步的 lightweight PRO 把 joint map 融入一次 reader read，使用
+Parent-conditioned 32 个 Current carrier，action 内 translated-prefix positions 为 0；其 held-out
+数值/成本门通过且理论 FLOPs 为 Full 的 9.1%。正式 rolling quality 已显示 AUC 5/5、log-loss 3/5
+和总体均值改善；额外 seed、label-free admission 与 runtime 仍未验证。
+后续 progressive 增量已完整保留为负资格结果：双 probe 几乎等价，纯幅值与 segment decay 门
+未过；10.52%/14.54%/18.64% carrier frontier 虽有 fidelity 收益，但不满足 absolute-direction 与
+单调性联合门，因此不产生新主配置。
+完整证据、反例和未闭合缺口见
 [Insight-Driven State Refinement Develop Map](insight_develop_map.md)。
 
-### 3.2 Pipeline Overview
+### 3.2 PRO Main Design 与 Design 0 比较边界
 
-一次 Parent-to-Current 转换统一表示为：
+主设计统一为 Per-user Reader Offset（PRO）：
+
+~~~text
+Parent persistent K/V
+  -> recent raw evidence -> 32 Parent-conditioned Current carriers
+  -> one fixed Current-reader probe
+       [reader-pushed joint version read of old Parent state
+        + native carrier read - Parent Reuse read]
+  -> persist four layerwise AV offsets
+  -> bounded-horizon, candidate-shared injection
+~~~
+
+joint version map 在 key-side 被推到 probe query，在 value-side被推到 history aggregation 之后；不生成、
+不持久化 translated prefix K/V。carrier 是一次性 sidecar generator 的内部对象，生成后丢弃。最终
+持久对象只有每层一个 hidden-width AV vector。
+
+当前已执行的 Parent-to-Current strong baseline 仍表示为：
 
 ~~~text
 PLAN(repair width r, carrier count c)
@@ -110,31 +158,34 @@ PLAN(repair width r, carrier count c)
 `CAST / PATCH / GROUP / SCALE` 是底层 typed semantics，不是四条并列 Insight；`SLICE`、`UNION`
 和 `COMMIT` 分别负责寻址、typed read-view 组合和 lineage 事务。完整 IR 见
 [One-Release State Refinement 与 Typed Plan IR](typed_state_refinement_algebra.md)。
+该 pipeline 只作为质量/成本比较和 typed-state 语义证据；它不与 PRO 串联，也不是 Gate 的默认
+fallback。安全 admission 只能在少量 Exact shadow 上事前比较 Reuse、PRO 及必要对照，未过门则
+保持 Reuse 或 Exact/Rebase。
 
-### 3.3 CAST
+### 3.3 Reader-Pushed Version Transform
 
-CAST 只处理 Parent/Current 之间可共享的版本变换，保持 evidence coverage 和 represented mass，
-不声称恢复用户特定的 contextual hidden drift。版本对 operator 的构造成本可以跨用户摊销，但仍需
-逐用户读取、转换和写回 state；其成本不能被写成零。
+版本 map 仍只处理 Parent/Current 之间可共享的 coordinate mismatch，不声称恢复用户特定的
+contextual hidden drift。它每条 release edge 构造一次，但每用户仍需流式读取 Parent state 并执行
+融合聚合；不能把其 FLOPs 或 bandwidth 写成零。主 action 不写回 mapped K/V。
 
-### 3.4 Compact Contextual Repair
+### 3.4 Compact Contextual Carriers
 
-对 CAST 后仍需修复的 `r` 个 evidence，GROUP 将其映射为 `c` 个有序 carrier，PATCH 用 Current
-模型生成 contextual payload，SCALE 声明每个 carrier 代表的 occurrence mass。GROUP 必须在 PATCH
-前发生，才会减少主要 Current 计算；exact PATCH 覆盖的 CAST scope 可由编译器消除。
+recent `r` 个 evidence 先固定 GROUP 为 `c` 个有序 carrier，Current 模型在 Parent prefix 上生成
+dependency-closed contextual payload，SCALE 声明每个 carrier 的 occurrence mass。当前 primary
+固定 `r=128,c=32,mass=4`；16-carrier 只保留为成本诊断，不进入质量主路径。
 
 ### 3.5 Cost-Aware Plan Selection
 
-`r` 控制需要 contextual repair 的 evidence 范围，`c` 控制实际执行 Current PATCH 的 carrier 数。
-第一版使用事前封存的少量固定 `(r,c)`，不要求先训练复杂 scheduler。Design I 分别报告解析 FLOPs、
+`r` 控制 contextual evidence 范围，`c` 控制 sidecar generator 实际执行的 Current carrier 数。
+第一版冻结单一 primary `(128,32)`，不要求先训练复杂 scheduler。Design I 分别报告解析 FLOPs、
 结构 token/pair work 和 rolling quality；真实 CUDA time、raw-history/state I/O、write bytes、storage
 和 makespan 留给 Design III Runtime。理论计算减少不自动等于实际加速。
 
-当前第一条固定计划已经完成 full-population one-release rolling qualification，并暴露了一个真实
-失败 edge；其完整理论 FLOPs 也已低于 Exact-All。它证明流水线可以形成任务质量收益和算法计算
-缩减，却不能被当作跨 release 的 always-on 配置。具体数字
-只记录在[核心 Motivation 与 Observation](motivation_observations.md)；本章据此保留一个很小的
-事前安全判断/Exact fallback 接口，而不提前扩展复杂 scheduler。
+旧 Design 0 已完成 full-population one-release rolling qualification并暴露真实失败 edge；lightweight
+PRO 已通过零物化、数值与 `<20%` 理论成本门，也完成了五边 full-population quality。PRO 的总体
+可行性为正，但严格 log-loss edge-count 门未过；二者都不能据此成为 always-on 配置。具体数字只记录
+在[核心 Motivation 与 Observation](motivation_observations.md)；本章只保留 release-level Exact-
+shadow admission 与 Reuse/Exact fallback 接口，不提前扩展复杂 scheduler。
 
 ## 4. Debt-Bounded Continuous State Evolution
 
@@ -166,12 +217,12 @@ future-label scheduler。`EstimatedDebt`、`tau/H`、shadow rate 和 hysteresis 
 Runtime 接收 Design I/II 的 typed plan，再按 execution signature 聚合为 GPU micro-batch：
 
 ~~~text
-(source version, target version, CAST type,
- repair-width bucket, carrier-count bucket, sequence-length bucket, dtype)
+(source version, target version, version-map type,
+ carrier-count bucket, sequence-length bucket, sidecar dtype)
 ~~~
 
 逻辑上不同用户可采用不同配置；物理执行时将相同或相近配置分桶。执行路径包括 state/history
-prefetch、batched CAST、GROUP/gather、ragged Current PATCH、SCALE/layout、异步 writeback 和
+prefetch、fused Parent-state reader reduction、Current carrier replay、sidecar scale/write 和
 atomic COMMIT。
 
 Runtime 当前只冻结接口。只有 profiling 证明真实瓶颈，并且相对朴素后台重算显著改善吞吐、
@@ -206,9 +257,10 @@ makespan 或 serving isolation，才作为独立系统贡献；否则只是实�
 ## 7. 论文要回答的研究问题
 
 - **RQ1：存在性** 新模型已经带来模型发布收益时，直接复用父版本 persistent state 是否会损害这个收益？
-- **RQ2：结构** 兼容性风险是否与用户、历史区域、序列组成、item/embedding 漂移、模型组件和版本年龄有关？
-- **RQ3：单次转换** 由“大范围 CAST + 局部 mass-aware compact replay”组成的简单固定流水线，
-  能否用低于 Exact-All 的理论计算恢复足够多的 rolling quality？
+- **RQ2：结构** 跨版本风险能否分解为 candidate-shared reader compatibility correction、typed entity/action
+  coordinate、user-context residual 与 represented mass？
+- **RQ3：单次转换** 不物化 translated prefix 的 lightweight PRO 能否以低于 Exact-All 20% 的
+  release-time FLOPs 恢复 rolling quality；bounded-horizon AV sidecar 是否跨 edge 安全？
 - **RQ4：连续演化** Debt-bounded incremental refinement 加 sampled Exact feedback，能否在多个
   release 中限制近似深度和质量偏差，并以低于每版 Exact-All 的摊销成本触发必要 Rebase？
 - **RQ5：物理执行** 异构的 typed transition plan 能否被编译成高吞吐 GPU workload，并在
@@ -226,7 +278,9 @@ One-Release 至少比较以下状态处理策略：
 - No-op / direct Reuse；
 - Exact-All / Current Full；
 - 固定宏计划：Translate-All、Tail-128、weighted Landmark-64 和 Translate+Tail-128；
-- 固定的 `CAST + GROUP/PATCH + SCALE` 计划。
+- 固定的 `CAST + GROUP/PATCH + SCALE` Design 0（strong baseline）；
+- lightweight PRO `(recent128, carriers32, latest-item probe)`；只有获得新的 prospective quality
+  contract 后才可加入正式 rolling 比较。
 
 Continuous 只需围绕闭环比较：每次 Exact-All、连续近似但不反馈、固定周期 Rebase，以及
 debt-bounded + Exact-shadow-triggered Rebase。Runtime 完成后再比较

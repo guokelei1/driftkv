@@ -22,6 +22,7 @@ from .release_windows import (
 )
 from .yambda import YambdaTrace, event_time_deltas, load_yambda_listens
 from .yambda_scale_dataset import YambdaScaleDataset
+from .yambda_history import load_yambda_histories
 from .foundation_manifests import (
     BASE_FEATURE_NAMES,
     CausalFeatureState,
@@ -44,6 +45,7 @@ __all__ = [
     "read_request_view",
     "YambdaTrace",
     "YambdaScaleDataset",
+    "load_yambda_histories",
     "BASE_FEATURE_NAMES",
     "CausalFeatureState",
     "SNAPSHOT_DAYS",

@@ -1,0 +1,126 @@
+contract: yambda500m_small_hstu_native_recommendation_state_structure_v1
+date_frozen: 2026-08-27
+status: prospective_label_free_observation_v1
+purpose: test_recommendation_specific_state_structure_across_the_fixed_v0_to_v5_release_chain
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  versions: [v0, v1, v2, v3, v4, v5]
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  users: 3000
+  fraction_of_frozen_small_population: 0.30
+  history_positions_per_user: 512
+  candidate_probes_per_user: 64
+  device: one_GPU
+  new_training: false
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+
+population:
+  eligibility: at_least_512_listens_strictly_before_day231
+  selector: ascending_existing_label_free_selector_rank_then_uid
+  selected_count: 3000
+  fixed_across_all_edges: true
+  labels_read: prohibited
+  split:
+    purpose: cross_user_centroid_fit_and_evaluation_only
+    algorithm: low_bit_of_sha256_namespace_and_decimal_uid
+    namespace: evokv:recommendation-state-structure:v1
+  history_snapshot: last_512_events_strictly_before_each_edge_cutover
+
+observations:
+  cross_user_state_delta:
+    shared_items: top_1024_by_distinct_selected_user_count_per_edge
+    item_tie_break: item_id_ascending
+    stages:
+      - item_embedding
+      - combined_input
+      - per_layer_normalized_input
+      - per_layer_Q
+      - per_layer_K
+      - per_layer_V
+      - per_layer_AV_before_output_projection
+      - per_layer_attention_output
+      - per_layer_U_gate
+      - per_layer_gated_update
+      - per_layer_hidden_output
+    fit: train_split_item_and_item_action_centroids
+    evaluation: held_out_user_split
+    minimum_train_and_test_samples_per_item_action: 8
+    metrics:
+      - global_version_shift_R2_over_zero_delta
+      - item_centroid_R2_over_zero_delta
+      - item_excess_R2_over_global_version_shift
+      - item_action_increment_over_item_centroid
+  weighted_semantic_coreset:
+    repair_scope: recent_128_positions
+    carriers: 64
+    represented_mass_per_carrier: 2
+    common_prefix: Parent_exact_oldest_384_positions
+    paths:
+      - Parent_Reuse
+      - Parent_prefix_plus_Current_dense_recent128
+      - Parent_prefix_plus_Current_positional_pair_carriers
+      - Parent_prefix_plus_Current_same_item_first_carriers
+      - Parent_prefix_plus_Current_typed_item_action_first_carriers
+    representative: later_occurrence_in_each_pair
+    carrier_order: representative_position_ascending
+    metrics:
+      - absolute_probability_gap_to_Current_Exact
+      - output_gap_recovery_over_Parent_Reuse
+      - top1_agreement_with_Current_Exact
+      - top10_overlap_with_Current_Exact
+      - within_user_rank_correlation
+  candidate_bank:
+    recent_repeat: up_to_16_most_recent_unique_known_items_from_recent128
+    old_only_repeat: up_to_16_most_recent_unique_known_items_from_old384_excluding_recent128
+    novel_to_prefix: fill_the_fixed_64_panel_with_globally_frequent_known_history_items_absent_from_user_prefix
+    rationale: preserve_all_3000_users_including_high_OOV_or_low_known_repeat_histories
+    global_bank_source: selected_users_same_pre_cutover_history_only
+    labels_or_negative_semantics: prohibited
+    query_timestamp: edge_cutover
+    metrics:
+      - layerwise_candidate_influence_rank90
+      - layerwise_candidate_influence_effective_rank
+      - layerwise_exact_minus_reuse_influence_rank90
+      - exact_minus_reuse_readout_effective_rank
+      - mode_conditioned_influence_support
+      - mode_conditioned_absolute_logit_shift
+
+protocol:
+  future_labels: prohibited
+  target_current_kv_fitting: prohibited
+  unexposed_candidate_as_negative: prohibited
+  all_five_edges_reported: required
+  fixed_population_count_must_equal_3000: true
+  output_expanded_state_tensors: prohibited
+  output_compact_aggregates_only: true
+  focused_canary: required
+  overwrite_existing_evidence: prohibited
+
+frozen_inputs:
+  dataset:
+    path: data/processed/yambda500m_unified_v1/scales/small/dataset.json
+    sha256: 316f68d04b8ae257a0f968768acb72e95cdec89057b5c8f01fb3a81cad0f0268
+  users:
+    path: data/processed/yambda500m_unified_v1/scales/small/users.parquet
+    sha256: a0d46990266c139c8800afea9912e19d3c1cf49d1b44565c7fb2c44cf083c80a
+  item_mapping:
+    path: data/processed/yambda500m_unified_v1/scales/small/item_mapping.parquet
+    sha256: 45c02d3f4d896bd24a8ff976370c363cf8e4efd2ddd8829781babb287ade6328
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  focused_single_gpu_canary: true
+  formal_single_gpu_observation: true
+  medium_large_training: false
+  theta3_read_or_training: false

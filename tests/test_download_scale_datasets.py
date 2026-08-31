@@ -24,3 +24,24 @@ def test_recflow_output_names() -> None:
 
 def test_human_bytes_uses_binary_units() -> None:
     assert MODULE.human_bytes(1024**3) == "1.000 GiB"
+
+
+def test_yambda5b_core_matches_existing_three_event_scope(monkeypatch) -> None:
+    rows = [
+        {
+            "path": f"flat/5b/{name}",
+            "size": index + 100,
+            "lfs": {"oid": f"sha-{index}"},
+        }
+        for index, name in enumerate(
+            ("listens.parquet", "likes.parquet", "dislikes.parquet", "multi_event.parquet")
+        )
+    ]
+    monkeypatch.setattr(MODULE, "fetch_json", lambda _url: rows)
+    files = MODULE.yambda_files("5b")
+    assert {item.logical_path for item in files} == {
+        "flat/5b/listens.parquet",
+        "flat/5b/likes.parquet",
+        "flat/5b/dislikes.parquet",
+    }
+    assert {item.dataset for item in files} == {"yambda5b"}

@@ -17,6 +17,8 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -26,17 +28,13 @@ from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 YAMBDA_API = (
-    "https://huggingface.co/api/datasets/yandex/yambda/tree/main/flat/500m"
+    "https://huggingface.co/api/datasets/yandex/yambda/tree/main/flat/{scale}"
     "?recursive=true&expand=true"
 )
 YAMBDA_RESOLVE = "https://huggingface.co/datasets/yandex/yambda/resolve/main"
 RECFLOW_LINK = "f8e5adc0-2e57-11ef-bea5-3b4cac9d110e"
 RECFLOW_API = "https://recapi.ustc.edu.cn/api/v2/link/target"
-YAMBDA_CORE = {
-    "flat/500m/listens.parquet",
-    "flat/500m/likes.parquet",
-    "flat/500m/dislikes.parquet",
-}
+YAMBDA_CORE_NAMES = {"listens.parquet", "likes.parquet", "dislikes.parquet"}
 RECFLOW_CORE = {"realshow.tar"}
 RECFLOW_COMPANION = {"request_id_dict.tar", "others.tar"}
 GIB = 1024**3
@@ -59,21 +57,38 @@ def fetch_json(url: str, payload: dict[str, Any] | None = None) -> Any:
     if data is not None:
         headers["Content-Type"] = "application/json"
     request = urllib.request.Request(url, data=data, headers=headers)
-    with urllib.request.urlopen(request, timeout=60) as response:
-        return json.loads(response.read().decode("utf-8-sig"))
+    last_error: BaseException | None = None
+    for attempt in range(1, 6):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.loads(response.read().decode("utf-8-sig"))
+        except (urllib.error.URLError, TimeoutError, OSError) as error:
+            last_error = error
+            if attempt == 5:
+                break
+            delay = 5 * attempt
+            print(
+                f"Metadata request failed ({attempt}/5); retrying in {delay}s: {error}",
+                flush=True,
+            )
+            time.sleep(delay)
+    raise RuntimeError(f"metadata request failed after 5 attempts: {url}") from last_error
 
 
-def yambda_files() -> list[DownloadFile]:
-    rows = fetch_json(YAMBDA_API)
+def yambda_files(scale: str = "500m") -> list[DownloadFile]:
+    if scale not in {"500m", "5b"}:
+        raise ValueError(f"unsupported Yambda scale: {scale}")
+    core = {f"flat/{scale}/{name}" for name in YAMBDA_CORE_NAMES}
+    rows = fetch_json(YAMBDA_API.format(scale=scale))
     selected: list[DownloadFile] = []
     for row in rows:
         path = row.get("path")
-        if path not in YAMBDA_CORE:
+        if path not in core:
             continue
         lfs = row.get("lfs") or {}
         selected.append(
             DownloadFile(
-                dataset="yambda500m",
+                dataset=f"yambda{scale}",
                 logical_path=path,
                 output=str(Path("data/raw/yambda") / path),
                 size=int(row["size"]),
@@ -81,7 +96,7 @@ def yambda_files() -> list[DownloadFile]:
                 sha256=lfs.get("oid"),
             )
         )
-    missing = YAMBDA_CORE - {item.logical_path for item in selected}
+    missing = core - {item.logical_path for item in selected}
     if missing:
         raise RuntimeError(f"Yambda official listing is missing: {sorted(missing)}")
     return sorted(selected, key=lambda item: item.logical_path)
@@ -261,7 +276,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--datasets",
         nargs="+",
-        choices=("yambda500m", "recflow"),
+        choices=("yambda500m", "yambda5b", "recflow"),
         default=("yambda500m", "recflow"),
         help="Datasets to plan/download (default: both)",
     )
@@ -287,6 +302,15 @@ def parse_args() -> argparse.Namespace:
         default=20.0,
         help="Free disk space that must remain after compressed download",
     )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        help=(
+            "Output manifest path. The yambda5b-only default is "
+            "data/raw/download_manifest_yambda5b_v1.json; other selections keep "
+            "the historical data/raw/download_manifest_v1.json path."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -301,7 +325,9 @@ def main() -> int:
 
     files: list[DownloadFile] = []
     if "yambda500m" in args.datasets:
-        files.extend(yambda_files())
+        files.extend(yambda_files("500m"))
+    if "yambda5b" in args.datasets:
+        files.extend(yambda_files("5b"))
     if "recflow" in args.datasets:
         files.extend(
             recflow_files(args.include_recflow_companion, args.include_recflow_all_stage)
@@ -333,7 +359,15 @@ def main() -> int:
         for future in concurrent.futures.as_completed(futures):
             results.append(future.result())
 
-    manifest_path = ROOT / "data/raw/download_manifest_v1.json"
+    manifest_path = args.manifest
+    if manifest_path is None:
+        manifest_path = Path(
+            "data/raw/download_manifest_yambda5b_v1.json"
+            if set(args.datasets) == {"yambda5b"}
+            else "data/raw/download_manifest_v1.json"
+        )
+    if not manifest_path.is_absolute():
+        manifest_path = ROOT / manifest_path
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -354,4 +388,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

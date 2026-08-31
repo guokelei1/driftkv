@@ -1,11 +1,12 @@
 # EvoKV Insight-Driven State Refinement Develop Map
 
-更新日期：2026-08-26
+更新日期：2026-08-28
 
 本文是论文第 3 章 `Insight-Driven State Refinement` 的研究支撑文档，回答：
 
-> 已观察到的 cross-version HSTU state incompatibility，能否推导出一条比 Exact-All 便宜、
-> 又比单一 Tail Replay 更完整的状态迁移流水线？
+> 推荐系统中一份 persistent user state 被整个 candidate bank 重复读取；跨版本 compatibility
+> 是否存在候选共享的 user-evidence structure，并能否据此推出比通用 token repair 更贴合
+> recommendation workload 的状态迁移？
 
 论文不再单独设置一个服务所有设计的 Insight 章节，也不在 Insight 和机制之间增加独立
 `Design Principles`。本文件的内容映射为：
@@ -13,19 +14,79 @@
 ~~~text
 Chapter 3: Insight-Driven State Refinement
   3.1 Design Insights: Insight -> Design implication
-  3.2 Pipeline Overview
-  3.3 CAST
-  3.4 Compact Contextual Repair
+  3.2 PRO Main Design and Design 0 comparison boundary
+  3.3 Reader-Pushed Version Transform
+  3.4 Compact Contextual Carriers
   3.5 Cost-Aware Plan Selection
 ~~~
 
 它不负责证明多次 transition 可以安全组合，也不负责 GPU 执行。后续两章分别是
 `Debt-Bounded Continuous State Evolution` 和 `GPU Transformation Runtime`。现有三条
-Insight 足以推出一次转换；Continuous 需要验证 bounded-debt estimator、Exact-shadow feedback 和
+机制观察足以推出一次转换的 strong baseline；新的 candidate-broadcast observation 已找到更
+recommendation-specific 的 headline structure。signed causal 与真实 exposed candidate 复核已经通过；
+唯一的 matched-cost evidence-measure basis canary 为 0/5，不进入正式 quality qualification。它
+说明当前已证实对象应称为 reader compatibility correction，而不是 history basis；仍没有合格的
+新 action。最新 stage/persistence gate 已定位 `qK·V/AV` 并以五边通过；唯一 compact-probe AV
+sidecar 的无标签 score canary 为 4/5，同时保留 `v3→v4` 反例，尚未进入 formal quality。
+最新 lightweight PRO 已将 joint map 推入一次固定 reader probe，action 内不物化 translated
+prefix；held-out 正确性/成本门通过，primary 32-carrier 为 Full 理论 FLOPs 的 9.1%。冻结机制的
+五边全人口 formal quality 也已完成：AUC 5/5、log-loss 3/5、五边均值两项均改善。总体 Design
+viability 通过；严格双门因 log-loss edge count 未过，仍不准入 serving/seed/runtime qualification。
+最新 progressive 增量也已完成：双固定 probe 在 5/5 edge 几乎等价，纯幅值与 segment-decay
+解释未过冻结门。held-out C32/C48/C64 frontier 中，C64 relative L2 对 C32 在 cutover/rolling
+均 5/5 改善，但 absolute rolling direction 为 0/5 过门，且 C48/C64 非单调；因此不选择升级，
+论文主设计仍为已完成真实质量验证的 C32 lightweight PRO。
+Continuous 需要验证 bounded-debt estimator、Exact-shadow feedback 和
 Rebase 闭环，Runtime 需要真实执行数据。
 
-当前论文主线不再把 `CAST / PATCH / GROUP / SCALE` 包装成四条并列 headline insight。
-更清楚的表达是三条 Insight 推导一个四阶段流水线：
+## 最新主裁决：candidate-shared reader compatibility correction
+
+固定 3,000 用户（Small 的 30%）、五条 `v0→...→v5` 相邻边、512-event cutover history 和每用户
+64 个 label-free candidate probe 的 observation 表明：
+
+- 所有 60,000 个 candidate×history influence matrix 均为 rank-1@90%，各 edge/layer 的第一
+  candidate-shared 方向平均占 99.9681%–99.9992% energy；
+- Exact−Reuse influence delta 在 59,999/60,000 个 user-edge-layer 上为 rank-1@90%，最终
+  readout delta 在 15,000/15,000 个 user-edge 上为 rank-1@90%；
+- held-out-user factorization 中，item/action coordinate 在 combined input 与 layer-0 K 上很强，
+  但 `AV × U` update 后 item-specific predictability 大幅下降；
+- same-item/typed pairing 虽显著增加 semantic matched pairs，却只在 3/5 edge 胜过 positional
+  pairing，不能准入 raw semantic GROUP。
+- signed、逐 head、无 candidate normalization 的 oracle 干预在 controlled width-64 上恢复
+  97.98%–99.64% 概率缺口；真实 exposed candidates 的 20/20 edge×width 组合均由 shared 优于
+  residual，shared-only 平均 absolute logit gap 为 `5.58e-5`，Reuse 为 `1.55e-2`；
+- 一个 matched-cost `CAST value measure + Current anchor residual` 实现在五边 label-free canary 上
+  0/5 不弱于 Design 0，按合同停止，说明 causal structure 不能直接用 signed V 相加来可执行化。
+- correction 最早在 query-dependent `activated(qK)·V` 形成；AV correction 在 11,364 对相邻
+  真实请求上以 5/5 通过方向与 coverage-scaled recovery 门；
+- 唯一 compact-probe AV sidecar 在 1,805 个无标签请求上 4/5 不弱于 Design 0，未自动进入 quality。
+- lightweight PRO 的 fused AV 最大相对 L2 为 `4.73e-6`、replay error 为 `3.58e-7`，translated-
+  prefix positions 为 0；32-carrier sidecar 相对旧 extractor 的五边方向 cosine mean 为
+  `0.9983–0.9993`，理论成本为 Full 的 9.1%。
+- lightweight PRO 在 217,584 个正式 rolling 请求上相对 Reuse 的 AUC 为 5/5 正向、log-loss 为
+  3/5 正向，五边非加权平均为 `+0.06641` AUC pp、`−7.65e-5` log-loss。
+- progressive decomposition 的 C32 direction 门为 cutover 2/5、rolling 0/5，amplitude-dominant
+  门为 0/5+0/5；双 probe 一致性为 5/5，segment decay 仅 2/5，不替换 global decay。
+- held-out 10.52%/14.54%/18.64% Full-FLOPs frontier 中，C64 对 C32 relative L2 为 5/5+5/5
+  改善，但 absolute direction 和 C48 intermediate 单调性门失败；按事前规则保留 C32。
+
+因此当前论文最有辨识度的 Insight 不再是“tail 比 prefix 更重要”，而是：
+
+~~~text
+Cross-version HSTU history error is distributed and contextual, but its effect
+converges in the Current reader to a candidate-shared user compatibility correction.
+State generation is user-contextual; state consumption is candidate-amortized.
+~~~
+
+**Design implication：** 主方法收敛为 Per-user Reader Offset：用一次 reader-pushed version read
+和 32 个 contextual carrier 生成 AV sidecar，再在 bounded horizon 内跨 candidate 摊销。不应把
+每个 candidate 当成独立 RAG query 做 request-time token Route；总体可行性已通过，但严格上线
+qualification 尚未通过。完整数字与边界见
+`results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/expert_discussion_summary.md`。
+
+当前论文不再把 `CAST / PATCH / GROUP / SCALE` 包装成四条并列 headline insight，也不把其固定
+组合包装成最终机制。它们是由三条机制观察推导出的 **Design 0 / strong baseline**；PRO 不与
+这条 pipeline 串联：
 
 ~~~text
 PLAN(repair width r, carrier count c)
@@ -39,7 +100,7 @@ rematerialization” Insight 的两个实现语义。`CAST / PATCH / GROUP / SCA
 plan IR，完整定义和机制数字见
 [Typed State Refinement Algebra](typed_state_refinement_algebra.md)。
 
-## 0. Design I 主线：三条 Insight 直接推导机制
+## 0. Design 0：三条机制观察直接推导可执行 baseline
 
 ### Insight 1：分布式失配与非对称修复
 
@@ -122,8 +183,11 @@ coverage/mass；carrier density 作为 `(r,c)` 质量—成本轴，而不是无
 
 ## 2. 已观察的核心 Insight
 
-| Insight | 规模 | 主要结果 | 设计含义 |
+| Insight / observation | 规模 | 主要结果 | 设计含义 |
 | --- | ---: | --- | --- |
+| candidate-shared reader correction | 3,000 controlled users + 15,338 real request groups | signed causal 通过；最早在 qK·V，AV 跨请求 5/5 持久；唯一 sidecar score canary 4/5 | 按用户生成 AV sidecar 并跨候选摊销；不做 per-candidate Route |
+| typed coordinate → contextual residual | 3,000 users；UID-disjoint fit/held-out | layer-0 K item/action R² 86.7%–92.6%；AV×U 后 item-specific component 大幅下降 | shared typed coordinate + user-context residual，而非 isolated embedding operator |
+| raw semantic coreset boundary | 3,000 users × 5 edges | same-item matching 约 3.5%→30%，但仅 3/5 edge 胜 positional | raw item/action equality 不足以定义 GROUP；需 contextual/functional substitutability |
 | release-benefit targeting | 217,584 requests，5 edges | `G/H` Spearman 0.323–0.606；matched probe 0.489–0.889 | 流水线目标是恢复 release value，不是只降 tensor distance |
 | Current-state anchoring | 32/64 users per edge | natural/current anchor 明显优于 pure eviction；pre-cutover tail replay 稳定降 gap 17.8%–23.4% | 需要 Current-space state refinement，不能只等 eviction |
 | recommendation sensitivity | 217,584 requests | novel-to-prefix AUC harm 在五条 edge 都高于 recent repeat | 进入 evaluation/failure analysis，当前不足以准入 Route |
@@ -164,11 +228,12 @@ Exact-shadow/Rebase，但不能用本次 qualification label 事后调 action。
 CAST 占 Exact 的 32.2%，compact GROUP/PATCH/SCALE 占 15.9%。当前 dense PyTorch 图的 companion
 为 34.1%，但不作为主值，也不推出 GPU runtime 加速。
 
-## 3. Insight -> Pipeline 与底层语义
+## 3. Design 0 observation -> Pipeline 与底层语义
 
-三条论文 Insight 与四个底层语义不是一对一关系。第一条 Insight 先确定“大范围
-便宜翻译 + 小范围依赖闭合重读”的分工；第二条解释 CAST 为什么可行；第三条联合
-推导 GROUP 和 SCALE。选择 `r/c` 的 PLAN 位于这些语义之上，不是第五种修复原语。
+三条机制观察与四个底层语义不是一对一关系。分布式失配观察确定“大范围便宜翻译 + 小范围
+依赖闭合重读”的分工；共享 coordinate 解释 CAST 为什么可行；evidence mass 联合推导 GROUP
+和 SCALE。选择 `r/c` 的 PLAN 位于这些语义之上，不是第五种修复原语。新的
+candidate-broadcast headline 改变未来机制的优先级，但不会事后修改这些已验证 instruction semantics。
 
 ### 3.1 `CAST`
 
@@ -253,14 +318,19 @@ GROUP 造成的 heterogeneous evidence 丢失。
 ### Novel-to-prefix
 
 novel candidate 的 aggregate harm 稳定更大，但不同 repair plan 在 novel/repeat cohort 上没有稳定的
-差异恢复排序，Route 也多数恶化。因此它当前只定义 evaluation weighting 和 failure analysis，
-不产生 `NOVEL_ROUTE` 或 request-time repair primitive。
+差异恢复排序，Route 也多数恶化。3,000-user candidate bank 进一步显示三类 probe 的 influence
+support 与绝对 logit shift 接近，Exact−Reuse readout delta 对 candidate bank 几乎 rank-1。
+因此它当前只定义 evaluation weighting 和 failure analysis，不产生 `NOVEL_ROUTE` 或
+request-time repair primitive；优先修复的是 candidate-shared reader compatibility correction。
 
 ### Embedding drift
 
 raw item-embedding drift、candidate/history geometry 与 harm 的关系弱且跨 edge 变号；isolated item
 embedding 只产生 Parent-all gap 的 0.5%–4.0%。因此当前不产生 `EMBEDDING_REPAIR`。若未来
 contextual exposure 能在 held-out edge 预测 PATCH value，它只改变 SLICE/value estimator。
+新的 held-out-user factorization 同时说明不能把这条负结果误写为“item identity 不重要”：item/action
+coordinate 在 combined input 和 layer-0 K 很强，只是经 aggregation/gating 后不再能由 isolated
+embedding operator 完整修复。
 
 ### History Utility cohorts
 
@@ -269,7 +339,11 @@ recent/old Utility、repeat、diversity 和 user activity 的方向不稳定，�
 
 ## 5. 新机制的抽象评估
 
-当前裁决：新机制在抽象层面上明显好于旧 action catalog，并且足够成为下一阶段的稳定 plan IR。
+当前裁决：typed IR 在抽象层面上明显好于旧 action catalog，足够保留为 Design 0 的稳定 plan IR；
+但固定流水线不是最终 recommendation-specific mechanism。candidate-broadcast structure 已通过
+signed causal/真实 candidate 复核；一个合法、matched-cost 的 signed value-measure plan 已执行并在
+canary 上失败。后续 `qK·V/AV` stage 与跨请求 persistence gate 已通过；唯一 Current-HSTU AV
+sidecar 的无标签 score canary 为 4/5，但尚未进入正式质量。
 
 | 标准 | 裁决 |
 | --- | --- |
@@ -278,7 +352,7 @@ recent/old Utility、repeat、diversity 和 user activity 的方向不稳定，�
 | 旧宏计划可表达 | 通过；Tail/Exact/Translate/Landmark/Retire/Route/Fuse 均可编译 |
 | 能进行编译优化 | 通过；被 exact PATCH 覆盖的 CAST scope 实测误差为 0 |
 | workload insight 不污染 instruction set | 通过；user/item/candidate 信号仅作为 scope/value 候选 |
-| 完整 recommendation-quality 资格 | **部分通过**；固定计划在完整 rolling AUC 上改善 4/5 edge，但 v4->v5 失败，尚无额外 seed/scale |
+| 完整 recommendation-quality 资格 | **总体可行性通过、严格资格未过**；lightweight PRO 完整 rolling AUC 5/5、log-loss 3/5，五边均值两项改善；progressive 增量未形成可冻结升级；严格双门要求各 4/5 |
 | 理论计算优势 | **通过**；完整计划含 CAST 后为 Exact 的 48.0% causal FLOPs，理论减少 52.0% |
 | 实际 GPU/I/O 优势 | 留给 Design III Runtime；Design I 不用理论 FLOPs 代替 runtime 结论 |
 | target-free budget compiler | **未通过**；还没有 held-out residual-value estimator |
@@ -286,7 +360,7 @@ recent/old Utility、repeat、diversity 和 user activity 的方向不稳定，�
 因此当前准入的是一次四阶段流水线的 mechanism semantics 和底层 plan IR，不是
 scheduler、multi-release policy、GPU runtime 或已经证明更快的端到端系统。
 
-## 6. 小型机制实验
+## 6. 当前机制与人口级 observation
 
 当前代码：
 
@@ -309,6 +383,18 @@ results/yambda500m_small_seed17/insight_refinement_algebra_v1/
 
 旧 primitive discovery 脚本的 reader bridge、Retire、Route 和大量动作组合不再执行。其历史结果保留为负证据，
 但不定义新代数。
+
+人口级 recommendation-state observation 使用：
+
+~~~text
+scripts/insight/probe_recommendation_state_structure.py
+scripts/insight/adjudicate_recommendation_state_structure.py
+configs/contracts/yambda500m_small_hstu_native_recommendation_state_structure_v1.yaml
+results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/
+~~~
+
+它固定 3,000 用户而不是扩大 request 数来伪装 population coverage，完整报告五条边，并只保留
+compact aggregates。该 observation 不训练新模型、不读取 label、不把 probe candidate 当作负样本。
 
 ## 7. 理论计算成本已知什么
 
@@ -339,7 +425,8 @@ GROUP 本身是线性 coverage-map/gather；SCALE 为 64 个 carrier 的线性 r
 
 ## 8. 接下来的关键补强
 
-不继续增加大动作或大量正确性测试。下一阶段只补与三条 Insight 直接相关的缺口：
+不继续增加大动作或大量正确性测试。下一阶段围绕新的 recommendation-specific Insight 和
+Design 0 边界补强：
 
 1. **位置与依赖闭包**：在同一批请求上做等宽 old/middle/recent/random-128 诊断性
    Current-K/V 区域干预，同时单独报告各自可执行 causal closure 成本。前者回答位置敏感性，
@@ -352,8 +439,12 @@ GROUP 本身是线性 coverage-map/gather；SCALE 为 64 个 carrier 的线性 r
    Design III Runtime。
 4. **跨 edge 失效边界**：rolling AUC 已完成且暴露 v4->v5 反例；下一轮只允许在新 prospective
    contract 下验证事前固定的安全判断或回退，不用本轮 label 反向调 `r/c`。
+5. **AV broadcast residual**：stage/persistence 与 score-replay canary 已完成；下一步是否冻结
+   rolling quality 由专家另行裁决，不从 4/5 canary 调 probe、group size 或 coverage scale，
+   也不拟合 target K/V。
 
-前两项是当前三条 Insight 的直接补强；第三项和 rolling AUC 已完成，第四项来自其真实反例。
+前两项补强 Design 0 的机制边界；第三项和 rolling AUC 已完成，第四项来自其真实反例，第五项
+是 candidate-amortized reader-correction headline 的首个机制化候选，但尚未获得质量资格。
 固定计划已经证明“一次转换可以在正式任务指标上产生收益，并理论减少 52.0% 计算”，但还没有满足
 跨 edge 稳定性。后续不把复杂 PATCH-value scheduler 当作前置条件；若人口预算或安全边界确实需要
 选择性分配，再在独立 development evidence 上寻找 held-out、label-free marginal-value proxy。

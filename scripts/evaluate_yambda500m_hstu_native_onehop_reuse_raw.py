@@ -23,13 +23,21 @@ from hstu_kvcache.evaluation import (
     timestamp_groups,
 )
 from insight.one_release_refinement import (
-    OUR_PATH, build_fixed_refinement_cache, parameter_cast_maps,
+    EVIDENCE_MEASURE_PATH,
+    OUR_PATH,
+    build_evidence_measure_basis_cache,
+    build_fixed_refinement_cache,
+    parameter_cast_maps,
 )
+from insight.pro_lazy_reader import PRO_PATH, pro_path as scaled_pro_path
 
 
+ROOT = Path(__file__).resolve().parents[1]
 PAIR_PATHS = ("current_exact_rolling", "one_hop_reuse_rolling")
 RELEASE_DEBT_PATHS = ("parent_exact_rolling", *PAIR_PATHS)
 REFINEMENT_PATHS = (*RELEASE_DEBT_PATHS, OUR_PATH)
+EVIDENCE_MEASURE_PATHS = (*REFINEMENT_PATHS, EVIDENCE_MEASURE_PATH)
+PRO_LAZY_PATHS = (*RELEASE_DEBT_PATHS, PRO_PATH)
 
 
 def sha256_file(path: Path) -> str:
@@ -41,11 +49,17 @@ def sha256_file(path: Path) -> str:
 
 
 def pair_rows(
-    rows: list[dict], *, include_parent_exact: bool, include_fixed_refinement: bool
+    rows: list[dict], *, include_parent_exact: bool, include_fixed_refinement: bool,
+    include_evidence_measure_basis: bool, include_pro_lazy: bool,
+    pro_path_name: str = PRO_PATH,
 ) -> list[dict]:
     paths = RELEASE_DEBT_PATHS if include_parent_exact else PAIR_PATHS
     if include_fixed_refinement:
         paths = (*paths, OUR_PATH)
+    if include_evidence_measure_basis:
+        paths = (*paths, EVIDENCE_MEASURE_PATH)
+    if include_pro_lazy:
+        paths = (*paths, pro_path_name)
     return [row for row in rows if row["path"] in paths]
 
 
@@ -64,7 +78,11 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
                            parent_name: str, current_name: str, cutover: int,
                            current_hash: str, parent_hash: str, manifest_hash: str,
                            include_parent_exact: bool,
-                           refinement_cast_maps=None) -> list[dict]:
+                           refinement_cast_maps=None,
+                           evidence_measure_cast_maps=None,
+                           include_pro_lazy: bool = False,
+                           pro_path_name: str = PRO_PATH,
+                           max_length: int = 512) -> list[dict]:
     timestamps, items, behaviors = history.rows[int(requests[0]["uid"])]
     events = [(int(t), int(i), int(b)) for t, i, b in zip(timestamps, items, behaviors, strict=True)]
     prefix = [event for event in events if event[0] < cutover]
@@ -72,12 +90,13 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
         raise RuntimeError("qualified request has no strictly-prior prefix")
     parent_state = None
     if include_parent_exact:
-        parent_state = materialize_state(parent, prefix, producer_version=parent_name, max_length=512)
-    current_state = materialize_state(current, prefix, producer_version=current_name, max_length=512)
-    reuse_state = materialize_state(parent, prefix, producer_version=parent_name, max_length=512)
+        parent_state = materialize_state(parent, prefix, producer_version=parent_name, max_length=max_length)
+    current_state = materialize_state(current, prefix, producer_version=current_name, max_length=max_length)
+    reuse_state = materialize_state(parent, prefix, producer_version=parent_name, max_length=max_length)
     refinement_state = None
+    evidence_measure_state = None
     if refinement_cast_maps is not None:
-        ordered = [event for _, group in timestamp_groups(prefix) for event in group][-512:]
+        ordered = [event for _, group in timestamp_groups(prefix) for event in group][-max_length:]
         prefix_times = torch.tensor(
             [[event[0] for event in ordered]], dtype=torch.long, device=reuse_state.cache.k.device
         )
@@ -106,6 +125,36 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
         refinement_state = VersionedCacheState(
             refinement_cache, reuse_state.last_timestamp, producers
         )
+    if evidence_measure_cast_maps is not None:
+        ordered = [event for _, group in timestamp_groups(prefix) for event in group][-max_length:]
+        prefix_times = torch.tensor(
+            [[event[0] for event in ordered]], dtype=torch.long, device=reuse_state.cache.k.device
+        )
+        prefix_deltas = torch.zeros_like(prefix_times, dtype=torch.float32)
+        if len(ordered) > 1:
+            prefix_deltas[:, 1:] = prefix_times[:, 1:] - prefix_times[:, :-1]
+        prefix_items = torch.tensor(
+            [[event[1] for event in ordered]], dtype=torch.long, device=reuse_state.cache.k.device
+        )
+        prefix_behaviors = torch.tensor(
+            [[event[2] for event in ordered]], dtype=torch.long, device=reuse_state.cache.k.device
+        )
+        evidence_measure_cache, layout = build_evidence_measure_basis_cache(
+            parent_cache=reuse_state.cache,
+            current=current,
+            item_ids=prefix_items,
+            behaviors=prefix_behaviors,
+            time_deltas=prefix_deltas,
+            cast_maps=evidence_measure_cast_maps,
+        )
+        producers = (
+            ("evokv_zero_padding",) * layout.padding_positions
+            + (f"{parent_name}_cast_measure_to_{current_name}",) * layout.cast_positions
+            + (f"{current_name}_evidence_measure_residual",) * layout.carriers
+        )
+        evidence_measure_state = VersionedCacheState(
+            evidence_measure_cache, reuse_state.last_timestamp, producers
+        )
     post_groups = list(timestamp_groups(event for event in events if event[0] >= cutover))
     request_groups: dict[int, list[dict]] = {}
     for request in requests:
@@ -117,20 +166,25 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
     for query_time, simultaneous in sorted(request_groups.items()):
         while group_index < len(post_groups) and post_groups[group_index][0] < query_time:
             _, group = post_groups[group_index]
-            evictions += max(0, current_state.cache.seq_len + len(group) - 512)
+            evictions += max(0, current_state.cache.seq_len + len(group) - max_length)
             if parent_state is not None:
-                parent_state = append_timestamp_group(parent, parent_state, group, producer_version=parent_name, max_length=512)
-            current_state = append_timestamp_group(current, current_state, group, producer_version=current_name, max_length=512)
-            reuse_state = append_timestamp_group(current, reuse_state, group, producer_version=current_name, max_length=512)
+                parent_state = append_timestamp_group(parent, parent_state, group, producer_version=parent_name, max_length=max_length)
+            current_state = append_timestamp_group(current, current_state, group, producer_version=current_name, max_length=max_length)
+            reuse_state = append_timestamp_group(current, reuse_state, group, producer_version=current_name, max_length=max_length)
             if refinement_state is not None:
                 refinement_state = append_timestamp_group(
                     current, refinement_state, group,
-                    producer_version=current_name, max_length=512,
+                    producer_version=current_name, max_length=max_length,
+                )
+            if evidence_measure_state is not None:
+                evidence_measure_state = append_timestamp_group(
+                    current, evidence_measure_state, group,
+                    producer_version=current_name, max_length=max_length,
                 )
             append_count += len(group)
             group_index += 1
         stop = int(np.searchsorted(timestamps, query_time, side="left"))
-        history_length = min(stop, 512)
+        history_length = min(stop, max_length)
         for request in simultaneous:
             candidate = int(request["item_idx"])
             if parent_state is not None:
@@ -140,6 +194,11 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
             if refinement_state is not None:
                 refinement_score, refinement_readout = observe_rolling(
                     current, refinement_state,
+                    candidate_id=candidate, query_timestamp=query_time,
+                )
+            if evidence_measure_state is not None:
+                evidence_measure_score, evidence_measure_readout = observe_rolling(
+                    current, evidence_measure_state,
                     candidate_id=candidate, query_timestamp=query_time,
                 )
             common = {
@@ -154,20 +213,31 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
                 output.append({**common, "path": "parent_exact_rolling", "hstu_logit": parent_score, "readout_normalized_l2": float((parent_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(parent_readout[None], current_readout[None]))})
             output.append({**common, "path": "current_exact_rolling", "hstu_logit": current_score, "readout_normalized_l2": 0.0, "readout_cosine": 1.0})
             output.append({**common, "path": "one_hop_reuse_rolling", "hstu_logit": reuse_score, "readout_normalized_l2": float((reuse_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(reuse_readout[None], current_readout[None]))})
+            if include_pro_lazy:
+                # The frozen PRO action requires a full-context cutover state.
+                # Underfull users are admitted as label-free No-op/Reuse.
+                output.append({**common, "path": pro_path_name, "hstu_logit": reuse_score, "readout_normalized_l2": float((reuse_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(reuse_readout[None], current_readout[None]))})
             if refinement_state is not None:
                 output.append({**common, "path": OUR_PATH, "hstu_logit": refinement_score, "readout_normalized_l2": float((refinement_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(refinement_readout[None], current_readout[None]))})
+            if evidence_measure_state is not None:
+                output.append({**common, "path": EVIDENCE_MEASURE_PATH, "hstu_logit": evidence_measure_score, "readout_normalized_l2": float((evidence_measure_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(evidence_measure_readout[None], current_readout[None]))})
         # Same-timestamp events append only after every query has been scored.
         while group_index < len(post_groups) and post_groups[group_index][0] == query_time:
             _, group = post_groups[group_index]
-            evictions += max(0, current_state.cache.seq_len + len(group) - 512)
+            evictions += max(0, current_state.cache.seq_len + len(group) - max_length)
             if parent_state is not None:
-                parent_state = append_timestamp_group(parent, parent_state, group, producer_version=parent_name, max_length=512)
-            current_state = append_timestamp_group(current, current_state, group, producer_version=current_name, max_length=512)
-            reuse_state = append_timestamp_group(current, reuse_state, group, producer_version=current_name, max_length=512)
+                parent_state = append_timestamp_group(parent, parent_state, group, producer_version=parent_name, max_length=max_length)
+            current_state = append_timestamp_group(current, current_state, group, producer_version=current_name, max_length=max_length)
+            reuse_state = append_timestamp_group(current, reuse_state, group, producer_version=current_name, max_length=max_length)
             if refinement_state is not None:
                 refinement_state = append_timestamp_group(
                     current, refinement_state, group,
-                    producer_version=current_name, max_length=512,
+                    producer_version=current_name, max_length=max_length,
+                )
+            if evidence_measure_state is not None:
+                evidence_measure_state = append_timestamp_group(
+                    current, evidence_measure_state, group,
+                    producer_version=current_name, max_length=max_length,
                 )
             append_count += len(group)
             group_index += 1
@@ -204,30 +274,66 @@ def main() -> None:
     parser.add_argument("--start-day", type=int, required=True)
     parser.add_argument("--end-day", type=int, required=True)
     parser.add_argument("--manifest-dir", type=Path, required=True)
+    parser.add_argument("--dataset-manifest", type=Path)
     parser.add_argument("--parent", type=Path, required=True)
     parser.add_argument("--current", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cohort-size", type=int, default=128)
+    parser.add_argument("--query-chunk-size", type=int, default=256)
     parser.add_argument("--max-users", type=int, default=0)
     parser.add_argument("--include-parent-exact", action="store_true")
     parser.add_argument(
         "--include-fixed-refinement", action="store_true",
         help="add the frozen one-release CAST+GROUP/PATCH+SCALE r=128,c=64 path",
     )
+    parser.add_argument(
+        "--include-evidence-measure-basis", action="store_true",
+        help="add the frozen matched-cost signed evidence-measure basis path",
+    )
+    parser.add_argument(
+        "--include-pro-lazy", action="store_true",
+        help="add a contract-frozen lightweight PRO layout; underfull histories use Reuse",
+    )
+    parser.add_argument("--pro-repair-width", type=int, default=128)
+    parser.add_argument("--pro-carriers", type=int, default=32)
+    parser.add_argument("--pro-path")
     parser.add_argument("--force-fallback", action="store_true", help="score every user through the existing scalar rolling fallback")
+    parser.add_argument("--allow-canary-checkpoints", action="store_true")
+    parser.add_argument("--history-threads", type=int, default=4)
+    parser.add_argument("--arrow-cpu-threads", type=int, default=4)
+    parser.add_argument("--arrow-io-threads", type=int, default=4)
+    parser.add_argument("--torch-cpu-threads", type=int, default=2)
+    parser.add_argument("--cpu-affinity-by-rank", help="semicolon-separated comma lists")
     args = parser.parse_args()
+    if args.include_pro_lazy:
+        if args.pro_repair_width < 1 or args.pro_carriers < 1:
+            raise ValueError("PRO repair width and carriers must be positive")
+        if args.pro_repair_width % args.pro_carriers:
+            raise ValueError("PRO carriers must divide the repair width")
+    pro_path_name = args.pro_path or scaled_pro_path(args.pro_carriers)
     if args.end_day <= args.start_day or args.start_day < args.cutover_day:
         raise ValueError("evaluation must be a nonempty post-cutover interval")
     parent_name, current_name = args.edge.split("_to_")
 
     local_rank = int(os.environ["LOCAL_RANK"])
+    if args.cpu_affinity_by_rank:
+        groups = args.cpu_affinity_by_rank.split(";")
+        if local_rank >= len(groups):
+            raise ValueError("CPU affinity does not define every local rank")
+        os.sched_setaffinity(0, {int(value) for value in groups[local_rank].split(",")})
+    if min(args.history_threads, args.arrow_cpu_threads, args.arrow_io_threads, args.torch_cpu_threads) < 1:
+        raise ValueError("CPU thread counts must be positive")
+    pa.set_cpu_count(args.arrow_cpu_threads)
+    pa.set_io_thread_count(args.arrow_io_threads)
+    torch.set_num_threads(args.torch_cpu_threads)
     torch.cuda.set_device(local_rank)
     dist.init_process_group("nccl", device_id=torch.device(f"cuda:{local_rank}"))
     rank, world = dist.get_rank(), dist.get_world_size()
     device = torch.device(f"cuda:{local_rank}")
     try:
-        if world != 4:
-            raise RuntimeError("formal one-hop evaluation requires four ranks")
+        torch.cuda.reset_peak_memory_stats(device)
+        if world < 1:
+            raise RuntimeError("one-hop evaluation requires at least one rank")
         if not 1 <= args.cohort_size <= 128:
             raise ValueError("cohort-size must be in [1,128]")
         if rank == 0:
@@ -237,12 +343,31 @@ def main() -> None:
             (args.output / ".directory_ready").write_text("ready\n")
         wait_for_paths([args.output / ".directory_ready"], description="rank-zero output directory")
 
-        parent, parent_payload = load_model(args.parent, device)
-        current, current_payload = load_model(args.current, device)
+        parent, parent_payload = load_model(
+            args.parent, device, allow_canary=args.allow_canary_checkpoints
+        )
+        current, current_payload = load_model(
+            args.current, device, allow_canary=args.allow_canary_checkpoints
+        )
         if parent_payload["config"] != current_payload["config"]:
             raise RuntimeError("Parent and Current must share an identical HSTU configuration")
-        cast_maps = parameter_cast_maps(parent, current) if args.include_fixed_refinement else None
-        oov_buckets = int(current_payload["config"]["num_items"]) - 781678
+        max_length = int(current_payload["config"]["max_seq_len"])
+        dataset_value = args.dataset_manifest or current_payload.get("dataset_manifest")
+        if dataset_value is None:
+            dataset_path = (ROOT / "data/processed/yambda500m_unified_v1/scales/small/dataset.json").resolve()
+        else:
+            dataset_path = Path(dataset_value)
+            if not dataset_path.is_absolute():
+                dataset_path = (ROOT / dataset_path).resolve()
+        dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+        known_vocab_size = int(
+            current_payload.get("known_vocab_size", dataset["foundation_items"])
+        )
+        cast_maps = parameter_cast_maps(parent, current) if (
+            args.include_fixed_refinement or args.include_evidence_measure_basis
+            or args.include_pro_lazy
+        ) else None
+        oov_buckets = int(current_payload["config"]["num_items"]) - known_vocab_size
         if oov_buckets < 0:
             raise RuntimeError("checkpoint vocabulary is smaller than the frozen known vocabulary")
         request_path = args.manifest_dir / "requests_fidelity.parquet"
@@ -262,14 +387,19 @@ def main() -> None:
         for row in rows:
             if int(row["uid"]) in selected:
                 by_user.setdefault(int(row["uid"]), []).append(row)
-        history = load_histories(selected_uids, oov_buckets=oov_buckets)
+        history = load_histories(
+            selected_uids, oov_buckets=oov_buckets, dataset_path=dataset_path,
+            known_vocab_size=known_vocab_size, start_timestamp=args.cutover_day * DAY,
+            end_timestamp=args.end_day * DAY, max_history=max_length,
+            threads=args.history_threads,
+        )
         cutover = args.cutover_day * DAY
         full_uids, fallback_uids, post_counts = [], [], {}
         for uid in selected_uids:
             times = history.rows[uid][0]
             prefix = int(np.searchsorted(times, cutover, side="left"))
             post_counts[uid] = len(times) - prefix
-            (fallback_uids if args.force_fallback or prefix < 512 else full_uids).append(uid)
+            (fallback_uids if args.force_fallback or prefix < max_length else full_uids).append(uid)
         # Keep every batch representative of the rank's activity mix.  Sorting
         # by post-cutover volume groups all extreme users into the first batch,
         # creating a long GPU tail without changing the evaluated population.
@@ -286,13 +416,22 @@ def main() -> None:
                 cutover=cutover, lineage_models=[(parent_name, parent)],
                 event_end_exclusive=args.end_day * DAY, include_request_local=False,
                 include_parent_exact=args.include_parent_exact,
-                refinement_cast_maps=cast_maps,
-                query_chunk_size=256,
+                refinement_cast_maps=cast_maps if args.include_fixed_refinement else None,
+                evidence_measure_cast_maps=cast_maps if args.include_evidence_measure_basis else None,
+                pro_lazy_maps=cast_maps if args.include_pro_lazy else None,
+                pro_lazy_carriers=args.pro_carriers,
+                pro_lazy_repair_width=args.pro_repair_width,
+                pro_lazy_path=pro_path_name,
+                query_chunk_size=args.query_chunk_size,
+                max_length=max_length,
             )
             output.extend(pair_rows(
                 values,
                 include_parent_exact=args.include_parent_exact,
                 include_fixed_refinement=args.include_fixed_refinement,
+                include_evidence_measure_basis=args.include_evidence_measure_basis,
+                include_pro_lazy=args.include_pro_lazy,
+                pro_path_name=pro_path_name,
             ))
             complete += len(cohort)
             (args.output / f"progress_rank{rank}.json").write_text(json.dumps({"rank": rank, "completed_users": complete, "assigned_users": len(selected_uids), "phase": "batched_full_cache"}) + "\n")
@@ -302,7 +441,11 @@ def main() -> None:
                 parent_name=parent_name, current_name=current_name, cutover=cutover,
                 current_hash=current_hash, parent_hash=parent_hash, manifest_hash=manifest_hash,
                 include_parent_exact=args.include_parent_exact,
-                refinement_cast_maps=cast_maps,
+                refinement_cast_maps=cast_maps if args.include_fixed_refinement else None,
+                evidence_measure_cast_maps=cast_maps if args.include_evidence_measure_basis else None,
+                include_pro_lazy=args.include_pro_lazy,
+                pro_path_name=pro_path_name,
+                max_length=max_length,
             ))
             complete += 1
             (args.output / f"progress_rank{rank}.json").write_text(json.dumps({"rank": rank, "completed_users": complete, "assigned_users": len(selected_uids), "phase": "fallback_variable_cache"}) + "\n")
@@ -310,6 +453,13 @@ def main() -> None:
         partial_shard = args.output / f"raw_rank{rank}.parquet.partial"
         pq.write_table(pa.Table.from_pylist(output), partial_shard, compression="zstd")
         os.replace(partial_shard, shard)
+        local_peak = {
+            "rank": rank,
+            "peak_allocated_mib": torch.cuda.max_memory_allocated(device) / 2**20,
+            "peak_reserved_mib": torch.cuda.max_memory_reserved(device) / 2**20,
+        }
+        peak_memory_by_rank: list[dict] = [None] * world  # type: ignore[list-item]
+        dist.all_gather_object(peak_memory_by_rank, local_peak)
         if rank == 0:
             shards = [args.output / f"raw_rank{value}.parquet" for value in range(world)]
             wait_for_paths(shards, description="all raw shards")
@@ -317,17 +467,30 @@ def main() -> None:
             expected_paths = RELEASE_DEBT_PATHS if args.include_parent_exact else PAIR_PATHS
             if args.include_fixed_refinement:
                 expected_paths = (*expected_paths, OUR_PATH)
+            if args.include_evidence_measure_basis:
+                expected_paths = (*expected_paths, EVIDENCE_MEASURE_PATH)
+            if args.include_pro_lazy:
+                expected_paths = (*expected_paths, pro_path_name)
             requests = validate_pair_raw(merged, expected_paths=expected_paths)
             raw = args.output / "raw.parquet"
             partial_raw = args.output / "raw.parquet.partial"
             pq.write_table(merged, partial_raw, compression="zstd")
             os.replace(partial_raw, raw)
-            seal = {"status": "native_onehop_reuse_raw_sealed_before_label_join", "raw_sha256": sha256_file(raw), "rows": merged.num_rows, "requests": requests, "stage": args.stage, "edge": args.edge, "cutover_day": args.cutover_day, "evaluation_day_range": [args.start_day, args.end_day], "contains_reuse": True, "contains_parent_exact_rolling": args.include_parent_exact, "contains_fixed_one_release_refinement": args.include_fixed_refinement, "fixed_refinement_path": OUR_PATH if args.include_fixed_refinement else None, "fixed_refinement_plan": {"repair_width": 128, "group_size": 2, "full_history_carriers": 64, "recursive_reuse": False} if args.include_fixed_refinement else None, "recursive_reuse": False, "architecture": "hstu_native_cc"}
+            seal = {"status": "native_onehop_reuse_raw_sealed_before_label_join", "raw_sha256": sha256_file(raw), "rows": merged.num_rows, "requests": requests, "stage": args.stage, "edge": args.edge, "cutover_day": args.cutover_day, "evaluation_day_range": [args.start_day, args.end_day], "dataset_manifest": str(dataset_path), "known_vocab_size": known_vocab_size, "max_seq_len": max_length, "execution_runtime": {"world_size": world, "cohort_size_per_rank": args.cohort_size, "query_chunk_size_per_rank": args.query_chunk_size, "max_users_per_rank": args.max_users, "peak_memory_by_rank": peak_memory_by_rank}, "cpu_runtime": {"history_threads": args.history_threads, "arrow_cpu_threads": args.arrow_cpu_threads, "arrow_io_threads": args.arrow_io_threads, "torch_cpu_threads": args.torch_cpu_threads, "affinity_by_rank": args.cpu_affinity_by_rank}, "contains_reuse": True, "contains_parent_exact_rolling": args.include_parent_exact, "contains_fixed_one_release_refinement": args.include_fixed_refinement, "fixed_refinement_path": OUR_PATH if args.include_fixed_refinement else None, "fixed_refinement_plan": {"repair_width": 128, "group_size": 2, "full_history_carriers": 64, "recursive_reuse": False} if args.include_fixed_refinement else None, "contains_evidence_measure_basis": args.include_evidence_measure_basis, "evidence_measure_path": EVIDENCE_MEASURE_PATH if args.include_evidence_measure_basis else None, "evidence_measure_plan": {"repair_width": 128, "group_size": 2, "full_history_carriers": 64, "joint_cast_equivalent_positions": 384, "recursive_reuse": False} if args.include_evidence_measure_basis else None, "contains_pro_lazy": args.include_pro_lazy, "pro_lazy_path": pro_path_name if args.include_pro_lazy else None, "pro_lazy_plan": {"repair_width": args.pro_repair_width, "carriers": args.pro_carriers, "represented_mass": args.pro_repair_width // args.pro_carriers, "materialized_translated_prefix_positions": 0, "underfull_rule": "reuse"} if args.include_pro_lazy else None, "recursive_reuse": False, "architecture": "hstu_native_cc"}
             (args.output / "raw.seal.json").write_text(json.dumps(seal, indent=2) + "\n")
             (args.output / ".raw_complete").write_text("complete\n")
+            for shard in shards:
+                shard.unlink()
+            for progress in args.output.glob("progress_rank*.json"):
+                progress.unlink()
             print(json.dumps(seal, indent=2))
         else:
             wait_for_paths([args.output / ".raw_complete"], description="rank-zero raw merge")
+        dist.barrier()
+        if rank == 0:
+            (args.output / ".directory_ready").unlink()
+            (args.output / ".raw_complete").unlink()
+        dist.barrier()
     finally:
         dist.destroy_process_group()
 

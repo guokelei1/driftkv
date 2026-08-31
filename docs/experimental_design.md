@@ -1,6 +1,6 @@
 # EvoKV HSTU-Native 路线与论文具体实验设计
 
-更新日期：2026-08-26
+更新日期：2026-08-28
 
 本文是当前 HSTU-native 路线 compact 和具体实验设计。它记录仓库当前实际保留的模型、数据、
 训练、评测入口，并把后续研究分成三个层次：一次 release refinement、连续多 release state
@@ -23,18 +23,33 @@ HSTU 架构代码
 
 当前主实验是 Yambda-500M Small、4L/H128/context512、seed 17 的递归 release chain。D=14/E=14 的五条连续边已经产生稳定 motivation：四条常规正收益边的 One-hop Reuse 侵蚀为 25.5%–47.9%，producer version age 的 direct Reuse 损失严格单调增加。v3→v4 的 Full-only 收益很小，不能把其放大的 418.7% 比例当作典型效果。完整表格和边界以 [核心 Motivation 与 Observation](motivation_observations.md) 为准。
 
-当前 Recommendation-specific insight 和机制干预已收敛为三条设计 Insight：失配跨层传播且
-Tail repair 有用但不完整；部分版本变化可由 parameter-only joint K/V CAST 批量翻译；
-Current replay 可以使用更少 carrier，但必须保留 represented mass。它们推导
-`PLAN -> CAST -> GROUP/PATCH -> SCALE/COMMIT` 四阶段流水线；
-[`CAST / PATCH / GROUP / SCALE`](typed_state_refinement_algebra.md) 作为底层 plan IR。
+当前 3,000-user recommendation-state observation 将主 Insight 收敛为：persistent HSTU state 是被
+candidate bank 重复消费的 user-evidence compatibility field；early version drift 含跨用户共享的
+typed item/action coordinate，aggregation 与 U gate 将剩余变化转成 user-context residual；compact
+state 必须保留 evidence mass，而 raw item/action equality 不足以定义可合并关系。此前的跨层传播、
+CAST/PATCH 互补和 GROUP/SCALE 消融保留为机制证据，并推导
+`PLAN -> CAST -> GROUP/PATCH -> SCALE/COMMIT` Design 0；
+[`CAST / PATCH / GROUP / SCALE`](typed_state_refinement_algebra.md) 继续作为底层 plan IR。
+该 candidate-shared 结构已进一步通过 signed、逐 head、四种 bank width 和真实 exposed candidate
+的五边 causal 复核；shared-only 在真实分布的 20/20 edge×width 组合中优于 residual-only。
 
-当前 Insight 只直接推出一次 `Parent -> Current` 转换。事前固定的
+现有机制证据首先推出一次 `Parent -> Current` Design 0 strong baseline。事前固定的
 `CAST384 + GROUP/PATCH 128->64 + SCALE2` 已完成五条 full-population rolling AUC：4/5 edge
 改善 Reuse，v4->v5 失败。它证明 Design I 有可执行任务收益，但不准入一个对所有 release 无条件
 采用的固定配置。完整计划的保守理论 FLOPs 为 Exact-All 的 48.0%，理论减少 52.0%；该值不预言
-GPU runtime。下一小步不训练 scheduler，只补位置对照、CAST 贡献分解和事前安全/回退边界。
-Design I 保持简单，不在这里堆叠复杂 allocation policy。
+GPU runtime。专家建议的第一轮最小机制已在独立 prospective contract 下执行：matched-cost
+`CAST signed value measure + Current anchor residual` 在五边 label-free canary 上 0/5 不弱于
+Design 0，按合同停止，未进入 formal AUC/log-loss。随后 reader-stage/persistence 证据将主对象收敛为
+per-user AV correction；旧 compact-probe score canary 4/5 通过但生成成本仍约 Full 的 40.5%。
+最新 lightweight PRO 已取消 per-position translated-prefix 物化：joint map 只进入一次固定 probe，
+recent-128 固定 32 个 Parent-conditioned Current carrier。held-out v2 正确性/成本门通过，理论 FLOPs
+为 Full 的 9.1%，只写 512 scalar。机制冻结后的五边全人口 quality 已完成：AUC 5/5 正向、
+log-loss 3/5 正向，五边均值两项均改善。总体 Design viability 通过；事前严格双门未过，因此
+serving admission、额外 seed 和 runtime qualification 仍锁定。
+最新 label-free progressive follow-up 也已完成：C32 error decomposition 不支持纯幅值或
+segment-decay 解释；held-out C32/C48/C64 frontier 中 C64 对 C32 的 relative L2 为 cutover/rolling
+各 5/5 改善，但 rolling direction 为 0/5 达到 0.90 且 C48/C64 非单调。按冻结规则不选择升级，
+不在既有五边重读 quality label。
 
 One-Release 通过后，研究重心转向 Continuous：以 estimated compatibility debt 和最大近似深度
 限制 `v0 -> v1 -> v2 -> ...` 的误差累积，再用 sampled Current-Exact shadow 检测假设失效并触发
@@ -46,8 +61,9 @@ One-Release 通过后，研究重心转向 Continuous：以 estimated compatibil
 Background & Motivation
   -> short System Overview
   -> Insight-Driven One-Release Refinement
-     -> position / CAST decomposition
-     -> fixed-plan rolling quality (complete, mixed) / theoretical FLOPs (complete)
+     -> 3,000-user candidate-broadcast / typed-coordinate observation (complete)
+     -> Design 0 strong baseline and per-user AV correction
+     -> lightweight PRO correctness/cost and full rolling quality (complete, mixed-positive)
   -> Debt-Bounded Continuous State Evolution
      -> bounded debt / Exact shadow / quality-triggered rebase
   -> GPU Transformation Runtime
@@ -84,8 +100,13 @@ carrier-density 安全阈值、profiler、scheduler、multi-release debt/rebase 
   -> 上游 release recipe 的 Full-only 质量检查
   -> 固定切片上的 Current Full / Parent Full / Reuse 对照
   -> 版本年龄、用户和序列结构 observation
-  -> 在 Design I 内准入三条 Insight 和一次四阶段固定流水线
-  -> One-Release rolling quality (complete, mixed) and cost qualification
+  -> 在 Design I 内观察 candidate-broadcast evidence field 与 typed-coordinate/context residual
+  -> 将四阶段固定流水线定位为 Design 0 strong baseline
+  -> Design 0 rolling quality (complete, mixed)
+  -> reader-stage/persistence -> lightweight PRO correctness/cost (complete)
+  -> lightweight PRO rolling quality (complete: AUC 5/5, log-loss 3/5)
+  -> progressive PRO label-free decomposition/frontier (complete: no upgrade selected)
+  -> label-free admission/calibration on independent development evidence
   -> Debt-bounded Continuous feedback loop
   -> GPU runtime
   -> S/M/L 与外部 workload 验证
@@ -108,7 +129,9 @@ One-Release 先验证最小可行转换；Continuous 再研究多个转换的生
 - 当前 Small 由统一 Yambda-500M 人口的固定 UID hash 前缀构成，目标是 10,000 用户；
 - 其余 Medium/Large 人口只在规模实验阶段使用，不与当前 Small motivation 数字混合。
 
-数据源覆盖约 301 天。基础模型使用 Day 0–217 的历史；后续 release update 和 observation 使用 Day 217–301 的时间线。所有逻辑窗口是半开区间，事件顺序在相同 timestamp 下使用稳定 tie-break。
+数据源有 300 个完整天和一个不足整天的尾段。基础模型使用 `[Day 0, Day 217)` 的历史；正式 release
+update 和 observation 只使用完整的 `[Day 217, Day 300)` 时间线，partial day300 不进入 formal
+窗口。所有逻辑窗口是半开区间，事件顺序在相同 timestamp 下使用稳定 tie-break。
 
 ### 2.2 模型
 
@@ -311,7 +334,29 @@ high-drift item/embedding 与 mismatch 稳定相关，才可能支持 embedding-
 analysis；long-term-interest region 更易失效，才可能支持 semantic-region-aware state
 evolution。这里的例子是待验证假设，不是当前结论。
 
-当前 Small/seed17 discovery 已将主线收敛为三条 Insight，但仍保留三个精确缺口：
+当前 Small/seed17 discovery 已将主线收敛为 candidate-broadcast user evidence、typed
+coordinate→context residual 和 evidence mass 三条 recommendation-specific Insight。3,000-user
+observation 已完成，合同和结果为：
+
+- `configs/contracts/yambda500m_small_hstu_native_recommendation_state_structure_v1.yaml`；
+- `results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/`。
+- `configs/contracts/yambda500m_small_hstu_native_candidate_shared_causal_v1.yaml` 与
+  `results/yambda500m_small_seed17/insight_candidate_shared_causal_v1/`；
+- `configs/contracts/yambda500m_small_hstu_native_evidence_measure_basis_v1.yaml` 与
+  `results/yambda500m_small_seed17/insight_evidence_measure_basis_v1/`。
+- `configs/contracts/yambda500m_small_hstu_native_reader_compatibility_correction_v1.yaml` 与
+  `results/yambda500m_small_seed17/insight_reader_compatibility_correction_v1/`。该路线先定位
+  query-dependent reader correction 的最早 HSTU 阶段，再检查真实请求间持久性；两门通过前
+  不得执行 layerwise broadcast residual 机制 canary。
+- `configs/contracts/yambda500m_small_hstu_native_av_broadcast_residual_v1.yaml` 与
+  `results/yambda500m_small_seed17/insight_av_broadcast_residual_v1/`。两道门已通过，唯一
+  compact-probe AV sidecar 的无标签 score canary 为 4/5；正式 quality 与 action admission 仍锁定。
+- `configs/contracts/yambda500m_small_hstu_native_pro_lazy_reader_v1.yaml` 保留 dimensionful AV
+  absolute threshold 导致的失败；`yambda500m_small_hstu_native_pro_lazy_reader_v2.yaml` 在机制不变、
+  下一批 32 用户上通过 scale-aware fused equivalence、零 translated-prefix 物化和理论成本门。
+  对应结果为 `results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/`；没有 score/quality 授权。
+
+仍保留四个精确缺口：
 
 - layer-0-only 已被否定、Tail-128 已证明有用但不完整；尚未做等宽
   old/middle/recent/random-128 位置对照，所以不冻结“Tail 最敏感”；
@@ -319,12 +364,22 @@ evolution。这里的例子是待验证假设，不是当前结论。
   quartile 贡献，所以不外推每层/每位置同样可转换；
 - GROUP64+SCALE 已有 matched quality 消融；包含 CAST 的完整计划为 Exact 的 48.0% 保守
   causal FLOPs。kernel utilization、KV bandwidth 和 wall time 是 Design III Runtime 问题，
-  不作为 Design I Insight 缺口。
+  不作为 Design I Insight 缺口；
+- candidate-shared reader correction 的 signed causal structure 与真实 candidate 外部性已通过；
+  这不是可物化 history basis 的证明。第一个 matched-cost executable plan canary 为 0/5，未获
+  rolling quality 资格。stage localization 与跨请求 persistence 已分别定位 `qK·V/AV` 并以
+  5/5 通过；唯一 AV sidecar score canary 为 4/5，但 `v3→v4` 仍失败，尚未授权正式 quality。
+  raw same-item/action grouping 已被 3/5 mixed edge 结果否定，也不能作为替代。
+- lightweight PRO 的 32-carrier theoretical compute 为 Full 的 9.1%，action 内 translated-prefix
+  positions 为 0；新机制 rolling quality 已在五边完成，AUC 5/5、log-loss 3/5、五边均值两项均
+  改善。它仍不等价于真实 latency；Parent bandwidth 和 5.0 MiB conservative logical streams/user
+  必须在独立 admission/qualification 后单独 profile。
 
-### Phase 5：Design I — Pipeline qualification
+### Phase 5：Design I — Lightweight PRO qualification
 
 这一阶段与 Phase 4 在论文中共同构成第 3 章 `Insight-Driven State Refinement`：Phase 4 提供
-Design Insights，Phase 5 验证它们直接推出的 CAST、compact contextual repair 和 `(r,c)` 计划。
+Design Insights，Phase 5 将已执行的 CAST、compact contextual repair 和 `(r,c)` Design 0 保留为
+strong baseline，再按 stage→persistence→AV sidecar→no-materialized-prefix PRO 的顺序验证主方法。
 它只回答一次 `Parent -> Current` 怎样低成本转换，不承担连续版本管理和 GPU runtime。
 固定 `r=128,c=64` 的第一条 one-hop 路径已在五条 D14/E14 edge 上完成 rolling AUC，正式请求总数
 217,584；它在 4/5 edge 上提高 Reuse，前三条保留既有 Full-only release gain 的 97.2%、117.9% 和
@@ -334,32 +389,36 @@ Design Insights，Phase 5 验证它们直接推出的 CAST、compact contextual 
 - `results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/`。
 
 因此 rolling 任务质量不再是完全未测；结果同时否定了“该固定配置可以无条件用于所有 edge”。
-在 512-position state 上，理论 Recompute/Our 分别为 0.625/0.301 GFLOPs per user，Our 使用
-48.0% compute、理论减少 52.0%。Phase 5 剩余补强仍不实现 scheduler：
+在 512-position state 上，旧 Design 0 理论为 0.301 GFLOPs/user（Full 的 48.0%）。轻量 PRO 的
+32-carrier primary 为 0.057 GFLOPs/user（Full 的 9.1%），16-carrier diagnostic 为 5.2%；完全等价
+地将 fused map 用于每个 carrier query 的 32-carrier 版本为 40.0%，已在执行前因成本失败拒绝。
+Phase 5 下一步不再开放新的 operator/region 探索，也不实现复杂 scheduler：
 
-1. 等宽 old/middle/recent/random-128 诊断性 region intervention，以及对应的 executable
-   causal-closure work；
-2. CAST 的 normalized layer-bundle 和 token-quartile 贡献分解；
-3. 在新 prospective contract 下验证最小的事前安全判断/Exact fallback，不使用本次
-   qualification label 调整 `r/c`。
+1. 在新 prospective contract 下验证最小的 label-free 事前安全判断与 Reuse/Exact fallback；
+2. lightweight PRO 正确性/成本及全人口 rolling quality 已完成；primary 32、latest-item、mass4
+   和 coverage decay 全程未改。其总体 Design viability 通过，但事前严格双门因 log-loss 3/5 未过。
+   本五边转为 development evidence；任何 admission/calibration 改动必须在新 seed 或新冻结 edge
+   验证，不得拟合 target K/V 或加入 per-candidate Route；
+3. 只有独立 quality gate 通过后，才执行额外 training seed 与同机 GPU/runtime/I/O profile。
 
-诊断性 region/layer splice 只用于 Insight 因果定位，不加入已冻结的 scale action set。
-前两项复用现有 checkpoint 和已封存请求，只做 focused inference probe，不启动新长训练；第三项
-必须使用独立 development evidence。
-机制和成本对照仍保留三个固定计划：
+既有诊断性 region/layer splice 只保留为 Insight 因果证据，不加入已冻结的 scale action set。
+安全信号开发不得读取未来 label；新增 training seed 仍需独立合同、资源估算、canary 和明确 launch。
+机制和成本对照保留：
 
 - `CAST(stale)`；
 - `CAST + typed PATCH(residual scope)`；
 - `CAST(prefix) + GROUP -> PATCH -> SCALE + UNION`。
+- lightweight PRO：reader-pushed map + Parent-conditioned carrier32 + AV sidecar。
 
 对照为 No-op、Exact-All 和旧固定宏 baseline。Design I 报告 rolling AUC/log-loss、output fidelity、
 解析 FLOPs 和结构 token/pair work；raw-history/state I/O、CUDA time、storage、throughput 和 makespan
 统一在 Design III Runtime 中实测。
 
-Design I 的完整完成条件是：一个事前固定的 `r/c` 组合或事前固定的安全回退合同，在 rolling
-AUC/log-loss 上不隐藏失败 edge，并在解析 FLOPs 上低于 Exact-All。理论计算条件已经满足；
-v4->v5 反例意味着“always-on 固定配置”尚未通过。这里不要求先证明复杂 scheduler；最小的
-edge/config safety contract 和 Exact fallback 足以向 Continuous 层交付一跳 transition。理论 FLOPs
+Design I 的完整完成条件是：Design 0 作为 strong baseline 保留；事前固定的 lightweight PRO 与
+release-level Exact-shadow admission 在 rolling AUC/log-loss 上报告全部五边且不隐藏反例，并在解析
+FLOPs 上低于 Exact-All 20%。理论计算、正确性和五边质量评价对 PRO 已完成；总体可行性通过，但
+严格 edge-count gate 未过，故“always-on 固定配置”尚未通过。这里不要求先证明复杂 scheduler；
+PRO、edge-level safety contract 和 Reuse/Exact fallback 足以向 Continuous 层交付一跳 transition。理论 FLOPs
 不保证实际加速，后者由 Runtime 单独回答。
 
 不得用这五条 qualification label 调整 `r/c` 或选择报告 edge。若以后确实需要 population budget
@@ -464,6 +523,12 @@ amplification、throughput、migration makespan、tail latency、失败恢复和
 ### Phase 8：规模与外部验证
 
 S/M/L 使用统一 Yambda-500M 母体，分别扩大模型计算量、context、catalog 和 state population；同一 checkpoint 的不同 cache length 是评测变量，不是重复训练模型。
+
+当前 Medium 的 prospective 执行边界已单独整理在
+[`medium_scale_training_plan.md`](medium_scale_training_plan.md)：沿用 day217 的 30k fixed-UID
+population、6L/H192/context1024 与 foundation item mapping，先训练一份共享 Full-only v0，再从同一
+v0 串行扫描 D7×10（E3/E7）和 D14×4（E3/E7/E14）。该方案只指导代码、合同、canary 和资源准备；
+在 Full-only recipe 稳定并完成独立 admission 前，不解锁 Reuse 或 PRO。
 
 RecFlow 是 prospective external validation：先验证 raw request-group、chronological history、multi-positive target 和 serving-space candidate 语义，再考虑受门控的 Medium 训练。它补充 Yambda-F，不替代当前 motivation。
 

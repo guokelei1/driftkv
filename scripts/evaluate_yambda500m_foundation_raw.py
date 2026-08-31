@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 
-import duckdb
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -20,7 +19,7 @@ from hstu_kvcache.evaluation import (
     OneHopRollingBundle, append_timestamp_group, materialize_state,
     timestamp_groups, validate_raw_table,
 )
-from hstu_kvcache.data import apply_stable_oov_buckets
+from hstu_kvcache.data.yambda_history import load_yambda_histories
 from hstu_kvcache.models import HSTU, HSTUConfig, HSTUKVCache
 from hstu_kvcache.training import FoundationHistoryIndex
 
@@ -38,9 +37,16 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_model(path: Path, device: torch.device) -> tuple[HSTU, dict]:
+def load_model(
+    path: Path, device: torch.device, *, allow_canary: bool = False,
+) -> tuple[HSTU, dict]:
     payload = torch.load(path, map_location="cpu", weights_only=False)
-    if payload.get("progress") != 1.0 or payload.get("status") != "formal_small_seed17_checkpoint":
+    status = str(payload.get("status", ""))
+    status_ok = status.startswith("formal_") and status.endswith("_checkpoint")
+    status_ok = status_ok or (
+        allow_canary and status in {"four_gpu_canary_checkpoint", "distributed_canary_checkpoint"}
+    )
+    if payload.get("progress") != 1.0 or not status_ok:
         raise RuntimeError(f"evaluation requires a formal final checkpoint: {path}")
     model = HSTU(HSTUConfig(**payload["config"])
                  ).to(device)
@@ -59,27 +65,20 @@ def balanced_users(rows: list[dict], world: int) -> dict[int, int]:
     return assignment
 
 
-def load_histories(uids: list[int], *, oov_buckets: int = 0) -> FoundationHistoryIndex:
-    dataset = json.loads(DATASET.read_text()); root = DATASET.parent
-    listens = (root / dataset["shared_listens_glob"]).resolve()
-    mapping = (root / dataset["item_mapping_path"]).resolve()
-    placeholders = ",".join("?" for _ in uids)
-    connection = duckdb.connect()
-    table = connection.execute(
-        f"""SELECT l.uid,l.timestamp,l.raw_item_id,coalesce(m.item_idx,0) item_idx,l.behavior
-             FROM read_parquet(?) l LEFT JOIN read_parquet(?) m
-             ON l.raw_item_id=m.raw_item_id WHERE l.uid IN ({placeholders})
-             ORDER BY l.uid,l.timestamp,l.raw_item_id,l.behavior""",
-        [str(listens), str(mapping), *uids],
-    ).fetch_arrow_table()
-    connection.close()
-    item_ids = apply_stable_oov_buckets(
-        table["raw_item_id"].to_numpy(), table["item_idx"].to_numpy(),
-        known_vocab_size=781678, buckets=oov_buckets,
-    )
-    return FoundationHistoryIndex.from_columns(
-        table["uid"].to_numpy(), table["timestamp"].to_numpy(),
-        item_ids, table["behavior"].to_numpy(),
+def load_histories(
+    uids: list[int], *, oov_buckets: int = 0, dataset_path: Path = DATASET,
+    known_vocab_size: int | None = None, start_timestamp: int | None = None,
+    end_timestamp: int | None = None, max_history: int | None = None,
+    threads: int = 4,
+) -> FoundationHistoryIndex:
+    dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+    known = int(known_vocab_size or dataset["foundation_items"])
+    return load_yambda_histories(
+        dataset_path, uids, known_vocab_size=known, oov_buckets=oov_buckets,
+        start_timestamp=start_timestamp,
+        max_pre_events=max_history if start_timestamp is not None else None,
+        end_timestamp=int(end_timestamp or (2**63 - 1)),
+        threads=threads,
     )
 
 
@@ -291,16 +290,27 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                                include_request_local: bool = True,
                                include_parent_exact: bool = False,
                                refinement_cast_maps=None,
-                               query_chunk_size: int | None = None):
+                               evidence_measure_cast_maps=None,
+                               pro_lazy_maps=None,
+                               pro_lazy_carriers: int = 32,
+                               pro_lazy_repair_width: int = 128,
+                               pro_lazy_path: str | None = None,
+                               query_chunk_size: int | None = None,
+                               max_length: int = 512):
     """Vectorize independent user timelines whose cutover caches are all full."""
+    if max_length < 1:
+        raise ValueError("max_length must be positive")
     batch = len(uids); device = next(current.parameters()).device
     raw = [history.rows[uid] for uid in uids]
     prefix = []
     for timestamps, items, behaviors in raw:
         stop = int(np.searchsorted(timestamps, cutover, side="left"))
-        if stop < 512:
+        if stop < max_length:
             raise ValueError("batched cohort requires full cutover caches")
-        prefix.append((timestamps[stop-512:stop], items[stop-512:stop], behaviors[stop-512:stop]))
+        prefix.append((
+            timestamps[stop-max_length:stop], items[stop-max_length:stop],
+            behaviors[stop-max_length:stop],
+        ))
     times = torch.tensor(np.stack([value[0] for value in prefix]), dtype=torch.long, device=device)
     items = torch.tensor(np.stack([value[1] for value in prefix]), dtype=torch.long, device=device)
     behaviors = torch.tensor(np.stack([value[2] for value in prefix]), dtype=torch.long, device=device)
@@ -328,6 +338,70 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                 layout.carriers, layout.padding_positions) != (512, 384, 128, 64, 64):
             raise RuntimeError("full-cache refinement layout differs from frozen r=128,c=64")
         refinement_path = OUR_PATH
+    evidence_measure_path = None
+    if evidence_measure_cast_maps is not None:
+        from insight.one_release_refinement import (
+            EVIDENCE_MEASURE_PATH,
+            build_evidence_measure_basis_cache,
+        )
+
+        caches[EVIDENCE_MEASURE_PATH], layout = build_evidence_measure_basis_cache(
+            parent_cache=parent_cache,
+            current=current,
+            item_ids=items,
+            behaviors=behaviors,
+            time_deltas=deltas,
+            cast_maps=evidence_measure_cast_maps,
+        )
+        if (layout.nominal_positions, layout.cast_positions, layout.repair_evidence,
+                layout.carriers, layout.padding_positions) != (512, 384, 128, 64, 64):
+            raise RuntimeError("full-cache evidence-measure layout differs from frozen r=128,c=64")
+        evidence_measure_path = EVIDENCE_MEASURE_PATH
+    active_pro_path = None
+    pro_corrections = None
+    if pro_lazy_maps is not None:
+        from insight.pro_lazy_reader import (
+            build_parent_conditioned_carriers,
+            generate_lazy_pro_sidecar,
+            pro_path as default_pro_path,
+        )
+
+        carrier_cache, layout = build_parent_conditioned_carriers(
+            parent_cache=parent_cache,
+            current=current,
+            item_ids=items,
+            behaviors=behaviors,
+            time_deltas=deltas,
+            repair_width=pro_lazy_repair_width,
+            carrier_count=pro_lazy_carriers,
+        )
+        expected_layout = (
+            max_length,
+            max_length - pro_lazy_repair_width,
+            pro_lazy_repair_width,
+            pro_lazy_carriers,
+            pro_lazy_repair_width // pro_lazy_carriers,
+        )
+        if (
+            layout.nominal_positions,
+            layout.old_positions,
+            layout.repair_evidence,
+            layout.carriers,
+            layout.represented_mass,
+        ) != expected_layout:
+            raise RuntimeError("full-cache lightweight PRO layout differs from the contract")
+        sidecar = generate_lazy_pro_sidecar(
+            current,
+            parent_cache,
+            carrier_cache,
+            pro_lazy_maps,
+            items[:, -1],
+            old_positions=layout.old_positions,
+        )
+        if sidecar.replay_max_abs_error > 2e-5:
+            raise RuntimeError("lightweight PRO cutover replay differs")
+        pro_corrections = tuple(value.detach() for value in sidecar.corrections)
+        active_pro_path = pro_lazy_path or default_pro_path(pro_lazy_carriers)
     if edge == "v0_to_r0":
         # Producer identity proves the reused and exact rolling states are bitwise
         # identical; retain one state and copy observations after canary validation.
@@ -346,6 +420,8 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
             ]
         if refinement_path is not None:
             current_path_names.append(refinement_path)
+        if evidence_measure_path is not None:
+            current_path_names.append(evidence_measure_path)
         current_path_names = tuple(current_path_names)
     last_times = np.asarray([int(value[0][-1]) for value in prefix], dtype=np.int64)
     append_counts = np.zeros(batch, dtype=np.int64); evictions = np.zeros(batch, dtype=np.int64)
@@ -388,20 +464,20 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
             from hstu_kvcache.models.state_transition import append_with_rolling_cap
             updated_parent = append_with_rolling_cap(
                 parent, select_cache(caches["parent_exact_rolling"], append_indices),
-                event_items, event_behaviors, event_deltas, 512,
+                event_items, event_behaviors, event_deltas, max_length,
             )
             assign_cache(caches["parent_exact_rolling"], append_indices, updated_parent)
             current_states = [select_cache(caches[name], append_indices) for name in current_path_names]
             updated_current = append_with_rolling_cap(
                 current, stacked_cache(current_states), event_items.repeat(len(current_path_names), 1),
                 event_behaviors.repeat(len(current_path_names), 1),
-                event_deltas.repeat(len(current_path_names), 1), 512,
+                event_deltas.repeat(len(current_path_names), 1), max_length,
             )
             width = len(append_indices)
             for offset, name in enumerate(current_path_names):
                 piece = HSTUKVCache(
                     updated_current.k[:, offset*width:(offset+1)*width],
-                    updated_current.v[:, offset*width:(offset+1)*width], 512,
+                    updated_current.v[:, offset*width:(offset+1)*width], max_length,
                 )
                 assign_cache(caches[name], append_indices, piece)
             for index, value in zip(append_indices, event_values, strict=True):
@@ -478,11 +554,46 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                 stacked_cache(current_states), candidates.repeat(len(current_path_names), 1),
                 query_deltas.repeat(len(current_path_names))
             )
+        pro_scores = None
+        pro_readouts = None
+        if pro_corrections is not None:
+            from insight.reader_compatibility_correction import (
+                intervene_reader_correction,
+                scale_correction,
+            )
+
+            pro_score_parts, pro_readout_parts = [], []
+            chunk_size = query_chunk_size or len(query_entries)
+            for query_start in range(0, len(query_entries), chunk_size):
+                query_stop = min(query_start + chunk_size, len(query_entries))
+                chunk_owner = owner[query_start:query_stop]
+                owner_index = torch.tensor(chunk_owner, dtype=torch.long, device=device)
+                factor = torch.as_tensor(
+                    np.maximum(0, max_length - evictions[chunk_owner]) / max_length,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                selected_corrections = tuple(
+                    value.index_select(0, owner_index) for value in pro_corrections
+                )
+                scaled = scale_correction(selected_corrections, factor)
+                scores, readouts = intervene_reader_correction(
+                    current,
+                    select_cache(caches["one_hop_reuse_rolling"], chunk_owner),
+                    candidates[query_start:query_stop],
+                    query_deltas[query_start:query_stop],
+                    stage="av_aggregation",
+                    corrections=scaled,
+                )
+                pro_score_parts.append(scores.cpu())
+                pro_readout_parts.append(readouts.cpu())
+            pro_scores = torch.cat(pro_score_parts)
+            pro_readouts = torch.cat(pro_readout_parts)
         if include_request_local:
             full_payload = []
             for index, query_time, _ in query_entries:
                 timestamps, event_items, event_behaviors = raw[index]
-                stop = int(np.searchsorted(timestamps, query_time, side="left")); start = max(0, stop-512)
+                stop = int(np.searchsorted(timestamps, query_time, side="left")); start = max(0, stop-max_length)
                 full_payload.append((timestamps[start:stop], event_items[start:stop], event_behaviors[start:stop]))
             lengths = torch.tensor([len(value[0]) for value in full_payload], dtype=torch.long, device=device)
             width = int(lengths.max())
@@ -522,6 +633,12 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                 observations["one_hop_reuse_rolling"] = observations["current_exact_rolling"]
             if include_request_local and "recursive_reuse_rolling" not in current_path_names:
                 observations["recursive_reuse_rolling"] = observations["one_hop_reuse_rolling"]
+            if active_pro_path is not None:
+                assert pro_scores is not None and pro_readouts is not None
+                observations[active_pro_path] = (
+                    pro_scores[row_index, 0],
+                    pro_readouts[row_index, 0],
+                )
             reference = observations["current_exact_rolling"][1].float().cpu()
             for path, (score, readout) in observations.items():
                 readout = readout.float().cpu()
@@ -530,8 +647,8 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                     "query_timestamp": int(query_time), "edge": edge, "path": path,
                     "hstu_logit": float(score), "architecture": "hstu_native_cc",
                     "append_count_since_cutover": int(append_counts[index]),
-                    "seconds_since_cutover": int(query_time-cutover), "history_length": int(lengths[row_index]) if include_request_local else int(min(np.searchsorted(raw[index][0], query_time, side="left"), 512)),
-                    "cache_length": 512, "rolling_evictions": int(evictions[index]),
+                    "seconds_since_cutover": int(query_time-cutover), "history_length": int(lengths[row_index]) if include_request_local else int(min(np.searchsorted(raw[index][0], query_time, side="left"), max_length)),
+                    "cache_length": max_length, "rolling_evictions": int(evictions[index]),
                     "readout_normalized_l2": float((readout-reference).norm()/(reference.norm()+1e-12)),
                     "readout_cosine": float(torch.nn.functional.cosine_similarity(readout[None], reference[None])),
                     "checkpoint_sha256": checkpoint_hash, "parent_checkpoint_sha256": parent_hash,

@@ -88,6 +88,7 @@ def main() -> None:
         rows = by_model[candidate]
         report["candidates"][candidate] = {
             "checkpoint_progress": rows[0]["checkpoint_progress"],
+            "training_epochs_completed": rows[0].get("training_epochs_completed"),
             "absolute": score_views(rows, labels),
             "paired_release_gain": paired_release(parent_rows, rows, labels, f"release:{seal['stage']}:{candidate}"),
             "daily": {}, "cohorts": {"recurring_user": {}, "history_oov": {}, "prefix_length": {}},

@@ -1,0 +1,149 @@
+contract: yambda500m_medium_hstu_native_d7_d14_full_reuse_v1
+date_frozen: 2026-08-28
+status: prospective_medium_preparation_and_canary_contract_v1
+purpose: >-
+  Build one Medium Full-only foundation checkpoint, scan two direct-parent update
+  recipes, and report Parent Full, Current Full, and adjacent one-hop Reuse on
+  every frozen edge and horizon.
+
+scope:
+  scale: EvoKV-HSTU-M
+  population_users: 30000
+  seed: 17
+  architecture: hstu_native_cc
+  fixed_initial_version: v0
+  foundation_days_half_open: [0, 217]
+  complete_source_days_half_open: [0, 300]
+  partial_day300_excluded: true
+  branches:
+    D7:
+      training_days: 7
+      updates: 10
+      versions: [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10]
+      evaluation_days: [3, 7]
+    D14:
+      training_days: 14
+      updates: 4
+      versions: [v0, v1, v2, v3, v4]
+      evaluation_days: [3, 7, 14]
+  branch_parent: shared_v0
+  candidate_parent: immediately_previous_checkpoint_in_same_branch
+  recursive_reuse: prohibited
+  long_age_reuse: prohibited
+  gpus: [0, 1, 2, 3]
+  world_size: 4
+
+frozen_inputs:
+  unified_scale_contract: configs/contracts/yambda500m_unified_scales_v1.yaml
+  unified_scale_contract_sha256: 7451d6042e86f24a15b24d31266b46c53d82035c2d1b5b1f5e96eb4d06f22fd0
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/medium/dataset.json
+  dataset_manifest_sha256: d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb
+  item_mapping: data/processed/yambda500m_unified_v1/scales/medium/item_mapping.parquet
+  item_mapping_sha256: 57b3e1e83625367777cc5cb1f932cb9a6df200352ba07cfdc7bb346a5504bbe7
+
+model:
+  num_behaviors: 4
+  hidden_size: 192
+  num_layers: 6
+  num_heads: 6
+  max_seq_len: 1024
+  num_query_types: 3
+  query_type_id: 2
+  num_query_actions: 1
+  query_action_id: 0
+  input_dropout: 0.1
+  oov_buckets: 256
+  known_items_from_dataset_manifest: 1380509
+
+manifest:
+  output: data/manifests/yambda500m_medium_hstu_native_d7_d14_v1
+  blocks:
+    foundation: [0, 217]
+    matrix_horizon: [217, 300]
+  request_group: [uid, timestamp, raw_item_id]
+  exact_duplicates_collapsed: true
+  conflicting_labels_excluded: true
+  strict_prior_listen_required: true
+  target_oov_retained_for_audit_but_not_training_or_evaluation: true
+  data_preparation_authorized: true
+  aggregate_quality_metrics_during_preparation: prohibited
+
+training:
+  objective: F_only_binary_cross_entropy
+  passes: 1
+  optimizer: fresh_AdamW_per_checkpoint
+  foundation_learning_rate: 0.0002
+  update_learning_rate: 0.00005
+  weight_decay: 0.0001
+  user_equal_window_weighting: true
+  direct_parent_warm_start: true
+  early_stopping: prohibited
+  checkpoint_selection: final_whole_pass_only
+  train_batch_size_per_rank: 8
+  fsdp: FULL_SHARD
+  compute_dtype: bf16
+  reduction_and_optimizer_dtype: fp32
+  one_four_rank_job_at_a_time: true
+
+evaluation:
+  paths: [parent_exact_rolling, current_exact_rolling, one_hop_reuse_rolling]
+  one_hop_definition: >-
+    At cutover the Current model reads a prefix K/V cache materialized by its
+    immediately previous model; all post-cutover listens are appended by Current.
+  evaluation_cohort_size_per_rank: 16
+  query_chunk_size: 128
+  metrics: [ROC_AUC, dislike_PR_AUC, log_loss, Brier]
+  derived_deltas:
+    - current_minus_parent_ROC_AUC_pp
+    - current_minus_reuse_ROC_AUC_pp
+    - reuse_gain_retained_percent_when_current_gain_positive
+    - reuse_minus_current_log_loss
+    - old_to_current_log_loss_gain_retained_percent_when_positive
+  raw_scores_sealed_before_label_join: true
+  all_edges_and_horizons_reported: true
+  model_admission_from_this_scan: prohibited
+  cache_result_used_for_recipe_selection: prohibited
+
+theta3_and_later:
+  boundary_is_frozen_by_this_contract: true
+  data_windows: frozen_above
+  parent_semantics: direct_parent_candidate_chain
+  metrics: frozen_above
+  failure_reporting: all_edges_no_selected_edge_reporting
+  training_or_result_read_requires_explicit_formal_launch: true
+
+failure_and_resume:
+  existing_complete_artifact: validate_hash_and_skip
+  existing_partial_directory: stop_for_audit
+  cuda_oom: stop_and_preserve_log_no_automatic_formal_batch_downshift
+  failed_candidate: stop_branch_do_not_skip_or_reparent_descendants
+  rejected_release_enters_serving_lineage: false
+  raw_without_seal: stop_for_audit
+  seal_without_adjudication: resume_label_join_after_hash_validation
+
+resource_plan:
+  model_parameters: 266259265
+  fp32_model_weight_gib: 0.992
+  planned_final_checkpoints: 15
+  planned_checkpoint_weight_gib: 14.9
+  minimum_free_workspace_gib_before_formal: 30
+  gpu_model: NVIDIA_A40
+  minimum_free_memory_mib_per_gpu_for_canary: 40000
+  canary_train_steps: 2
+  canary_train_batch_size_per_rank: 8
+  formal_wall_clock: measure_from_canary_not_precommitted
+
+authorization:
+  cpu_manifest_materialization: authorized_by_user_2026_08_28
+  focused_correctness_canary: authorized_by_user_2026_08_28
+  formal_foundation_and_release_training: requires_user_invoked_formal_flag
+  formal_three_path_evaluation: requires_user_invoked_formal_flag
+  medium_pro_or_insight_probe: prohibited
+  serving_lineage_promotion: prohibited
+
+outputs:
+  root: results/yambda500m_medium_seed17/full_reuse_matrix_v1
+  structured_log: results/yambda500m_medium_seed17/full_reuse_matrix_v1/logs/pipeline.jsonl
+  state: results/yambda500m_medium_seed17/full_reuse_matrix_v1/pipeline_state.json
+  summary_json: results/yambda500m_medium_seed17/full_reuse_matrix_v1/summary.json
+  summary_markdown: results/yambda500m_medium_seed17/full_reuse_matrix_v1/summary.md

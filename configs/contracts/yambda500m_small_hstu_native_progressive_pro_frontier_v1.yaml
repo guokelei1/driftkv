@@ -1,0 +1,157 @@
+contract: yambda500m_small_hstu_native_progressive_pro_frontier_v1
+date_frozen: 2026-08-28
+status: prospective_label_free_progressive_PRO_carrier_fidelity_frontier_v1
+purpose: measure_whether_more_carriers_improve_the_same_two_probe_single_direction_PRO_after_error_decomposition_rejected_amplitude_only_and_segment_decay_explanations
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  development_evidence_only: true
+  new_training: false
+  labels: prohibited
+  quality_metrics: prohibited
+  action_admission: prohibited
+  lineage_promotion: prohibited
+
+held_out_label_free_samples:
+  cutover:
+    users_per_edge: 64
+    population_offset: 64
+    selection: selector_order_positions_65_through_128
+    candidate_bank: frozen_controlled_width_64_panel
+    history: last_512_events_strictly_before_cutover
+    query_time_delta: 0
+  rolling:
+    users_per_edge: 64
+    eligible_population_offset: 64
+    selection: eligible_selector_order_positions_65_through_128_with_at_least_two_real_exposed_groups
+    requests_per_user: [first_eligible, last_eligible]
+    candidate_bank: largest_available_real_exposed_width_in_2_4_8_16
+    request_order: query_before_same_timestamp_append
+  canary:
+    users_per_edge: 8
+    use_same_offsets: true
+    all_five_edges: true
+
+one_unified_mechanism:
+  name: two_fixed_probe_single_direction_progressive_PRO
+  serving_base: Parent_persistent_KV
+  materialized_version_translated_prefix_positions: 0
+  stage: av_aggregation
+  repair_window: latest_128_pre_cutover_events
+  fixed_probes: [latest_pre_cutover_item, oldest_item_in_recent_128]
+  direction: normalized_sum_of_two_probe_unit_directions_per_layer
+  amplitude: mean_old_plus_recent_projection_at_cutover
+  rolling_decay: frozen_global_max_0_512_minus_evictions_divided_by_512
+  components: 1
+  carrier_axis:
+    C32:
+      carrier_count: 32
+      theoretical_flops_per_user: 65814592
+      fraction_of_Full: 0.10522327918718567
+    C48:
+      carrier_count: 48
+      theoretical_flops_per_user: 90939456
+      fraction_of_Full: 0.14539249544871125
+    C64:
+      carrier_count: 64
+      theoretical_flops_per_user: 116588608
+      fraction_of_Full: 0.1863999346775461
+  common_state:
+    sidecar_FP32_scalars: 520
+    sidecar_bytes: 2080
+    unique_Parent_read_bytes_FP32: 2097152
+    materialized_translated_prefix_scalars: 0
+
+frozen_metrics:
+  layerwise:
+    - direction_cosine_to_exact_shared_AV
+    - estimated_to_exact_norm_ratio
+    - relative_L2_to_exact_shared_AV
+    - fixed_probe_direction_cosine
+    - fixed_probe_norm_ratio
+  score_fidelity:
+    - mean_absolute_logit_gap_to_Current_Exact
+    - mean_absolute_probability_gap_to_Current_Exact
+    - mean_absolute_logit_gap_to_exact_shared_AV_intervention
+    - ratio_of_means_probability_gap_recovery_over_Reuse
+  self_convergence:
+    - C32_to_C64_direction_cosine
+    - C32_to_C64_norm_ratio
+    - C48_to_C64_direction_cosine
+    - C48_to_C64_norm_ratio
+  aggregation: every_edge_and_phase_plus_non_weighted_five_edge_mean
+
+prefrozen_rules:
+  valid_frontier:
+    every_edge_phase_and_carrier_required: true
+    correctness_max_abs_error: 0.00002
+    raw_seal_required: true
+  C64_direction_gate:
+    median_cosine_minimum: 0.90
+    minimum_cutover_edges: 4
+    minimum_rolling_edges: 4
+  C64_fidelity_improvement_over_C32:
+    median_relative_L2_not_above_C32_minimum_cutover_edges: 4
+    median_relative_L2_not_above_C32_minimum_rolling_edges: 4
+    five_edge_mean_lower_both_phases: required
+  C48_intermediate_frontier_point:
+    five_edge_mean_relative_L2_between_C32_and_C64_both_phases: required
+  interpretation:
+    C64_pass: freeze_C64_as_under_20_percent_fidelity_primary_for_future_new_seed_quality
+    C64_fail: retain_C32_lightweight_PRO_and_stop_progressive_upgrade_without_quality_test
+    per_user_adaptive_route: not_authorized_by_this_frontier
+    thresholds_or_configuration_changes_after_result: prohibited
+
+protocol:
+  exact_shared_AV_is_diagnostic_oracle_only: true
+  raw_first: true
+  labels_and_future_labels: prohibited
+  target_KV_fitting: prohibited
+  selected_edge_reporting: prohibited
+  expanded_KV_output: prohibited
+  semantic_GROUP_embedding_selector_per_candidate_route_history_basis_PCA_SVD: prohibited
+  formal_AUC_logloss_on_existing_five_edges: prohibited
+  formal_quality_after_pass: new_seed_or_new_frozen_release_edge_only
+
+frozen_inputs:
+  decomposition_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_progressive_pro_decomposition_v1.yaml
+    sha256: a0745a9751170c5d71523ed5bf32e552b990a38050012ed0b42e434d23245f5d
+  decomposition_raw_seal:
+    path: results/yambda500m_small_seed17/insight_progressive_pro_v1/decomposition_v1/formal/raw.seal.json
+    sha256: 9f1e166f4e4a8b42fbb0876af089f97c103b9d564e650aa7ec4eebf1ebb1ae58
+  decomposition_adjudication:
+    path: results/yambda500m_small_seed17/insight_progressive_pro_v1/decomposition_v1/formal/adjudication.json
+    sha256: 3e9463c9f17a57960569a9c53a0905b9fb76202dabd2a2e034ee03fed297665f
+    required_status: progressive_pro_decomposition_valid_frontier_unlocked
+  cost_model:
+    path: scripts/insight/pro_lazy_cost.py
+    sha256: de41e0c95d4e17827b60c43ce893e0a5100453f2ac94aa12882715565bd37d6a
+  population:
+    path: results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/population.parquet
+    sha256: 60ed4ba5ace8ad26cac713e9493242c549935bc64c5d58218954fbc85fccf7f8
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  requests_fidelity:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_fidelity.parquet
+    sha256: 029cfec77fbdfefcc58ee31c9b0311f900e685f783082f54e3acda3d011b63fd
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  implementation_and_unit_tests: true
+  focused_single_GPU_label_free_canary: true
+  formal_single_GPU_label_free_frontier: true
+  quality_on_existing_five_edges: false
+  new_training: false
+  medium_large_training: false
+  theta3: false

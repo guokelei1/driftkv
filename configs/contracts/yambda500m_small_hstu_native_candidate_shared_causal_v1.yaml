@@ -1,0 +1,134 @@
+contract: yambda500m_small_hstu_native_candidate_shared_causal_v1
+date_frozen: 2026-08-27
+status: prospective_signed_causal_canary_v1
+purpose: test_whether_the_candidate_shared_HSTU_evidence_component_is_signed_causal_width_stable_and_present_on_real_exposed_requests
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  versions: [v0, v1, v2, v3, v4, v5]
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  new_training: false
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  scale_action_admission: prohibited
+
+controlled_population:
+  source: prior_frozen_recommendation_state_structure_population
+  formal_users: 3000
+  fraction_of_frozen_small_population: 0.30
+  fixed_across_all_edges: true
+  history_positions: 512
+  full_candidate_panel: 64
+  width_interventions: [8, 16, 32, 64]
+  width_subsampling: deterministic_nested_stride_from_the_frozen_64_candidate_panel
+  candidate_negative_semantics: prohibited
+
+real_exposed_candidates:
+  source: frozen_requests_fidelity_manifest_before_label_join
+  semantics: actual_Yambda_request_items_at_the_same_uid_and_query_timestamp
+  formal_scope: all_five_D14_E14_edges
+  width_interventions: [2, 4, 8, 16]
+  group_selector: group_size_at_least_width_then_item_idx_and_request_id_ascending
+  width_one_groups: excluded_from_shared_vs_residual_causal_claim
+  sampled_or_synthetic_negatives: prohibited
+  labels_during_raw_generation: prohibited
+
+signed_causal_intervention:
+  unit: per_user_candidate_bank_layer_head
+  contribution: signed_prefix_attention_weight_times_value_aggregated_within_each_head
+  candidate_normalization: prohibited
+  decomposition:
+    delta: Current_exact_cache_head_contribution_minus_Parent_reuse_cache_head_contribution_at_the_same_intervened_query_state
+    shared: signed_candidate_mean_delta_broadcast_to_the_bank
+    residual: delta_minus_shared
+  diagnostic_paths:
+    - current_exact
+    - parent_reuse
+    - reuse_plus_shared
+    - reuse_plus_residual
+    - reuse_plus_shared_plus_residual
+  full_delta_reconstruction: must_reproduce_current_exact_reader
+  metrics:
+    - signed_shared_energy_fraction_by_edge_width_layer_head
+    - shared_direction_cosine_to_largest_width
+    - absolute_logit_and_probability_gap_to_current_exact
+    - score_gap_recovery_over_parent_reuse
+    - top1_agreement
+    - top10_overlap_when_width_at_least_10
+    - within_bank_rank_correlation
+  interpretation: diagnostic_oracle_intervention_not_an_executable_state_action
+
+focused_canary:
+  controlled_users: 32
+  controlled_edges: all_five
+  exposed_groups: one_earliest_label_free_group_with_at_least_16_candidates_per_edge
+  correctness:
+    native_score_max_abs_error: 0.00002
+    full_delta_reconstruction_max_abs_error: 0.00002
+    labels_read: false
+  progression_gate:
+    controlled_width64_shared_gap_better_than_residual_gap_edges_minimum: 4
+    controlled_width64_shared_gap_recovery_positive_edges_minimum: 4
+  on_failure: stop_before_formal_or_mechanism_implementation_and_retain_negative_result
+
+formal_gate_after_canary:
+  signed_causal:
+    controlled_population_users: 3000
+    all_five_edges_reported: true
+    exposed_request_groups_reported_by_width: true
+  mechanism_qualification:
+    status: locked_until_signed_causal_gate_passes
+    candidate: one_candidate_independent_Current_HSTU_evidence_basis_plus_contextual_residual
+    matched_against: evokv_cast_group_patch_scale_r128_c64_rolling
+    matched_axes: [Current_compute, carriers, raw_history_IO, state_IO]
+    metrics: [ROC_AUC, log_loss, output_fidelity, GPU_time, raw_history_IO, state_IO]
+  externality:
+    requirement: extra_seed_or_real_exposed_candidate_distribution
+    this_contract_uses: real_exposed_candidate_distribution
+
+protocol:
+  future_labels_for_scheduling_or_decomposition: prohibited
+  target_current_KV_fitting: prohibited
+  qualification_label_tuning: prohibited
+  head_or_width_selection_from_results: prohibited
+  all_frozen_widths_and_edges_reported: required
+  raw_first_before_label_join: required_for_exposed_quality
+  overwrite_existing_evidence: prohibited
+  expanded_attention_or_KV_tensor_output: prohibited
+  compact_aggregates_only: true
+
+frozen_inputs:
+  source_observation_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_recommendation_state_structure_v1.yaml
+    sha256: 8f6ba1be0b562823a7aa81273358bb3974886b02bd54580171d1e1d1ef577377
+  population:
+    path: results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/population.parquet
+    sha256: 60ed4ba5ace8ad26cac713e9493242c549935bc64c5d58218954fbc85fccf7f8
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  requests_fidelity:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_fidelity.parquet
+    sha256: 029cfec77fbdfefcc58ee31c9b0311f900e685f783082f54e3acda3d011b63fd
+  requests_quality:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_quality.parquet
+    sha256: 922b7807f691300c8c86907a5441810f16f28d85fef578d36041ef35c7a865c8
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  focused_single_GPU_canary: true
+  formal_single_GPU_structural_observation_after_canary: true
+  formal_four_GPU_raw_first_quality_after_canary: true
+  minimal_mechanism_implementation_after_signed_causal_gate: true
+  new_training: false
+  medium_large_training: false
+  theta3_read_or_training: false

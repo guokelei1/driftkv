@@ -20,6 +20,18 @@ listens/likes/dislikes and RecFlow realshow. RecFlow request/metadata companions
 require `--include-recflow-companion`; the 37 all-stage files additionally require
 `--include-recflow-all-stage`. Archives are not extracted automatically.
 
+The CPU-only Yambda-5B raw preparation uses the same three-event scope as the
+500M pipeline and writes a separate manifest, so it does not overwrite the
+sealed 500M/RecFlow download record:
+
+```bash
+python scripts/download_scale_datasets.py --datasets yambda5b
+python scripts/download_scale_datasets.py --datasets yambda5b --download --jobs 3
+```
+
+This fetches `flat/5b/{listens,likes,dislikes}.parquet`; it intentionally skips
+the duplicate `multi_event.parquet` and currently unused unlike/undislike files.
+
 After the core Yambda files pass download verification, the CPU-only scale
 population preparation entry point audits the raw tables and materializes only
 compact UID/catalog maps (not expanded event copies):
@@ -77,7 +89,7 @@ points currently enforce the contract's no-long-training boundary:
 - `build_yambda500m_foundation_manifests.py`: causal request/snapshot manifests,
   timestamp-group atomicity, request-time as-of Base features and separate
   target/history OOV audits;
-- `train_yambda500m_foundation_fsdp.py`: four-rank HSTU-native foundation trainer;
+- `train_yambda500m_foundation_fsdp.py`: contract-driven FSDP HSTU-native foundation trainer;
 - `evaluate_yambda500m_release_candidates_raw.py` and
   `adjudicate_yambda500m_release_candidates.py`: independent Full-only candidate
   quality before any Reuse evaluation.
@@ -87,7 +99,139 @@ one-hop evaluator and its sealed adjudicator. It does not run the old fixed-
 endpoint or residual/Base queues.
 
 Keep model, data, transition and accounting primitives independent from orchestration.
-No Medium/Large long queue is authorized yet.
+
+### Large D7/D14 prospective qualification
+
+`run_yambda500m_large_qualification.py` reuses the existing manifest builder,
+FSDP trainer and raw-first Full/Reuse evaluators for the frozen
+10L/H320/10-head/C1024 point. It does not clone model/data logic. Its modes are
+`prepare`, `resource-canary`, `status`, and `formal`; the formal command requires
+acknowledgement `RUN_LARGE_D7_D14_10L_H320`.
+
+The passing label-free canary froze four A40 ranks, global train batch96, Full
+batch64/rank and Reuse+C64-PRO cohort12/query128. Formal execution trains all 16
+checkpoints first and seals all 20 Full/admission cells. A first 2026-08-31
+amendment narrowed Reuse to five D14/E14 cells; a later explicit user decision
+cancelled formal Reuse/PRO before its first cell. The current queue therefore
+ends after Full-only. D14 v4→v5 E14 remains `E14_partial`. See
+`docs/large_scale_training_and_qualification_plan.md` for exact hashes, runtime
+measurements, commands and evidence boundaries.
+
+The separate `run_yambda500m_large_v3_v4_epoch_sweep.py` entry point diagnoses
+the observed D14 v3→v4 Full-only failure without changing the original chain.
+It resumes from the sealed v3 checkpoint, follows one continuous two-epoch
+AdamW trajectory, saves cumulative 0.5/1.0/1.5/2.0-epoch checkpoints, and scores
+the parent plus all four candidates in one E14 Full-only pass. `plan` and
+`status` are read-only; `canary` and `formal` have separate acknowledgement
+tokens, and `formal` refuses to start without a passing current-contract
+canary. Reuse, PRO, early stopping and selective endpoint reporting are absent.
+
+### Medium D7/D14 Full + adjacent-Reuse matrix
+
+The contract-driven Medium entry point is
+`run_yambda500m_medium_full_reuse_matrix.py`. It prepares the frozen 30k
+manifest and runs the 6L/H192/context1024 job only on physical GPU2/3 with two
+FSDP ranks and global batch 32 (16/16). It trains all 15 final checkpoints, then
+evaluates all 32 Full-only D7/D14 cells. Adjacent one-hop Reuse is constructed
+only after the edge's primary-horizon Full-only eligibility seal passes; rejected
+edges and their existing candidate descendants remain Reuse-locked. It never
+constructs recursive or long-age Reuse.
+
+```bash
+PYTHONPATH=src python scripts/run_yambda500m_medium_full_reuse_matrix.py --mode plan
+PYTHONPATH=src python scripts/run_yambda500m_medium_full_reuse_matrix.py --mode prepare
+PYTHONPATH=src python scripts/run_yambda500m_medium_full_reuse_matrix.py --mode smoke
+```
+
+The GPU2/3 correctness smoke passed on 2026-08-28, including v0/v1 training,
+Full-only raw sealing and the small-cohort adjacent-Reuse mechanics. GPU0/1 are
+not inspected or used by the runner. Canary quality is not qualification evidence.
+
+After all D7 Full-only cells completed, D14 evaluation was prospectively resumed
+with 14 disjoint NUMA-local physical CPU cores per rank (28 total). The raw
+evaluators accept explicit history/Arrow/Torch thread counts and per-rank CPU
+affinity; the D14-only values are injected by the runner from
+`yambda500m_medium_hstu_native_d14_cpu_runtime_v2.yaml`. A 16-user raw-only
+canary passed before the first formal D14 result was produced.
+
+After all 32 Full-only cells and the first D14 edge's three Reuse horizons
+completed, only the remaining nine D14 Reuse cells switch to GPU0/1/2/3 with
+four ranks, cohort 32, query chunk 256 and 14 NUMA-local physical CPU cores per
+rank. `--mode reuse-canary` runs the required raw-only runtime canary; the normal
+`--mode evaluate` validates that marker, skips every completed artifact, and
+continues with the four-GPU runtime.
+
+The later user-requested D7 Reuse completion is deliberately separate from the
+formal admission-controlled matrix. `--mode d7-forced-reuse-canary` checks the
+latest/longest D7 edge without labels; `--mode d7-forced-reuse` then runs all 20
+D7 E3/E7 cells under
+`yambda500m_medium_hstu_native_d7_forced_reuse_diagnostic_v1.yaml`. It uses the
+proven four-GPU cohort32/query256 runtime and writes only beneath
+`D7/forced_reuse_diagnostic_v1/`. It does not modify the formal D7 admission
+seals, `D7/reuse/`, `summary.json`, or serving/cache lineage. The long command
+requires acknowledgement `RUN_MEDIUM_D7_FORCED_REUSE`.
+
+The subsequent one-edge D14 extension uses
+`run_yambda500m_medium_d14_v5_extension.py`. It reuses the sealed v4 checkpoint,
+trains v5 only on `[273,287)`, and serially evaluates E3/E7 plus the isolated
+`E14_partial` window. Training is four-rank global batch 32; Full uses batch
+128/rank and Reuse uses cohort32/query256. The new manifest includes incomplete
+day300 only so the partial-tail result is reproducible and explicitly marked;
+it cannot be called complete E14 or promote a release. Formal launch requires
+`--acknowledge-long-run RUN_MEDIUM_D14_V5_EXTENSION`.
+
+Formal execution remains an explicit user action and requires the printed
+acknowledgement token. Completed checkpoint/raw seals are hash-validated and
+skipped on resume; partial directories stop the queue for audit. The exact
+formal command and result paths are recorded in
+`docs/medium_scale_training_plan.md`.
+
+## Recommendation-state observation
+
+The current population-scale insight probe reuses the frozen Small v0..v5
+checkpoints without training or labels:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src \
+  python scripts/insight/probe_recommendation_state_structure.py
+PYTHONPATH=src \
+  python scripts/insight/adjudicate_recommendation_state_structure.py
+```
+
+The formal contract requires 3,000 fixed users, all five adjacent edges, 512
+pre-cutover events and 64 label-free candidate probes per user-edge. Probe
+candidates are not negatives. The result identifies state structure; it does
+not authorize a user-basis mechanism, scheduler, training run or lineage
+promotion.
+
+The expert-requested follow-up adds signed/head-wise causal intervention and
+real exposed candidate validation under
+`yambda500m_small_hstu_native_candidate_shared_causal_v1.yaml`. That structure
+gate passed. The single matched-cost executable candidate under
+`yambda500m_small_hstu_native_evidence_measure_basis_v1.yaml` failed its
+label-free five-edge canary 0/5 and therefore did not unlock formal quality or
+action admission. The corrected reader-stage/persistence contract then passed
+both gates and unlocked exactly one compact-probe AV broadcast residual. Its
+label-free score canary passed 4/5, with `v3_to_v4` retained as a negative;
+formal quality and action admission remain locked for expert review.
+
+The follow-up lightweight PRO path removes per-user translated-prefix
+materialization. It pushes the fixed joint version map into one latest-item
+reader probe and replays 32 recent Current carriers against the unmodified
+Parent prefix. The unchanged held-out v2 correctness/cost audit passed at 9.1%
+of Full theoretical FLOPs with zero translated-prefix positions in the action.
+The subsequent frozen full-population run sealed each edge before label join:
+PRO improved Reuse AUC on 5/5 edges and log-loss on 3/5, with favorable mean
+edge deltas for both. Overall design viability is positive, but the prospective
+4/5+4/5 strict gate failed; it does not authorize serving admission, additional
+seeds, runtime qualification, or training.
+
+The latest label-free progressive-PRO follow-up is implemented under
+`scripts/insight/`. It first decomposes C32 direction/amplitude and rolling
+decay, then measures the same two-probe, one-component mechanism at C32/C48/C64.
+C64 improves C32 relative L2 on all five cutover and rolling edges, but the
+absolute rolling-direction gate and the prefrozen monotonic-frontier gate fail.
+The adjudicator therefore retains C32 and does not unlock another quality run.
 
 ## Random-weight release-cost benchmark (implementation only; no quality claim)
 

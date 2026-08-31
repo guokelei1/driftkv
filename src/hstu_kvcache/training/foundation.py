@@ -39,13 +39,24 @@ class FoundationHistoryIndex:
         order = np.lexsort((item_ids, timestamps, uids))
         uids, timestamps = np.asarray(uids)[order], np.asarray(timestamps)[order]
         item_ids, behaviors = np.asarray(item_ids)[order], np.asarray(behaviors)[order]
+        if len(uids) == 0:
+            return cls({})
+        # ``uids`` is already contiguous after the lexicographic sort.  The
+        # former implementation rebuilt a full-length boolean mask for every
+        # user, making population-scale construction O(events * users).  Slice
+        # the same sorted arrays at UID boundaries instead; ordering and dtypes
+        # are unchanged while construction becomes O(events + users).
+        boundary = np.empty(len(uids), dtype=bool)
+        boundary[0] = True
+        boundary[1:] = uids[1:] != uids[:-1]
+        starts = np.flatnonzero(boundary)
+        ends = np.r_[starts[1:], len(uids)]
         rows = {}
-        for uid in np.unique(uids):
-            mask = uids == uid
-            rows[int(uid)] = (
-                timestamps[mask].astype(np.int64),
-                item_ids[mask].astype(np.int64),
-                behaviors[mask].astype(np.int64),
+        for start, end in zip(starts, ends, strict=True):
+            rows[int(uids[start])] = (
+                timestamps[start:end].astype(np.int64),
+                item_ids[start:end].astype(np.int64),
+                behaviors[start:end].astype(np.int64),
             )
         return cls(rows)
 
@@ -61,11 +72,17 @@ class FoundationHistoryIndex:
 
 
 def collate_foundation_batch(
-    requests: list[dict], history: FoundationHistoryIndex, *, device: torch.device
+    requests: list[dict], history: FoundationHistoryIndex, *, device: torch.device,
+    max_history: int = 512,
 ) -> FoundationBatch:
     if not requests:
         raise ValueError("empty foundation batch")
-    prefixes = [history.prefix(row["uid"], row["query_timestamp"]) for row in requests]
+    if max_history < 1:
+        raise ValueError("max_history must be positive")
+    prefixes = [
+        history.prefix(row["uid"], row["query_timestamp"], max_history=max_history)
+        for row in requests
+    ]
     if any(len(prefix[0]) == 0 for prefix in prefixes):
         raise ValueError("foundation request has an empty strict-prior prefix")
     width = max(len(prefix[0]) for prefix in prefixes)

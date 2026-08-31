@@ -35,3 +35,27 @@ def test_uid_assignment_is_deterministic_balanced_and_user_closed() -> None:
     assert first == second and set(first) == set(uids.tolist())
     loads = [sum(int(counts[index]) for index, uid in enumerate(uids) if first[int(uid)] == rank) for rank in range(4)]
     assert max(loads) - min(loads) <= int(counts.max())
+
+
+def test_staged_epoch_schedule_is_contract_bound_and_keeps_one_epoch_boundary() -> None:
+    module = _load_script()
+    recipe = {
+        "checkpoint_epochs": [0.5, 1.0, 1.5, 2.0],
+    }
+    epochs = module.parse_checkpoint_epochs("0.5,1.0,1.5,2.0", recipe, 2)
+    assert epochs == (0.5, 1.0, 1.5, 2.0)
+    schedule = module.checkpoint_step_schedule(3597, epochs)
+    assert schedule == {1799: 0.5, 3597: 1.0, 5396: 1.5, 7194: 2.0}
+    assert module.epoch_checkpoint_name(0.5) == "checkpoint_epoch_0p5.pt"
+    assert module.epoch_checkpoint_name(2.0) == "checkpoint_epoch_2.pt"
+
+
+def test_staged_epoch_schedule_rejects_uncontracted_or_incomplete_endpoints() -> None:
+    import pytest
+
+    module = _load_script()
+    recipe = {"checkpoint_epochs": [0.5, 1.0, 1.5, 2.0]}
+    with pytest.raises(RuntimeError):
+        module.parse_checkpoint_epochs("0.5,1.0,2.0", recipe, 2)
+    with pytest.raises(RuntimeError):
+        module.parse_checkpoint_epochs("0.5,1.0,1.5,2.0", recipe, 3)

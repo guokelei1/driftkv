@@ -1,0 +1,74 @@
+contract: yambda500m_medium_hstu_native_d14_reuse_4gpu_runtime_v3
+date_frozen: 2026-08-28
+status: prospective_four_gpu_runtime_for_remaining_d14_reuse_v3
+purpose: >-
+  Continue only the unfinished Medium D14 adjacent-Reuse evaluations with four
+  data-parallel evaluator ranks and a larger user/query batch. Preserve every
+  completed two-rank artifact and all data, model, lineage, metric and admission
+  semantics.
+
+frozen_parent:
+  matrix_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+  matrix_contract_sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  execution_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_execution_admission_v1.yaml
+  execution_contract_sha256: d2e86f97e082779d64014da911d4214ae05cb6e90f0aa9fca2a8e1014e59aa72
+  d14_cpu_runtime: configs/contracts/yambda500m_medium_hstu_native_d14_cpu_runtime_v2.yaml
+  d14_cpu_runtime_sha256: 8894ce06d1af32a35178e87f12c6d0c9387bcbda14170187afd52bc78660f93d
+
+freeze_boundary:
+  all_full_only_cells_complete: true
+  d7_reuse_locked_cells: 20
+  completed_d14_reuse_cells: [v0_to_v1_E3, v0_to_v1_E7]
+  running_two_rank_cell_allowed_to_finish: v0_to_v1_E14
+  first_four_rank_formal_cell: v1_to_v2_E3
+  overwrite_or_recompute_completed_cells: prohibited
+  runtime_selected_from_quality: false
+
+scope:
+  branch: D14
+  phase: adjacent_reuse_only
+  remaining_edges: [v1_to_v2, v2_to_v3, v3_to_v4]
+  horizons: [3, 7, 14]
+  physical_gpus: [0, 1, 2, 3]
+  world_size: 4
+  one_four_rank_job_at_a_time: true
+
+runtime:
+  cohort_size_per_rank: 32
+  query_chunk_size_per_rank: 256
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+  rank0_cpu_affinity: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  rank1_cpu_affinity: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+  rank2_cpu_affinity: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+  rank3_cpu_affinity: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+  total_physical_history_workers: 56
+  hyperthread_siblings_used: false
+
+correctness_canary:
+  edge: v1_to_v2
+  horizon_days: 3
+  maximum_users_per_rank: 64
+  maximum_peak_reserved_mib_per_rank: 40000
+  output: results/yambda500m_medium_seed17/full_reuse_matrix_v1/reuse_4gpu_runtime_v3_canary/D14_E3_v1_to_v2
+  quality_metric_read: prohibited
+  pass:
+    - raw_seal_row_conservation
+    - exactly_three_paths_per_request
+    - no_runtime_error
+    - peak_reserved_memory_below_40000_MiB_on_every_rank
+
+invariants:
+  change_data_or_window: prohibited
+  change_model_or_checkpoint: prohibited
+  change_labels_or_metrics: prohibited
+  change_admission_or_lineage: prohibited
+  change_evaluated_population: prohibited
+  selected_edge_reporting: prohibited
+
+authorization:
+  four_gpu_canary: authorized_by_user_2026_08_28
+  resume_remaining_d14_reuse_after_canary_pass: authorized_by_user_2026_08_28

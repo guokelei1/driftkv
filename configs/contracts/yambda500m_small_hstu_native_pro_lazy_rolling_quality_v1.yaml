@@ -1,0 +1,156 @@
+contract: yambda500m_small_hstu_native_pro_lazy_rolling_quality_v1
+date_frozen: 2026-08-27
+status: prospective_frozen_five_edge_rolling_quality
+purpose: test_the_frozen_no_materialized_CAST_per_user_reader_offset_on_real_E14_recommendation_quality
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  training_days: 14
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  evaluation_days: [14]
+  population: full_frozen_E14_request_population
+  gpus: [0, 1, 2, 3]
+  new_training: false
+  recursive_reuse: prohibited
+  lineage_promotion: prohibited
+
+frozen_method:
+  name: per_user_reader_offset
+  path: evokv_pro_lazy_reader_c32_rolling
+  serving_base: one_hop_Parent_KV_then_ordinary_Current_appends
+  materialized_version_translated_prefix_positions: 0
+  transformed_prefix_KV_writeback: prohibited
+  old_prefix:
+    positions: 384
+    version_map: frozen_parameter_only_joint_KV_map
+    execution: pushed_into_one_fixed_probe_reader_aggregation
+  recent_evidence:
+    positions: 128
+    carriers: 32
+    grouping: fixed_chronological_groups_of_4
+    dependency_source: unmodified_Parent_old_prefix
+    represented_mass: explicit_value_scale_4
+  probe:
+    item: most_recent_strictly_pre_cutover_history_item
+    query_time_delta: 0
+    candidate_count: 1
+  sidecar:
+    stage: av_aggregation
+    shape: 4_layers_times_4_heads_times_32_head_dim
+    scalars: 512
+    fp32_bytes: 2048
+    generated: once_per_user_at_release
+    consumed: broadcast_across_the_candidate_bank
+    coverage_scale: max_0_512_minus_rolling_evictions_divided_by_512
+  underfull_cutover_rule: label_free_Reuse_no_op
+
+fixed_cost:
+  headline_release_time_compute_fraction_of_Full:
+    carriers_16_diagnostic: 0.052131083665129925
+    carriers_32_primary: 0.09140968802388935
+  primary_fraction_limit: 0.20
+  action_translated_prefix_positions: 0
+  serving_arithmetic_reported_separately:
+    coverage_scale_multiplies_per_user_request: 512
+    AV_adds_per_candidate: 512
+
+focused_canary:
+  population: first_8_frozen_assignment_users_per_rank_per_edge
+  edges: all_five
+  raw_first: true
+  labels_read: false
+  required_paths:
+    - current_exact_rolling
+    - one_hop_reuse_rolling
+    - evokv_pro_lazy_reader_c32_rolling
+  correctness:
+    baseline_replay_max_abs_error: 0.00002
+    exact_request_path_alignment: required
+    no_label_column: required
+  progression_gate: all_five_edges_pass_structural_and_replay_checks
+  on_failure: stop_before_formal_and_retain_failure_without_mechanism_changes
+
+formal_quality:
+  raw_scores_sealed_before_label_join: required
+  exact_request_set_equal_to_frozen_Design0: required
+  all_five_edges_reported: required
+  comparisons:
+    - Parent_Exact_rolling
+    - Current_Exact_rolling
+    - Reuse_rolling
+    - sealed_Design0
+    - PRO
+  headline_metrics: [ROC_AUC, log_loss, release_gain_retention]
+  companions: [dislike_PR_AUC, Brier, Bernoulli_JS_to_Current, mean_absolute_logit_gap_to_Current]
+  inherited_directional_gate:
+    basis: preserve_the_previously_observed_fixed_compact_sidecar_4_of_5_edge_behavior
+    PRO_ROC_AUC_not_below_Reuse_edges_minimum: 4
+    PRO_log_loss_not_above_Reuse_edges_minimum: 4
+    mean_PRO_minus_Reuse_ROC_AUC_nonnegative: required
+    mean_PRO_minus_Reuse_log_loss_nonpositive: required
+  Design0_is_a_frozen_comparison_baseline_not_a_pipeline_stage: true
+  interpretation_on_pass: eligible_for_label_free_safety_gate_then_extra_seed_and_runtime_validation
+  interpretation_on_failure: retain_negative_and_do_not_tune_probe_grouping_scale_or_edges
+
+protocol:
+  candidate_bank_for_construction: prohibited
+  labels_for_construction_or_scheduling: prohibited
+  target_Current_KV_fitting: prohibited
+  semantic_GROUP: prohibited
+  learned_selector_or_route: prohibited
+  per_candidate_route: prohibited
+  probe_item_grouping_carrier_count_or_scale_tuning: prohibited
+  edge_or_user_selection_from_results: prohibited
+  selective_removal_of_v3_to_v4: prohibited
+  overwrite_existing_evidence: prohibited
+  full_population_raw_first_before_label_join: required
+
+frozen_inputs:
+  PRO_correctness_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_pro_lazy_reader_v2.yaml
+    sha256: 3832220104bd96ca64fb6c9c2b409ca777cc03b5659df09150e147ec1636ee4a
+  PRO_correctness_summary:
+    path: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost_v2/summary.json
+    sha256: 013a51f465d9b823b807765695b286fe325611072085549ea389e9c9b2c8c0f0
+    required_status: pro_lazy_reader_correctness_and_cost_passed
+  PRO_cost:
+    path: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost_v2/theoretical_compute.json
+    sha256: 6a844255047292e593980710264016fa831cd448213910b34a448e8109dc70e8
+  Design0_formal_raw:
+    v0_to_v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v0_to_v1/raw.parquet, sha256: 3d5a2c7a14cae497c58a8d839ef5ab5c5252ae2d6788119be1db33b181be580f}
+    v1_to_v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v1_to_v2/raw.parquet, sha256: 4e68ae668625f1050398d20a48505a4f010997387733ebb80cdbf7efb39c644b}
+    v2_to_v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v2_to_v3/raw.parquet, sha256: 3089c8435aa261980a9ed845ea951326aa834bd035f4985b7060ac5038dcc67f}
+    v3_to_v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v3_to_v4/raw.parquet, sha256: 5d2cdd7b05e3076ea06e6a2e70418fa617fb85b761f45bb1cf54a452bdd07c41}
+    v4_to_v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v4_to_v5/raw.parquet, sha256: fbf12579e0a071af6c1edfd912fd41add823889d83144cdd5c0b74c637762e6e}
+  full_only_gain_table:
+    path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_onehop_reuse_completion_v2/auc_release_gain_coverage_table.json
+    sha256: b6bdf667b3e20d6a9f9db622538e6ce715971daf4f37286c6ba902813e654721
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  requests_fidelity:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_fidelity.parquet
+    sha256: 029cfec77fbdfefcc58ee31c9b0311f900e685f783082f54e3acda3d011b63fd
+  requests_quality:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_quality.parquet
+    sha256: 922b7807f691300c8c86907a5441810f16f28d85fef578d36041ef35c7a865c8
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  implementation_and_unit_tests: true
+  focused_four_gpu_canary: true
+  formal_four_gpu_inference_after_canary: true
+  new_training: false
+  medium_large_training: false
+  runtime_benchmark_before_quality_gate: false
+  extra_seed_before_quality_gate: false
+  theta3_read_or_training: false

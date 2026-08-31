@@ -1,0 +1,166 @@
+contract: yambda500m_small_hstu_native_progressive_pro_decomposition_v1
+date_frozen: 2026-08-28
+status: prospective_label_free_progressive_PRO_error_decomposition_v1
+purpose: determine_whether_lightweight_PRO_error_is_direction_or_amplitude_dominated_and_whether_two_fixed_probes_and_segment_scalar_decay_are_supported
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  new_training: false
+  development_evidence_only: true
+  request_labels: prohibited
+  quality_adjudication: prohibited
+  lineage_promotion: prohibited
+  scale_action_admission: prohibited
+
+fixed_samples:
+  cutover:
+    users_per_edge: 64
+    selection: first_64_population_selector_order_users_with_full_512_pre_cutover_history
+    history: last_512_events_strictly_before_cutover
+    candidate_bank: frozen_controlled_width_64_panel
+    query_time_delta: 0
+  rolling:
+    users_per_edge_maximum: 64
+    selection: first_64_population_selector_order_users_with_full_cutover_history_and_at_least_two_real_exposed_groups
+    requests_per_user: [first_eligible, last_eligible]
+    candidate_bank: largest_available_real_exposed_width_in_2_4_8_16
+    request_order: query_before_same_timestamp_append
+    state_transition: Current_appends_to_both_Current_Exact_and_Parent_Reuse_lineages_with_rolling_cap_512
+  focused_canary:
+    users_per_edge: 8
+    cutover_and_rolling: required
+    all_five_edges: required
+
+mechanism_under_diagnosis:
+  serving_base: Parent_persistent_KV
+  materialized_version_translated_prefix_positions: 0
+  carrier_count: 32
+  repair_window: latest_128_pre_cutover_events
+  carrier_partition: deterministic_consecutive_groups_with_endpoint_anchor_and_explicit_mass
+  carrier_dependency_source: unmodified_Parent_prefix_first_384_positions
+  fixed_candidate_independent_probes:
+    - latest_pre_cutover_history_item
+    - oldest_item_in_latest_128_pre_cutover_window
+  probe_query_time_delta: 0
+  stage: av_aggregation
+  two_probe_combination:
+    direction: normalized_sum_of_per_probe_unit_directions_per_layer
+    old_amplitude: mean_projection_of_the_two_old_coordinate_components_onto_shared_direction
+    recent_amplitude: mean_projection_of_the_two_recent_context_components_onto_shared_direction
+  rolling_scalar_rules:
+    legacy_global: max_0_512_minus_evictions_divided_by_512
+    segment_old: max_0_384_minus_evictions_divided_by_384
+    segment_recent: one_until_384_evictions_then_max_0_128_minus_additional_evictions_divided_by_128
+  persisted_action:
+    direction_scalars: 4_layers_times_128
+    amplitude_scalars: 4_layers_times_2_segments
+    total_FP32_scalars: 520
+
+exact_oracle:
+  source: coherent_Current_Exact_minus_Parent_Reuse_candidate_mean_AV_aggregation_correction
+  allowed_use: label_free_error_decomposition_only
+  prohibited_use: [target_KV_fitting, serving_action, request_or_edge_selection, quality_claim]
+
+frozen_metrics:
+  layerwise:
+    - direction_cosine_to_exact_shared_AV
+    - estimated_to_exact_norm_ratio
+    - relative_L2_to_exact_shared_AV
+    - oracle_projection_amplitude_relative_L2
+    - fixed_probe_direction_cosine
+    - fixed_probe_norm_ratio
+    - old_to_recent_component_direction_cosine
+  score_fidelity_without_labels:
+    - mean_absolute_logit_gap_to_Current_Exact
+    - mean_absolute_probability_gap_to_Current_Exact
+    - probability_gap_recovery_over_Reuse
+  comparisons:
+    cutover: [single_latest_probe, dual_probe]
+    rolling: [single_probe_global_decay, dual_probe_global_decay, dual_probe_segment_decay]
+  aggregation:
+    - every_edge_reported
+    - request_weighted_edge_medians
+    - non_weighted_five_edge_mean
+    - cutover_and_rolling_reported_separately
+
+prefrozen_interpretation_rules:
+  stable_direction:
+    threshold_median_cosine: 0.90
+    minimum_edges_at_cutover: 4
+    minimum_edges_at_rolling: 4
+  amplitude_dominant_error:
+    oracle_projection_relative_L2_reduction_minimum: 0.25
+    minimum_edges_at_cutover: 4
+    minimum_edges_at_rolling: 4
+  two_probe_consistency:
+    median_direction_cosine_minimum: 0.90
+    median_norm_ratio_interval: [0.5, 2.0]
+    minimum_edges: 4
+  segment_decay_selection:
+    condition: dual_probe_segment_decay_relative_L2_not_above_dual_probe_global_decay_on_at_least_4_edges_and_lower_five_edge_mean
+    on_pass: freeze_segment_decay_for_progressive_frontier
+    on_failure: retain_global_decay_and_preserve_negative_result
+  component_rule:
+    second_component_allowed_only_if: two_probe_median_direction_cosine_below_0.90_on_at_least_2_edges
+    otherwise: one_persistent_direction_per_layer
+
+progression:
+  on_valid_diagnostic: freeze_one_progressive_PRO_frontier_contract_before_frontier_execution
+  next_frontier_carriers: [32, 48, 64]
+  next_frontier_probes: 2
+  expected_budget_names: [approximately_10_percent, approximately_15_percent, approximately_20_percent]
+  formal_quality: new_training_seed_or_new_frozen_release_edge_only
+  same_five_edge_labels_for_formal_claim: prohibited
+
+protocol:
+  raw_first: true
+  compact_aggregates_only: true
+  expanded_KV_output: prohibited
+  future_labels: prohibited
+  sampled_or_synthetic_negatives: prohibited
+  raw_request_items_are_not_interpreted_as_negatives: true
+  probe_carrier_coverage_or_threshold_tuning_after_results: prohibited
+  semantic_GROUP_embedding_selector_per_candidate_route_history_basis_PCA_SVD: prohibited
+
+frozen_inputs:
+  prior_quality_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_pro_lazy_rolling_quality_v1.yaml
+    sha256: 3735bac1baf18781d86dc4df44d51bd32f311045700c46711cdbd4e5356f1e72
+  prior_quality_adjudication:
+    path: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/rolling_quality_v1/formal/summary.json
+    sha256: 1cee68f72aed083d1d0763eb8f6c2f00c67ca92a1a0105542071271c3a6f4abe
+  prior_correctness_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_pro_lazy_reader_v2.yaml
+    sha256: 3832220104bd96ca64fb6c9c2b409ca777cc03b5659df09150e147ec1636ee4a
+  prior_correctness_adjudication:
+    path: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost_v2/summary.json
+    sha256: 013a51f465d9b823b807765695b286fe325611072085549ea389e9c9b2c8c0f0
+  population:
+    path: results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/population.parquet
+    sha256: 60ed4ba5ace8ad26cac713e9493242c549935bc64c5d58218954fbc85fccf7f8
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  requests_fidelity:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_fidelity.parquet
+    sha256: 029cfec77fbdfefcc58ee31c9b0311f900e685f783082f54e3acda3d011b63fd
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  implementation_and_unit_tests: true
+  focused_single_GPU_label_free_canary: true
+  formal_single_GPU_label_free_decomposition: true
+  progressive_frontier_only_after_valid_decomposition: true
+  formal_quality: false
+  new_training: false
+  medium_large_training: false
+  theta3: false

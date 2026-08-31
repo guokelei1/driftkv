@@ -1,0 +1,133 @@
+contract: yambda500m_small_hstu_native_pro_lazy_reader_v2
+date_frozen: 2026-08-27
+status: prospective_label_free_scale_aware_correctness_and_cost_v2
+purpose: repeat_the_no_materialized_CAST_PRO_audit_on_held_out_users_with_a_dimensionless_FP32_equivalence_metric
+
+protocol_correction:
+  v1_outcome: retained_failure
+  v1_issue: absolute_2e_minus_5_threshold_was_copied_from_logit_replay_to_unnormalized_AV_tensors
+  v1_observed_max_absolute_error: 0.015625
+  mechanism_changed: false
+  carrier_probe_grouping_and_scale_changed: false
+  correction: use_relative_L2_for_AV_and_keep_absolute_error_for_score_replay
+  relative_threshold_basis: conservative_FP32_dot_and_reduction_error_bound_not_v1_observed_maximum
+  independence: next_32_selector_order_users_not_used_by_v1
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  users_per_edge: 32
+  population_offset: 32
+  history: 512_strictly_pre_cutover_events
+  new_training: false
+  request_labels: prohibited
+  request_candidate_bank: prohibited
+  score_adjudication: prohibited
+  lineage_promotion: prohibited
+
+mechanism:
+  name: per_user_reader_offset_lazy_reader_v1_unchanged
+  serving_base: Parent_persistent_KV
+  materialized_version_translated_prefix_positions: 0
+  version_transform:
+    source: frozen_parameter_only_joint_map
+    execution: pushed_into_one_fixed_probe_AV_aggregation
+    transformed_query: once_per_layer_per_user
+    parent_state: streamed_without_translated_KV_allocation_or_writeback
+    transformed_value: once_after_weighted_parent_state_sum_per_layer_per_user
+  recent_context:
+    evidence: latest_raw_128_pre_cutover_events
+    primary_carriers: 32
+    diagnostic_carriers: 16
+    grouping: fixed_consecutive_equal_width
+    dependency_source: unmodified_Parent_prefix_first_384_positions
+    output: Current_KV_for_carriers_only
+    represented_mass: explicit_value_scale_4_for_32_or_8_for_16
+  probe:
+    item: most_recent_strictly_pre_cutover_history_item
+    query_time_delta: 0
+    candidates: 1
+  sidecar:
+    stage: av_aggregation
+    scalars: 4_layers_times_128_equal_512_per_user
+    persistence: bounded_post_release_horizon_with_coverage_decay
+
+rationale:
+  exact_lazy_map_for_all_32_carrier_queries: rejected_by_analytic_cost_before_execution
+  exact_lazy_16_fraction_of_Full: 0.2063641096500419
+  exact_lazy_32_fraction_of_Full: 0.39987573999371334
+  lightweight_choice: map_only_the_single_probe_and_keep_carrier_context_dependency_closed_on_Parent_Reuse
+
+cost_contract:
+  headline: conservative_ideal_causal_release_time_FLOPs
+  full_recompute_flops_per_user: 625475584
+  carrier_axis: [16, 32]
+  maximum_fraction_of_full: 0.20
+  count_version_map_construction: report_once_per_release_edge_separately
+  count_parent_state_read: report_unique_and_conservative_stream_bytes
+  count_sidecar_write: report_scalars_and_bytes
+  prohibit_excluding_per_user_reader_pushed_map_arithmetic: true
+
+correctness_canary:
+  reference: materialized_joint_map_AV_with_the_same_Parent_conditioned_carriers
+  fused_reference_relative_l2: 0.0001
+  replay_max_abs_error: 0.00002
+  retain_absolute_AV_error_as_diagnostic: true
+  primary_legacy_sidecar_comparison:
+    metrics: [direction_cosine, norm_ratio, layer_relative_error]
+    interpretation: diagnostic_only_not_a_quality_or_admission_result
+  progression_gate:
+    - scale_aware_fused_equivalence_all_edges_within_tolerance
+    - primary_32_carrier_theoretical_compute_not_above_20_percent_of_Full
+    - zero_materialized_version_translated_prefix_state
+  on_pass: return_to_expert_before_any_score_or_quality_canary
+  on_failure: stop_and_retain_negative_without_tuning_probe_grouping_or_scale
+
+prohibited:
+  - materialized_CAST_prefix_cache_in_the_PRO_action
+  - transformed_prefix_KV_writeback
+  - target_Current_KV_fitting
+  - labels_or_future_events
+  - per_candidate_route_or_selector
+  - semantic_GROUP
+  - probe_item_or_scale_tuning
+  - full_population_rolling_quality
+  - long_training
+
+frozen_inputs:
+  v1_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_pro_lazy_reader_v1.yaml
+    sha256: a192d8e50480c39630dc60686d3481e1e0b6cc81c8695373ad76a6569c7c8200
+  v1_raw_seal:
+    path: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost/raw.seal.json
+    sha256: 181c2250789b0d67b5697ad155dba6d24e6699497dcd2909f724a8b94b359ffb
+  v1_failed_adjudication:
+    path: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost/summary.json
+    sha256: 5ab9192848bdfa5e6bb33b220a1a0066fe30f4edd3ed43e7ff51778ef6548951
+  previous_sidecar_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_av_broadcast_residual_v1.yaml
+    sha256: ec365a781ca6fe46cde1404a79af1a9ec82574f95eebc2f94d8ac210dae0cafa
+  population:
+    path: results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/population.parquet
+    sha256: 60ed4ba5ace8ad26cac713e9493242c549935bc64c5d58218954fbc85fccf7f8
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  implementation_and_unit_tests: true
+  label_free_correctness_and_cost_canary: true
+  score_canary: false
+  formal_quality: false
+  new_training: false
+  medium_large: false
+  theta3: false

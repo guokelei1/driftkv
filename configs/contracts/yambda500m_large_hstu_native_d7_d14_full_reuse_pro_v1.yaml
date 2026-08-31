@@ -1,0 +1,219 @@
+contract: yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1
+date_frozen: 2026-08-29
+status: prospective_user_authorized_pending_manifest_resource_canary_and_execution_seal
+purpose: >-
+  Prospectively qualify the frozen HSTU-native motivation and lightweight PRO
+  design at the complete Yambda-500M Large population without architecture,
+  release, horizon, or estimator search after any Large quality is read.
+
+decision_basis:
+  expert_adjudication: user_supplied_2026_08_29
+  sizing_discussion: docs/large_scale_model_sizing_discussion.md
+  sizing_discussion_sha256: 3d3f6acfad892a23b192e207d09d76043f8dc5fdb173bdd23b48065c6a8fa317
+  frozen_primary: 10L_H320_heads10_context1024
+  excluded_branch: 12L_H320
+  physical_fallback_order: [8L_H320_heads10_context1024, 8L_H256_heads8_context1024]
+  fallback_trigger_only: [cuda_oom, nonfinite_training, unsafe_memory_headroom, throughput_floor_failure, checkpoint_failure, state_io_failure]
+  quality_or_auc_may_select_architecture: false
+
+scope:
+  scale: EvoKV-HSTU-L
+  dataset: Yambda-500M
+  workload: F_only
+  seed: 17
+  population_users: 79681
+  population_semantics: all_lineage_eligible_users
+  foundation_days_half_open: [0, 217]
+  stream_available_days_half_open: [217, 301]
+  complete_source_days_half_open: [0, 300]
+  partial_tail_day: 300
+  day300_is_formal_complete_day: false
+  theta3_contract_boundary_sealed_here: true
+  theta3_read_or_trained: false
+  branches:
+    D7:
+      training_days: 7
+      updates: 10
+      versions: [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10]
+      evaluation_days: [7]
+      complete_evaluation_edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6, v6_to_v7, v7_to_v8, v8_to_v9, v9_to_v10]
+    D14:
+      training_days: 14
+      updates: 5
+      versions: [v0, v1, v2, v3, v4, v5]
+      evaluation_days: [7, 14]
+      complete_E14_edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4]
+      partial_E14_edges: [v4_to_v5]
+      v4_to_v5_E14_name: E14_partial
+      v4_to_v5_E14_interpretation: directional_diagnostic_not_complete_horizon_qualification
+
+frozen_inputs:
+  unified_scale_contract: configs/contracts/yambda500m_unified_scales_v1.yaml
+  unified_scale_contract_sha256: 7451d6042e86f24a15b24d31266b46c53d82035c2d1b5b1f5e96eb4d06f22fd0
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/large/dataset.json
+  dataset_manifest_sha256: f93c1a3ac5e59d94d557a873bbfca02312fe342dcfa20239105240fe70ccca6e
+  item_mapping: data/processed/yambda500m_unified_v1/scales/large/item_mapping.parquet
+  item_mapping_sha256: 8f54dd2a660c9812cd68faf94ea5bd3723fe7b277d07dd1f71ba78201de98382
+  population: data/processed/yambda500m_unified_v1/scales/large/users.parquet
+  population_sha256: dc57c54a5975eb5a6bfb8537667a6b60f2f1888f1726b30f9b7d6264362214bc
+  small_PRO_quality_contract: configs/contracts/yambda500m_small_hstu_native_pro_lazy_rolling_quality_v1.yaml
+  small_PRO_quality_contract_sha256: 3735bac1baf18781d86dc4df44d51bd32f311045700c46711cdbd4e5356f1e72
+  small_PRO_theoretical_compute: results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost_v2/theoretical_compute.json
+  small_PRO_theoretical_compute_sha256: 6a844255047292e593980710264016fa831cd448213910b34a448e8109dc70e8
+
+model:
+  num_behaviors: 4
+  hidden_size: 320
+  num_layers: 10
+  num_heads: 10
+  max_seq_len: 1024
+  num_query_types: 3
+  query_type_id: 2
+  num_query_actions: 1
+  query_action_id: 0
+  input_dropout: 0.1
+  oov_buckets: 256
+  known_items_from_dataset_manifest: 2224809
+  head_dimension: 32
+  total_parameters: 717260481
+  contextual_block_parameters: 5123200
+  total_parameter_reporting_must_separate_embedding_and_contextual_blocks: true
+
+manifest:
+  output: data/manifests/yambda500m_large_hstu_native_d7_d14_v1
+  blocks:
+    foundation: [0, 217]
+    matrix_horizon: [217, 301]
+  request_group: [uid, timestamp, raw_item_id]
+  exact_duplicates_collapsed: true
+  conflicting_labels_excluded: true
+  strict_prior_listen_required: true
+  target_oov_retained_for_audit_but_not_training_or_evaluation: true
+  day300_rows_retained_and_explicitly_tagged_by_evaluation_window: true
+  label_metrics_during_preparation: prohibited
+
+training:
+  objective: F_only_binary_cross_entropy
+  passes: 1
+  optimizer: fresh_AdamW_per_checkpoint
+  foundation_learning_rate: 0.0002
+  update_learning_rate: 0.00005
+  weight_decay: 0.0001
+  user_equal_window_weighting: true
+  direct_parent_warm_start: true
+  early_stopping: prohibited
+  checkpoint_selection: final_whole_pass_only
+  fsdp: FULL_SHARD
+  compute_dtype: bf16
+  reduction_and_optimizer_dtype: fp32
+  resource_canary_global_batch_candidates: [64, 96]
+  runtime_selection_reads_quality: false
+  formal_global_batch_from_execution_seal: required
+
+release_admission:
+  full_only_before_any_reuse_or_PRO: required
+  full_only_paths: [parent_exact_request_local, current_exact_request_local]
+  primary_horizon:
+    D7_all_edges: 7
+    D14_v0_to_v4: 14
+    D14_v4_to_v5: 7
+  metric_gate:
+    current_minus_parent_ROC_AUC_strictly_positive: true
+    parent_minus_current_log_loss_strictly_positive: true
+    current_brier_not_greater_than_parent: true
+    parent_minus_current_log_loss_user_cluster_bootstrap_95CI_lower_strictly_positive: true
+  all_edge_diagnostic_after_admission_seal: true
+  rejected_candidate_changes_serving_parent_or_cache_lineage: false
+  direct_parent_candidate_chain_is_not_serving_lineage: true
+  serving_lineage_promotion: prohibited
+
+evaluation:
+  D7_horizons: [7]
+  D14_horizons: [7, 14]
+  paths: [parent_exact_rolling, current_exact_rolling, one_hop_reuse_rolling]
+  adjacent_one_hop_only: true
+  recursive_reuse: prohibited
+  all_edges_reported: true
+  raw_scores_sealed_before_label_join: true
+  metrics: [ROC_AUC, dislike_PR_AUC, log_loss, Brier]
+  quality_or_reuse_used_for_runtime_selection: prohibited
+
+large_PRO:
+  branch: D14
+  horizons: [7, 14]
+  all_five_edges: true
+  path: evokv_pro_lazy_reader_c64_rolling
+  mapping_rule: same_repair_context_and_carrier_context_ratios_verified_at_same_Exact_relative_FLOPs
+  repair_width: 256
+  carriers: 64
+  represented_mass: 4
+  repair_over_context_fraction: 0.25
+  carriers_over_context_fraction: 0.0625
+  materialized_version_translated_prefix_positions: 0
+  sidecar_shape: 10_layers_times_10_heads_times_32_head_dim
+  sidecar_scalars: 3200
+  sidecar_fp32_bytes: 12800
+  theoretical_compute_fraction_of_Full: 0.08919181505384934
+  small_primary_reference_fraction: 0.09140968802388935
+  construction: once_per_user_at_release_candidate_amortized
+  underfull_cutover_rule: label_free_Reuse_no_op
+  probe_item: most_recent_strictly_pre_cutover_history_item
+  candidate_bank_for_construction: prohibited
+  target_Current_KV_fitting: prohibited
+  carrier_probe_scale_or_edge_tuning_from_Large_results: prohibited
+
+resource_canary:
+  physical_gpus: [0, 1, 2, 3]
+  world_size: 4
+  training_steps_per_candidate: 20
+  train_candidates_in_order: [64, 96]
+  stop_escalation_if_peak_reserved_mib_above: 36000
+  formal_peak_reserved_mib_limit: 40000
+  require_finite_loss: true
+  require_checkpoint_save_and_parent_restore: true
+  full_eval_batch_candidates_per_rank: [32, 64]
+  reuse_cohort_candidates_per_rank: [8, 12]
+  reuse_query_chunk_candidates_per_rank: [128]
+  minimum_GPU_utilization_mean_percent_during_compute_phase: 50
+  runtime_choice: largest_safe_candidate_not_slower_than_previous_by_more_than_5_percent
+  full_reuse_PRO_dry_run: required
+  state_io_sample_users_per_rank: 8
+  state_io_write_read_checksum: required
+  quality_metric_read: prohibited
+
+resource_plan:
+  fp32_model_weight_gib: 2.672
+  final_checkpoints: 16
+  final_checkpoint_weight_gib: 42.8
+  full_population_bf16_KV_upper_bound_gib: 972.7
+  minimum_free_workspace_gib_before_formal: 160
+  gpu_model: NVIDIA_A40
+  minimum_free_memory_mib_per_gpu_before_job: 42000
+  one_four_rank_job_at_a_time: true
+  long_training_and_evaluation_wall_clock: measured_from_canary_not_precommitted
+
+failure_and_resume:
+  existing_complete_artifact: validate_hash_and_skip
+  existing_partial_directory: stop_for_audit
+  cuda_oom: stop_preserve_log_and_apply_only_pre_registered_physical_fallback
+  nonfinite_training: stop_preserve_log_and_apply_only_pre_registered_physical_fallback
+  failed_candidate: preserve_checkpoint_and_report_all_descendants_as_candidate_chain_only
+  raw_without_seal: stop_for_audit
+  seal_without_adjudication: resume_label_join_after_hash_validation
+  partial_E14_may_be_upgraded_to_complete: false
+
+authorization:
+  label_free_manifest_materialization: authorized_by_user_2026_08_29
+  four_gpu_resource_and_end_to_end_canary: authorized_by_user_2026_08_29
+  formal_long_training_after_passing_canary_and_execution_seal: authorized_by_user_2026_08_29
+  formal_full_reuse_PRO_after_checkpoint_completion: authorized_by_user_2026_08_29
+  serving_lineage_promotion: prohibited
+  architecture_or_estimator_search: prohibited
+
+outputs:
+  root: results/yambda500m_large_seed17/qualification_v1
+  structured_log: results/yambda500m_large_seed17/qualification_v1/logs/pipeline.jsonl
+  resource_canary: results/yambda500m_large_seed17/qualification_v1/resource_canary
+  state: results/yambda500m_large_seed17/qualification_v1/pipeline_state.json
+  summary_json: results/yambda500m_large_seed17/qualification_v1/summary.json
+  summary_markdown: results/yambda500m_large_seed17/qualification_v1/summary.md

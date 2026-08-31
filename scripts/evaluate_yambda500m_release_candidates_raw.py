@@ -44,13 +44,20 @@ def named_paths(values: list[str]) -> dict[str, Path]:
     return output
 
 
-def load_candidate_model(path: Path, device: torch.device) -> tuple[HSTU, dict]:
+def load_candidate_model(
+    path: Path, device: torch.device, *, allow_canary: bool = False,
+) -> tuple[HSTU, dict]:
     payload = torch.load(path, map_location="cpu", weights_only=False)
-    if payload.get("status") != "formal_small_seed17_checkpoint":
+    status = str(payload.get("status", ""))
+    status_ok = status.startswith("formal_") and status.endswith("_checkpoint")
+    status_ok = status_ok or (
+        allow_canary and status in {"four_gpu_canary_checkpoint", "distributed_canary_checkpoint"}
+    )
+    if not status_ok:
         raise RuntimeError(f"candidate evaluator requires a formal checkpoint: {path}")
     progress = float(payload.get("progress", -1.0))
     if progress != 1.0:
-        raise RuntimeError(f"release candidates must be complete whole-epoch checkpoints: {path}")
+        raise RuntimeError(f"release candidates must be complete contract endpoints: {path}")
     model = HSTU(HSTUConfig(**payload["config"])).to(device)
     model.load_state_dict(payload["model"])
     return model.eval(), payload
@@ -74,6 +81,7 @@ def main() -> None:
     parser.add_argument("--block", required=True)
     parser.add_argument("--training-block", required=True)
     parser.add_argument("--manifest-dir", type=Path, required=True)
+    parser.add_argument("--dataset-manifest", type=Path)
     parser.add_argument("--parent", required=True, help="NAME=PATH")
     parser.add_argument("--current", action="append", required=True, help="NAME=PATH")
     parser.add_argument("--output", type=Path, required=True)
@@ -81,6 +89,14 @@ def main() -> None:
     parser.add_argument("--max-users", type=int, default=0)
     parser.add_argument("--start-day", type=int)
     parser.add_argument("--end-day", type=int)
+    parser.add_argument("--training-start-day", type=int)
+    parser.add_argument("--training-end-day", type=int)
+    parser.add_argument("--allow-canary-checkpoints", action="store_true")
+    parser.add_argument("--history-threads", type=int, default=4)
+    parser.add_argument("--arrow-cpu-threads", type=int, default=4)
+    parser.add_argument("--arrow-io-threads", type=int, default=4)
+    parser.add_argument("--torch-cpu-threads", type=int, default=2)
+    parser.add_argument("--cpu-affinity-by-rank", help="semicolon-separated comma lists")
     args = parser.parse_args()
     parents = named_paths([args.parent])
     if len(parents) != 1:
@@ -88,14 +104,24 @@ def main() -> None:
     parent_name, parent_path = next(iter(parents.items()))
     current_paths = named_paths(args.current)
 
-    dist.init_process_group("nccl")
-    rank, world = dist.get_rank(), dist.get_world_size()
     local_rank = int(os.environ["LOCAL_RANK"])
+    if args.cpu_affinity_by_rank:
+        groups = args.cpu_affinity_by_rank.split(";")
+        if local_rank >= len(groups):
+            raise ValueError("CPU affinity does not define every local rank")
+        os.sched_setaffinity(0, {int(value) for value in groups[local_rank].split(",")})
+    if min(args.history_threads, args.arrow_cpu_threads, args.arrow_io_threads, args.torch_cpu_threads) < 1:
+        raise ValueError("CPU thread counts must be positive")
+    pa.set_cpu_count(args.arrow_cpu_threads)
+    pa.set_io_thread_count(args.arrow_io_threads)
+    torch.set_num_threads(args.torch_cpu_threads)
     torch.cuda.set_device(local_rank)
     device = torch.device(f"cuda:{local_rank}")
+    dist.init_process_group("nccl", device_id=device)
+    rank, world = dist.get_rank(), dist.get_world_size()
     try:
-        if world != 4:
-            raise RuntimeError("formal release-only evaluation requires four ranks")
+        if world < 1:
+            raise RuntimeError("release-only evaluation requires at least one rank")
         if not 1 <= args.batch_size <= 128:
             raise ValueError("batch-size must be in [1,128]")
         if rank == 0:
@@ -104,16 +130,29 @@ def main() -> None:
             args.output.mkdir(parents=True)
         dist.barrier()
 
-        parent, parent_payload = load_candidate_model(parent_path, device)
+        parent, parent_payload = load_candidate_model(
+            parent_path, device, allow_canary=args.allow_canary_checkpoints
+        )
         currents: dict[str, HSTU] = {}
         current_payloads: dict[str, dict] = {}
         for name, path in current_paths.items():
-            currents[name], current_payloads[name] = load_candidate_model(path, device)
+            currents[name], current_payloads[name] = load_candidate_model(
+                path, device, allow_canary=args.allow_canary_checkpoints
+            )
         models = {parent_name: parent, **currents}
         model_vocab_sizes = {int(payload["config"]["num_items"]) for payload in [parent_payload, *current_payloads.values()]}
         if len(model_vocab_sizes) != 1:
             raise RuntimeError("all Parent/Current candidates must share one item mapping dimension")
-        oov_buckets = model_vocab_sizes.pop() - 781678
+        dataset_value = args.dataset_manifest or parent_payload.get("dataset_manifest")
+        if dataset_value is None:
+            dataset_path = Path("data/processed/yambda500m_unified_v1/scales/small/dataset.json").resolve()
+        else:
+            dataset_path = Path(dataset_value)
+            if not dataset_path.is_absolute():
+                dataset_path = (Path(__file__).resolve().parents[1] / dataset_path).resolve()
+        dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+        known_vocab_size = int(parent_payload.get("known_vocab_size", dataset["foundation_items"]))
+        oov_buckets = model_vocab_sizes.pop() - known_vocab_size
         if oov_buckets < 0:
             raise RuntimeError("candidate vocabulary is smaller than the frozen known-item vocabulary")
 
@@ -140,9 +179,17 @@ def main() -> None:
         selected = set(selected_uids)
         rows = [row for row in rows if int(row["uid"]) in selected]
 
+        training_filters = [("time_block", "=", args.training_block), ("target_known", "=", True)]
+        if (args.training_start_day is None) != (args.training_end_day is None):
+            raise ValueError("training-start-day and training-end-day must be supplied together")
+        if args.training_start_day is not None:
+            training_filters.extend([
+                ("query_timestamp", ">=", args.training_start_day * 86_400),
+                ("query_timestamp", "<", args.training_end_day * 86_400),
+            ])
         training_users = set(
             int(value) for value in pq.read_table(
-                source, filters=[("time_block", "=", args.training_block), ("target_known", "=", True)],
+                source, filters=training_filters,
                 columns=["uid"],
             )["uid"].to_pylist()
         )
@@ -152,13 +199,24 @@ def main() -> None:
             row["weight"] = 1.0
             row["recurring_user"] = int(row["uid"]) in training_users
 
-        history = load_histories(selected_uids, oov_buckets=oov_buckets)
+        max_history = int(parent_payload["config"]["max_seq_len"])
+        history = load_histories(
+            selected_uids, oov_buckets=oov_buckets, dataset_path=dataset_path,
+            known_vocab_size=known_vocab_size,
+            start_timestamp=args.start_day * 86_400 if args.start_day is not None else None,
+            end_timestamp=args.end_day * 86_400 if args.end_day is not None else None,
+            max_history=max_history if args.start_day is not None else None,
+            threads=args.history_threads,
+        )
         hashes = {name: sha256_file(path) for name, path in {parent_name: parent_path, **current_paths}.items()}
 
         output: list[dict] = []
+        torch.cuda.reset_peak_memory_stats(device)
         for start in range(0, len(rows), args.batch_size):
             request_batch = rows[start:start + args.batch_size]
-            batch = collate_foundation_batch(request_batch, history, device=device)
+            batch = collate_foundation_batch(
+                request_batch, history, device=device, max_history=max_history
+            )
             scores = score_batch(models=models, batch=batch)
             for index, request in enumerate(request_batch):
                 for name in models:
@@ -170,8 +228,11 @@ def main() -> None:
                         "evaluation_day_range": [args.start_day, args.end_day],
                         "model_name": name, "is_parent": name == parent_name,
                         "checkpoint_progress": float(payload["progress"]),
+                        "training_epochs_completed": float(
+                            payload.get("training_epochs_completed", payload.get("passes", 1.0))
+                        ),
                         "hstu_logit": float(scores[name][index]),
-                        "history_length": int(request.get("history_length", 0)),
+                        "history_length": int(batch.lengths[index]),
                         "history_oov_fraction": float(request.get("history_oov_fraction", 0.0)),
                         "recurring_user": bool(request["recurring_user"]),
                         "checkpoint_sha256": hashes[name],
@@ -186,6 +247,14 @@ def main() -> None:
 
         shard = args.output / f"raw_rank{rank}.parquet"
         pq.write_table(pa.Table.from_pylist(output), shard, compression="zstd")
+        torch.cuda.synchronize(device)
+        local_peak = {
+            "rank": rank,
+            "peak_allocated_mib": float(torch.cuda.max_memory_allocated(device) / 2**20),
+            "peak_reserved_mib": float(torch.cuda.max_memory_reserved(device) / 2**20),
+        }
+        peak_memory_by_rank: list[dict | None] = [None] * world
+        dist.all_gather_object(peak_memory_by_rank, local_peak)
         dist.barrier()
         if rank == 0:
             merged = pa.concat_tables([pq.read_table(args.output / f"raw_rank{value}.parquet") for value in range(world)])
@@ -202,10 +271,32 @@ def main() -> None:
                 "evaluation_day_range": [args.start_day, args.end_day],
                 "training_block": args.training_block, "parent": parent_name,
                 "currents": list(currents), "contains_reuse": False,
-                "oov_buckets": oov_buckets, "architecture": "hstu_native_cc",
+                "oov_buckets": oov_buckets, "known_vocab_size": known_vocab_size,
+                "max_seq_len": max_history, "dataset_manifest": str(dataset_path),
+                "execution_runtime": {
+                    "world_size": world,
+                    "batch_size_per_rank": args.batch_size,
+                    "max_users_per_rank": args.max_users,
+                    "peak_memory_by_rank": peak_memory_by_rank,
+                },
+                "cpu_runtime": {
+                    "history_threads": args.history_threads,
+                    "arrow_cpu_threads": args.arrow_cpu_threads,
+                    "arrow_io_threads": args.arrow_io_threads,
+                    "torch_cpu_threads": args.torch_cpu_threads,
+                    "affinity_by_rank": args.cpu_affinity_by_rank,
+                },
+                "architecture": "hstu_native_cc",
             }
             (args.output / "raw.seal.json").write_text(json.dumps(seal, indent=2) + "\n")
             print(json.dumps(seal, indent=2))
+        dist.barrier()
+        if rank == 0:
+            for value in range(world):
+                (args.output / f"raw_rank{value}.parquet").unlink()
+                progress = args.output / f"progress_rank{value}.json"
+                if progress.exists():
+                    progress.unlink()
         dist.barrier()
     finally:
         dist.destroy_process_group()

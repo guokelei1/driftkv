@@ -1,0 +1,162 @@
+contract: yambda500m_small_hstu_native_evidence_measure_basis_v1
+date_frozen: 2026-08-27
+status: prospective_minimal_mechanism_canary_v1
+purpose: test_one_candidate_independent_Current_HSTU_evidence_measure_basis_against_Design0_at_identical_compute_carriers_raw_IO_and_state_IO
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  training_days: 14
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  evaluation_days: [14]
+  new_training: false
+  recursive_reuse: prohibited
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  scale_action_admission: prohibited
+  gpus: [0, 1, 2, 3]
+
+mechanism_hypothesis:
+  name: cast_shared_evidence_measure_plus_Current_contextual_residual_anchor
+  reader_semantics: HSTU_unnormalized_signed_value_measure
+  candidate_independent: true
+  constructed_once_per_user_at_release: true
+  candidate_bank_used_for_construction: prohibited
+  target_Current_KV_fitting: prohibited
+  PCA_SVD_or_tensor_reconstruction_objective: prohibited
+  learned_selector_or_route: prohibited
+  raw_item_action_semantic_grouping: prohibited
+
+fixed_plan:
+  history_positions_full_user: 512
+  old_prefix_positions: 384
+  oldest_Parent_reuse_positions_for_full_user: 32
+  joint_KV_CAST_old_prefix_positions_for_full_user: 352
+  repair_evidence_positions: 128
+  grouping: chronological_adjacent_pairs
+  carriers: 64
+  anchor_in_each_pair: later_event
+  value_only_CAST_earlier_pair_positions_for_full_user: 64
+  Current_dependency_closed_patch_carriers: 64
+  per_layer_head_basis_atom:
+    key: Current_dependency_closed_anchor_key
+    shared_value_measure: sum_of_parameter_CAST_values_over_the_covered_pair
+    contextual_residual: Current_anchor_value_minus_parameter_CAST_anchor_value
+    committed_value: shared_value_measure_plus_contextual_residual
+    equivalent_pair_size_two_form: CAST_value_earlier_plus_Current_value_anchor
+  coverage_mass: explicit_in_the_sum_of_signed_CAST_values_not_scalar_multiplication
+  compute_budget_reallocation:
+    Design0_joint_KV_CAST_equivalent_positions: 384
+    mechanism_joint_KV_CAST_equivalent_positions: 352_plus_64_value_only_positions_equal_384_joint_equivalents
+    Design0_scalar_SCALE_elements: 32768
+    mechanism_signed_value_ADD_elements: 32768
+    exact_parameter_map_and_mass_arithmetic_FLOPs_match: true
+  short_history_rule:
+    repair: min_128_or_all_available_evidence_with_one_later_anchor_per_adjacent_pair
+    joint_CAST_equivalents_reallocated: min_old_prefix_positions_or_floor_size_two_pair_count_over_2
+    value_only_CAST_pair_earlier_positions: twice_the_reallocated_joint_CAST_equivalents_chosen_most_recent_first
+    remaining_pair_earlier_values: Parent_cached_value_without_extra_compute
+  execution_layout: same_leading_zero_KV_padding_and_eviction_order_as_Design0
+  layout_precondition: frozen_checkpoints_have_no_relative_position_bias
+
+matched_Design0:
+  path: evokv_cast_group_patch_scale_r128_c64_rolling
+  common_axes:
+    parameter_map_FLOPs: identical_384_joint_KV_CAST_equivalents
+    raw_repair_region_positions: 128
+    Current_PATCH_carriers: 64
+    materialized_state_positions: 448
+    nominal_state_positions_with_padding: 512
+    Current_compute: identical
+    carrier_count: identical
+    raw_history_IO: identical
+    state_IO: identical
+  changed_axes:
+    - allocate_32_old_joint_CAST_equivalents_to_64_recent_value_only_CASTs
+    - replace_scalar_Current_anchor_mass_with_signed_CAST_shared_measure_plus_Current_residual
+
+focused_canary:
+  population: first_8_label_free_users_per_rank_per_edge_from_frozen_E14_assignment
+  ranks: 4
+  edges: all_five
+  raw_first: true
+  labels_read: false
+  required_paths:
+    - current_exact_rolling
+    - one_hop_reuse_rolling
+    - evokv_cast_group_patch_scale_r128_c64_rolling
+    - evokv_cast_measure_current_residual_r128_c64_rolling
+  correctness:
+    baseline_replay_max_abs_error: 0.00002
+    exact_request_path_alignment: required
+  progression_gate:
+    mean_absolute_logit_gap_to_Current_Exact_not_worse_than_Design0_edges_minimum: 4
+  on_failure: stop_before_formal_and_retain_negative_result
+
+formal_gate_after_canary:
+  population: all_frozen_E14_requests_and_users
+  all_five_edges_reported: true
+  raw_scores_sealed_before_label_join: required
+  headline:
+    ROC_AUC_not_below_Design0_edges_required: 5
+    log_loss_not_above_Design0_edges_required: 5
+  companions:
+    - mean_absolute_logit_gap_to_Current_Exact
+    - user_equal_log_loss_delta_to_Current_Exact
+    - Brier
+    - Bernoulli_JS
+    - within_edge_request_alignment
+  interpretation_on_pass: eligible_for_further_runtime_and_extra_seed_validation_not_automatic_scale_admission
+  interpretation_on_failure: mechanism_negative_result_candidate_shared_causal_structure_remains_valid
+
+protocol:
+  future_labels_for_construction_or_scheduling: prohibited
+  qualification_label_tuning: prohibited
+  edge_or_user_selection_from_results: prohibited
+  all_frozen_edges_reported: required
+  overwrite_existing_evidence: prohibited
+  raw_first_before_label_join: required
+  expanded_KV_or_attention_output: prohibited
+  compact_outputs_only: true
+
+frozen_inputs:
+  signed_causal_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_candidate_shared_causal_v1.yaml
+    sha256: 04d44634634f575641f9f854dc6b8e5139ac4592ad44194ed580bfcf0e20ea5c
+  signed_causal_adjudication:
+    path: results/yambda500m_small_seed17/insight_candidate_shared_causal_v1/adjudication/summary.json
+    sha256: 60964c103aa6b3acde705a67168235cb8d89ee394de0f78e3ec8c3274716666e
+    required_status: candidate_shared_signed_causal_gate_passed
+  Design0_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_d14_one_release_refinement_auc_v1.yaml
+    sha256: 1997e3d98e23eaa8bbb92e7e2a82b307a87311e7dd2324f6ff0c0a5f2bcc03d3
+  Design0_formal_raw:
+    v0_to_v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v0_to_v1/raw.parquet, sha256: 3d5a2c7a14cae497c58a8d839ef5ab5c5252ae2d6788119be1db33b181be580f}
+    v1_to_v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v1_to_v2/raw.parquet, sha256: 4e68ae668625f1050398d20a48505a4f010997387733ebb80cdbf7efb39c644b}
+    v2_to_v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v2_to_v3/raw.parquet, sha256: 3089c8435aa261980a9ed845ea951326aa834bd035f4985b7060ac5038dcc67f}
+    v3_to_v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v3_to_v4/raw.parquet, sha256: 5d2cdd7b05e3076ea06e6a2e70418fa617fb85b761f45bb1cf54a452bdd07c41}
+    v4_to_v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/eval_14d/v4_to_v5/raw.parquet, sha256: fbf12579e0a071af6c1edfd912fd41add823889d83144cdd5c0b74c637762e6e}
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  requests_fidelity:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_fidelity.parquet
+    sha256: 029cfec77fbdfefcc58ee31c9b0311f900e685f783082f54e3acda3d011b63fd
+  requests_quality:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_quality.parquet
+    sha256: 922b7807f691300c8c86907a5441810f16f28d85fef578d36041ef35c7a865c8
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  focused_four_gpu_canary: true
+  formal_four_gpu_inference_after_canary: true
+  new_training: false
+  medium_large_training: false
+  theta3_read_or_training: false

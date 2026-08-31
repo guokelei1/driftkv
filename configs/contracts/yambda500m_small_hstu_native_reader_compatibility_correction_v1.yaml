@@ -1,0 +1,177 @@
+contract: yambda500m_small_hstu_native_reader_compatibility_correction_v1
+date_frozen: 2026-08-27
+status: prospective_reader_stage_and_persistence_v1
+purpose: locate_the_earliest_HSTU_stage_where_cross_version_error_forms_a_candidate_shared_reader_correction_and_test_whether_that_correction_persists_across_real_requests
+
+claim_correction:
+  prohibited_claim: a_materializable_candidate_shared_history_evidence_basis_has_been_proved
+  current_claim: a_candidate_shared_reader_compatibility_correction_has_been_proved
+  rationale: history_side_error_is_distributed_and_contextual_while_candidate_amortized_reader_effect_is_shared
+
+scope:
+  scale: EvoKV-HSTU-S
+  seed: 17
+  architecture: hstu_native_cc
+  versions: [v0, v1, v2, v3, v4, v5]
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  new_training: false
+  candidate_admission: prohibited
+  lineage_promotion: prohibited
+  scale_action_admission: prohibited
+
+stage_localization:
+  controlled_population: prior_frozen_3000_users
+  history_positions: 512
+  candidate_widths: [8, 16, 32, 64]
+  real_exposed_candidate_widths: [2, 4, 8, 16]
+  stages_in_causal_order:
+    - kv_prefix_contribution
+    - av_aggregation
+    - u_gated_update
+    - layer_hidden
+    - final_readout
+  trace_semantics:
+    exact_and_reuse: coherent_Current_reader_paths_from_Current_exact_and_Parent_reuse_caches
+    delta: coherent_Current_exact_stage_minus_coherent_Parent_reuse_stage
+    shared: signed_candidate_mean_delta_broadcast_to_the_bank
+    residual: delta_minus_shared
+    candidate_normalization: prohibited
+    norm_before_decomposition: prohibited
+  stage_definitions:
+    kv_prefix_contribution: signed_activated_qK_times_V_before_history_sum_excluding_transient_query_self_term
+    av_aggregation: signed_per_head_prefix_plus_self_aggregation_before_output_projection_and_gate
+    u_gated_update: Current_block_update_after_attention_output_projection_normalization_and_U_gate
+    layer_hidden: residual_plus_u_gated_update_before_next_layer_norm
+    final_readout: final_normalized_query_hidden_before_scalar_score_head
+  oracle_intervention:
+    stage_scope: same_stage_at_all_layers_for_layered_stages
+    source: coherent_exact_minus_reuse_shared_delta_from_the_same_candidate_bank
+    path: inject_shared_delta_into_coherent_reuse_path_then_continue_with_Current_reader_and_reuse_cache
+    final_readout: add_shared_readout_delta_before_the_frozen_score_head
+    interpretation: diagnostic_oracle_not_persistent_state_or_executable_action
+  metrics:
+    - signed_shared_energy_fraction_by_stage_layer_edge_width
+    - residual_energy_fraction
+    - same_request_probability_gap_recovery_by_stage
+    - top1_agreement
+    - bank_rank_correlation
+    - native_trace_and_final_full_delta_correctness
+  earliest_stable_boundary_gate:
+    shared_energy_fraction_at_least: 0.95
+    same_request_probability_gap_recovery_at_least: 0.90
+    controlled_edges_minimum: 4
+    real_exposed_edges_minimum: 4
+    stage_selection: first_stage_in_frozen_causal_order_passing_both_requirements
+
+cross_request_persistence:
+  source: frozen_real_same_UID_same_query_timestamp_exposed_request_groups
+  candidate_bank: largest_available_frozen_width_in_2_4_8_16
+  user_requirement: at_least_two_eligible_request_groups_in_the_same_E14_edge
+  pair_order: consecutive_eligible_groups_per_user_in_time_order
+  correction_stages: [av_aggregation, u_gated_update, layer_hidden, final_readout]
+  correction_signature: candidate_mean_signed_exact_minus_reuse_delta_flattened_within_each_layer_or_readout
+  metrics:
+    - adjacent_request_direction_cosine
+    - current_to_previous_correction_norm_ratio
+    - seconds_between_requests
+    - append_count_difference
+    - remaining_old_state_fraction
+    - same_request_oracle_gap_recovery
+    - prior_request_correction_gap_recovery
+    - coverage_scaled_prior_correction_gap_recovery
+  coverage_scaling:
+    rule: previous_correction_times_current_remaining_old_positions_over_previous_remaining_old_positions
+    remaining_old_positions: max_0_512_minus_rolling_evictions_since_cutover
+    labels: prohibited
+  persistence_gate_after_stage_gate:
+    stage: earliest_passing_post_aggregation_stage_from_stage_localization
+    median_adjacent_request_cosine_at_least: 0.90
+    median_coverage_scaled_prior_gap_recovery_at_least: 0.50
+    edges_passing_both_minimum: 4
+    all_append_and_time_buckets_reported: required
+  interpretation:
+    pass: supports_release_time_per_user_sidecar_hypothesis
+    fail: correction_is_request_local_or_requires_an_unfrozen_transport_model
+
+focused_canary:
+  controlled_users: 32
+  controlled_edges: all_five
+  controlled_widths: [16, 64]
+  real_users_per_rank_maximum: 8
+  real_edges: all_five
+  correctness_max_abs_error: 0.00002
+  labels_read: false
+  on_correctness_failure: stop_and_retain_invalid_result
+
+formal_after_canary:
+  stage_localization_users: 3000
+  real_exposed_edges: all_five
+  raw_first: true
+  labels_before_raw_seal: prohibited
+  all_frozen_stages_widths_edges: required
+  overwrite_existing_evidence: prohibited
+
+mechanism_gate:
+  status: locked_until_stage_and_persistence_gates_pass
+  only_allowed_candidate: per_user_layerwise_broadcast_compatibility_residual
+  source: Current_HSTU_intermediate_state
+  history_value_sum_PCA_SVD_raw_semantic_group_or_per_candidate_selector: prohibited
+  comparison: matched_cost_against_Design0
+  first_test: label_free_score_canary
+  on_failure: stop_before_formal_quality
+
+protocol:
+  future_labels_for_trace_stage_or_persistence: prohibited
+  target_Current_KV_fitting: prohibited
+  qualification_label_tuning: prohibited
+  stage_layer_edge_or_width_selection_from_results: prohibited_except_frozen_earliest_boundary_rule
+  sampled_or_synthetic_negatives: prohibited
+  raw_request_items_are_not_interpreted_as_negatives: true
+  compact_aggregates_only: true
+  expanded_KV_output: prohibited
+
+frozen_inputs:
+  signed_causal_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_candidate_shared_causal_v1.yaml
+    sha256: 04d44634634f575641f9f854dc6b8e5139ac4592ad44194ed580bfcf0e20ea5c
+  signed_causal_adjudication:
+    path: results/yambda500m_small_seed17/insight_candidate_shared_causal_v1/adjudication/summary.json
+    sha256: 60964c103aa6b3acde705a67168235cb8d89ee394de0f78e3ec8c3274716666e
+    required_status: candidate_shared_signed_causal_gate_passed
+  failed_history_basis_contract:
+    path: configs/contracts/yambda500m_small_hstu_native_evidence_measure_basis_v1.yaml
+    sha256: d7c5e7c51e1afab35b3dbe4eea232e0882ef6de3438e1f77371f9f41b88f8406
+  failed_history_basis_canary:
+    path: results/yambda500m_small_seed17/insight_evidence_measure_basis_v1/canary/summary.json
+    sha256: 6786ebe81f66bdd933ad7a870b2660f49d9a0942dea4859a3382fcef5e64f400
+    required_status: evidence_measure_basis_canary_failed
+  population:
+    path: results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/population.parquet
+    sha256: 60ed4ba5ace8ad26cac713e9493242c549935bc64c5d58218954fbc85fccf7f8
+  matrix_manifest:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/manifest.json
+    sha256: ef6bfc4f362aa0470229a27670bc87132bf6e207e071e98fda7d2847e7078830
+  requests_fidelity:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_fidelity.parquet
+    sha256: 029cfec77fbdfefcc58ee31c9b0311f900e685f783082f54e3acda3d011b63fd
+  requests_quality:
+    path: data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v3/requests_quality.parquet
+    sha256: 922b7807f691300c8c86907a5441810f16f28d85fef578d36041ef35c7a865c8
+  checkpoints:
+    v0: {path: results/yambda500m_small_seed17/hstu_native_release_chain_v1/v0/checkpoint_100.pt, sha256: 1517e4cc337153661289b06ff5d89aff605f9b282beb13775cdd11cc0e52ee27}
+    v1: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v1/checkpoint_100.pt, sha256: 873442c13fe4927532c510ee062fb7078d3f0bca82bc9117beb184420eede738}
+    v2: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v2/checkpoint_100.pt, sha256: 7985ce0817d1f260be9943a55ffff156518307655ce394bfbd52e9203ea96fb6}
+    v3: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v3/checkpoint_100.pt, sha256: 401bf7a6b8832a63a3a26bc6c783f3457acf82f45dcc86bf43c01ac7bfdf43dc}
+    v4: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v4/checkpoint_100.pt, sha256: 9a86f7ca7a09810e8a9b8b40dfaeacbd7a834925f62d260e2b4e7ca2b726829b}
+    v5: {path: results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/train_14d/checkpoints/v5/checkpoint_100.pt, sha256: 094ce193f90bfa059abf83a546168cd59997ff7d89f8e27da12ac833015d4d5d}
+
+authorization:
+  focused_single_GPU_stage_canary: true
+  formal_single_GPU_controlled_stage_observation: true
+  focused_four_GPU_real_persistence_canary: true
+  formal_four_GPU_real_persistence_observation_after_canary: true
+  minimal_mechanism_canary_only_after_both_gates: true
+  new_training: false
+  medium_large_training: false
+  theta3_read_or_training: false

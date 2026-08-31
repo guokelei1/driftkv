@@ -1,0 +1,116 @@
+contract: yambda500m_medium_hstu_native_d7_forced_reuse_diagnostic_v1
+date_frozen: 2026-08-29
+status: prospective_forced_d7_adjacent_reuse_diagnostic_v1
+purpose: >-
+  Evaluate adjacent one-hop Reuse on every frozen Medium D7 edge and horizon,
+  even though the already-sealed formal release-admission lineage rejected the
+  branch. This is a complete diagnostic matrix only: it does not alter release
+  admission, serving/cache lineage, or the formal D7/D14 summary.
+
+frozen_parent:
+  matrix_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+  matrix_contract_sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  execution_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_execution_admission_v1.yaml
+  execution_contract_sha256: d2e86f97e082779d64014da911d4214ae05cb6e90f0aa9fca2a8e1014e59aa72
+  four_gpu_runtime_contract: configs/contracts/yambda500m_medium_hstu_native_d14_reuse_4gpu_runtime_v3.yaml
+  four_gpu_runtime_contract_sha256: b192292b19e08016e7a84150a93eac55d49e5025ea16638fdbdaf7833ca3735a
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  branch: D7
+  training_days: 7
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6, v6_to_v7, v7_to_v8, v8_to_v9, v9_to_v10]
+  horizons_days: [3, 7]
+  expected_cells: 20
+  paths: [parent_exact_rolling, current_exact_rolling, one_hop_reuse_rolling]
+  parent_cache: immediately_previous_checkpoint_in_D7_candidate_chain
+  recursive_reuse: prohibited
+  output: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D7/forced_reuse_diagnostic_v1
+  formal_summary_mutation: prohibited
+  formal_admission_override: prohibited
+
+frozen_admission_evidence:
+  interpretation: >-
+    These hashes preserve the rejected formal decisions. Execution is allowed
+    only in the separate forced-diagnostic output and does not unlock an edge.
+  seal_sha256_by_edge:
+    v0_to_v1: bdb8601caa3806db250cb9569deb5dd0ccf9b616be74e57d2ad71b353ea74b51
+    v1_to_v2: 946b2c39abd48ab9989d9420ddf0050d9cc238271ef996be7b8a125c25a43809
+    v2_to_v3: ce7bef994758df3a2ee9f4ecd2804de4c7061ebe94fcd4f5f7b837b7bd04ecb5
+    v3_to_v4: 06321d3f6b0b6cb585640cd2b7166e2a901d7bf48b469f398bd7b4441ad6a2cb
+    v4_to_v5: ddc5d450e340f243fdaeea3c4324a8f4f6ff6050a7e53bffd7614a52ffb2c25e
+    v5_to_v6: 0080d4d4afe0eb9d8c20cc40eb523f8c8a8f8d54438c8c620c9ec1a9cda9bfbe
+    v6_to_v7: 7ff495f04cbdd5f18204d58710675881736aa7a145f2f5d6b629cb3beab52702
+    v7_to_v8: 641fc96ac1eb9fd8f4f4f8da3561e1d0a19598d3149e77267b2f504209aac298
+    v8_to_v9: d8a9bc099814170947dd0c233687dd43ba25f061fbf59fbcab3f30748c89d931
+    v9_to_v10: f9288b5fac3206b98c47af5f185fb1763820df2382f9e7578b18b6e9faa5d70f
+
+frozen_checkpoint_evidence:
+  seal_sha256_by_version:
+    v0: 6963bb7cdb4c732d5f5a3c231914fef10206add9d30a446e8e3061631a5823d8
+    v1: 60bcb310e8f0b9172c519ee47634688b3ab2f3084c4146259f5e2c6b2b9eed4f
+    v2: 801473d9fdd49cb65549af6fd5f44bcb61e7c49abea123e405768e458d85d490
+    v3: f9df7fd268ecbb1771b0fe08d2e694e345005751aba586ce12bbc5f0afb335e6
+    v4: d74d25f4de0362e3a5f3e7f122b896ba23c650b51421823d95c2f8516d04c5dc
+    v5: d5c362e09701a341ee60ab6b84d94a977e691afcf2f176f50b964dfd74f4138d
+    v6: d550e691120f6a297d9c5c85c61a9f15919cdf66303394cc5bd4519831a1eef5
+    v7: a386a390376d03ebc5f0c93470af0d815fa057b83654731cd6175a4327650b59
+    v8: 138dcbeed970a4f4532116d0e0981eb0c91794a8cfafafea488c1723561f7aea
+    v9: f7343720a262bd61409799fae63af1a178ba48d84107e2bc85a291635039e0af
+    v10: 0da231bff169041c8b844276cc307ceada21f13007b5d4bc060101e530938823
+
+runtime:
+  physical_gpus: [0, 1, 2, 3]
+  world_size: 4
+  one_four_rank_job_at_a_time: true
+  cohort_size_per_rank: 32
+  query_chunk_size_per_rank: 256
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+  rank0_cpu_affinity: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  rank1_cpu_affinity: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+  rank2_cpu_affinity: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+  rank3_cpu_affinity: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+  total_physical_history_workers: 56
+  rationale: >-
+    This is the largest frozen batch already exercised over the complete D14
+    matrix. D14 reached 44950 MiB peak reserved on a 46068 MiB A40, so a larger
+    D7 batch would not have a safe worst-case margin.
+
+correctness_canary:
+  edge: v9_to_v10
+  horizon_days: 7
+  maximum_users_per_rank: 64
+  maximum_peak_reserved_mib_per_rank: 45500
+  output: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D7/forced_reuse_diagnostic_v1/canary/E7/v9_to_v10
+  quality_metric_read: prohibited
+  pass:
+    - raw_hash_matches_seal
+    - exactly_three_paths_per_request
+    - four_rank_execution_metadata
+    - peak_reserved_memory_below_45500_MiB_on_every_rank
+
+reporting:
+  all_edges_and_horizons_required: true
+  selected_edge_reporting: prohibited
+  primary_values:
+    - new_relative_to_old_AUC_percent
+    - reuse_gain_retained_percent_when_current_gain_positive
+    - old_current_reuse_log_loss
+  same_three_path_raw_cohort_required: true
+
+failure_and_resume:
+  existing_complete_cell: validate_contract_raw_and_report_hashes_then_skip
+  existing_partial_cell: stop_for_audit
+  cuda_oom: stop_and_preserve_log_no_automatic_batch_downshift
+  failed_cell: stop_serial_queue
+
+authorization:
+  four_gpu_canary: authorized_by_user_2026_08_29
+  all_twenty_forced_d7_reuse_cells_after_canary: authorized_by_user_2026_08_29
+  serving_lineage_promotion: prohibited
+  qualification_claim: prohibited
