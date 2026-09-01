@@ -27,7 +27,8 @@
    当前 checkpoint、Full/Reuse、D7 forced diagnostic 与 D14 v5 扩展均已完成，文档保留实际执行记录。
 7. [Medium 全轮实验总结](../results/yambda500m_medium_seed17/full_reuse_matrix_v1/medium_scale_experiment_summary.md)：
    已完成 seed17 的 checkpoint、D7/D14 Full/Reuse、D7 forced diagnostic、D14 v5、统一同-cohort 百分比、
-   运行成本、异常边、结论边界和专家讨论问题。
+   运行成本、异常边、结论边界和专家讨论问题；D14/E14 的10个非相邻 direct Reuse 格子由独立合同和
+   总控脚本补齐，最终与5个相邻格子合并成完整15格三角矩阵。
 8. [Large 模型规模讨论稿](large_scale_model_sizing_discussion.md)：对齐 Small/Medium/Large 的人口、
    catalog、请求、参数、persistent-state 和 A40 资源，比较 8L/H256、10L/H320 与 12L/H320；它是
    专家裁决时使用的历史输入，训练授权不由该文档提供。

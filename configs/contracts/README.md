@@ -16,8 +16,8 @@ filename does not authorize execution.
   preprocessing route for nested Yambda-500M S/M/L logical datasets.
 - `yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1.yaml` prospectively
   freezes the user-approved 79,681-user Large point at 10L/H320/10 heads/C1024,
-  ten D7 E7 edges and five D14 E7/E14 edges. The fifth nominal E14 is explicitly
-  `E14_partial`. It fixes C64 PRO at 8.919% of Exact theoretical FLOPs and
+  ten D7 E7 edges and five D14 E7/E14 edges. The fifth 14-day cell is reported
+  under the same `E14` display name, with its exact range and request count retained. It fixes C64 PRO at 8.919% of Exact theoretical FLOPs and
   prohibits quality-driven architecture/runtime/estimator selection.
 - `yambda500m_large_hstu_native_d7_d14_execution_v1.yaml` binds that base
   contract to the sealed Large request manifest and passing label-free four-A40
@@ -26,8 +26,8 @@ filename does not authorize execution.
 - `yambda500m_large_reuse_scope_d14_e14_only_v1.yaml` transparently records the
   user-authorized 2026-08-31 post-commencement scope reduction: training and all
   20 Full/admission cells remain unchanged, while formal Reuse+C64-PRO runs only
-  the five D14/E14 cells. D7/E7 and D14/E7 Reuse are explicitly excluded; the
-  fifth cell remains `E14_partial`.
+  the five D14/E14 cells. D7/E7 and D14/E7 Reuse are explicitly excluded; all
+  five cells use the same `E14` display name.
 - `yambda500m_large_full_only_stop_v1.yaml` supersedes that execution scope
   before any formal Reuse cell was launched. It preserves all checkpoints,
   Full-only cells and admission seals, sets the formal Reuse/PRO cell count to
@@ -38,6 +38,25 @@ filename does not authorize execution.
   and reports all four together on E14 Full-only. It is development evidence,
   prohibits Reuse/PRO and requires a focused canary plus a separate explicit
   formal launch.
+- `yambda500m_large_v4e2_vs_legacy_v5_full_only_v1.yaml` freezes the subsequent
+  post-hoc head-to-head Full comparison. Complete E7 is primary and the
+  14-day window is reported as `E14`; both raw populations are sealed
+  before either label join. Legacy v5 descended from original v4@1.0 rather
+  than v4@2.0, so the result is not represented as a direct-parent release edge.
+- `yambda500m_large_v4e2_vs_legacy_v5_e14_only_v1.yaml` records the user's
+  pre-formal scope reduction. It excludes E7 before raw or label access and
+  retains only `[287,301)` under the unified `E14` name, bound to the
+  already-passing canary of that same longest window.
+- `yambda500m_large_v4e2_to_v5_epoch_sweep_v1.yaml` freezes the proper
+  direct-parent lineage repair after the head-to-head result: v4@2.0 trains on
+  `[273,287)` along one continuous trajectory, with v5 checkpoints at one and
+  two epochs. Both are reported together on `E14`; E7, Reuse, PRO,
+  early stopping and hidden endpoint selection are prohibited.
+- `yambda500m_large_d14_canonical_v0_v5_v1.yaml` is the current working Large
+  D14 lineage pointer: original v0..v3 plus direct-lineage v4@2.0 and v5@2.0.
+  Its five aggregate AUC release gains are positive. The selection is explicitly
+  post-hoc development; historical contracts and negative endpoints remain
+  immutable evidence but are excluded from the current model sequence.
 - `yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml` freezes the Medium
   day217 D7/D14 preparation, original four-rank plan, direct-parent training windows,
   and three-path Parent/Current/adjacent-Reuse metrics. CPU preparation and a
@@ -68,12 +87,22 @@ filename does not authorize execution.
   alter formal lineage/summary, or support a qualification claim.
 - `yambda500m_medium_hstu_native_d14_v5_extension_v1.yaml` adds exactly one
   direct-parent Medium D14 candidate, v4→v5. Training `[273,287)` and E3/E7 are
-  complete-data evidence; nominal E14 `[287,301)` includes incomplete source
-  day300 and is sealed/reported only as `E14_partial`, never as qualification.
+  complete-data evidence; E14 `[287,301)` retains its exact source coverage and
+  request count while using the same display name as every other E14 cell.
 - `yambda500m_medium_hstu_native_d14_v5_execution_v1.yaml` binds that extension
   to one serial GPU0/1/2/3 four-rank queue, global train batch 32 (8/rank), Full
   batch 128/rank and the proven Reuse cohort32/query256 runtime. It requires a
   raw-only longest-window canary before the full queue.
+- `yambda500m_medium_hstu_native_d14_direct_long_age_reuse_v1.yaml` freezes the
+  ten missing non-adjacent D14/E14 producer/current cells for v0…v5. It binds
+  all checkpoints, both request manifests, five adjacent reports and the
+  proven four-GPU runtime by hash; the final report is the complete 15-cell
+  direct, non-recursive Reuse triangle under one E14 display convention.
+- `yambda500m_medium_hstu_native_d14_direct_long_age_reuse_reporting_v2.yaml`
+  records the user-authorized continuation after the first new cell exposed an
+  unnecessary cross-run Current-equality assertion. New cells remain two-path
+  Current/Reuse runs; cross-run Current drift is recorded, never gating, and
+  all ten predeclared cells must be retained and reported.
 - `yambda500m_small_foundation_chain_v1.yaml` freezes Small foundation
   data/model/cache/metric semantics. It authorizes implementation and correctness
   canaries, not real Base fitting or HSTU training.

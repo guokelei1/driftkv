@@ -1,0 +1,88 @@
+contract: yambda500m_large_v4e2_vs_legacy_v5_full_only_v1
+date_frozen: 2026-08-31
+status: prospective_head_to_head_full_only_authorized
+purpose: >-
+  Compare the accepted Large D14 v4 two-epoch development checkpoint against
+  the previously trained legacy v5 checkpoint on the same subsequent request
+  populations, without claiming a direct-parent release edge.
+
+evidence_boundary:
+  comparison_defined_after_v4e2_quality_was_read: true
+  v4_epoch_sweep_summary: results/yambda500m_large_seed17/v3_v4_epoch_sweep_v1/summary.json
+  v4_epoch_sweep_summary_sha256: a5de796450068dbd7135f94773c5765c00c74ab7e6237577e090fc11b3106faf
+  interpretation: post_hoc_head_to_head_development_not_independent_qualification
+  serving_lineage_promotion: prohibited
+  endpoint_or_horizon_selection_after_quality: prohibited
+
+models:
+  reference_name: v4_e2
+  reference_checkpoint: results/yambda500m_large_seed17/v3_v4_epoch_sweep_v1/checkpoints/checkpoint_epoch_2.pt
+  reference_checkpoint_sha256: a18f76c7e2619382caf8d989a27924129727da5229ddc4e507b24444501b1905
+  reference_training_days_half_open: [259, 273]
+  reference_training_epochs: 2.0
+  comparison_name: v5_legacy
+  comparison_checkpoint: results/yambda500m_large_seed17/qualification_v1/D14/checkpoints/v5/checkpoint_100.pt
+  comparison_checkpoint_sha256: 9489267033171ab0b33d7735e955c270a6f7cc1e5a668ed57d4159f16b59c853
+  comparison_checkpoint_seal: results/yambda500m_large_seed17/qualification_v1/D14/checkpoints/v5/checkpoint.seal.json
+  comparison_checkpoint_seal_sha256: 388f391b6f4415121ba947e653a7adf36b0b4f815c3036f9dc55d87d152c3015
+  comparison_training_days_half_open: [273, 287]
+  comparison_training_epochs: 1.0
+  comparison_direct_parent_is_original_v4_e1_not_reference_v4_e2: true
+
+frozen_inputs:
+  base_large_contract: configs/contracts/yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1.yaml
+  base_large_contract_sha256: f631e7d7a6438187d7b64e28f696f4759ffab5b93d9579e36ffc48b7c3ed13f8
+  unified_scale_contract: configs/contracts/yambda500m_unified_scales_v1.yaml
+  unified_scale_contract_sha256: 7451d6042e86f24a15b24d31266b46c53d82035c2d1b5b1f5e96eb4d06f22fd0
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/large/dataset.json
+  dataset_manifest_sha256: f93c1a3ac5e59d94d557a873bbfca02312fe342dcfa20239105240fe70ccca6e
+  item_mapping: data/processed/yambda500m_unified_v1/scales/large/item_mapping.parquet
+  item_mapping_sha256: 8f54dd2a660c9812cd68faf94ea5bd3723fe7b277d07dd1f71ba78201de98382
+  manifest: data/manifests/yambda500m_large_hstu_native_d7_d14_v1/manifest.json
+  manifest_sha256: 065afeefa4ffaed459c6e3832fa0f0a8a9a9818e7a7474ccd58bb7f7d1d70785
+  requests_quality: data/manifests/yambda500m_large_hstu_native_d7_d14_v1/requests_quality.parquet
+  requests_quality_sha256: f17de5a1746aec0d899e5850fb4810dd8ef64182a1e8473c353743ba31f7a91e
+  requests_fidelity: data/manifests/yambda500m_large_hstu_native_d7_d14_v1/requests_fidelity.parquet
+  requests_fidelity_sha256: f00e64235bb96ebeac1c1bf8350bde34b78cdbf616a231cb60b1434daea534f0
+
+evaluation:
+  type: full_only_two_model_head_to_head
+  training_population_membership_days_half_open: [273, 287]
+  raw_scores_sealed_before_any_label_join: true
+  horizons:
+    E7:
+      days_half_open: [287, 294]
+      completeness: complete
+      expected_known_requests: 192441
+      primary: true
+    E14_partial:
+      days_half_open: [287, 301]
+      completeness: incomplete_day300_directional_only
+      expected_known_requests: 370165
+      primary: false
+  metrics: [ROC_AUC, log_loss, Brier, dislike_PR_AUC]
+  reuse: prohibited
+  PRO: prohibited
+
+resource_plan:
+  physical_gpus: [0, 1, 2, 3]
+  world_size: 4
+  batch_size_per_rank: 64
+  history_threads_per_rank: 14
+  focused_canary_users_per_rank: 8
+  focused_canary_peak_reserved_mib_limit: 30000
+  minimum_free_workspace_gib: 10
+  canary_must_pass_before_formal: true
+
+authorization:
+  code_contract_and_focused_canary: authorized_by_user_2026_08_31
+  formal_full_only_E7_and_E14_partial: authorized_by_user_2026_08_31
+  reuse_or_PRO: prohibited
+
+outputs:
+  root: results/yambda500m_large_seed17/v4e2_vs_legacy_v5_full_only_v1
+  canary: results/yambda500m_large_seed17/v4e2_vs_legacy_v5_full_only_v1/canary
+  E7: results/yambda500m_large_seed17/v4e2_vs_legacy_v5_full_only_v1/E7
+  E14_partial: results/yambda500m_large_seed17/v4e2_vs_legacy_v5_full_only_v1/E14_partial
+  summary_json: results/yambda500m_large_seed17/v4e2_vs_legacy_v5_full_only_v1/summary.json
+  summary_markdown: results/yambda500m_large_seed17/v4e2_vs_legacy_v5_full_only_v1/summary.md

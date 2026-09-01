@@ -113,7 +113,7 @@ batch64/rank and Reuse+C64-PRO cohort12/query128. Formal execution trains all 16
 checkpoints first and seals all 20 Full/admission cells. A first 2026-08-31
 amendment narrowed Reuse to five D14/E14 cells; a later explicit user decision
 cancelled formal Reuse/PRO before its first cell. The current queue therefore
-ends after Full-only. D14 v4→v5 E14 remains `E14_partial`. See
+ends after Full-only. D14 v4→v5 uses the unified `E14` reporting name. See
 `docs/large_scale_training_and_qualification_plan.md` for exact hashes, runtime
 measurements, commands and evidence boundaries.
 
@@ -125,6 +125,25 @@ the parent plus all four candidates in one E14 Full-only pass. `plan` and
 `status` are read-only; `canary` and `formal` have separate acknowledgement
 tokens, and `formal` refuses to start without a passing current-contract
 canary. Reuse, PRO, early stopping and selective endpoint reporting are absent.
+
+`run_yambda500m_large_v4e2_vs_legacy_v5_full_only.py` performs the separately
+frozen Full-only head-to-head between v4@2.0 and legacy v5. It treats complete
+E7 as excluded by the later pre-formal scope amendment and runs only
+`[287,301)`, reported under the unified `E14` name. It seals raw scores before
+joining labels. Because legacy v5 was trained from original v4@1.0, the runner
+records this as a non-lineage development comparison and cannot promote either
+model.
+
+`run_yambda500m_large_v4e2_to_v5_epoch_sweep.py` is the follow-up proper-lineage
+experiment. It starts from v4@2.0, trains v5 for two continuous passes over
+`[273,287)`, saves the frozen one- and two-epoch endpoints, and evaluates both
+against their actual parent in one `E14` Full-only pass. A focused
+three-model canary is required before the formal tmux queue.
+
+`validate_yambda500m_large_d14_canonical_chain.py` resolves the single current
+D14 v0..v5 manifest and checks ordered direct-parent pointers plus bound quality
+sources. Add `--verify-checkpoints` for the slower full 16-GiB checkpoint hash
+and payload audit; the default metadata check does not duplicate checkpoints.
 
 ### Medium D7/D14 Full + adjacent-Reuse matrix
 
@@ -173,12 +192,25 @@ requires acknowledgement `RUN_MEDIUM_D7_FORCED_REUSE`.
 
 The subsequent one-edge D14 extension uses
 `run_yambda500m_medium_d14_v5_extension.py`. It reuses the sealed v4 checkpoint,
-trains v5 only on `[273,287)`, and serially evaluates E3/E7 plus the isolated
-`E14_partial` window. Training is four-rank global batch 32; Full uses batch
-128/rank and Reuse uses cohort32/query256. The new manifest includes incomplete
-day300 only so the partial-tail result is reproducible and explicitly marked;
-it cannot be called complete E14 or promote a release. Formal launch requires
+trains v5 only on `[273,287)`, and serially evaluates E3/E7/E14. Training is
+four-rank global batch 32; Full uses batch 128/rank and Reuse uses
+cohort32/query256. The manifest preserves the observed day300 coverage and
+request count while the reporting horizon remains E14;
+it does not promote a release. Formal launch requires
 `--acknowledge-long-run RUN_MEDIUM_D14_V5_EXTENSION`.
+
+The Medium Motivation-1 cross-version completion uses
+`run_yambda500m_medium_d14_direct_long_age_reuse.py`. It adds exactly ten
+non-adjacent D14/E14 cells and reuses the five sealed adjacent cells when
+emitting the complete 15-cell triangle. Every cell is direct: the named old
+producer materializes the whole pre-cutover prefix, then Current appends after
+cutover; no recursive lineage is constructed. The runner uses the proven
+GPU0/1/2/3 cohort32/query256 runtime, emits only two paths for each new cell
+(Current Exact and Direct Reuse), and never joins an Old metric from another
+run into the primary comparison. Cross-run Current drift is recorded but does
+not gate execution. It runs a raw-only v0→v5 canary first and is
+hash-validating/resumable. The long queue requires
+`--acknowledge-long-run RUN_MEDIUM_D14_DIRECT_LONG_AGE_REUSE`.
 
 Formal execution remains an explicit user action and requires the printed
 acknowledgement token. Completed checkpoint/raw seals are hash-validated and

@@ -62,7 +62,14 @@ class EpochSweep:
         self.state = self.output / "state.json"
         self.manifest = (ROOT / self.contract["frozen_inputs"]["manifest"]).resolve().parent
         self.dataset = (ROOT / self.contract["frozen_inputs"]["dataset_manifest"]).resolve()
-        self.parent = (ROOT / self.contract["frozen_parent"]["v3_checkpoint"]).resolve()
+        frozen_parent = self.contract["frozen_parent"]
+        parent_key = next(
+            (key for key in ("parent_checkpoint", "v3_checkpoint", "v4_e2_checkpoint") if key in frozen_parent),
+            None,
+        )
+        if parent_key is None:
+            raise RuntimeError("staged epoch sweep contract has no parent checkpoint")
+        self.parent = (ROOT / frozen_parent[parent_key]).resolve()
         self.epochs = tuple(float(value) for value in self.contract["training"]["checkpoint_epochs"])
         self.gpus = list(map(int, self.contract["resource_plan"]["physical_gpus"]))
         self.world = int(self.contract["resource_plan"]["world_size"])

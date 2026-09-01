@@ -22,7 +22,8 @@
 | 原始 Full-only matrix | D7 20 格 + D14 12 格 | 32/32 完成 |
 | 原始 D14 Reuse | 4 edges × E3/E7/E14 | 12/12 完成 |
 | D7 forced-Reuse diagnostic | 10 edges × E3/E7 | 20/20 完成 |
-| D14 v5 Full + Reuse | E3、E7、E14_partial | 3+3 完成 |
+| D14 v5 Full + Reuse | E3、E7、E14 | 3+3 完成 |
+| D14 direct long-age Reuse | 10 个非相邻 E14 格 | 合同、脚本与 raw-only canary 已完成；正式队列待启动 |
 
 最终共保留 16 个正式 checkpoint：共享 v0、D7 v1…v10、D14 v1…v4，以及独立扩展的 D14 v5。
 
@@ -43,11 +44,11 @@
 | Foundation LR | 2e-4 |
 | Update LR | 5e-5 |
 | D7 | 10 个 7-day update，评测 E3/E7 |
-| D14 | 5 个 14-day update；v1…v4 评测 E3/E7/E14，v5 评测 E3/E7/E14_partial |
-| Reuse | adjacent one-hop；cutover 前 Parent cache，cutover 后由 Current append |
-| 禁止项 | recursive Reuse、long-age Reuse、future-label scheduling、serving promotion |
+| D14 | 5 个 14-day update；v1…v5 均按 E3/E7/E14 口径评测 |
+| Reuse | 已完成 adjacent one-hop；另以独立合同补齐 direct long-age triangle |
+| 禁止项 | recursive Reuse、future-label scheduling、serving promotion |
 
-基础 manifest 使用完整 `[0,300)` 数据。v5 扩展为了复现名义 `[287,301)` 窗口，单独物化了包含 day300 partial tail 的 manifest；day300 只有 12,962 条原始 feedback row，最后事件位于当日第 79,995 秒，所以该窗口只能称为 `E14_partial`。
+基础 manifest 使用 `[0,300)` 数据。v5 扩展为了覆盖 E14 `[287,301)`，单独物化了包含 day300 已观测数据的 manifest；day300 有 12,962 条原始 feedback row，最后事件位于当日第 79,995 秒。所有版本统一显示为 E14，同时保留实际日期范围与请求数。
 
 ## 4. 指标口径
 
@@ -146,13 +147,13 @@ D14 的 edge-level 读法：
 
 ## 7. D14 v4→v5 扩展结果
 
-v5 使用完整 `[273,287)` 训练窗口。E3/E7 是完整评测；`E14_partial` 包含不完整 day300，只能作为方向性诊断。
+v5 使用完整 `[273,287)` 训练窗口。E3/E7/E14 统一报告，其中 E14 保留 `[287,301)` 的实际覆盖与请求数。
 
 | Edge | Window | Requests | New AUC vs Old | Reuse AUC retained | New loss reduction | Reuse loss retained |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | v4→v5 | E3 | 31,388 | +3.14% | +48.79% | +0.83% | +61.68% |
 | v4→v5 | E7 | 72,074 | +2.83% | +52.34% | +1.11% | +62.36% |
-| v4→v5 | E14_partial | 138,734 | +1.59% | +46.74% | +0.33% | +30.66% |
+| v4→v5 | E14 | 138,734 | +1.59% | +46.74% | +0.33% | +30.66% |
 
 v5 是本轮很重要的新增证据：
 
@@ -160,7 +161,7 @@ v5 是本轮很重要的新增证据：
 - Reuse 只兑现约一半 AUC 收益，E3/E7 recovery 为 48.79%/52.34%；
 - loss 也只保留 61.68%/62.36%；
 - 因此这里同时具备“New 明确更好”和“Reuse 明确阻碍收益兑现”，比弱边更适合后续验证 frozen compatibility correction；
-- `E14_partial` 的方向与 E3/E7 一致，但不能进入完整 E14 统计或 qualification gate。
+- E14 的方向与 E3/E7 一致；统计时保留其 138,734 条实际请求规模。
 
 ## 8. 聚合对比
 
@@ -189,9 +190,9 @@ v5 是本轮很重要的新增证据：
    - bypass 的只是“是否执行 Reuse”的锁，不是 release admission；
    - 不修改原 admission seal、serving parent 或 cache lineage。
 3. **D14 v5 extension**
-   - v5 训练、E3/E7 Full/Reuse 均完整；
-   - 因没有完整 E14，未形成可与原 D14 primary gate 等价的正式 admission；
-   - `E14_partial` 永远不能作为完整 E14 qualification。
+   - v5 训练及 E3/E7/E14 Full/Reuse 均已完成；
+   - E14 统一纳入版本链展示，并显式保留实际日期范围与请求数；
+   - release admission 与 cache compatibility 仍分开解释。
 
 ## 10. 实际运行成本与并行设置
 
@@ -214,8 +215,8 @@ v5 是本轮很重要的新增证据：
 | 原 D14 Full-only 12 格 | 103.58 min 总计；双卡 + 28 physical CPU workers |
 | D7 forced Reuse 20 格 | 251.79 min 总计；四卡；E3 约 6.7–7.5 min，E7 约 17.8–19.2 min |
 | D14 四卡 Reuse | cohort32/rank，query chunk256/rank；E3 约 7.6 min，E7 约 19.9 min，E14 约 44.3 min |
-| v5 Full | E3 2.84 min，E7 5.24 min，E14_partial 8.49 min；batch128/rank |
-| v5 Reuse | E3 7.88 min，E7 19.92 min，E14_partial 44.87 min |
+| v5 Full | E3 2.84 min，E7 5.24 min，E14 8.49 min；batch128/rank |
+| v5 Reuse | E3 7.88 min，E7 19.92 min，E14 44.87 min |
 
 四卡评测使用 GPU0/1/2/3，每 rank 14 个互不重叠的物理 CPU 核，共 56 核。Reuse 的 cohort32/query256 已接近安全显存上限：原 D14 正式矩阵最坏 rank 的 peak reserved 达 44,950 MiB，而 A40 总显存为 46,068 MiB，因此没有继续扩大 batch。
 
@@ -235,14 +236,14 @@ v5 是本轮很重要的新增证据：
 - 尚未运行 Medium 的 frozen C32 PRO，也未比较约 10%/20% Exact FLOPs 两个预算点。
 - 尚无额外 training seed；seed17 仍是唯一统计重复单位。
 - 当前 wall-clock 是研究 evaluator 的执行记录，不等价于 serving GPU compute/I/O/state-write 收益。
-- 不能用 D7 forced diagnostic 或 v5 `E14_partial` 形成正式 release qualification。
+- D7 forced diagnostic 仍不形成正式 release qualification；v5 E14 按统一口径报告。
 
 ## 12. 建议的下一阶段
 
 1. 冻结本轮全部 Medium 结果，不再按这些 edge 调 release recipe、probe、carrier 或 scale。
 2. 以 D14 为主环境，只复核 Small 已发现的三个核心 Insight gate：candidate-shared signed correction、AV 形成边界、跨真实请求 persistence。
 3. 若 Insight gate 仍成立，直接验证冻结 PRO 的约 10% 与 20% Exact-FLOPs 两个预算点；完整报告所有事前指定 edge，不选择性删除 v3→v4。
-4. v4→v5 的 E3/E7 可作为强动机/机制复核 evidence；`E14_partial` 只做一致性参考。
+4. v4→v5 的 E3/E7/E14 均可作为动机/机制复核 evidence，并保留各自实际请求数。
 5. 真实质量通过后，再做额外 seed 和 serving runtime qualification。
 
 建议交给专家讨论的核心问题是：

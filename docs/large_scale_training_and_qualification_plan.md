@@ -1,7 +1,7 @@
 # Yambda-500M Large 训练与验证执行记录
 
 日期：2026-08-30  
-状态：**16 个 checkpoint 已完成；正式 Reuse/PRO 在首个质量 cell 前取消；已裁决 18/20 个 Full-only cell，并针对 D14 v3→v4 启动独立 endpoint-strength 专项**
+状态：**Large D14 当前工作序列已冻结为原 V0–V3、V4@2.0、direct-child V5@2.0；五条相邻边 aggregate AUC 全正**
 
 ## 1. 冻结结论
 
@@ -31,7 +31,7 @@ Large population 是全部 79,681 名 lineage-eligible 用户。冻结 manifest 
 | --- | ---: | ---: | --- | --- |
 | D7 | 7 天 | 10 | E7 | 10 条均完整 |
 | D14 | 14 天 | 5 | E7、E14 | 5 条 E7 完整；前 4 条 E14 完整 |
-| D14 v4→v5 | 14 天 | 第 5 条 | E14_partial | `[287,301)` 含不完整 Day 300，只作方向诊断 |
+| D14 v4→v5 | 14 天 | 第 5 条 | E14 | `[287,301)`；按统一 E14 口径报告，并保留实际请求数 |
 
 shared v0 只训练一次；D7 和 D14 分别从 v0 开始沿 direct-parent candidate chain 训练。每个 checkpoint
 只跑一个完整 pass，fresh AdamW，foundation LR `2e-4`，update LR `5e-5`。总计保留 16 个正式
@@ -41,13 +41,13 @@ checkpoint：shared v0、D7 v1–v10、D14 v1–v5。
 
 原合同要求全部 20 个 Full-only cell 先完成 raw seal、label join 和独立 admission seal，之后才开始任何
 Reuse/PRO label join。实际停止时已裁决 18/20：D7/E7 十格与 D14 前四条 edge 的 E7/E14；D14
-v4→v5 E7 只留下 sealed raw，E14_partial 未运行。模型 admission 与 cache compatibility 分开报告；即使某条 candidate edge 未过
+v4→v5 E7 只留下 sealed raw，E14 未运行。模型 admission 与 cache compatibility 分开报告；即使某条 candidate edge 未过
 严格模型门，也只在 admission seal 之后运行预冻结的 adjacent diagnostic，且不改变 serving parent 或
 cache lineage。
 
 - Full-only 保持原矩阵：D7 的 10 edges × E7，以及 D14 的 5 edges × E7/E14；
 - 正式 Reuse/PRO 不再运行；此前缩减为 D14/E14 五格的计划已在首个正式 Reuse cell 前取消；
-- D14 第五条的 14-day cell 始终命名为 `E14_partial`；
+- D14 第五条的 14-day cell 与其余版本统一命名为 `E14`；实际日期范围与请求数仍完整记录；
 - 不运行 D3/E3，不运行 recursive/cross-version Reuse；
 - 所有 raw score 都在 label join 前封存，所有预冻结 cell 全量报告。
 
@@ -163,3 +163,26 @@ qualification。它从原封存 v3 出发，在同一 `[259,273)` 数据和同�
 入口为 `scripts/run_yambda500m_large_v3_v4_epoch_sweep.py`。focused canary 只验证 20-step 训练、
 四卡 checkpoint 和五模型联合 Full 推理的正确性/显存，不读取质量；正式任务必须在 canary 通过后由
 用户使用独立 acknowledgement 启动。
+
+## 9. 当前 canonical D14 V0–V5
+
+后续代码与讨论只使用
+`configs/contracts/yambda500m_large_d14_canonical_v0_v5_v1.yaml` 和
+`results/yambda500m_large_seed17/canonical_D14_v0_v5_v1/chain.json` 解析当前序列：
+
+| Version | 训练窗口 | Epoch | 相对直接 parent AUC |
+| --- | --- | ---: | ---: |
+| V0 | `[0,217)` | 1.0 | — |
+| V1 | `[217,231)` | 1.0 | +3.396% |
+| V2 | `[231,245)` | 1.0 | +2.072% |
+| V3 | `[245,259)` | 1.0 | +2.750% |
+| V4 | `[259,273)` | **2.0** | +0.855% |
+| V5 | `[273,287)` | **2.0** | +4.826%（E14） |
+
+V4/V5 的 parent checkpoint hash 已分别核对为 V3 和 canonical V4，六个版本形成一条闭合的直接父子
+lineage。当前 development release rule 按用户决定采用 aggregate ROC-AUC 严格为正；loss、Brier 和
+user-cluster bootstrap 继续完整报告，但不作为这条工作序列的否决门。
+
+这个 rule 只解释已经完成的 post-hoc working lineage。未来新 edge 若要形成独立 qualification，必须在
+读取其质量前冻结两 epoch recipe，不能对同一 qualification labels 反复训练到 AUC 变正。旧 0.5/1.0/
+1.5 endpoint、原 V4@1.0 与 legacy V5 已从当前入口排除，其封存结果和负证据不删除、不改写。

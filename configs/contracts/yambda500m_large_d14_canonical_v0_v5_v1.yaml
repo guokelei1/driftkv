@@ -1,0 +1,126 @@
+contract: yambda500m_large_d14_canonical_v0_v5_v1
+date_frozen: 2026-08-31
+status: canonical_post_hoc_development_release_lineage
+purpose: >-
+  Define the single current Large D14 v0..v5 checkpoint sequence after
+  endpoint-strength development: preserve v0..v3 and replace the working v4
+  and v5 with their direct-lineage two-epoch endpoints.
+
+interpretation_boundary:
+  selection_was_made_after_quality_was_read: true
+  claim: current_working_release_lineage_not_independent_qualification
+  original_contracts_seals_adjudications_and_negative_results_remain_immutable: true
+  historical_endpoints_are_not_current_models: true
+  serving_promotion: prohibited
+
+model:
+  scale: EvoKV-HSTU-L
+  dataset: Yambda-500M
+  population_users: 79681
+  architecture: HSTU_native_F_only
+  num_layers: 10
+  hidden_size: 320
+  num_heads: 10
+  max_seq_len: 1024
+  seed: 17
+
+release_policy:
+  current_development_acceptance: aggregate_ROC_AUC_strictly_positive
+  log_loss_Brier_and_user_cluster_bootstrap: always_reported_not_current_selection_gates
+  selected_epochs:
+    v0: 1.0
+    v1: 1.0
+    v2: 1.0
+    v3: 1.0
+    v4: 2.0
+    v5: 2.0
+  future_unseen_edges_may_not_adapt_epochs_on_qualification_labels: true
+  future_recipe_if_reused_must_freeze_two_epochs_before_quality_read: true
+
+checkpoints:
+  v0:
+    path: results/yambda500m_large_seed17/qualification_v1/shared_v0/checkpoint_100.pt
+    sha256: e3fb0f56939919648c9d4fe65f7418276427f1dca6241058020b58eb6e2c87fb
+    parent_sha256: null
+    training_days_half_open: [0, 217]
+    epochs: 1.0
+  v1:
+    path: results/yambda500m_large_seed17/qualification_v1/D14/checkpoints/v1/checkpoint_100.pt
+    sha256: 4918c9425b57688dfca6cfe1ee554ca46bdc354ff3049f6ee04629a33019d520
+    parent_sha256: e3fb0f56939919648c9d4fe65f7418276427f1dca6241058020b58eb6e2c87fb
+    training_days_half_open: [217, 231]
+    epochs: 1.0
+  v2:
+    path: results/yambda500m_large_seed17/qualification_v1/D14/checkpoints/v2/checkpoint_100.pt
+    sha256: 7f1b9a31ca80578200a76aa77d7b8e0e641ffaa085eefe8f9ee3af193e5986be
+    parent_sha256: 4918c9425b57688dfca6cfe1ee554ca46bdc354ff3049f6ee04629a33019d520
+    training_days_half_open: [231, 245]
+    epochs: 1.0
+  v3:
+    path: results/yambda500m_large_seed17/qualification_v1/D14/checkpoints/v3/checkpoint_100.pt
+    sha256: 2cd79ab157391358220b93197851041c4358747d210f3a22ac13f25501eabeee
+    parent_sha256: 7f1b9a31ca80578200a76aa77d7b8e0e641ffaa085eefe8f9ee3af193e5986be
+    training_days_half_open: [245, 259]
+    epochs: 1.0
+  v4:
+    path: results/yambda500m_large_seed17/v3_v4_epoch_sweep_v1/checkpoints/checkpoint_epoch_2.pt
+    sha256: a18f76c7e2619382caf8d989a27924129727da5229ddc4e507b24444501b1905
+    parent_sha256: 2cd79ab157391358220b93197851041c4358747d210f3a22ac13f25501eabeee
+    training_days_half_open: [259, 273]
+    epochs: 2.0
+  v5:
+    path: results/yambda500m_large_seed17/v4e2_to_v5_epoch_sweep_v1/checkpoints/checkpoint_epoch_2.pt
+    sha256: df0c41790d465f7f7f18e89d00e69688c4caaac2d4344328ba7f82bccee72898
+    parent_sha256: a18f76c7e2619382caf8d989a27924129727da5229ddc4e507b24444501b1905
+    training_days_half_open: [273, 287]
+    epochs: 2.0
+
+full_only_release_gains:
+  reporting: current_relative_to_direct_parent_percent
+  edges:
+    v0_to_v1:
+      horizon: E14
+      completeness: complete
+      AUC: 3.395928
+      loss_reduction: 1.656367
+      source: results/yambda500m_large_seed17/qualification_v1/D14/full_only/E14/v0_to_v1/adjudication.json
+      source_sha256: aeadf692daf277cc4943ce4015bf4a6a758399dd072ec32f6c9a23343cdcc458
+    v1_to_v2:
+      horizon: E14
+      completeness: complete
+      AUC: 2.071652
+      loss_reduction: 1.016319
+      source: results/yambda500m_large_seed17/qualification_v1/D14/full_only/E14/v1_to_v2/adjudication.json
+      source_sha256: db9bd38d5d7fd02e732dfe0b72ebcc6be7c3ea13745df37f4b7ba9b5c06da74d
+    v2_to_v3:
+      horizon: E14
+      completeness: complete
+      AUC: 2.749766
+      loss_reduction: 1.391809
+      source: results/yambda500m_large_seed17/qualification_v1/D14/full_only/E14/v2_to_v3/adjudication.json
+      source_sha256: da5af717e9a211c3aecb6587bbd0f4ca16a8f9e934e5e8a27b9337b2eb58653b
+    v3_to_v4:
+      horizon: E14
+      completeness: complete
+      AUC: 0.855419
+      loss_reduction: 0.821598
+      source: results/yambda500m_large_seed17/v3_v4_epoch_sweep_v1/summary.json
+      source_sha256: a5de796450068dbd7135f94773c5765c00c74ab7e6237577e090fc11b3106faf
+    v4_to_v5:
+      horizon: E14_partial
+      completeness: incomplete_day300_directional_only
+      AUC: 4.826165
+      loss_reduction: 2.420411
+      source: results/yambda500m_large_seed17/v4e2_to_v5_epoch_sweep_v1/summary.json
+      source_sha256: 5df61e73f228ed78d275bc09100a6decf95a957e6d757f48c2b6269e67b8d845
+
+superseded_but_preserved_evidence:
+  original_v4_e1_and_legacy_v5: results/yambda500m_large_seed17/qualification_v1/D14/checkpoints
+  v4_endpoint_sweep: results/yambda500m_large_seed17/v3_v4_epoch_sweep_v1
+  v5_endpoint_sweep: results/yambda500m_large_seed17/v4e2_to_v5_epoch_sweep_v1
+  policy: excluded_from_current_chain_but_not_deleted_or_rewritten
+
+outputs:
+  canonical_directory: results/yambda500m_large_seed17/canonical_D14_v0_v5_v1
+  chain_manifest: results/yambda500m_large_seed17/canonical_D14_v0_v5_v1/chain.json
+  discussion_summary: results/yambda500m_large_seed17/canonical_D14_v0_v5_v1/README.md

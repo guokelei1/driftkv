@@ -129,9 +129,10 @@ One-Release 先验证最小可行转换；Continuous 再研究多个转换的生
 - 当前 Small 由统一 Yambda-500M 人口的固定 UID hash 前缀构成，目标是 10,000 用户；
 - 其余 Medium/Large 人口只在规模实验阶段使用，不与当前 Small motivation 数字混合。
 
-数据源有 300 个完整天和一个不足整天的尾段。基础模型使用 `[Day 0, Day 217)` 的历史；正式 release
-update 和 observation 只使用完整的 `[Day 217, Day 300)` 时间线，partial day300 不进入 formal
-窗口。所有逻辑窗口是半开区间，事件顺序在相同 timestamp 下使用稳定 tie-break。
+数据源主体覆盖 `[Day 0, Day 300)`，并保留 day300 已观测尾段。基础模型使用 `[Day 0, Day 217)`
+的历史；基础 release matrix 使用 `[Day 217, Day 300)`，v5 扩展的 E14 使用 `[Day 287, Day 301)`。
+所有 E14 统一命名，同时在结果中保留精确半开日期范围、请求数与实际 source coverage；事件顺序在
+相同 timestamp 下使用稳定 tie-break。
 
 ### 2.2 模型
 

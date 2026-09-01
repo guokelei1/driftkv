@@ -1,7 +1,7 @@
 # Yambda-500M Medium Full-only 训练推进方案
 
 日期：2026-08-28  
-状态：**共享 v0、D7 v1…v10、D14 v1…v5 共 16 个 checkpoint 已完成；基础 32 个 Full-only、D14 v1…v4 的 12 个 Reuse、D7 forced diagnostic 的 20 个 Reuse，以及 v5 的 E3/E7/E14_partial Full+Reuse 均已封存；PRO 未启动**
+状态：**共享 v0、D7 v1…v10、D14 v1…v5 共 16 个 checkpoint 已完成；基础 32 个 Full-only、D14 v1…v4 的 12 个 Reuse、D7 forced diagnostic 的 20 个 Reuse，以及 v5 的 E3/E7/E14 Full+Reuse 均已封存；PRO 未启动**
 
 ## 1. 这份方案解决什么
 
@@ -26,10 +26,11 @@ SHA-256 规则重新选择 day150 population，只与当前 population 重合 26
 
 - 直接复用已审计的 30k 固定 UID population 和 1,380,509-item foundation mapping；
 - 与 Small 的 foundation boundary 一致，scale comparison 更干净；
-- 83 个完整 stream days 足以支持 10 条 D7 edge 和 4 条具有完整 E14 的 D14 edge。
+- 83 个基础 stream days 支持 10 条 D7 edge 和前 4 条 D14/E14 edge；随后以同一 population/mapping
+  增补 v5，并按统一 E14 口径保留 `[287,301)` 的实际观测覆盖。
 
-完整数据只到半开区间 `[0,300)`；day300 是 partial tail，正式训练和评测均排除。D14 若训练第 5 个
-增量版本，其 E14 会延伸到 day301，因此不进入对称的正式 recipe matrix。
+基础对称矩阵使用半开区间 `[0,300)`。后续 v5 扩展使用 `[287,301)` 作为 E14，并以实际日期范围、
+请求数和 source coverage 记录尾部差异；展示名称不再另立一档。
 
 ## 3. Small 流程中应继承与不应照搬的部分
 
@@ -108,10 +109,10 @@ listen 和 `(uid,timestamp,item)` 去重得到的 **label-free planning upper bo
 
 D7 update 总计约 684,440 request-passes。
 
-### 5.2 D14：4 个增量版本
+### 5.2 D14：基础4个增量版本，随后扩展至v5
 
-每条 edge 在 cutover 后报告 E3、E7 和 E14；最后一条 v3→v4 在 day273 cutover，E14 于 day287
-结束。`[287,300)` 保留，不为了凑第五条 edge 使用不完整 E14。
+每条 edge 在 cutover 后报告 E3、E7 和 E14；基础矩阵最后一条 v3→v4 在 day273 cutover，E14 于
+day287 结束。后续独立合同又训练 v5 `[273,287)`，并将 `[287,301)` 统一报告为 E14。
 
 | Candidate | 训练窗口 | 请求组上限 | 用户数 |
 | --- | --- | ---: | ---: |
@@ -307,14 +308,14 @@ PYTHONPATH=src python scripts/run_yambda500m_medium_full_reuse_matrix.py \
 ### 9.4 D14 v4→v5 单边扩展
 
 用户于 2026-08-29 授权补齐 D14 v5。v5 的增量训练窗口 `[273,287)` 完整且直接继承 sealed v4；其
-E3 `[287,290)` 与 E7 `[287,294)` 也完整。名义 E14 为 `[287,301)`，但 day300 只有 12,962 条原始
-feedback row，最后时间为当日第 79,995 秒，不能冒充完整日。因此新合同把它命名为 `E14_partial`，
-保留全量 partial-tail 诊断但禁止 qualification/serving admission。
+E3 `[287,290)`、E7 `[287,294)` 与 E14 `[287,301)` 均按统一 horizon 名称报告。day300 的实际原始
+feedback row 为 12,962 条，最后时间为当日第 79,995 秒；这一覆盖差异通过日期范围和请求数保留，
+不再改变 E14 的展示名称。
 
 独立入口 `run_yambda500m_medium_d14_v5_extension.py` 先构建 `[217,301)` 扩展 manifest，再做四卡
 raw-only canary，最后串行执行 v5 training、三个 Full-only 和三个 adjacent-Reuse cell。训练保持
 global batch 32（8/rank）；Full 为 batch128/rank；Reuse 沿用 cohort32/query256；四 rank 各绑定 14
-个独立物理 CPU 核。canary 在最长 `E14_partial` 上同时覆盖 Full 与 Reuse，不读取质量。
+个独立物理 CPU 核。canary 在最长 `E14` 上同时覆盖 Full 与 Reuse，不读取质量。
 
 ```bash
 PYTHONPATH=src python scripts/run_yambda500m_medium_d14_v5_extension.py --mode prepare
@@ -326,8 +327,40 @@ PYTHONPATH=src python scripts/run_yambda500m_medium_d14_v5_extension.py \
 结果位于 `results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/`，不会修改原
 D14 v1…v4 checkpoint、admission、raw seal 或 summary。
 
+### 9.5 D14/E14 跨版本 direct Reuse 补齐
+
+Medium Motivation-1 还需要复现 Small 的版本年龄矩阵。相邻 v0→v1…v4→v5 五格已经封存；新增实验
+只运行10个非相邻格子：v0→v2，v0/v1→v3，v0/v1/v2→v4，以及 v0/v1/v2/v3→v5。每格均为
+direct long-age Reuse：指定 producer 直接物化完整 cutover 前缀，Current 读取该 K/V 后追加全部
+post-cutover 事件；禁止递归串联历史 Reuse。
+
+统一只测 D14/E14。v2/v3/v4 使用基础 manifest，v5 使用覆盖 `[287,301)` 的扩展 manifest；所有结果
+显示为 E14，同时在结构化结果中保留精确日期范围与请求数。新增格只计算同一次运行内的 Current
+Exact 与 Direct Reuse 两条路径，不计算 Old，也不把历史运行的 New 拼接进主比较。跨运行 Current
+漂移只记录、不作为停止条件；完整报告全部预定义格子。
+
+运行固定为 GPU0/1/2/3 四 rank、cohort32/rank、query chunk256/rank、每 rank 14 个互不重叠的物理
+CPU 核。先运行最长跨度 v0→v5 的16-user/rank raw-only canary；正式队列串行、可续跑，每格 raw
+先封存后才 join label，完成一格即更新三角矩阵汇总。
+
+```bash
+PYTHONPATH=src python scripts/run_yambda500m_medium_d14_direct_long_age_reuse.py \
+  --mode preflight
+
+PYTHONPATH=src python scripts/run_yambda500m_medium_d14_direct_long_age_reuse.py \
+  --mode canary
+
+PYTHONPATH=src python scripts/run_yambda500m_medium_d14_direct_long_age_reuse.py \
+  --mode formal \
+  --acknowledge-long-run RUN_MEDIUM_D14_DIRECT_LONG_AGE_REUSE
+```
+
+结果位于 `results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/`。完整时
+`summary.json`/`summary.md` 包含10个新增非相邻格子和5个引用的相邻格子，共15格；该诊断不修改
+已有 release admission、serving parent 或 cache lineage。
+
 一句话执行口径：
 
 > **复用 day217 的 30k Medium population 与 mapping，先训练一份 6L/H192/context1024 Full-only v0，
-> 再从同一 v0 串行扫描 D7×10 和 D14×4 candidate chain；全程先验证模型更新本身，冻结稳定 recipe
-> 后才解锁 Reuse/PRO，且任何长训都需新合同、canary 和用户再次明确授权。**
+> 再从同一 v0 串行扫描 D7×10 和 D14×5 candidate chain；先验证模型更新，再依独立合同补齐相邻及
+> 跨版本 direct Reuse。任何后续长训仍需合同、canary 和用户明确授权。**

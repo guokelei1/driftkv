@@ -1,0 +1,162 @@
+contract: yambda500m_medium_hstu_native_d14_direct_long_age_reuse_v1
+date_frozen: 2026-08-31
+status: prospective_posthoc_medium_motivation_diagnostic_v1
+purpose: >-
+  Complete the Medium D14/E14 direct long-age Reuse triangle for v0 through v5.
+  Add every non-adjacent producer/current pair exactly once, preserve the five
+  sealed adjacent cells, and report all fifteen cells without selection.
+
+scope:
+  scale: EvoKV-HSTU-M
+  population_users: 30000
+  seed: 17
+  architecture: hstu_native_cc
+  training_days: 14
+  display_horizon: E14
+  requested_evaluation_days: 14
+  versions: [v0, v1, v2, v3, v4, v5]
+  direct_long_age_cells:
+    - {producer: v0, current: v2, cutover_day: 245, day_range_half_open: [245, 259]}
+    - {producer: v0, current: v3, cutover_day: 259, day_range_half_open: [259, 273]}
+    - {producer: v1, current: v3, cutover_day: 259, day_range_half_open: [259, 273]}
+    - {producer: v0, current: v4, cutover_day: 273, day_range_half_open: [273, 287]}
+    - {producer: v1, current: v4, cutover_day: 273, day_range_half_open: [273, 287]}
+    - {producer: v2, current: v4, cutover_day: 273, day_range_half_open: [273, 287]}
+    - {producer: v0, current: v5, cutover_day: 287, day_range_half_open: [287, 301]}
+    - {producer: v1, current: v5, cutover_day: 287, day_range_half_open: [287, 301]}
+    - {producer: v2, current: v5, cutover_day: 287, day_range_half_open: [287, 301]}
+    - {producer: v3, current: v5, cutover_day: 287, day_range_half_open: [287, 301]}
+  expected_new_cells: 10
+  expected_complete_triangle_cells_including_adjacent: 15
+  reuse_semantics: >-
+    The named producer materializes the entire strictly pre-cutover prefix once;
+    Current reads that producer K/V and appends every post-cutover event.
+  recursive_reuse: prohibited
+  candidate_admission: prohibited
+  serving_or_cache_lineage_promotion: prohibited
+  selected_cell_reporting: prohibited
+
+horizon_reporting:
+  canonical_name_for_every_cell: E14
+  preserve_exact_day_range_and_request_count: true
+  v5_range_half_open: [287, 301]
+  observed_source_coverage_differences_change_the_E14_display_name: false
+  legacy_artifact_directory_names_are_read_only_compatibility_inputs: true
+
+frozen_parents:
+  medium_matrix_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+    sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  medium_v5_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_d14_v5_extension_v1.yaml
+    sha256: b302e40cec074e7a299f0841afb764d2606864d2b94f52ba3f6c3143b7821517
+  medium_v5_execution_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_d14_v5_execution_v1.yaml
+    sha256: 5de750a4fc6d8c12c94cd0894bf3b64ebdeacb84870fa2dcf31f24dbcaf947d4
+  proven_four_gpu_runtime_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_d14_reuse_4gpu_runtime_v3.yaml
+    sha256: b192292b19e08016e7a84150a93eac55d49e5025ea16638fdbdaf7833ca3735a
+
+frozen_execution:
+  executor:
+    path: scripts/evaluate_yambda500m_hstu_native_onehop_reuse_raw.py
+    sha256: f27939c0593d3961a69881ed600352da6e13bd1fb310bff170577cc0aa17c568
+  adjudicator:
+    path: scripts/adjudicate_yambda500m_hstu_native_onehop_reuse.py
+    sha256: 623c9a5e8bd888c34d6840270ee93bd3548838895527a9eba0d97ee54c36a511
+  dataset_manifest:
+    path: data/processed/yambda500m_unified_v1/scales/medium/dataset.json
+    sha256: d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb
+  manifests:
+    base:
+      directory: data/manifests/yambda500m_medium_hstu_native_d7_d14_v1
+      manifest_sha256: 122229a5f61849aafdc0faeaf0ab2c7080ac7bb006df67bb135c05dc46cff980
+      requests_fidelity_sha256: 22a70eea34bc6ca88343f06db8f388d3631644dd00c1e4851bcb8c3c81e46bcd
+      requests_quality_sha256: aa51aea945734939a1ef4f9285b78772c3b19d42f4dfcc74a77cecde33f6115b
+      applies_to_currents: [v2, v3, v4]
+    v5:
+      directory: data/manifests/yambda500m_medium_hstu_native_d14_v5_extension_v1
+      manifest_sha256: f8e5479fc8e0724c615513290a4c779dea5adbbcd2d25f05f5b5e58c9b4646d4
+      requests_fidelity_sha256: 8b23e1a170174245fbeebfb38b20403d667f1a489ffffab3087f6c367c14a056
+      requests_quality_sha256: d85ead3b1d48e6e6aa773dafa1e3ebd1adf9bde16872e08a65a4dbe877c15a6d
+      applies_to_currents: [v5]
+
+checkpoints:
+  v0:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/shared_v0/checkpoint_100.pt
+    sha256: 4a51957fe7c7d89132b315ba9b34c442c77c9cb07fc8b09e70f3b5e8c3750586
+  v1:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v1/checkpoint_100.pt
+    sha256: 72fdc2011f5e2f5c21ee995406b09fcb82d60fbbd52888cc5d561a8fd30fe124
+  v2:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v2/checkpoint_100.pt
+    sha256: 74d535a68d719d0399f968c39477db861dcfb805086b99618f926f1a0c0ac8be
+  v3:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v3/checkpoint_100.pt
+    sha256: 9942e1dab6a5e45d638a4d045670593b6370ec50043ecbec174e8a7cd68437d0
+  v4:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v4/checkpoint_100.pt
+    sha256: a8f2d57d3ebbcfbf294949ef628c310e06a22afb1ad9d7064f77a2ef35c397e6
+  v5:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/checkpoint/checkpoint_100.pt
+    sha256: 6047162ea0d2dd996104f950808e7ff2c84e90a99ec61d554848568cd6edd064
+
+adjacent_evidence:
+  v0_to_v1:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/reuse/E14/v0_to_v1/adjudication.json
+    sha256: 6bd6ef7fe34ca1cff3cb2b2b60e094308b09eb24717787f1da0b391b9ac3df7e
+  v1_to_v2:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/reuse/E14/v1_to_v2/adjudication.json
+    sha256: 7c1f198aeed3248e0556278358bb5296f589b55f97609b7bed4cb6fb21ef1621
+  v2_to_v3:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/reuse/E14/v2_to_v3/adjudication.json
+    sha256: c76bfedc0b7a27854bb18a57a22d31c6e0854af2aa6fb5d84e381e2a0b11c268
+  v3_to_v4:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/reuse/E14/v3_to_v4/adjudication.json
+    sha256: 84eddb3c30b8832db0daff9f46eac0d4c2390007ead5cbe71c9b8741590cbcbc
+  v4_to_v5:
+    path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/reuse/E14_partial/v4_to_v5/adjudication.json
+    sha256: 07400762f7be42067160c97106fa64c096b179d0ec969cc43b9a27110ba3291f
+
+runtime:
+  physical_gpus: [0, 1, 2, 3]
+  world_size: 4
+  one_four_rank_job_at_a_time: true
+  cohort_size_per_rank: 32
+  query_chunk_size_per_rank: 256
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+  rank0_cpu_affinity: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  rank1_cpu_affinity: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+  rank2_cpu_affinity: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+  rank3_cpu_affinity: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+
+canary:
+  cell: {producer: v0, current: v5}
+  maximum_users_per_rank: 16
+  maximum_peak_reserved_mib_per_rank: 45500
+  quality_metric_read: prohibited
+  pass: [raw_hash, two_paths_per_request, four_ranks, no_OOM, peak_memory]
+
+failure_and_resume:
+  completed_cell: validate_hash_and_skip
+  sealed_raw_without_adjudication: resume_label_join
+  interrupted_unsealed_directory: stop_for_audit
+  cuda_oom: stop_and_preserve_log_no_automatic_batch_downshift
+  failed_cell: stop_serial_queue
+
+outputs:
+  root: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1
+  canonical_horizon_directory: E14
+  summary_json: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/summary.json
+  summary_markdown: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/summary.md
+
+authorization:
+  static_preflight: authorized_by_user_2026_08_31
+  focused_four_gpu_canary: authorized_by_user_2026_08_31
+  formal_ten_cell_queue: requires_user_invoked_acknowledgement
+  quality_driven_cell_selection: prohibited
+  serving_lineage_promotion: prohibited

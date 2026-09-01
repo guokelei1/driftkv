@@ -4,6 +4,10 @@
 
 ## 保留结果
 
+- `yambda500m_large_seed17/canonical_D14_v0_v5_v1/`：当前唯一 Large D14 工作序列；不复制模型
+  大文件，而以 contract-bound path/hash 固定原 V0–V3、V4@2.0、以及从该 V4 直接训练的 V5@2.0。
+  五条相邻边 aggregate AUC 全正。旧 endpoint sweep 仍保留为历史开发证据，不再作为当前模型入口；
+
 - data_audit/yambda500m_scale_v1/：Yambda-500M 人口与数据审计；
 - `data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/`（位于 data 目录）：已按 prospective
   Medium 合同物化的 `[0,300)` request manifest；包含 2,962,852 个因果去重请求，未计算质量指标，
@@ -22,9 +26,13 @@
   不改写 `D7/admission/`、正式 `D7/reuse/`、顶层 summary 或 serving/cache lineage；canary 与正式结果
   均保留 raw-first seal，完整矩阵不得选择性报告；
 - `yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/`：独立的 D14 v4→v5
-  四卡扩展。v5 只训练完整 `[273,287)`；E3/E7 为完整窗口，`E14_partial` 明确包含不完整 day300，
-  只能作诊断。`canary/` 不读取质量，正式 checkpoint、Full、Reuse 与 summary 均绑定独立合同，不改写
+  四卡扩展。v5 只训练完整 `[273,287)`；E3/E7/E14 统一按 horizon 报告，E14 的实际日期范围与请求数
+  保留 day300 的观测覆盖。`canary/` 不读取质量，正式 checkpoint、Full、Reuse 与 summary 均绑定独立合同，不改写
   原 D14 v1…v4 结果或 serving admission；
+- `yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/`：Medium
+  Motivation-1 的 D14/E14 跨版本补齐目录；新增10个非相邻 direct Reuse 格子，并引用5个已封存
+  相邻格子形成15格完整三角矩阵。所有格子统一显示为 E14，实际日期范围与请求数写入 JSON；不执行
+  recursive Reuse，也不改变 admission 或 serving/cache lineage；
 - `yambda500m_medium_seed17/full_reuse_matrix_v1/medium_scale_experiment_summary.md`：本轮 Medium
   seed17 的统一专家讨论稿；汇总模型/数据/训练、原始 D7/D14、D7 forced Reuse、D14 v5、统一百分比
   口径、运行成本、异常边、结论和下一步。Recovery 只使用同一 sealed 三路径 cohort 计算，不混用
