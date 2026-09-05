@@ -15,7 +15,6 @@ from .cache_lineage import (
     observe_rolling,
     timestamp_groups,
 )
-from .release_debt import fixed_query_curve, release_debt, rolling_erase_fraction
 from .raw_protocol import PATHS, seal_raw, validate_raw_table
 
 __all__ = [
@@ -25,12 +24,9 @@ __all__ = [
     "append_timestamp_group",
     "bernoulli_js",
     "binary_metrics",
-    "fixed_query_curve",
     "materialize_state",
     "observe_rolling",
     "paired_harm",
-    "release_debt",
-    "rolling_erase_fraction",
     "seal_raw",
     "sigmoid",
     "stable_log_loss",

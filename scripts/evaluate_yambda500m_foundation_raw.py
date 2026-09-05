@@ -289,8 +289,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                                event_end_exclusive: int | None = None,
                                include_request_local: bool = True,
                                include_parent_exact: bool = False,
-                               refinement_cast_maps=None,
-                               evidence_measure_cast_maps=None,
                                pro_lazy_maps=None,
                                pro_lazy_carriers: int = 32,
                                pro_lazy_repair_width: int = 128,
@@ -322,41 +320,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
         "current_exact_rolling": current_cache,
         "one_hop_reuse_rolling": clone_cache(parent_cache),
     }
-    refinement_path = None
-    if refinement_cast_maps is not None:
-        from insight.one_release_refinement import OUR_PATH, build_fixed_refinement_cache
-
-        caches[OUR_PATH], layout = build_fixed_refinement_cache(
-            parent_cache=parent_cache,
-            current=current,
-            item_ids=items,
-            behaviors=behaviors,
-            time_deltas=deltas,
-            cast_maps=refinement_cast_maps,
-        )
-        if (layout.nominal_positions, layout.cast_positions, layout.repair_evidence,
-                layout.carriers, layout.padding_positions) != (512, 384, 128, 64, 64):
-            raise RuntimeError("full-cache refinement layout differs from frozen r=128,c=64")
-        refinement_path = OUR_PATH
-    evidence_measure_path = None
-    if evidence_measure_cast_maps is not None:
-        from insight.one_release_refinement import (
-            EVIDENCE_MEASURE_PATH,
-            build_evidence_measure_basis_cache,
-        )
-
-        caches[EVIDENCE_MEASURE_PATH], layout = build_evidence_measure_basis_cache(
-            parent_cache=parent_cache,
-            current=current,
-            item_ids=items,
-            behaviors=behaviors,
-            time_deltas=deltas,
-            cast_maps=evidence_measure_cast_maps,
-        )
-        if (layout.nominal_positions, layout.cast_positions, layout.repair_evidence,
-                layout.carriers, layout.padding_positions) != (512, 384, 128, 64, 64):
-            raise RuntimeError("full-cache evidence-measure layout differs from frozen r=128,c=64")
-        evidence_measure_path = EVIDENCE_MEASURE_PATH
     active_pro_path = None
     pro_corrections = None
     if pro_lazy_maps is not None:
@@ -418,10 +381,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
             current_path_names = [
                 "current_exact_rolling", "one_hop_reuse_rolling", "recursive_reuse_rolling"
             ]
-        if refinement_path is not None:
-            current_path_names.append(refinement_path)
-        if evidence_measure_path is not None:
-            current_path_names.append(evidence_measure_path)
         current_path_names = tuple(current_path_names)
     last_times = np.asarray([int(value[0][-1]) for value in prefix], dtype=np.int64)
     append_counts = np.zeros(batch, dtype=np.int64); evictions = np.zeros(batch, dtype=np.int64)

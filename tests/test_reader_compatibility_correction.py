@@ -17,7 +17,6 @@ from reader_compatibility_correction import (
     scale_correction,
     trace_reader_correction,
 )
-from evaluate_reader_correction_persistence_raw import evaluate_group_batch
 
 
 def _model(seed: int) -> HSTU:
@@ -129,61 +128,3 @@ def test_correction_signature_cosine_norm_and_scaling() -> None:
     assert torch.allclose(correction_norm(previous), 2.0 * correction_norm(current))
     scaled = scale_correction(previous, torch.tensor([0.5, 0.25]))
     assert torch.allclose(scaled[0], torch.tensor([[1.0, 2.0], [1.5, 2.0]]))
-
-
-def test_real_group_batch_emits_adjacent_request_persistence() -> None:
-    parent, current = _model(19), _model(23)
-    items, behaviors, deltas = _inputs()
-    exact = current.compute_kv(items[:1], behaviors[:1], deltas[:1])
-    reuse = parent.compute_kv(items[:1], behaviors[:1], deltas[:1])
-    prior = {}
-    score_records, energy_records, persistence_records, correctness_records = [], [], [], []
-    common = dict(
-        current=current,
-        exact_cache=exact,
-        reuse_cache=reuse,
-        owners=[0],
-        edge="v0_to_v1",
-        append_counts=[0],
-        evictions=[0],
-        cutover=100,
-        prior=prior,
-        verify_full_delta=True,
-        score_records=score_records,
-        energy_records=energy_records,
-        persistence_records=persistence_records,
-        correctness_records=correctness_records,
-    )
-    evaluate_group_batch(
-        **common,
-        groups=[
-            {
-                "uid": 7,
-                "query_timestamp": 110,
-                "max_width": 4,
-                "items": torch.tensor([17, 18, 19, 20]).numpy(),
-            }
-        ],
-        query_deltas=torch.tensor([10.0]),
-    )
-    assert not persistence_records
-    evaluate_group_batch(
-        **common,
-        groups=[
-            {
-                "uid": 7,
-                "query_timestamp": 130,
-                "max_width": 4,
-                "items": torch.tensor([21, 22, 23, 24]).numpy(),
-            }
-        ],
-        query_deltas=torch.tensor([30.0]),
-    )
-    assert len(persistence_records) == 4
-    assert {row["stage"] for row in persistence_records} == {
-        "av_aggregation",
-        "u_gated_update",
-        "layer_hidden",
-        "final_readout",
-    }
-    assert all(row["seconds_between_requests"] == 20 for row in persistence_records)

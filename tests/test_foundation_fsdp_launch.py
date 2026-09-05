@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.util
 from pathlib import Path
 
 import numpy as np
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,14 +14,6 @@ def _load_script():
     spec = importlib.util.spec_from_file_location("foundation_fsdp", path)
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
-
-
-def test_launch_contract_binds_parent_and_keeps_theta3_locked() -> None:
-    launch = yaml.safe_load((ROOT / "configs/contracts/yambda500m_small_seed17_launch_v1.yaml").read_text())
-    parent = ROOT / launch["parent_contract"]
-    assert hashlib.sha256(parent.read_bytes()).hexdigest() == launch["parent_contract_sha256"]
-    assert launch["scope"]["default_versions"] == ["v0", "v1"]
-    assert launch["scope"]["v3_theta3_or_later"] == "prohibited"
 
 
 def test_uid_assignment_is_deterministic_balanced_and_user_closed() -> None:

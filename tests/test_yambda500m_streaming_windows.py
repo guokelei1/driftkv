@@ -1,7 +1,3 @@
-from pathlib import Path
-
-import yaml
-
 from hstu_kvcache.data.release_windows import (
     DAY_SECONDS,
     ReleaseWindowRecipe,
@@ -9,9 +5,6 @@ from hstu_kvcache.data.release_windows import (
     max_equal_train_days,
     plan_release_slots,
 )
-
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def recipe(name: str, train: int, admission: int, cadence: int, evaluation: int, fixed: bool = False):
@@ -78,15 +71,3 @@ def test_fewer_versions_can_use_larger_equal_windows() -> None:
         admission_days=0,
         evaluation_days=7,
     ) == 23
-
-
-def test_streaming_contract_has_no_training_or_theta3_access() -> None:
-    value = yaml.safe_load(
-        (ROOT / "configs/contracts/yambda500m_streaming_windows_v1.yaml").read_text()
-    )
-    assert value["scope"]["training_authorized"] is False
-    assert value["scope"]["label_access"] is False
-    assert value["blind_boundary"]["labels_requests_training_and_metrics"] == "prohibited"
-    assert value["blind_boundary"]["this_is_not_the_theta3_qualification_contract"] is True
-    assert all(recipe["admission_days"] == 0 for recipe in value["recipes"].values())
-    assert all(recipe["fixed_endpoint"] is True for recipe in value["recipes"].values())

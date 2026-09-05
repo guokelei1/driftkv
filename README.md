@@ -1,18 +1,41 @@
 # EvoKV
 
-EvoKV 研究模型发布后持久化用户 K/V 状态的预算化收敛：哪些状态可以继续复用，哪些需要依赖合法的部分重算，哪些必须 Exact Recompute。
+EvoKV 研究 Transformer recommender 在模型更新后如何继续使用持久化 K/V。
+当前方法是 **Cross-Version Cache Adaptation**：保留逐事件缓存，在写入时维护短摘要，
+发布时学习共享版本转换，请求时修正历史读取，并支持追加、淘汰和连续发布。
 
-当前论文主线聚焦 HSTU-native 推荐模型在版本发布后的 persistent K/V state compatibility：
-新模型可以变好，但旧模型产生的状态可能阻碍这部分收益兑现。最新可复核结果记录在核心
-motivation 文档中；具体实验设计和概念边界分别独立维护。
+## 从这里开始
 
-## 入口
+- [论文正文](../paper/main.tex)：当前论文及设计命名的唯一正文。
+- [文档地图](docs/README.md)：设计、实验协议和模型资产。
+- [脚本入口](scripts/README.md)：按数据、六层/十层训练、Motivation 和 Insights 查找。
+- [论文图表](figures/README.md)：论文实际使用的生成器、数据来源和显示口径。
+- [结果索引](results/README.md)：区分论文证据、保留模型与历史诊断。
 
-- [论文总体设计](docs/paper_design.md)：概念层问题、场景、相关工作、比较对象和目标指标。
-- [论文具体实验设计](docs/experimental_design.md)：架构、数据、版本训练、实验阶段和预期观察。
-- [核心 Motivation 与 Observation](docs/motivation_observations.md)：当前已观察到的结果、数字和边界。
+当前已有 Motivation 和两个 Insight 的诊断证据；版本转换与完整在线维护仍是待实现设计。
+旧 PRO、KV-only replay 等方法不再作为当前 EvoKV 实现，但当前评估依赖的少量公共函数仍保留。
 
-旧阶段文档、archive、legacy 和重复路线说明已清理。代码、合同、脚本和测试是实验设计
-的执行材料，不再通过额外路线文档维护第二套叙述。
+## 工作边界
 
-所有结果必须按 workload、release、lineage、seed、metric 和证据等级解释。不得跨协议拼接结果、筛选有利 seed/edge，或把 diagnostic K/V splice 当作可部署动作。
+这是论文研究仓库，开发和实验都以快速、可信地验证 idea 为主。
+先做能回答当前问题的最小实现和小规模实验，再根据结果决定是否扩展；
+序列化、并发、容错和通用框架按实际需要补充。
+检查聚焦数值、数据因果、评价口径和证据，只运行与改动相关的必要测试，
+不默认跑全量测试，也不追求完整覆盖。具体规则见 [AGENTS.md](AGENTS.md) 和
+[测试入口](tests/README.md)。
+
+六层 Medium、十层 Large 的模型、训练记录和评估链保留。当前论文的原始结果、
+seal、裁决、数据与冻结合同保留；废弃四层实验和旧探索原始结果已清理。
+旧探索的结论、失败说明及删除清单压缩归档，不再作为活动实验入口。
+长训练和正式人口实验仍需前瞻协议、资源估计、focused canary 和用户明确启动。
+已授权任务内的小规模开发探针使用轻量配置与记录，不为每次尝试另建审批流程。
+
+历史删除清单、归档及恢复边界见 [结果索引](results/README.md)。
+
+## Git 保存范围
+
+Git 保存代码、论文文档、冻结合同、必要的小型结果表、汇总与 seals，以及论文 PDF。
+数据、模型权重、逐请求 raw、运行日志、预览图和历史恢复包保留在本地，由
+[.gitignore](.gitignore) 排除；小 CSV/JSON 不按扩展名一概忽略。
+新增结果只提交复现图表和解释结论所需的紧凑记录，不用 `git add -f` 绕过规则提交大载荷。
+仅克隆仓库可读取这些汇总和生成论文图；重新执行模型实验仍需本机的数据、权重和 raw。

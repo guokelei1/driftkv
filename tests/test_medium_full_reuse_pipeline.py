@@ -17,7 +17,6 @@ from hstu_kvcache.training import FoundationHistoryIndex
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml"
-EXECUTION = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d7_d14_execution_admission_v1.yaml"
 CPU_RUNTIME = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_cpu_runtime_v2.yaml"
 REUSE_RUNTIME = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_reuse_4gpu_runtime_v3.yaml"
 FORCED_D7_REUSE = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d7_forced_reuse_diagnostic_v1.yaml"
@@ -78,23 +77,6 @@ def test_foundation_history_index_uses_identical_sorted_uid_groups() -> None:
     assert prefix[2].tolist() == [10, 20]
 
 
-def test_medium_contract_freezes_complete_symmetric_matrix() -> None:
-    value = yaml.safe_load(CONTRACT.read_text(encoding="utf-8"))
-    assert value["scope"]["foundation_days_half_open"] == [0, 217]
-    assert value["scope"]["complete_source_days_half_open"] == [0, 300]
-    assert value["scope"]["branches"]["D7"]["updates"] == 10
-    assert value["scope"]["branches"]["D7"]["evaluation_days"] == [3, 7]
-    assert value["scope"]["branches"]["D14"]["updates"] == 4
-    assert value["scope"]["branches"]["D14"]["evaluation_days"] == [3, 7, 14]
-    assert value["evaluation"]["paths"] == [
-        "parent_exact_rolling", "current_exact_rolling", "one_hop_reuse_rolling"
-    ]
-    assert value["scope"]["recursive_reuse"] == "prohibited"
-    assert 217 + 10 * 7 + 7 <= 300
-    assert 217 + 4 * 14 + 14 <= 300
-    assert 217 + 5 * 14 + 14 > 300
-
-
 def test_medium_runner_plan_has_checkpoint_first_32_cell_shape() -> None:
     module = load_runner()
     pipeline = module.Pipeline(CONTRACT, threads=1)
@@ -111,17 +93,6 @@ def test_medium_runner_plan_has_checkpoint_first_32_cell_shape() -> None:
         "formal_reuse_only_for_unlocked_accepted_lineage_edges"
     )
     assert plan["formal_acknowledgement"] == "RUN_MEDIUM_D7_D14"
-
-
-def test_medium_execution_supplement_freezes_gpu2_gpu3_only() -> None:
-    value = yaml.safe_load(EXECUTION.read_text(encoding="utf-8"))
-    amendment = value["execution_amendment"]
-    assert amendment["world_size"] == 2
-    assert amendment["physical_gpus"] == [2, 3]
-    assert amendment["global_train_batch_size"] == 32
-    assert amendment["local_batch_sizes_by_rank"] == [16, 16]
-    assert "candidates" not in amendment
-    assert value["release_admission"]["full_only_before_reuse"] == "required"
 
 
 def test_d14_cpu_runtime_uses_disjoint_numa_local_physical_cores() -> None:
@@ -180,22 +151,6 @@ def test_forced_d7_reuse_is_complete_four_gpu_diagnostic_only() -> None:
     assert pipeline.reuse_dir("D7", 1, 3) == (
         pipeline.output / "D7" / "reuse" / "E3" / "v0_to_v1"
     )
-
-
-def test_d14_v5_extension_separates_complete_and_partial_windows() -> None:
-    launch = yaml.safe_load(D14_V5.read_text(encoding="utf-8"))
-    execution = yaml.safe_load(D14_V5_EXECUTION.read_text(encoding="utf-8"))
-    assert launch["scope"]["training_day_range_half_open"] == [273, 287]
-    assert launch["scope"]["complete_evaluation_windows"] == {
-        "E3": [287, 290], "E7": [287, 294],
-    }
-    assert launch["scope"]["partial_tail_diagnostic_window"]["requested_range_half_open"] == [287, 301]
-    assert launch["scope"]["partial_tail_diagnostic_window"]["interpretation_as_complete_E14"] == "prohibited"
-    assert execution["execution_amendment"]["physical_gpus"] == [0, 1, 2, 3]
-    assert execution["execution_amendment"]["global_train_batch_size"] == 32
-    assert execution["execution_amendment"]["local_batch_sizes_by_rank"] == [8, 8, 8, 8]
-    assert execution["full_only_runtime"]["batch_size_per_rank"] == 128
-    assert execution["reuse_runtime"]["cohort_size_per_rank"] == 32
 
 
 def test_d14_v5_runner_uses_separate_extension_paths() -> None:

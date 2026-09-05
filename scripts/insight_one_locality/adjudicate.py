@@ -7,11 +7,8 @@ import math
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.patches import Patch
-from matplotlib.ticker import FuncFormatter
 
 from insight_one_locality.common import (
     CONTRACT,
@@ -149,209 +146,6 @@ def markdown_table(frame: pd.DataFrame, columns: list[str]) -> list[str]:
     return lines
 
 
-def plot_frontiers(best: pd.DataFrame, output: Path) -> None:
-    colors = {"layer": "#3B6FB6", "token": "#D97904", "window": "#2D8A5B"}
-    labels = {
-        "layer": "Layer subset",
-        "token": "Sparse tokens",
-        "window": "Contiguous window",
-    }
-    markers = {"layer": "o", "token": "s", "window": "^"}
-    linestyles = {"layer": "-", "token": "--", "window": "-."}
-    target_fill = "#F3B6B6"
-    target_edge = "#B83A3A"
-    callouts = {
-        "layer": {
-            "line_end_y": 0.14,
-            "text_y": 0.07,
-            "text_x": 0.52,
-            "horizontal_alignment": "center",
-            "vertical_alignment": "center",
-        },
-        "token": {
-            "line_end_y": 0.59,
-            "text_y": 0.52,
-            "text_x": 0.87,
-            "horizontal_alignment": "center",
-            "vertical_alignment": "center",
-        },
-        "window": {
-            "line_end_y": 0.42,
-            "text_y": 0.35,
-            "text_x": 0.72,
-            "horizontal_alignment": "center",
-            "vertical_alignment": "center",
-        },
-    }
-    displayed = best[best.edge.isin(EDGES[:3])]
-    aggregate = (
-        displayed.groupby(["family", "budget", "cost"], sort=True)
-        .probability_gap_recovery.mean()
-        .reset_index()
-    )
-    panels: list[tuple[str, pd.DataFrame]] = [
-        (edge, displayed[displayed.edge == edge]) for edge in EDGES[:3]
-    ] + [("Average", aggregate.assign(edge="Average"))]
-    all_values = displayed.probability_gap_recovery.to_numpy()
-    lower = min(-0.05, float(np.nanmin(all_values)) - 0.05)
-    upper = max(1.05, float(np.nanmax(all_values)) + 0.05)
-    figure, axes = plt.subplots(2, 2, figsize=(3.45, 2.95), sharex=True, sharey=True)
-    panel_labels = ("(a)", "(b)", "(c)", "(d)")
-    for axis, panel_label, (title, frame) in zip(axes.flat, panel_labels, panels, strict=True):
-        axis.add_patch(
-            plt.Rectangle(
-                (0.0, 0.8),
-                0.2,
-                0.2,
-                facecolor=target_fill,
-                edgecolor=target_edge,
-                linewidth=0.65,
-                alpha=0.55,
-                hatch="////",
-                zorder=0,
-            )
-        )
-        for family in ("layer", "token", "window"):
-            selected = frame[frame.family == family].sort_values("cost")
-            x = np.concatenate(([0.0], selected.cost.to_numpy(), [1.0]))
-            observed_recovery = selected.probability_gap_recovery.to_numpy()
-            if family == "layer":
-                observed_recovery = np.clip(observed_recovery - 0.05, 0.0, 1.0)
-            y = np.concatenate(([0.0], observed_recovery, [1.0]))
-            axis.plot(
-                x,
-                y,
-                marker=markers[family],
-                linestyle=linestyles[family],
-                linewidth=1.35,
-                markersize=3.2,
-                color=colors[family],
-                label=labels[family],
-                zorder=3,
-            )
-        for family in ("layer", "token", "window"):
-            selected = frame[frame.family == family].sort_values("cost")
-            last_observed = selected.iloc[-1]
-            displayed_recovery = float(last_observed.probability_gap_recovery)
-            if family == "layer":
-                displayed_recovery = max(0.0, displayed_recovery - 0.05)
-            line_end_x = callouts[family]["text_x"]
-            line_end_y = callouts[family]["line_end_y"]
-            axis.plot(
-                [last_observed.cost, line_end_x],
-                [displayed_recovery, line_end_y],
-                color=colors[family],
-                linewidth=0.7,
-                solid_capstyle="round",
-                zorder=2.2,
-            )
-            text_x = callouts[family]["text_x"]
-            text_y = callouts[family]["text_y"]
-            cost_percent = int(round(100.0 * float(last_observed.cost)))
-            recovery_percent = int(
-                round(100.0 * displayed_recovery)
-            )
-            axis.text(
-                text_x,
-                text_y,
-                rf"$({cost_percent},{recovery_percent})^{{\%}}$",
-                ha=callouts[family]["horizontal_alignment"],
-                va=callouts[family]["vertical_alignment"],
-                color=colors[family],
-                fontsize=5.4,
-                fontweight="medium",
-                bbox={
-                    "facecolor": "white",
-                    "edgecolor": "none",
-                    "alpha": 0.88,
-                        "pad": 0.08,
-                },
-                zorder=5,
-            )
-        axis.axhline(0.0, color="#777777", linewidth=0.7)
-        axis.grid(True, alpha=0.20, linewidth=0.55)
-        display_title = title.replace("_to_", "→") if title.startswith("v") else title
-        axis.set_title(f"{panel_label} {display_title}", fontsize=7.5, pad=2.5)
-        axis.set_xlim(-0.02, 1.02)
-        axis.set_ylim(lower, upper)
-        ticks = np.linspace(0.0, 1.0, 5)
-        axis.set_xticks(ticks)
-        axis.set_yticks(ticks)
-        percent_formatter = FuncFormatter(
-            lambda value, _position: (
-                rf"${int(round(100.0 * value))}^{{\%}}$"
-            )
-        )
-        axis.xaxis.set_major_formatter(percent_formatter)
-        axis.yaxis.set_major_formatter(percent_formatter)
-        axis.tick_params(axis="both", labelsize=7, length=2.5)
-    figure.text(
-        0.515,
-        0.026,
-        "Theoretical KV coverage",
-        ha="center",
-        va="bottom",
-        fontsize=7.5,
-    )
-    figure.text(
-        0.028,
-        0.485,
-        "Functional gap recovery",
-        ha="left",
-        va="center",
-        rotation="vertical",
-        fontsize=7.5,
-    )
-    handles, labels_values = axes.flat[0].get_legend_handles_labels()
-    target_handle = Patch(
-        facecolor=target_fill,
-        edgecolor=target_edge,
-        linewidth=0.65,
-        alpha=0.55,
-        hatch="////",
-    )
-    legend_handles = [handles[0], handles[2], handles[1], target_handle]
-    legend_labels = [
-        labels_values[0],
-        labels_values[2],
-        labels_values[1],
-        "Desired operating region",
-    ]
-    figure.legend(
-        legend_handles,
-        legend_labels,
-        loc="upper center",
-        ncol=2,
-        frameon=False,
-        fontsize=6.7,
-        handlelength=1.7,
-        columnspacing=1.15,
-        handletextpad=0.35,
-        labelspacing=0.25,
-        bbox_to_anchor=(0.5, 1.015),
-    )
-    figure.subplots_adjust(
-        left=0.155,
-        right=0.988,
-        bottom=0.135,
-        top=0.84,
-        wspace=0.19,
-        hspace=0.27,
-    )
-    figure.savefig(
-        output / "insight1_locality_frontiers.png",
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    figure.savefig(
-        output / "insight1_locality_frontiers.pdf",
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(figure)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw", type=Path, default=RESULT_ROOT / "formal_raw")
@@ -417,7 +211,6 @@ def main() -> None:
     family_summary.to_csv(partial / "family_mean_min_max.csv", index=False)
     edge_equal.to_csv(partial / "edge_equal_best_observed.csv", index=False)
     fixed_winners.to_csv(partial / "globally_fixed_config_winners.csv", index=False)
-    plot_frontiers(best, partial)
     summary = {
         "status": "medium_insight1_locality_analysis_complete",
         "contract_sha256": sha256_file(CONTRACT),

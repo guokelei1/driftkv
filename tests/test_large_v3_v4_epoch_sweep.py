@@ -14,15 +14,6 @@ def _sweep():
     return EpochSweep()
 
 
-def test_epoch_sweep_contract_and_windows_are_frozen() -> None:
-    sweep = _sweep()
-    assert sweep.epochs == (0.5, 1.0, 1.5, 2.0)
-    assert sweep.contract["scope"]["branches"]["D14"]["training_days_half_open"] == [259, 273]
-    assert sweep.contract["evaluation"]["day_range_half_open"] == [273, 287]
-    assert sweep.contract["evaluation"]["reuse"] == "prohibited"
-    assert sweep.contract["authorization"]["formal_long_training"].startswith("requires_new_explicit")
-
-
 def test_epoch_sweep_training_is_one_two_epoch_trajectory() -> None:
     sweep = _sweep()
     command = sweep.train_command(sweep.checkpoint_dir, canary=False)

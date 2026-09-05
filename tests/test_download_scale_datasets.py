@@ -22,10 +22,6 @@ def test_recflow_output_names() -> None:
     )
 
 
-def test_human_bytes_uses_binary_units() -> None:
-    assert MODULE.human_bytes(1024**3) == "1.000 GiB"
-
-
 def test_yambda5b_core_matches_existing_three_event_scope(monkeypatch) -> None:
     rows = [
         {

@@ -1,0 +1,88 @@
+{
+  "format": "evokv_pro_lazy_reader_theoretical_compute_v1",
+  "scope": "release-time per-user PRO sidecar generation",
+  "flop_convention": "one multiply plus one add equals two FLOPs",
+  "architecture": {
+    "layers": 4,
+    "hidden": 128,
+    "inner": 128,
+    "heads": 4,
+    "context": 512,
+    "old_positions": 384,
+    "repair_evidence": 128
+  },
+  "excluded": [
+    "embedding lookup and pointwise activation/norm",
+    "raw-history and state memory/network transport beyond reported logical bytes",
+    "one-time per-release parameter-map pseudoinverse",
+    "common post-release request serving"
+  ],
+  "budgets": [
+    {
+      "carriers": 16,
+      "represented_mass": 8,
+      "full_recompute_flops_per_user": 625475584,
+      "lazy_joint_map_flops_per_user": 6815744,
+      "carrier_and_probe_flops_per_user": 25782272,
+      "carrier_mass_scale_flops_per_user": 8192,
+      "sidecar_difference_flops_per_user": 512,
+      "total_flops_per_user": 32606720,
+      "over_full_fraction": 0.052131083665129925,
+      "reduction_vs_full_fraction": 0.94786891633487,
+      "unique_parent_state_read_scalars": 524288,
+      "unique_parent_state_read_bytes_fp32": 2097152,
+      "conservative_parent_state_stream_scalars": 1310720,
+      "conservative_parent_state_stream_bytes_fp32": 5242880,
+      "sidecar_write_scalars": 512,
+      "sidecar_write_bytes_fp32": 2048,
+      "post_release_coverage_scale_flops_per_user_request": 512,
+      "post_release_injection_adds_per_candidate": 512,
+      "materialized_version_translated_prefix_scalars": 0,
+      "version_map_shape_per_layer": [
+        256,
+        256
+      ],
+      "version_map_construction_frequency": "once_per_release_edge_not_per_user"
+    },
+    {
+      "carriers": 32,
+      "represented_mass": 4,
+      "full_recompute_flops_per_user": 625475584,
+      "lazy_joint_map_flops_per_user": 6815744,
+      "carrier_and_probe_flops_per_user": 50341888,
+      "carrier_mass_scale_flops_per_user": 16384,
+      "sidecar_difference_flops_per_user": 512,
+      "total_flops_per_user": 57174528,
+      "over_full_fraction": 0.09140968802388935,
+      "reduction_vs_full_fraction": 0.9085903119761106,
+      "unique_parent_state_read_scalars": 524288,
+      "unique_parent_state_read_bytes_fp32": 2097152,
+      "conservative_parent_state_stream_scalars": 1310720,
+      "conservative_parent_state_stream_bytes_fp32": 5242880,
+      "sidecar_write_scalars": 512,
+      "sidecar_write_bytes_fp32": 2048,
+      "post_release_coverage_scale_flops_per_user_request": 512,
+      "post_release_injection_adds_per_candidate": 512,
+      "materialized_version_translated_prefix_scalars": 0,
+      "version_map_shape_per_layer": [
+        256,
+        256
+      ],
+      "version_map_construction_frequency": "once_per_release_edge_not_per_user"
+    }
+  ],
+  "rejected_exact_lazy_carrier_replay": [
+    {
+      "carriers": 16,
+      "total_flops_per_user": 129075712,
+      "over_full_fraction": 0.2063641096500419,
+      "rejection_reason": "repeated_multihead_joint_state_scan_exceeds_20_percent_budget"
+    },
+    {
+      "carriers": 32,
+      "total_flops_per_user": 250112512,
+      "over_full_fraction": 0.39987573999371334,
+      "rejection_reason": "repeated_multihead_joint_state_scan_exceeds_20_percent_budget"
+    }
+  ]
+}

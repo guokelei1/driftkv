@@ -1,0 +1,98 @@
+{
+  "status": "native_onehop_reuse_adjudicated",
+  "raw_sha256": "ecb6931a2f0949a4b40376a1be146a01d514726a7ec919cbfadc92fc785c8d82",
+  "stage": "medium_D14_E7_edge3_reuse",
+  "edge": "v2_to_v3",
+  "evaluation_day_range": [
+    259,
+    266
+  ],
+  "comparison": "CurrentExactRolling_vs_OneHopReuseRolling",
+  "absolute_metrics": {
+    "current_exact_rolling": {
+      "log_loss": 0.33472555598169795,
+      "Brier": 0.09524704266031425,
+      "ROC_AUC": 0.6319522896142314,
+      "dislike_PR_AUC": 0.18409446558478085,
+      "dislike_only_log_loss": 2.1197503474783574
+    },
+    "one_hop_reuse_rolling": {
+      "log_loss": 0.33607683093764845,
+      "Brier": 0.09558855060927439,
+      "ROC_AUC": 0.6253129007062913,
+      "dislike_PR_AUC": 0.1771157472901353,
+      "dislike_only_log_loss": 2.0922134267694763
+    },
+    "parent_exact_rolling": {
+      "log_loss": 0.33728403563808473,
+      "Brier": 0.09568775645141875,
+      "ROC_AUC": 0.6201654314150463,
+      "dislike_PR_AUC": 0.17753315471795966,
+      "dislike_only_log_loss": 2.1896980177079213
+    }
+  },
+  "reuse_minus_recompute": {
+    "paired_harm": {
+      "requests": 65254,
+      "users": 10275,
+      "event_weighted_mean": 0.0013512749559504227,
+      "user_weighted_mean": 0.0017684770154541196,
+      "D_positive": 322.07168330610153,
+      "D_negative": 233.89558733051268,
+      "positive_request_fraction": 0.6849082048610047,
+      "positive_user_fraction": 0.6830170316301704,
+      "positive_harm_user_concentration": {
+        "top_1pct_users": 0.21744306446216238,
+        "top_5pct_users": 0.4897767119916796,
+        "top_10pct_users": 0.6443013240202942
+      },
+      "user_quantiles": {
+        "p50": 0.002488970517268239,
+        "p90": 0.014584864526260084,
+        "p95": 0.018815796456170885,
+        "p99": 0.02725469318506476
+      },
+      "user_cluster_bootstrap_95CI": {
+        "repetitions": 2000,
+        "p2_5": 0.0014703048679544557,
+        "p97_5": 0.002054867701041843
+      }
+    },
+    "event_weighted_log_loss": 0.0013512749559504227,
+    "current_minus_reuse_ROC_AUC_pp": 0.6639388907940136,
+    "current_minus_reuse_dislike_PR_AUC_pp": 0.6978718294645553,
+    "reuse_minus_current_Brier": 0.0003415079489601375,
+    "mean_Bernoulli_JS": 5.0591295800125067e-05,
+    "mean_absolute_logit_shift": 0.04431083645272782
+  },
+  "release_debt_auc": {
+    "comparison": "ParentExactRolling_vs_CurrentExactRolling_vs_OneHopReuseRolling",
+    "current_minus_parent_ROC_AUC_pp": 1.1786858199185124,
+    "current_minus_reuse_ROC_AUC_pp": 0.6639388907940136,
+    "reuse_harm_over_current_gain_fraction": 0.5632874168622088,
+    "reuse_harm_over_current_gain_percent": 56.328741686220894,
+    "reuse_gain_retained_percent": 43.67125831377911,
+    "interpretation": "percent is defined only for a positive current-versus-parent AUC release gain; fraction preserves the signed diagnostic ratio for every edge"
+  },
+  "three_path_summary": {
+    "requests": 65254,
+    "old_parent": {
+      "ROC_AUC": 0.6201654314150463,
+      "log_loss": 0.33728403563808473
+    },
+    "new_current": {
+      "ROC_AUC": 0.6319522896142314,
+      "log_loss": 0.33472555598169795
+    },
+    "adjacent_one_hop_reuse": {
+      "ROC_AUC": 0.6253129007062913,
+      "log_loss": 0.33607683093764845
+    },
+    "current_minus_old_ROC_AUC_pp": 1.1786858199185124,
+    "reuse_minus_old_ROC_AUC_pp": 0.5147469291244988,
+    "reuse_AUC_gain_retained_percent": 43.67125831377911,
+    "old_minus_current_log_loss": 0.0025584796563867807,
+    "old_minus_reuse_log_loss": 0.0012072047004362818,
+    "reuse_log_loss_gain_retained_percent": 47.18445571465515
+  }
+}

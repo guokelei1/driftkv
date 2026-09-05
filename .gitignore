@@ -1,32 +1,24 @@
-# Python
+# Python environments, builds and caches
 __pycache__/
 *.py[cod]
 *.egg-info/
 build/
 dist/
 .eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.coverage*
+htmlcov/
 
-# Datasets (large, kept out of git)
-data/kuairand/
-data/movielens/
-data/taobao/
-data/tenrec/
-data/zhihurec/
-data/raw/
-data/interim/
-data/processed/
-data/external/
-data/manifests/
-*.csv
-*.tsv
-*.parquet
-*.npy
-*.npz
-*.h5
-*.arrow
-
-# Checkpoints / model artifacts (large, kept out of git)
-checkpoints/
+# Local datasets, expanded manifests and model payloads
+/data/
+/checkpoints/
+/configs/generated/
 *.pt
 *.pth
 *.ckpt
@@ -34,70 +26,52 @@ checkpoints/
 *.bin
 *.pkl
 *.msgpack
+*.parquet
+*.npy
+*.npz
+*.h5
+*.arrow
+*.feather
 
-# Results / experiment artifacts (keep small docs, ignore bulky outputs)
-results/**/*.json
-results/runs/
-results/*/runs/
-results/validity/core_seed*.json
-results/validity/core6l_seed*.json
-results/validity/layerwise_seed*.json
-results/validity/layerwise6l_seed*.json
-results/validity/interval_oracle_seed*.json
-results/validity/interval_validation_seed*.json
-results/validity/streaming_control6l_seed*.json
-results/validity/*migration_design_seed*.json
-results/validity/*low_rank_migration_seed*.json
-results/validity/smoke*.json
-results/scaling/sequence_length_seed*.json
-results/scaling/update_magnitude_seed*.json
-results/scaling/movielens_seed*.json
-results/scaling/*_core_seed*.json
-results/scaling/*_method_seed*.json
-results/scaling/*_streaming_control_seed*.json
-results/exposure/*_core_seed*.json
-results/exposure/*_method_seed*.json
-results/exposure/*_streaming_control_seed*.json
-results/exposure/*cache_version_matrix_seed*.json
-results/exposure/*migration_design_seed*.json
-results/exposure/*low_rank_migration_seed*.json
-results/exposure/smoke*.json
-results/motivation_scale/*_core_seed*.json
-results/motivation_scale/*_streaming_control_seed*.json
-results/motivation_scale/*_cache_version_matrix_seed*.json
-results/motivation_scale/*_operator_cost_seed*.json
-results/motivation_scale/*_structural_replay_*.json
-results/motivation_scale/*_prefix_replay_seed*.json
-results/motivation_scale/*_residual_transport_*.json
-results/motivation_scale/*_compiled_adapter_discovery_*.json
-results/motivation_scale/*_cohort_tiered_discovery_*.json
-results/motivation_scale/*_cohort_tiered_seed*.json
-results/motivation_scale/long_context_12plus4_*_seed*.json
-results/motivation_scale/long_context_8plus8_*_seed*.json
-results/dataset_audit/motivation_scale_*.json
+# Results are local by default. Keep compact evidence, not raw payloads,
+# progress/runtime logs or recovery archives. Never use `git add -f` for a
+# dataset or checkpoint; add an explicit exception for a needed small record.
+/results/**
+!/results/**/
+!/results/**/*.md
+!/results/**/summary.json
+!/results/**/adjudication.json
+!/results/**/*.seal.json
+!/results/**/train_result.json
+!/results/**/resource_estimate.json
+!/results/**/canary.pass.json
+!/results/**/configuration.json
+!/results/**/admission/*.json
+!/results/**/analysis/*.csv
+!/results/**/analysis_v2/*.csv
+!/results/release_cost_random_weight_v1/*_gpu_only.json
+!/results/yambda500m_large_seed17/canonical_D14_v0_v5_v1/*.json
+!/results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/correctness_cost_v2/theoretical_compute.json
+
+# Figure source, small CSV/JSON inputs and final paper PDFs belong in Git.
+# Raster previews and old diagnostic renders are reproducible local outputs.
+/figures/pic/**
+!/figures/pic/pdf/
+!/figures/pic/pdf/*.pdf
+
+# Runtime outputs and local tools
 *.log
 logs/
+runs/
 wandb/
 mlruns/
 mlartifacts/
-
-# Notebooks
-.ipynb_checkpoints/
-
-# Caches
 nogit/
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-
-# Env
-.venv/
-venv/
-env/
 .env
 .env.*
-
-# IDE / OS
+!.env.example
+!.env.sample
+/.claude/settings.local.json
 .vscode/
 .idea/
 .DS_Store

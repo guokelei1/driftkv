@@ -16,7 +16,7 @@ from broadcast_residual import generate_av_broadcast_residual
 from candidate_shared_causal import _cached_prefix_heads
 from evaluate_yambda500m_foundation_raw import evaluate_full_cache_cohort
 from hstu_kvcache.models import HSTU, HSTUConfig, HSTUKVCache
-from one_release_refinement import cast_prefix, parameter_cast_maps
+from parameter_maps import cast_prefix, parameter_cast_maps
 from pro_lazy_cost import (
     exact_lazy_carrier_cost,
     full_recompute_flops,
@@ -29,12 +29,6 @@ from pro_lazy_reader import (
     fused_joint_map_prefix_heads,
     generate_lazy_pro_probe_components,
     generate_lazy_pro_sidecar,
-)
-from progressive_pro import (
-    build_progressive_parent_conditioned_carriers,
-    combine_two_probe_components,
-    progressive_corrections,
-    segment_coverage,
 )
 
 
@@ -176,78 +170,6 @@ def test_probe_components_exactly_split_old_and_recent_correction() -> None:
         assert torch.allclose(total, old + recent, rtol=1e-6, atol=1e-6)
         assert torch.allclose(total, original, rtol=1e-6, atol=1e-6)
     assert components.replay_max_abs_error < 1e-6
-
-
-def test_progressive_carriers_support_unequal_c48_partition() -> None:
-    torch.manual_seed(31)
-    current = HSTU(
-        HSTUConfig(
-            num_items=256,
-            num_behaviors=3,
-            hidden_size=16,
-            num_layers=2,
-            num_heads=2,
-            head_dim=8,
-            max_seq_len=128,
-            temporal_num_freqs=2,
-            input_dropout=0.0,
-        )
-    ).eval()
-    items = torch.arange(1, 129).reshape(1, 128)
-    behaviors = torch.ones_like(items)
-    deltas = torch.arange(128).float().reshape(1, 128)
-    parent_cache = current.compute_kv(items, behaviors, deltas)
-    carriers, layout = build_progressive_parent_conditioned_carriers(
-        parent_cache=parent_cache,
-        current=current,
-        item_ids=items,
-        behaviors=behaviors,
-        time_deltas=deltas,
-        repair_width=128,
-        carrier_count=48,
-    )
-    assert carriers.seq_len == 48
-    assert layout.carriers == 48
-    assert sum(layout.represented_masses) == 128
-    assert set(layout.represented_masses) == {2, 3}
-
-
-def test_two_probe_sidecar_and_segment_coverage_only_update_scalars() -> None:
-    parent, current = _model(37), _model(41)
-    items, behaviors, deltas = _inputs()
-    parent_cache = parent.compute_kv(items, behaviors, deltas)
-    maps = parameter_cast_maps(parent, current)
-    carriers, layout = build_parent_conditioned_carriers(
-        parent_cache=parent_cache,
-        current=current,
-        item_ids=items,
-        behaviors=behaviors,
-        time_deltas=deltas,
-        repair_width=8,
-        carrier_count=2,
-    )
-    components = generate_lazy_pro_probe_components(
-        current,
-        parent_cache,
-        carriers,
-        maps,
-        items[:, -1],
-        old_positions=layout.old_positions,
-    )
-    sidecar = combine_two_probe_components(components, components)
-    assert torch.allclose(sidecar.probe_direction_cosines, torch.ones_like(sidecar.probe_direction_cosines))
-    assert torch.allclose(sidecar.probe_norm_ratios, torch.ones_like(sidecar.probe_norm_ratios))
-    at_cutover = progressive_corrections(
-        sidecar, torch.zeros(items.shape[0]), old_positions=8, recent_positions=8
-    )
-    for actual, expected in zip(at_cutover, components.corrections, strict=True):
-        assert torch.allclose(actual, expected, rtol=2e-5, atol=2e-5)
-
-    old, recent = segment_coverage(
-        torch.tensor([0, 8, 12, 16]), old_positions=8, recent_positions=8
-    )
-    assert torch.allclose(old, torch.tensor([1.0, 0.0, 0.0, 0.0]))
-    assert torch.allclose(recent, torch.tensor([1.0, 1.0, 0.5, 0.0]))
 
 
 def test_frozen_lightweight_cost_axis_is_below_twenty_percent() -> None:

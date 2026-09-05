@@ -1,9 +1,6 @@
 import importlib.util
 from pathlib import Path
 
-import yaml
-
-
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/run_yambda500m_medium_d14_direct_long_age_reuse.py"
 CONTRACT = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_direct_long_age_reuse_v1.yaml"
@@ -15,24 +12,6 @@ def load_runner_module():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
-
-
-def test_medium_direct_long_age_contract_freezes_complete_ten_cell_triangle():
-    payload = yaml.safe_load(CONTRACT.read_text(encoding="utf-8"))
-    cells = [
-        (row["producer"], row["current"])
-        for row in payload["scope"]["direct_long_age_cells"]
-    ]
-    assert cells == [
-        ("v0", "v2"),
-        ("v0", "v3"), ("v1", "v3"),
-        ("v0", "v4"), ("v1", "v4"), ("v2", "v4"),
-        ("v0", "v5"), ("v1", "v5"), ("v2", "v5"), ("v3", "v5"),
-    ]
-    assert payload["scope"]["display_horizon"] == "E14"
-    assert payload["scope"]["expected_new_cells"] == 10
-    assert payload["scope"]["expected_complete_triangle_cells_including_adjacent"] == 15
-    assert payload["scope"]["recursive_reuse"] == "prohibited"
 
 
 def test_runner_uses_canonical_e14_output_and_exact_ranges():

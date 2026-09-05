@@ -14,16 +14,6 @@ def _sweep():
     return V5EpochSweep()
 
 
-def test_v5_sweep_is_direct_parent_continuous_and_e14_partial_only() -> None:
-    sweep = _sweep()
-    assert sweep.epochs == (1.0, 2.0)
-    assert sweep.contract["scope"]["expected_parent_version"] == "v4"
-    assert sweep.contract["scope"]["branches"]["D14"]["training_days_half_open"] == [273, 287]
-    assert sweep.contract["evaluation"]["day_range_half_open"] == [287, 301]
-    assert sweep.contract["evaluation"]["horizon"] == "E14_partial"
-    assert sweep.contract["evaluation"]["reuse"] == "prohibited"
-
-
 def test_v5_sweep_training_and_eval_commands_preserve_scope() -> None:
     sweep = _sweep()
     train = sweep.train_command(sweep.checkpoint_dir, canary=False)

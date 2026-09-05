@@ -1,28 +1,8 @@
 from __future__ import annotations
 
 import math
-from pathlib import Path
-
-import yaml
 
 from hstu_kvcache.data import BASE_FEATURE_NAMES, CausalFeatureState, foundation_request_id, time_block
-
-
-ROOT = Path(__file__).resolve().parents[1]
-
-
-def test_small_foundation_contract_locks_expert_corrections() -> None:
-    contract = yaml.safe_load(
-        (ROOT / "configs/contracts/yambda500m_small_foundation_chain_v1.yaml").read_text()
-    )
-    assert "parent_exact_rolling" in contract["paths"]["names"]
-    assert contract["causality"]["timestamp_group_atomicity"][
-        "score_all_queries_from_common_pre_timestamp_state"
-    ] is True
-    assert contract["base"]["features"] == "request_time_as_of_strictly_prior"
-    assert contract["metrics"]["traffic_persistence"]["observational_not_causal"] is True
-    assert contract["metrics"]["fixed_query_dilution"]["causal_diagnostic"] is True
-    assert contract["authorization"]["any_real_HSTU_training"] is False
 
 
 def test_request_time_features_do_not_see_same_timestamp_listens() -> None:

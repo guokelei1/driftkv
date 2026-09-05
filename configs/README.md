@@ -1,38 +1,14 @@
-# Experiment contracts
+# 配置与合同
 
-`configs/contracts/` is the machine-readable evidence boundary. Frozen contracts
-and result contracts are immutable even after a phase is complete.
+[contracts/](contracts/) 保存冻结的执行与证据边界。文件完成或路线退休后仍不可改写，
+也不因脚本清理而删除。README 仅是导航，不是执行授权。
 
-## Completed chain
+现有 Medium 六层、Large 十层模型及评估来自对应冻结合同；历史 Small 和各类 Insight 合同仍作为审计记录。
+保留的工具入口见 [scripts/README.md](../scripts/README.md)，下一阶段方案草稿见
+[experimental_design.md](../docs/experimental_design.md)。
 
-- `p7_*`: N/R/F, compact manifests, Frozen Base, theta0 and H qualification.
-- `f_release_chain_contract_v1.yaml` plus P8 artifacts: R0/R1/R2 and H/S.
-- `p9_*`: tomography, dependency closure, legal executor, full-population cost,
-  rolling quality and frontier.
-- `p10_*`: sparse profiler, policy seal, same-cost gate, executor optimization
-  and development full-stack freeze.
-- `p11_*`: recursive version debt, all-population legal actions, frozen scheduler
-  replay and recursive rolling quality.
-
-Presence records evidence; it does not authorize rerunning or tuning the phase.
-
-## Next contract family
-
-The next prospective family will use `scale_*` and cover, in order:
-
-1. P11 full-stack input seal;
-2. 8L/H256/context1024 resource audit;
-3. Full/Append/rolling correctness canary;
-4. theta0 H scale gate;
-5. R0/R1/R2 scale gate;
-6. frozen action/scheduler replay;
-7. fixed-count/capped-rate probe sensitivity.
-
-Do not create one monolithic contract. Each long stage requires the preceding
-seal and stopping gate.
-
-## Retired boundaries
-
-P5/P6 failure contracts and old Yambda audit contracts remain immutable for
-audit. They may not be requalified or used to revive sampled next-listen,
-neutral-readout repair, artificial K/V perturbation, or old controller claims.
+当前 EvoKV 方法为 Cross-Version Cache Adaptation，尚没有已运行的 translator 或连续迁移合同。
+长训练、calibration 的新监督协议和正式人口评价需要相应前瞻协议、资源估计、
+focused canary 与用户启动。日常小规模探索只记录复现所需的配置，优先使用现有配置入口，
+不为每次尝试新增冻结合同或通用校验框架；进入正式评价前再冻结实际采用的设置。
+theta3 和 RecFlow 原有隔离与授权边界不变。

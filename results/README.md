@@ -1,96 +1,75 @@
-# Results registry
+# 模型与论文证据索引
 
-当前只保留与 HSTU-native motivation 复现相关的结果和必要输入。
+当前目录保留论文原始证据、六层/十层模型及必要训练评估过程。
+废弃四层实验和无关探索原始数据已删除，不再把所有历史结果并列为活动入口。
 
-## 保留结果
+Git 保存本目录的报告、紧凑 summary/adjudication、seals、训练元数据和分析 CSV；
+原始 parquet/npz、权重、日志、进度文件、诊断图片和 history/ 恢复包留在本地。
+忽略或取消追踪不会删除这些本地证据。analysis 与被修正的 analysis_v2 一起保留，
+有效口径以原 report/INVALIDATED.md 为准。规则见 [../.gitignore](../.gitignore)。
 
-- `yambda500m_large_seed17/canonical_D14_v0_v5_v1/`：当前唯一 Large D14 工作序列；不复制模型
-  大文件，而以 contract-bound path/hash 固定原 V0–V3、V4@2.0、以及从该 V4 直接训练的 V5@2.0。
-  五条相邻边 aggregate AUC 全正。旧 endpoint sweep 仍保留为历史开发证据，不再作为当前模型入口；
+| 用途 | 路径 |
+| --- | --- |
+| 六层 Medium 模型、Full/Reuse 与 Motivation | yambda500m_medium_seed17/full_reuse_matrix_v1/ |
+| 十层 Large 当前 V0–V5 指针及范围 | [canonical chain](yambda500m_large_seed17/canonical_D14_v0_v5_v1/README.md) |
+| 论文重算成本表 | [report](release_cost_random_weight_v1/report.md) |
+| Insight 1 五条更新的完整诊断 | yambda500m_medium_seed17/insight1_locality_v1/ |
+| Insight 2 响应修正表 | yambda500m_medium_seed17/insight2_functional_boundary_v1/discovery_functional_boundary/analysis_v2/ |
+| Insight 2 持续性结果 | yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_temporal_persistence_v1/discovery/analysis/ |
+| 数据审计 | data_audit/yambda500m_scale_v1/ |
 
-- data_audit/yambda500m_scale_v1/：Yambda-500M 人口与数据审计；
-- `data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/`（位于 data 目录）：已按 prospective
-  Medium 合同物化的 `[0,300)` request manifest；包含 2,962,852 个因果去重请求，未计算质量指标，
-  只授权数据准备和 focused canary；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/smoke/`：GPU2/3 双 rank、global batch 32 的
-  6L/H192/context1024 correctness canary；v0/v1 两步训练、Full-only raw seal 与 118-request
-  adjacent-Reuse mechanics 已通过。它不构成 quality、release admission 或 formal 长训练结果；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/cpu_runtime_v2_canary/`：D7 全部完成后、D14
-  恢复前执行的 16-user raw-only CPU runtime canary；660 行 raw/seal 守恒且 hash 一致，固定 GPU2/3
-  各 14 个互不重叠的 NUMA-local 物理核，不读取质量指标；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/reuse_4gpu_runtime_v3_canary/`：剩余 D14 Reuse
-  切换四卡前的 raw-only canary；GPU0/1/2/3、cohort32、query chunk256、每 rank 14 个本地物理核，
-  共 1,000 请求/3,000 三路径行，四卡 peak reserved 6.7–7.3 GiB，未读取质量指标；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/D7/forced_reuse_diagnostic_v1/`：用户在正式
-  admission 已封存后要求补跑的 D7 全 20 格相邻 Reuse 诊断；该目录单独绑定 forced-diagnostic 合同，
-  不改写 `D7/admission/`、正式 `D7/reuse/`、顶层 summary 或 serving/cache lineage；canary 与正式结果
-  均保留 raw-first seal，完整矩阵不得选择性报告；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/`：独立的 D14 v4→v5
-  四卡扩展。v5 只训练完整 `[273,287)`；E3/E7/E14 统一按 horizon 报告，E14 的实际日期范围与请求数
-  保留 day300 的观测覆盖。`canary/` 不读取质量，正式 checkpoint、Full、Reuse 与 summary 均绑定独立合同，不改写
-  原 D14 v1…v4 结果或 serving admission；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/`：Medium
-  Motivation-1 的 D14/E14 跨版本补齐目录；新增10个非相邻 direct Reuse 格子，并引用5个已封存
-  相邻格子形成15格完整三角矩阵。所有格子统一显示为 E14，实际日期范围与请求数写入 JSON；不执行
-  recursive Reuse，也不改变 admission 或 serving/cache lineage；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/medium_scale_experiment_summary.md`：本轮 Medium
-  seed17 的统一专家讨论稿；汇总模型/数据/训练、原始 D7/D14、D7 forced Reuse、D14 v5、统一百分比
-  口径、运行成本、异常边、结论和下一步。Recovery 只使用同一 sealed 三路径 cohort 计算，不混用
-  Full-only 与 rolling cohort；
-- `yambda500m_medium_seed17/full_reuse_matrix_v1/structured_log_test_notice_2026-08-28.md`：记录并
-  限定早期单元测试误写入 `pipeline.jsonl` 的 synthetic D7 edge1/2 事件；正式 seal/checkpoint/raw 未受
-  影响，测试隔离已修复；
-- yambda500m_small_foundation_canary_2026-08-24.md：foundation correctness canary；
-- yambda500m_small_seed17/base.json：当前 Small foundation 输入；
-- yambda500m_small_seed17/hstu_native_release_chain_v1/v0/：当前 D14/E14 使用的 parent checkpoint；
-- yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/：当前 HSTU-native recipe scan；
-  train_1d、train_4d、train_7d 按当前保留决定保留，train_14d 及 D14 Full-only、One-hop
-  Reuse、direct long-age 结果用于当前 motivation 复现；
-- yambda500m_small_seed17/insight_recommendation_state_structure_v1/：固定 3,000 用户、五条
-  v0..v5 边的 label-free recommendation-state observation；[专家讨论稿](yambda500m_small_seed17/insight_recommendation_state_structure_v1/expert_discussion_summary.md)
-  将实验动机、协议、三个实验、结果、结论、反证边界与待讨论问题收束在一篇文档中；目录只保留
-  compact population、state factorization、coreset、candidate-subspace 与 adjudication，不保留展开
-  K/V/attention tensor；[Small Insight/Design 冻结记录](yambda500m_small_seed17/insight_recommendation_state_structure_v1/small_insight_design_freeze_2026-08-28.md)
-  收口开放式探索，保留 C32 lightweight PRO，并明确 Medium 前不得继续用相同五边调 estimator；
-- yambda500m_small_seed17/insight_candidate_shared_causal_v1/：signed、逐 head、四种 candidate
-  width 的 3,000-user causal intervention，以及五边真实 exposed candidate raw-first 复核；正式
-  causal gate 通过，但 shared/residual 仍是 diagnostic oracle；
-- yambda500m_small_seed17/insight_evidence_measure_basis_v1/：唯一 matched-cost signed
-  value-measure basis canary；五边 0/5 不弱于 Design 0，按合同停止，保留为机制负结果；
-- yambda500m_small_seed17/insight_reader_compatibility_correction_v1/：按最新专家意见将 claim
-  收紧为 candidate-shared reader compatibility correction，并事前冻结地定位其 HSTU 形成阶段、
-  检查跨真实请求持久性；该目录中的 oracle 仍不是 action，机制能否解锁以最终 adjudication 为准；
-- yambda500m_small_seed17/insight_av_broadcast_residual_v1/：两道 reader gate 通过后唯一执行的
-  compact-probe AV sidecar；无标签 score canary 4/5 不弱于 Design 0，`v3→v4` 为保留反例；
-  未启动 formal quality，未准入 action；
-- yambda500m_small_seed17/insight_pro_lazy_reader_v1/：取消 per-position translated-prefix
-  物化的 lightweight PRO 正确性/成本证据。`correctness_cost/` 保留 dimensionful AV absolute
-  threshold 导致的 v1 失败；机制未变且换用下一批 32 用户的 `correctness_cost_v2/` 通过
-  scale-aware 数值等价、零物化和理论成本门。32-carrier 为 Full 的 9.1%；`rolling_quality_v1/`
-  保留五边 full-population raw-first 质量结果：AUC 5/5、log-loss 3/5、均值两项改善。总体 Design
-  viability 为正，事前严格双门未过，未准入 serving action、额外 seed 或 runtime qualification；
-- yambda500m_small_seed17/insight_progressive_pro_v1/：专家建议后的 label-free 增量。
-  `decomposition_v1/formal/` 证明两条固定 probe 在 5/5 edge 几乎一致，但 C32 的 absolute direction
-  与 amplitude-dominant 门均未通过，segment decay 仅 2/5；`frontier_v1/formal/` 完整报告
-  C32/C48/C64 的 10.52%/14.54%/18.64% Full-FLOPs 轴。C64 relative L2 对 C32 在 cutover/rolling
-  均 5/5 改善，但 absolute rolling direction 为 0/5 过门且 C48/C64 非单调，按事前规则不选择升级，
-  不读取旧五边 label；
-- checkpoint_cleanup_2026-08-24.md：已完成 checkpoint 清理范围的审计记录。
+Medium 的 V0–V5 每个版本均训练一 epoch。Large canonical 序列的 V4/V5 为两 epoch；
+Large 的 post-hoc working-lineage 说明和原始失败记录保留，不能当作独立 qualification。
+为保留六层/十层模型的完整训练评估依据，这两条 full/reuse 或 qualification 链未拆散，
+包括 D7、未采用的 endpoint、epoch 对照和必要 canary。它们不是当前论文的方法效果。
 
-D14/E14 当前结果的核心汇总位于：
+Insight 1 的 formal_raw、analysis、正式 canary 和资源估计保留；
+论文图显示前三条更新及其平均值，但底层五条更新的证据没有删减。
+重复 batch benchmark 和中断 formal 的原始输出已删除，其摘要在清理包中。
 
-- hstu_native_rolling_recipe_matrix_v3/matrix_result.json；
-- hstu_native_rolling_recipe_matrix_v3/d14_onehop_reuse_diagnostic_v1/；
-- hstu_native_rolling_recipe_matrix_v3/d14_onehop_reuse_completion_v2/；
-- hstu_native_rolling_recipe_matrix_v3/d14_direct_long_age_reuse_v1/。
+Insight 2 只保留两个论文诊断及其 rank-0/low-rank canary 和资源估计。
+旧 analysis 的 INVALIDATED.md、原视图及有效原始数据仍在；论文只引用 analysis_v2。
+其他 estimator、coreset、paired-functional 和 activation 探索不再留在活动结果树。
 
-## 已删除结果
+Small 目录仅保留一个 theoretical_compute.json，因为 Large 冻结合同直接校验它的哈希。
+这不是完整 Small 实验，也不是当前 EvoKV 的成本结论。Small 模型和其余原始结果已删除。
+成本表的五个当前测量与对应随机权重保留，未采用的两组配置移除。
 
-旧 P7–P11、8L、archive、Yambda-50M audit、旧 Small fixed-endpoint diagnostics、
-旧 evaluation 和 release_diagnostics 已删除。它们不再是当前文档、脚本或合同的输入。
+## 历史归档与恢复边界
 
-## 存储规则
+2026-09-05 的两轮清理先移除旧入口，再依据后续授权删除废弃 Small 权重与无关原始结果。
+保留 19 个 Medium、25 个 Large 模型 payload 和 5 个成本随机模型；模型路径、seals、
+训练与 admission 记录保持原状。当前论文证据包括 Motivation 全部 15 个旧 producer 对比、
+Insight 1 全部五边及 34 个配置、Insight 2 全部 ranks/stages/edges 和持续性桶，
+以及原有 canary、资源估计、失败结果和 invalidation。
 
-raw aggregate、seal、adjudication、summary 和必要 invalidation 记录属于可审计结果；
-rank shard、progress marker、临时日志和重复中间产物不属于默认保留对象。新结果不得重新
-建立按旧编号命名的结果族。
+删除范围包括旧 Small 实验、Insight 1 重复 benchmark 与中断 formal、Insight 2 的
+estimator/coreset/paired-functional/activation 等废弃探索、两组未采用成本配置。
+共删除 3,184 个结果文件（38,875,237,060 bytes），其中 95 个旧四层权重和 2 个成本随机权重。
+删除以完整废弃分支为单位，没有从保留实验中挑除负结果。
+
+- [旧源码与文档归档](history/cleanup_2026-09-05.tar.gz)：210 个成员，保存第一轮退出的
+  代码、设计讨论及修改前文本。SHA-256：
+  `7161e3bdcb69fc8e83b7d773ae7c6ce02cdf2cab8e786883556efd9fc9b95da6`。
+  对应 Git 基线为 `d39a3382cc0953880088bc2aa6307ad0f2a565a4`。
+- [废弃结果摘要与清单](history/cleanup_results_2026-09-05.tar.gz)：1,757 个成员，保存旧结论、
+  失败说明、invalidation 文本、修改前源码/文档和逐文件删除清单 `plan.json`。SHA-256：
+  `ef782d6b63be72e5dfe82c49868e7a485d012f5168df2fa233c319d24f582093`。
+
+第一包是入口清理时的快照，其中“模型与结果未动”不描述第二轮之后的状态。
+第二包不包含已删除的权重及 parquet/npz 等原始数据；没有外部备份就无法从包中恢复这些材料。
+清单记录原路径、大小和非权重数据哈希，权重仅记录元数据。可以在仓库根目录查看：
+
+```bash
+tar -tzf results/history/cleanup_2026-09-05.tar.gz
+tar -xOf results/history/cleanup_results_2026-09-05.tar.gz plan.json
+```
+
+历史源码和摘要仅在独立目录按需提取，不把整包覆盖解压回仓库，也不根据旧合同恢复训练队列。
+Small 仅存的 theoretical_compute.json 与旧 PRO 合同仍是 Large 合同的哈希依赖；
+其他历史合同中的 Small 指针可能已不可用。旧 PRO 公共函数只服务保留的 canary 与测试。
+更早的清理范围仍见 [2026-08-24 记录](checkpoint_cleanup_2026-08-24.md)。
+
+已知协议问题：Insight 2 functional-boundary 的 research_plan 在清理前已被追加修改，
+合同哈希与保留原文不匹配，具体哈希见 [冻结协议依赖](../research_discussions/README.md)。
+原合同、原文、raw 与 analysis_v2 均保留，未跳过校验；未来重跑前须解决该输入快照问题。

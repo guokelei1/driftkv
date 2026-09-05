@@ -1,17 +1,21 @@
-# Yambda-500M Medium Full-only 训练推进方案
+# Yambda-500M Medium 训练与评估记录
 
-日期：2026-08-28  
-状态：**共享 v0、D7 v1…v10、D14 v1…v5 共 16 个 checkpoint 已完成；基础 32 个 Full-only、D14 v1…v4 的 12 个 Reuse、D7 forced diagnostic 的 20 个 Reuse，以及 v5 的 E3/E7/E14 Full+Reuse 均已封存；PRO 未启动**
+记录始于：2026-08-28；状态整理：2026-09-05。
 
-## 1. 这份方案解决什么
+状态：**共享 v0、D7 v1…v10、D14 v1…v5 共 16 个正式 checkpoint 已完成；基础 32 个 Full-only、D14 v1…v4 的 12 个 Reuse、D7 forced diagnostic 的 20 个 Reuse，以及 v5 的 E3/E7/E14 Full+Reuse 均已封存；D14/E14 direct Reuse 三角已完成 15/15 格。旧 PRO 路线未在 Medium 启动。**
 
-本方案把既有 Small 训练流程迁移到已经定义的 Medium scale，用于下一步编写通用化代码、生成合同、
-组织 canary 和串行训练队列。第一阶段只回答上游问题：30k-user、6L Medium 能否形成稳定、连续的
-Full-only model-update gain。此时不运行 Reuse、Design 0、PRO 或 cache compatibility 指标。
+本文保留训练配方的选择依据、最初资源估计和实际执行变更，不是当前待办或重新启动队列。
+第 2–8 节解释当时的准备过程，第 9 节记录已完成的执行及扩展。
+论文当前结论见 [motivation_observations.md](motivation_observations.md)。
 
-Medium 不是为了继续调 Small C32 estimator，而是一次新的 scale environment qualification。Small
-已经冻结的 Insight/Design 见
-`results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/small_insight_design_freeze_2026-08-28.md`。
+## 1. 这份记录说明什么
+
+Medium 准备阶段将原 Small 流程通用化，完成了合同、数据 manifest、canary 和训练评估队列。
+最初的 Full-only 阶段先检查 30k-user、6L 模型的更新改善；相邻与跨版本 Reuse 后来由独立合同补齐。
+该阶段不是对旧 Small C32 estimator 的继续调参，也不是当前 EvoKV 方法的效果验证。
+
+旧 Small Insight/Design 文档已随废弃结果清理，其原文在清理包中，不再引用失效的活动结果路径。
+保留范围与恢复限制见 [结果索引](../results/README.md)。
 
 ## 2. 为什么沿用 day217，而不是改到 day150
 
@@ -32,50 +36,49 @@ SHA-256 规则重新选择 day150 population，只与当前 population 重合 26
 基础对称矩阵使用半开区间 `[0,300)`。后续 v5 扩展使用 `[287,301)` 作为 E14，并以实际日期范围、
 请求数和 source coverage 记录尾部差异；展示名称不再另立一档。
 
-## 3. Small 流程中应继承与不应照搬的部分
+## 3. 从 Small 迁移到 Medium 的历史改造
 
 ### 3.1 继承的训练语义
 
-Small 当前训练语义如下，Medium 默认保持一致，以隔离 scale 变量：
+当时沿用的 Small 训练语义如下，已写入 Medium 合同，以隔离 scale 变量：
 
 - F-only HSTU-native binary objective；所有合格真实请求均进入训练；
 - 用户等权：每个窗口内按用户请求数取逆权重，再做全局归一化；
 - 严格时间因果：只取 query timestamp 之前的 listen，同 timestamp 原子化，query 本身不写回 history；
 - 一个 foundation pass；每个增量版本一个 pass；
-- foundation 建议起点 LR `2e-4`，增量版本 LR `5e-5`，AdamW、weight decay `1e-4`；
+- foundation LR `2e-4`，增量版本 LR `5e-5`，AdamW、weight decay `1e-4`；
 - 每个增量版本从 direct parent 权重 warm-start，但创建全新的 AdamW state；
 - seed17 为首个 Medium seed；不做 early stopping、label-driven checkpoint selection 或 per-edge 调参；
 - 只保留 whole-pass final checkpoint；raw Full scores 先封存，再进行 label join 与 metric adjudication；
 - 物理 GPU2/3 上一次只运行一个双 rank FSDP `FULL_SHARD` job，bf16 compute、fp32
-  reduction/optimizer；GPU0/1 不参与本轮 Medium 执行。
+  reduction/optimizer；GPU0/1 未参与这一基础阶段。后续四卡 Reuse 和 v5 扩展见第 9 节。
 
-LR 与 batch size 仍须写入新的 prospective Medium contract。若 canary 表明数值不稳定，只能在读取
-formal quality 之前整体更换 recipe 并创建新合同，不能按 edge 调整。
+LR 与 batch size 已写入 Medium 基础及执行合同。当时的规则要求：若 canary 表明数值不稳定，
+只能在读取 formal quality 之前整体更换 recipe 并创建新合同，不能按 edge 调整。
 
-### 3.2 不能机械复制的 Small 硬编码
+### 3.2 已完成的参数化与历史加载改造
 
-当前脚本仍直接写死 Small 的 dataset、`selector_rank<=10000`、781,678 known items、4L/H128/4 heads、
-context512、checkpoint status 和输出路径。Medium 实现必须把这些值从合同和 dataset manifest 读取，
-复用现有数据/model primitives，不复制一套完整 pipeline。
+早期脚本曾写死 Small 的 dataset、人口、vocabulary、4L/H128/4 heads 和 context512。
+现行 manifest builder、trainer 和 evaluator 已能从合同、dataset manifest 与 checkpoint 读取
+对应配置，并被 Medium/Large runner 复用。部分工具仍保留 Small 默认参数，不能因此裸跑默认入口；
+应由对应模型 runner 传入已封存配置，见 [脚本索引](../scripts/README.md)。
 
-尤其要处理 history memory：Small trainer 会为当前 rank 的用户加载完整时间域 listen，再在 collator 中
-做 causal slice。Medium 30k/context1024 下应改为 window-bounded 或 partition-streamed history index，
-同时通过测试证明严格 prior、同 timestamp 原子性和最大 1024 history 不变；不能靠加载 future events
-后再假定内存足够。
+训练器与评估器已复用支持时间范围和前缀长度限制的 history loader，相关严格 prior、
+同 timestamp 原子性和 1024-context 行为由测试覆盖。这些基础改造不是下一阶段 Design 的待办。
 
-## 4. Medium 冻结定义与建议实现值
+## 4. 已封存的 Medium 配置
 
 | 项目 | Medium 值 | 当前性质 |
 | --- | ---: | --- |
 | population | 30,000 fixed UIDs | 已由 unified scale contract 定义 |
-| foundation/stream | `[0,217)` / `[217,300)` | 沿用已有 time boundary；本方案选择 |
+| foundation/stream | `[0,217)` / `[217,300)` | 基础矩阵已冻结；v5 尾段扩展另见第 9.4 节 |
 | known item mapping | 1,380,509 items，固定于 foundation | 已物化并有 hash |
-| OOV | stable 256 buckets | 继承 Small recipe，待 Medium 合同冻结 |
+| OOV | stable 256 buckets | 已冻结 |
 | architecture | 6 layers、hidden192、context1024 | 已由 unified scale contract 定义 |
-| attention heads | 6（head dim 32） | 建议实现值，待 Medium 合同冻结 |
-| query schema | 4 behaviors、3 query types、query type id 2、1 query action | 继承 Small，待合同冻结 |
-| seed | 17 | 首个 scale seed 建议，待合同冻结 |
-| training pass | foundation 1；每个 update 1 | 继承 Small，待合同冻结 |
+| attention heads | 6（head dim 32） | 已冻结 |
+| query schema | 4 behaviors、3 query types、query type id 2、1 query action | 已冻结 |
+| seed | 17 | 已完成的训练 seed |
+| training pass | foundation 1；每个 update 1 | 已冻结并执行 |
 
 按 `num_items=1,380,509+256`、6L/H192/6 heads 计算，模型约有 **266,259,265** 个参数；一份只含
 FP32 model weights 的 checkpoint 理论下限约 **0.992 GiB**。该数字不包含序列 activation、FSDP
@@ -85,8 +88,9 @@ FP32 model weights 的 checkpoint 理论下限约 **0.992 GiB**。该数字不�
 
 一个共享 v0 在 `[0,217)` 上训练完成后，D7 和 D14 从同一个 v0 分成两条相互独立的 direct-parent
 candidate chain。下面的请求数是 2026-08-28 使用固定 30k population、known-item join、严格先验
-listen 和 `(uid,timestamp,item)` 去重得到的 **label-free planning upper bound**；正式 manifest 还会按
-事前规则排除 conflicting feedback group，因此 checkpoint 中的最终 eligible count 以未来 seal 为准。
+listen 和 `(uid,timestamp,item)` 去重得到的 **label-free planning upper bound**；正式 manifest 按
+事前规则排除 conflicting feedback group，因此最终 eligible count 应查看已完成的 checkpoint seal，
+不能将下面的历史规划上限当作正式计数。
 
 基础期规划上限为 2,005,790 个请求组、23,347 个有请求用户。
 
@@ -129,12 +133,15 @@ D14 update 总计约 550,516 request-passes。
 和 Brier，以及 Current−Parent delta；edge 等权汇总，不能只展示正 edge。D7/D14 的 recipe acceptance
 rule、bootstrap 单位和 failure policy 必须在正式训练前写入不可变合同，不能看完矩阵再发明门槛。
 
-本阶段只允许用 Full-only 结果判断 release training signal 是否足够稳定，绝不读取 Reuse/PRO。recipe
+当时的 Full-only scan 阶段只用 Full-only 结果判断 release training signal 是否足够稳定，不读取 Reuse/PRO。recipe
 scan 中的 v1…vn 只是 direct-parent candidate chain，不自动成为 serving lineage。如果某 candidate 在
 后续正式 admission 中被拒绝，serving parent 与 cache lineage 保持不变；其 descendant 不能被挑出来
 接到已接受 parent 上，必须按已接受 parent 重新训练。
 
-## 6. 分阶段执行顺序
+## 6. 原始阶段划分与后续去向
+
+M0–M5 是当时的准备与执行顺序，相应合同、代码、canary、模型和裁决现已保留；
+后续 Reuse 扩展见第 9 节。以下历史阶段不是新的启动清单。
 
 1. **M0：合同与数据 seal。** 新建 Medium D7/D14 prospective contract，冻结 population/mapping hash、
    `[0,300)` complete-day boundary、全部 train/eval windows、metrics、failure policy、seed 和资源上限。
@@ -151,21 +158,23 @@ scan 中的 v1…vn 只是 direct-parent candidate chain，不自动成为 servi
    Full score，再 join label；整个阶段禁止 Reuse、PRO 和 cache 指标。
 6. **M5：冻结 Medium release recipe。** 只依据事前 Full-only rule 裁决 D7/D14。若两条 recipe 均不
    稳定，先修 training recipe 并创建新的 prospective evidence；不能用 PRO 掩盖上游问题。
-7. **M6：后续 scale qualification（本方案不授权）。** 在 accepted Medium edges 上只复核
-   candidate-shared signed correction、AV boundary 和跨请求 persistence；随后按 Medium FLOPs 重算约
-   10%/20% 两个 PRO 预算点。通过真实质量后，才做额外 seed 与 runtime。
+7. **M6：已退出主线的 PRO qualification 设想。** 当时拟在 accepted Medium edges 上复核
+   candidate-shared correction、AV boundary、persistence 和约 10%/20% 两个 PRO 预算点。
+   这不是当前 EvoKV 的后续计划；Medium PRO 未启动，不能将后来的 Insight 诊断视为该方案已经完成。
 
 当前 theta3 仍受 blind boundary 保护。M0 必须一次性冻结第三个及以后 candidate 的 data、release、
 admission、metric 和 failure contract；在该合同和显式 launch 之前，不训练或读取任何 theta3 结果。
 
-## 7. 初步资源预算
+## 7. 基础矩阵的历史规划预算
+
+以下为 v5 扩展之前的初步估计，不包含后续新增任务，也不是当前剩余工作量。
 
 共享 foundation 加两条 update branch 共约 **3,240,746** 个 label-free planning request-passes，产生
 1 个 v0、10 个 D7 candidate 和 4 个 D14 candidate，共 15 份 final checkpoint。按每份 0.992 GiB
 纯 FP32 weights 估算，必要 checkpoint 约 14.9 GiB；执行时建议至少预留 30 GiB 临时余量，完成 seal
 后不保留 optimizer state、partial checkpoint 或重复 rank shard。
 
-当前双卡固定 batch 16/rank（global batch 32），上限请求数对应约：
+当时双卡固定 batch 16/rank（global batch 32），上限请求数对应约：
 
 | 阶段 | Optimizer steps |
 | --- | ---: |
@@ -180,25 +189,23 @@ attention term 约为 9 倍；同时 foundation 请求上限约为 Small 已训 
 Medium foundation 可能达到 Small foundation request-FLOPs 的约 21–28 倍，实际值必须由真实历史
 长度分布和 canary step time校准，本文不承诺 wall-clock 时间。
 
-## 8. 下一步代码清单与启动门
+## 8. 已完成的基础代码准备
 
-后续实现应按以下顺序改造，而不是立即长训：
+原准备清单对应的基础改造已完成：
 
-- 将 `scripts/build_yambda500m_hstu_native_matrix_manifest.py` 的 population、窗口和 dataset 输入参数化；
-- 将 `scripts/train_yambda500m_foundation_fsdp.py` 的 dataset、known vocab、模型 config、context、状态名
-  与 history loading 参数化；
-- 将 `scripts/evaluate_yambda500m_foundation_raw.py` 和
-  `scripts/evaluate_yambda500m_release_candidates_raw.py` 中的 Small/context512/vocab 硬编码改为从
-  checkpoint 与合同读取；
-- 把现有 rolling runner 抽成 contract-driven runner，保留 single-job serial queue、resume audit、raw
-  seal 和完整矩阵报告；
-- 补充 Medium canary contract、资源记录和失败清理规则。
+- manifest builder 已按合同与 dataset manifest 构造人口和窗口；
+- trainer 已支持对应 dataset、vocabulary、模型配置、context 和 history loading；
+- Full/Reuse evaluator 已读取 checkpoint 和模型运行配置；
+- Medium runner 已保留串行队列、resume audit、raw seal 和完整矩阵报告；
+- Medium canary、资源记录和执行合同已封存。
 
-长训练启动前必须同时具备：prospective Medium contract、精确资源估算、focused canary PASS，以及
-用户对具体 launch command 的明确授权。当前本文只允许进入代码与 canary 准备，不允许启动 v0 或
-任何 release candidate。
+原 v0 和增量版本已完成，不应按这份历史清单重新训练。任何新的长训练仍需独立合同、
+资源估算、passing canary 和用户明确启动；本文不提供新授权。
 
-## 9. 已实现的一键入口（2026-08-28）
+## 9. 已完成执行、保留入口与扩展记录
+
+以下命令保留用于解释已有产物的来源，不是需要重新执行的步骤。
+基础队列始于 2026-08-28；后续扩展各由独立合同记录。
 
 当前基础合同、GPU2/3 双卡执行/admission 补充合同、通用化 trainer/evaluator、数据 manifest 和可恢复
 runner 已实现。统一入口是：
@@ -217,7 +224,8 @@ Full-only，但不构造 Reuse。三种报告对象是：
 - `current_exact_rolling`：New/Current 模型及其完整 Current cache；
 - `one_hop_reuse_rolling`：Current 模型读取紧邻 Parent 在 cutover 生成的 cache，之后由 Current append。
 
-不执行 recursive 或 long-age Reuse。最终 `summary.md/json` 并列给出三条路径的 ROC-AUC、log-loss，
+基础队列不执行 recursive 或 long-age Reuse；后者已由第 9.5 节的独立诊断补齐。
+基础 `summary.md/json` 并列给出三条路径的 ROC-AUC、log-loss，
 以及 Reuse 相对 Old→New 的 AUC/log-loss gain retention。
 
 CPU 数据准备已经完成；可重复验证但不会覆盖已有 seal：
@@ -236,7 +244,7 @@ PYTHONPATH=src python scripts/run_yambda500m_medium_full_reuse_matrix.py --mode 
 GPU2/3 各至少空闲 40,000 MiB 时 smoke 才会启动；GPU0/1 不检查、不占用。2026-08-28 canary 已通过：
 v0 峰值 reserved 显存为 7.3/6.8 GiB，v1 为 8.7/9.0 GiB；118 个请求的 Full-only 和三路径 Reuse
 小流程均完成。该小 cohort 的 quality 不作解释。OOM 会保留日志并停止，不会在 formal 中静默降低
-batch size。用户显式启动全部长任务的命令为：
+batch size。当时用户显式启动基础长任务的命令为：
 
 ```bash
 PYTHONPATH=src python scripts/run_yambda500m_medium_full_reuse_matrix.py \
@@ -276,8 +284,8 @@ checkpoint、三路径定义、label、metric、admission 或 lineage。
 
 正式续跑前以 `v1→v2/E3`、每 rank 最多 64 用户执行 raw-only canary。四 rank 共 1,000 请求、3,000
 行，严格满足每请求 Parent/Current/Reuse 三路径与 raw hash/行数守恒；四卡 peak reserved memory 为
-6.7–7.3 GiB，明显低于 40 GiB 门槛，未读取 canary quality。当前正式续跑入口仍为同一个 `--mode
-evaluate`，runner 会保留并跳过双卡完成产物，只对剩余九个 D14 Reuse cell 使用四卡 runtime。
+6.7–7.3 GiB，明显低于 40 GiB 门槛，未读取 canary quality。当时通过同一个 `--mode evaluate`
+完成续跑，跳过双卡完成产物，对剩余九个 D14 Reuse cell 使用四卡 runtime；这些 cell 现已完成。
 
 ### 9.3 D7 全矩阵 forced-Reuse 诊断补跑
 
@@ -329,8 +337,8 @@ D14 v1…v4 checkpoint、admission、raw seal 或 summary。
 
 ### 9.5 D14/E14 跨版本 direct Reuse 补齐
 
-Medium Motivation-1 还需要复现 Small 的版本年龄矩阵。相邻 v0→v1…v4→v5 五格已经封存；新增实验
-只运行10个非相邻格子：v0→v2，v0/v1→v3，v0/v1/v2→v4，以及 v0/v1/v2/v3→v5。每格均为
+Medium Motivation-1 的版本年龄矩阵现已完成。它复用五个已封存的相邻格子，并补齐
+10个非相邻格子：v0→v2，v0/v1→v3，v0/v1/v2→v4，以及 v0/v1/v2/v3→v5。每格均为
 direct long-age Reuse：指定 producer 直接物化完整 cutover 前缀，Current 读取该 K/V 后追加全部
 post-cutover 事件；禁止递归串联历史 Reuse。
 
@@ -355,12 +363,12 @@ PYTHONPATH=src python scripts/run_yambda500m_medium_d14_direct_long_age_reuse.py
   --acknowledge-long-run RUN_MEDIUM_D14_DIRECT_LONG_AGE_REUSE
 ```
 
-结果位于 `results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/`。完整时
-`summary.json`/`summary.md` 包含10个新增非相邻格子和5个引用的相邻格子，共15格；该诊断不修改
+结果位于 `results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/direct_long_age_reuse_v1/`。
+已完成的 `summary.json`/`summary.md` 包含10个新增非相邻格子和5个引用的相邻格子，共15格；该诊断不修改
 已有 release admission、serving parent 或 cache lineage。
 
-一句话执行口径：
+已完成流程小结：
 
-> **复用 day217 的 30k Medium population 与 mapping，先训练一份 6L/H192/context1024 Full-only v0，
-> 再从同一 v0 串行扫描 D7×10 和 D14×5 candidate chain；先验证模型更新，再依独立合同补齐相邻及
-> 跨版本 direct Reuse。任何后续长训仍需合同、canary 和用户明确授权。**
+> 已复用 day217 的 30k Medium population 与 mapping，完成 6L/H192/context1024 Full-only v0、
+> D7×10 和 D14×5 candidate chain，再依独立合同补齐相邻及跨版本 direct Reuse。
+> 这些是现有模型与论文证据，不是当前 Design 的待执行任务。

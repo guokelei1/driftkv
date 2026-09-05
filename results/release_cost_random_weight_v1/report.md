@@ -37,8 +37,10 @@ unrealistic dense-cache copy from the Reuse path. A batch-32 canary at 4K/16L
 ran out of GPU memory. At 24L/8K, batch 8 ran out of GPU memory during full
 prefill (the eager attention activation requested 8.00 GiB); batch 6 is
 therefore the largest verified stable micro-batch for this implementation on
-this A40. The earlier 24L/10K/B4 result remains as a historical canary JSON,
-but is not part of the current configuration or table.
+this A40. The earlier 24L/10K/B4 canary and superseded 4L point were archived
+during the 2026-09-05 cleanup; neither belongs to the current configuration or
+table. Their unused random-weight payloads were deleted. The five current
+measurement JSON files and their random-weight inputs remain unchanged.
 
 Raw machine-readable records are the five `*_gpu_only.json` files beside this
 report. They include the random model seed, complete architecture, timer

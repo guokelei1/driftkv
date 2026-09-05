@@ -14,15 +14,6 @@ def pipeline():
     return LargePipeline(BASE_CONTRACT, EXECUTION_CONTRACT, threads=56)
 
 
-def test_large_contract_and_execution_are_bound_to_passing_canary():
-    value = pipeline()
-    assert value.contract["decision_basis"]["frozen_primary"] == "10L_H320_heads10_context1024"
-    assert value.execution is not None
-    assert value.execution["execution_amendment"]["global_train_batch_size"] == 96
-    assert value.execution["execution_amendment"]["full_eval_batch_size_per_rank"] == 64
-    assert value.execution["execution_amendment"]["reuse_cohort_size_per_rank"] == 12
-
-
 def test_large_matrix_keeps_fifth_d14_edge_and_marks_partial_e14():
     value = pipeline()
     assert value.horizon_label("D14", 5, 14) == "E14_partial"

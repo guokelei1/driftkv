@@ -1,10 +1,3 @@
-from .compact_manifest import (
-    FIDELITY_FORBIDDEN_COLUMNS,
-    QualificationUnlock,
-    load_compact_index,
-    read_request_table,
-    read_request_view,
-)
 from .scale_population import (
     UID_SELECTOR_NAMESPACE,
     select_medium_uids,
@@ -38,11 +31,6 @@ __all__ = [
     "ReleaseWindowRecipe",
     "TimeWindow",
     "UID_SELECTOR_NAMESPACE",
-    "QualificationUnlock",
-    "FIDELITY_FORBIDDEN_COLUMNS",
-    "load_compact_index",
-    "read_request_table",
-    "read_request_view",
     "YambdaTrace",
     "YambdaScaleDataset",
     "load_yambda_histories",

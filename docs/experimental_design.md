@@ -1,20 +1,35 @@
 # EvoKV 具体实验设计
 
-更新日期：2026-09-05
+更新日期：2026-09-06
 
-状态：**Medium KV-only discovery 已完成；Sketch-to-Sketch State Migration 为 prospective
+状态：**Medium KV-only discovery 已完成；Cross-Version Cache Adaptation 为 prospective
 Design 1；实现、Translator calibration 和方法实验均尚未运行。**
 
-本文把 [论文总体设计](paper_design.md)具体化为可执行、可否证的实验协议。当前执行范围仍为一次
+本文记录 [论文总体设计](paper_design.md)对应的实验方案草稿，不是已封存的运行合同。
+训练边界与首版实现约定留待讨论；本轮只校正文档中的历史与当前状态。草稿讨论的范围仍为一次
 相邻 Parent → Current migration。现有 V0–V5 backbone 保持冻结，不重新训练；五条 edge 分别
 校准共享、edge-specific Translator。论文新增的连续发布状态管理属于设计范围，尚不由这里的
 单边执行协议覆盖，也不改变任何既有合同。
 
 本文不修改任何 sealed motivation contract、checkpoint、data hash、release window、seed、workload、
-metric、raw result 或 adjudication。历史探索和负结果继续由原结果与探索日志维护。
-本次仅同步论文设计中的状态语义、诊断名称和成本定义；没有新建实验合同或启动运行。
+metric、raw result 或 adjudication。当前论文证据、Medium/Large 模型及其必要过程记录保持原路径；
+废弃 Small 和旧探索的原始结果已删除，旧结论与失败说明压缩归档，见
+[结果索引](../results/README.md)。
+本文沿用先前草稿的状态语义、诊断名称和成本定义；实现与检查按当前研究问题分步展开，
+不把完整生命周期工程作为首个想法实验的前置条件。本文没有新建实验合同或启动运行。
 Design 正文按组件与流水线叙述；本文件保留复现所需的技术定义和评价检查。
 这些检查用于确认接口按定义工作、评价近似方法效果，不要求各模块与 Current Full 逐元素等价。
+
+### 研究迭代方式
+
+本仓库以论文想法的快速验证为主。先用最小的 HSTU-native、内存中、顺序执行原型和小样本
+回答当前问题：例如先测摘要能否保留有用响应，再实现翻译；不先做通用框架、事务执行器、
+异常恢复或完整序列化兼容。检查聚焦当前会影响结果的公式、时间因果、数据划分与指标口径。
+
+小规模探索记录假设、必要配置、结果和下一步即可，更新现有实验记录，不为每次改动另建合同
+或执行全量测试。已有的数值对照或小样本运行能覆盖风险时，直接作为相应检查/canary。
+长训练、正式人口评价、新监督来源和未开放数据仍遵循各自协议与授权边界。
+工程功能和边界用例只在实际运行或论文论点依赖它们时补充。
 
 ## 1. 固定资产与范围
 
@@ -81,7 +96,7 @@ compatibility target 是 Current Exact − Current Reuse。模型 admission 先�
 | S7 | final representation | final norm 前后 hidden |
 | S8 | readout | CC logit/probability |
 
-Sketch paired correction 的 HSTU 主注入点是 S4：聚合后 normalization 之前的可加 historical
+Read-time correction 的 HSTU 主注入点是 S4：聚合后 normalization 之前的可加 historical
 aggregate；合并历史与模型规定的暂态贡献后，按原模型顺序执行 normalization、gate、output
 projection 和 residual。S2/S3 仍是诊断 tensor，不自动成为 persistent action。
 
@@ -103,15 +118,15 @@ prospective contract 中封存。不得把同一用户同时用于 Translator fi
 
 - Motivation、Full/Reuse 与 Medium locality 已封存；
 - S4 shared/low-rank oracle 显示 functional contraction；
-- fixed correction、tail、sparse carriers、paired replay、release-algebra 和多类 KV-only constructors
-  已形成正负证据；
+- fixed correction 的持续性原始证据仍保留；tail、sparse carriers、paired replay、release-algebra
+  等退休探索的正负结论保存在归档中，不再表示对应原始结果和实现均可直接使用；
 - ordinary KV、Full/Reuse、response instrumentation 和 diagnostic delta injection 已有代码。
 
-这些只决定为什么进入新的 state interface，不是 Sketch-to-Sketch 方法结果。
+这些只决定为什么进入新的 state interface，不是 EvoKV 方法结果。
 
 ## 3. Prospective state 与 Translator
 
-### 3.1 Fixed Source Sketch
+### 3.1 Source summary
 
 参考 schema 每段最多 64 个事件、每段每层两个固定事件区间 slots。边界对齐的 1,024-event
 窗口有 16 段、每层 32 slots；滑动边界与 release 提前封段的额外容量需单列：
@@ -165,7 +180,7 @@ softmax attention 不使用上述 normalized-output 求和；它需要组合 num
 
 ### 3.3 Translator objectives
 
-两版 backbone 冻结。calibration users 可产生 Parent/Current Exact Sketch 和 response teacher：
+两版 backbone 冻结。calibration users 可产生 Parent/Current Exact summary 和 response teacher：
 
 \[
 \mathcal L_{\mathrm{sketch}}
@@ -218,7 +233,7 @@ population 上的共享 edge-level supervision，并继续禁止 evaluation-user
 
 ### 3.4 连续发布设计的技术衔接
 
-论文 Design 1 第 3.5 节定义同一 release family 内的混合来源迁移：每个目标版本共享一个
+论文第 4.5 节 State Maintenance Across Releases定义同一 release family 内的混合来源迁移：每个目标版本共享一个
 Translator，输入按事件顺序排列的待迁移 Source，并附各段 producer 标记；跨段、跨层读取后
 输出新目标载荷。原始 Source 作为每次转换的输入，上一轮 translated sketch 只承担当时的读取
 视图。稳态每段保留 Source 和一个目标视图，过渡缓冲与在途引用另计峰值存储。
@@ -232,21 +247,23 @@ Translator，输入按事件顺序排列的待迁移 Source，并附各段 produ
 校准人口、目标切换、资源和完整轨迹评价；现有五条相邻边不能作为连续迁移结果。
 本文件下述 S0–S5 保持单边含义，本次不新建运行合同或启动多版本校准。
 
-## 4. 分阶段 admission
+## 4. 按研究问题推进
 
-前一 gate 未通过时，不得用更复杂 Translator 掩盖问题。
+下面列出表示、翻译、质量、持续性和成本的研究问题，不是每次探索必须完整走过的工程门禁。
+根据当前假设选择最小实验；正式结论应覆盖其依赖的问题。已经发现的表示或数值错误需要
+明确解释，不能用更复杂 Translator 掩盖。
 
-### S0 — Algebra、writer 与 lifecycle canary
+### S0 — 最小代数与数值检查
 
-- 验证 HSTU S4 对不相交 history segments 可加；
-- 验证 count、mask、time/position 和 mass-aware sketch read；
-- 验证 writer add/subtract、partial/full eviction 和 empty slots；
-- 验证 serialization、schema/hash mismatch、generation atomicity 和 Reuse fallback；
-- 测 tiny-batch writer/backfill/read FLOPs、bytes 和 runtime。
+- 用一个 tiny reference 对照检查 HSTU S4 分段聚合与当前 read 路径；
+- 核对该路径使用的 count、mask、time/position 和缩放；
+- 当前假设涉及追加或淘汰时，再检查对应 writer 更新；
+- 需要安排长作业时，用同一小样本估计内存和耗时。
 
-如果 S0 algebra 失败，修正 state interface；不能训练补偿 mapper。
+先修正会污染结果的代数错误。静态表示实验无需先实现 serialization、schema mismatch、
+generation atomicity、并发事务或全部 empty/eviction 组合；涉及这些运行路径时再做必要检查。
 
-### S1 — Exact-Sketch representation reference
+### S1 — Exact-summary representation reference
 
 直接从 frozen Exact caches 构造：
 
@@ -281,7 +298,7 @@ capacity、loss weights、optimizer、sample count 和 stopping rule 在 develop
 
 在 unseen users、histories 和 queries 上报告：
 
-- payload error relative to true Current Sketch；
+- payload error relative to true target summary；
 - response recovery relative to full differential；
 - 与 S1 真实摘要参考的差距，以及输出对真实摘要的偏离；
 - calibration population、slots 和 capacity curves；
@@ -291,8 +308,8 @@ capacity、loss weights、optimizer、sample count 和 stopping rule 在 develop
 
 ### S3 — End-to-end single-edge quality
 
-在逐层 closed-loop 路径比较 Current Exact、Reuse、No-op、Exact-Sketch reference、
-Translated-Sketch、direct mapper 和 generic controls。higher-is-better 指标：
+在逐层 closed-loop 路径比较 Current Exact、Reuse、No-op、Exact-summary reference、
+EvoKV、direct mapper 和 generic controls。higher-is-better 指标：
 
 \[
 \rho_M
@@ -316,7 +333,7 @@ rank agreement 和 user-equal companion。
 - whole/partial eviction 后的全用户 Parent 摘要 refresh；
 - whole Parent-segment retirement；
 - Parent 全部淘汰后的 endpoint；
-- append/eviction 并发与事务顺序。
+- append/eviction 的因果顺序；先顺序模拟，仅在实际评估并发执行时检查事务行为。
 
 Current producer tag 只证明参数/格式归属，不证明 exactness。若 descendant contamination 超过预注册
 tolerance，Design 1 不准入，除非另行定义并验证 bounded replay/rebase 或 clean-write mechanism。
@@ -328,6 +345,8 @@ Parent 全部淘汰只消除直接旧版本项，不消除新增 K/V 的继承�
 分别测量 writer、calibration teacher/training、existing-cache backfill、population translation、
 storage/I/O、per-request paired read、全摘要 refresh 和另行定义时的 rebase。
 理论估计不得冒充 GPU/system result。
+早期机制验证只需足以判断可行性的计算量、内存和小样本耗时；完整系统测量在论文相应
+成本论点需要时展开，不作为每次算法尝试的前置工作。
 
 ## 5. Cost contract
 
@@ -368,7 +387,7 @@ calibration teacher 的最低人口摊销约为
 \(N_{\mathrm{cal}}/N_{\mathrm{target}}\) 次 Exact-All。3,000 users 对 30,000 target population
 为 10%；若正式分母只包含 21,200 eligible users，则为 14.15%，实际值还受 history length 影响。
 prospective contract 必须冻结 target population、eligibility 和 history-weighted Exact-All denominator。
-优先复用已有 Parent KV/Sketch；Translator training、response probes、backfill I/O 和 release write 另计。
+优先复用已有 Parent K/V 与 source summary；Translator training、response probes、backfill I/O 和 release write 另计。
 
 论文默认以一次性 population release compute 的 0%–20% 为主门，不称为总生命周期预算；
 同时计入 writer、paired read、全摘要 refresh，报告 latency、throughput、P99 和相对 Exact-All
@@ -378,9 +397,12 @@ prospective contract 必须冻结 target population、eligibility 和 history-we
 
 ### 6.1 Matched controls
 
+以下是草稿中的对照候选，不是现有实现清单；其中部分旧路线代码已清理。
+本轮不增删对照候选，也不据此决定首版实验配置。
+
 - Current Exact、Reuse、No-op；
-- Exact-Sketch reference；
-- Current-Sketch-only add；
+- Exact-summary reference；
+- Translated-response-only add；
 - Parent→Current raw KV/sketch ridge 或 MLP mapper；
 - direct prediction 与 residual Translator；
 - fixed offset、PRO、generic Current-r8；
@@ -412,21 +434,24 @@ compatibility gap 的 edge 仍是合法结果。
 - ordinary K/V、Full/Reuse 和 state transition primitives；
 - stage/response instrumentation；
 - diagnostic response-difference injection；
-- Insight 1/2 evidence 与 KV-only controls。
+- Insight 1/2 的论文证据与诊断实现。旧 KV-only controls 多已退出活动代码目录，
+  不能再整体列为现成实现。
 
 ### 7.2 未实现
 
-- fixed Sketch schema/writer/serialization；
+- fixed summary schema/writer/serialization；
 - backfill、segment add/subtract 和 transactional lifecycle；
 - exact-sketch S1 harness；
 - edge-specific Translator 和 calibration pipeline；
-- production paired reader；
+- 用于实验的 paired reader；
 - closed-loop append/contamination control；
 - release executor 与 measured cost。
 
-执行顺序严格为 S0 → S1 → S2 → S3 → S4 → S5。S0/S1 可先做 CPU/tiny-GPU canary。S2 触及
-Current-derived supervision，必须先有新合同。任何 formal GPU population job 都需要 focused canary、
-资源估计和用户明确 launch；超过 30 分钟的作业使用 detached execution。
+通常先用 CPU/tiny-GPU 检查核心代数和表示信号，再推进翻译与质量；只在研究持续性时展开
+追加、淘汰和状态维护，成本按当前实验需要同步估计。无需为一个局部假设完整实现 S0–S5。
+S2 的 Current-derived supervision 仍需新的监督协议；formal GPU population job 需要
+focused canary、资源估计和用户明确 launch。相关小样本检查已通过且路径未变时直接复用，
+不为文本或局部无关改动重跑；超过 30 分钟的作业使用 detached execution。
 
 四张 GPU 0/1/2/3 均在 allowlist，但同一时刻至多运行一个 four-rank long job。UID shard 可并行，
 edge/checkpoint 串行；CPU mapping、join 和 aggregation 可安全并行。
