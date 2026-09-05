@@ -1,555 +1,447 @@
-# EvoKV HSTU-Native 路线与论文具体实验设计
+# EvoKV 具体实验设计
 
-更新日期：2026-08-28
+更新日期：2026-09-05
 
-本文是当前 HSTU-native 路线 compact 和具体实验设计。它记录仓库当前实际保留的模型、数据、
-训练、评测入口，并把后续研究分成三个层次：一次 release refinement、连续多 release state
-evolution 和 GPU transformation runtime。已经观察到的数字只写入
-[核心 Motivation 与 Observation](motivation_observations.md)；本文不把尚未验证的 continuous
-policy、runtime 或阈值写成结论。
+状态：**Medium KV-only discovery 已完成；Sketch-to-Sketch State Migration 为 prospective
+Design 1；实现、Translator calibration 和方法实验均尚未运行。**
 
-## 0. 当前状态与下一阶段核心
+本文把 [论文总体设计](paper_design.md)具体化为可执行、可否证的实验协议。当前执行范围仍为一次
+相邻 Parent → Current migration。现有 V0–V5 backbone 保持冻结，不重新训练；五条 edge 分别
+校准共享、edge-specific Translator。论文新增的连续发布状态管理属于设计范围，尚不由这里的
+单边执行协议覆盖，也不改变任何既有合同。
 
-当前仓库已经形成可复现的 HSTU-native motivation 链条：
+本文不修改任何 sealed motivation contract、checkpoint、data hash、release window、seed、workload、
+metric、raw result 或 adjudication。历史探索和负结果继续由原结果与探索日志维护。
+本次仅同步论文设计中的状态语义、诊断名称和成本定义；没有新建实验合同或启动运行。
+Design 正文按组件与流水线叙述；本文件保留复现所需的技术定义和评价检查。
+这些检查用于确认接口按定义工作、评价近似方法效果，不要求各模块与 Current Full 逐元素等价。
 
-~~~text
-HSTU 架构代码
-  -> Yambda-500M 时间因果数据与固定人口
-  -> foundation / release candidate 训练
-  -> Full-only release admission
-  -> Current / Parent / Recompute / One-hop Reuse rolling 对照
-  -> D14/E14 motivation 与 long-age direct Reuse observation
-~~~
+## 1. 固定资产与范围
 
-当前主实验是 Yambda-500M Small、4L/H128/context512、seed 17 的递归 release chain。D=14/E=14 的五条连续边已经产生稳定 motivation：四条常规正收益边的 One-hop Reuse 侵蚀为 25.5%–47.9%，producer version age 的 direct Reuse 损失严格单调增加。v3→v4 的 Full-only 收益很小，不能把其放大的 418.7% 比例当作典型效果。完整表格和边界以 [核心 Motivation 与 Observation](motivation_observations.md) 为准。
+### 1.1 数据与人口
 
-当前 3,000-user recommendation-state observation 将主 Insight 收敛为：persistent HSTU state 是被
-candidate bank 重复消费的 user-evidence compatibility field；early version drift 含跨用户共享的
-typed item/action coordinate，aggregation 与 U gate 将剩余变化转成 user-context residual；compact
-state 必须保留 evidence mass，而 raw item/action equality 不足以定义可合并关系。此前的跨层传播、
-CAST/PATCH 互补和 GROUP/SCALE 消融保留为机制证据，并推导
-`PLAN -> CAST -> GROUP/PATCH -> SCALE/COMMIT` Design 0；
-[`CAST / PATCH / GROUP / SCALE`](typed_state_refinement_algebra.md) 继续作为底层 plan IR。
-该 candidate-shared 结构已进一步通过 signed、逐 head、四种 bank width 和真实 exposed candidate
-的五边 causal 复核；shared-only 在真实分布的 20/20 edge×width 组合中优于 residual-only。
+| 项目 | 当前设置 |
+| --- | --- |
+| 数据 | Yambda-500M unified Medium |
+| 固定训练人口 | 30,000 users |
+| 已封存 Insight population | 3,000 label-free users，跨五 edge 固定 |
+| full-history eligibility | 首个 cutover 前至少 1,024 events |
+| eligible population | 21,200 users |
+| 历史长度 | 1,024 |
+| candidate panel | 每 user-edge 64 candidates，来自 pre-cutover history/global bank |
+| item vocabulary | 1,380,509 known + 256 stable OOV buckets |
 
-现有机制证据首先推出一次 `Parent -> Current` Design 0 strong baseline。事前固定的
-`CAST384 + GROUP/PATCH 128->64 + SCALE2` 已完成五条 full-population rolling AUC：4/5 edge
-改善 Reuse，v4->v5 失败。它证明 Design I 有可执行任务收益，但不准入一个对所有 release 无条件
-采用的固定配置。完整计划的保守理论 FLOPs 为 Exact-All 的 48.0%，理论减少 52.0%；该值不预言
-GPU runtime。专家建议的第一轮最小机制已在独立 prospective contract 下执行：matched-cost
-`CAST signed value measure + Current anchor residual` 在五边 label-free canary 上 0/5 不弱于
-Design 0，按合同停止，未进入 formal AUC/log-loss。随后 reader-stage/persistence 证据将主对象收敛为
-per-user AV correction；旧 compact-probe score canary 4/5 通过但生成成本仍约 Full 的 40.5%。
-最新 lightweight PRO 已取消 per-position translated-prefix 物化：joint map 只进入一次固定 probe，
-recent-128 固定 32 个 Parent-conditioned Current carrier。held-out v2 正确性/成本门通过，理论 FLOPs
-为 Full 的 9.1%，只写 512 scalar。机制冻结后的五边全人口 quality 已完成：AUC 5/5 正向、
-log-loss 3/5 正向，五边均值两项均改善。总体 Design viability 通过；事前严格双门未过，因此
-serving admission、额外 seed 和 runtime qualification 仍锁定。
-最新 label-free progressive follow-up 也已完成：C32 error decomposition 不支持纯幅值或
-segment-decay 解释；held-out C32/C48/C64 frontier 中 C64 对 C32 的 relative L2 为 cutover/rolling
-各 5/5 改善，但 rolling direction 为 0/5 达到 0.90 且 C48/C64 非单调。按冻结规则不选择升级，
-不在既有五边重读 quality label。
+现有 3,000-user population 继续使用封存 UID 顺序和 \([5,3000,64]\) candidate panel。扩大到
+15,000/30,000 只用于方法冻结后的 scale/qualification，不得用来重新选择配置。
 
-One-Release 通过后，研究重心转向 Continuous：以 estimated compatibility debt 和最大近似深度
-限制 `v0 -> v1 -> v2 -> ...` 的误差累积，再用 sampled Current-Exact shadow 检测假设失效并触发
-加固或 Rebase。GPU Runtime 最后实现，只在当前阶段预留 typed plan 和 controller 接口。
+### 1.2 六个冻结模型
 
-当前阶段的研究顺序固定为：
+使用 seed 17、HSTU-native CC、6 layers、hidden 192、6 heads、context 1,024、约 266.3M 参数的
+D14 direct-parent chain：
 
-~~~text
-Background & Motivation
-  -> short System Overview
-  -> Insight-Driven One-Release Refinement
-     -> 3,000-user candidate-broadcast / typed-coordinate observation (complete)
-     -> Design 0 strong baseline and per-user AV correction
-     -> lightweight PRO correctness/cost and full rolling quality (complete, mixed-positive)
-  -> Debt-Bounded Continuous State Evolution
-     -> bounded debt / Exact shadow / quality-triggered rebase
-  -> GPU Transformation Runtime
-     -> plan lowering / batching / I/O pipeline / atomic commit
-  -> scale and external validation
-~~~
-
-因此，当前只冻结 One-Release mechanism semantics 和 plan-IR 语义。不冻结 `tau_patch`、
-carrier-density 安全阈值、profiler、scheduler、multi-release debt/rebase policy 或 GPU executor，
-也不把旧 Yambda-50M development 的具体动作当作最终方案。
-
-## 0.1 当前仓库的复现入口
-
-当前主链对应的代码和输入如下：
-
-- HSTU 与 persistent K/V：`src/hstu_kvcache/models/`；
-- Yambda 时间窗口、人口、mapping、manifest 和 OOV：`src/hstu_kvcache/data/`；
-- foundation training：`src/hstu_kvcache/training/`、`scripts/train_yambda500m_foundation_fsdp.py`；
-- 数据处理：`scripts/download_scale_datasets.py`、`prepare_yambda500m_scale_populations.py`、`build_yambda500m_unified_scales.py`、`build_yambda500m_foundation_manifests.py`；
-- 当前 manifest：`data/manifests/yambda500m_scale_v1/`、`yambda500m_small_foundation_v1/`、`yambda500m_small_five_version_v1/`、`yambda500m_small_hstu_native_rolling_matrix_fast_v3/`；
-- 处理后数据：`data/processed/yambda500m_unified_v1/`；
-- 当前 release、rolling、D14 和 long-age 评测脚本：`scripts/run_yambda500m_hstu_native_*.py`；
-- 当前结果：`results/yambda500m_small_seed17/`，其中 `train_1d`、`train_4d`、`train_7d` 与 D14/E14 证据按保留策略保存。
-
-`configs/contracts/` 中的合同冻结数据边界、模型 recipe、admission 和评测语义；`tests/` 验证时间因果、manifest、cache lineage、训练和 evaluator contract。旧 archive、legacy、frozen development、旧 manifest 和旧实验控制代码不属于当前复现链。
-
-## 1. 实验总逻辑
-
-实验按以下顺序推进：
-
-~~~text
-数据与时间因果正确
-  -> HSTU-native foundation 正确
-  -> 上游 release recipe 的 Full-only 质量检查
-  -> 固定切片上的 Current Full / Parent Full / Reuse 对照
-  -> 版本年龄、用户和序列结构 observation
-  -> 在 Design I 内观察 candidate-broadcast evidence field 与 typed-coordinate/context residual
-  -> 将四阶段固定流水线定位为 Design 0 strong baseline
-  -> Design 0 rolling quality (complete, mixed)
-  -> reader-stage/persistence -> lightweight PRO correctness/cost (complete)
-  -> lightweight PRO rolling quality (complete: AUC 5/5, log-loss 3/5)
-  -> progressive PRO label-free decomposition/frontier (complete: no upgrade selected)
-  -> label-free admission/calibration on independent development evidence
-  -> Debt-bounded Continuous feedback loop
-  -> GPU runtime
-  -> S/M/L 与外部 workload 验证
-~~~
-
-前两步是实验基础，第三步决定如何构造可信模型发布，第四步是当前论文 motivation 的核心。
-One-Release 先验证最小可行转换；Continuous 再研究多个转换的生命周期；Runtime 最后优化物理执行。
-三者不能由一次 output-fidelity probe 一并宣称完成。
-
-## 2. 当前主实验：Yambda-500M Small
-
-### 2.1 数据
-
-主 workload 使用 Yambda-500M 的 Explicit Feedback：
-
-- 原始事件按真实 timestamp 排序；
-- 使用 listens、likes、dislikes 构造用户历史和监督信号；
-- item mapping 在 foundation cutoff 前固定，未来新 item 进入稳定 OOV bucket；
-- 所有 prefix、request、target 和 label 遵守严格 as-of 时间边界；
-- 当前 Small 由统一 Yambda-500M 人口的固定 UID hash 前缀构成，目标是 10,000 用户；
-- 其余 Medium/Large 人口只在规模实验阶段使用，不与当前 Small motivation 数字混合。
-
-数据源主体覆盖 `[Day 0, Day 300)`，并保留 day300 已观测尾段。基础模型使用 `[Day 0, Day 217)`
-的历史；基础 release matrix 使用 `[Day 217, Day 300)`，v5 扩展的 E14 使用 `[Day 287, Day 301)`。
-所有 E14 统一命名，同时在结果中保留精确半开日期范围、请求数与实际 source coverage；事件顺序在
-相同 timestamp 下使用稳定 tie-break。
-
-### 2.2 模型
-
-当前 motivation 只使用 HSTU-native 模型：
-
-- 4 layers；
-- hidden size 128；
-- context length 512；
-- item、behavior、time-delta 和 query/readout 均属于同一 HSTU 语义；
-- 使用 256 个稳定 OOV bucket；
-- 当前正式 motivation 的训练 repeat unit 是 seed 17。
-
-Frozen Base + residual、CC scorer、N/R 多任务模型和旧 8L architecture pilot 不进入当前 motivation 的 deployment score，也不作为新结果的主模型。
-
-## 3. 版本训练与 release recipe
-
-### 3.1 Foundation v0
-
-v0 在 Day 0–217 的基础历史上训练，形成固定 parent checkpoint 和 compact item mapping。v0 训练完成后，先验证：
-
-- Full forward 与 cache materialization 一致；
-- time delta、prefix boundary 和 OOV 处理无泄漏；
-- checkpoint、manifest、mapping hash 与合同一致；
-- 当前模型的 Full-only 质量可被稳定复现。
-
-v0 只是初始模型，不因为训练完成就自动成为论文中的“有效 release”；它是后续版本和 persistent state 的 producer。
-
-### 3.2 Upstream recipe scan
-
-当前先做 label-blind release recipe scan，训练窗口和 observation window 只由事前合同决定：
-
-| update duration D | 包含固定 v0 的版本数 | Full-only observation E |
-| ---: | ---: | --- |
-| 1 day | 60 | 1 |
-| 4 days | 20 | 1, 4 |
-| 7 days | 12 | 1, 4, 7 |
-| 14 days | 6 | 1, 4, 7, 14 |
-
-D=14 链为 v0→v1→v2→v3→v4→v5，共五条相邻边。每个 update candidate 使用对应时间窗训练；矩阵 recipe 使用 one-pass fresh AdamW、固定 learning rate/weight decay、完整 epoch checkpoint，不按看到的结果选择中间 checkpoint。每个 release 的 Full-only 评测可以与下一 update 的训练窗口在时间上重叠，但窗口定义不能事后移动。
-
-当前 matrix scan 的目的不是测 Reuse，而是回答：
-
-- 哪些固定 update duration 能在多个连续边上产生可解释的 Parent→Current Full 差异；
-- 训练终点和数据边界是否严格落在 Day<301；
-- candidate recipe、manifest 和 Full-only raw evaluator 是否稳定。
-
-scan 阶段禁止读取 Reuse、KV distance、JS、release debt 或 scheduler 输出，因此不会用 compatibility 结果挑选 release recipe。
-
-### 3.3 Accepted release
-
-后续 release chain 使用两个完全分离的步骤：
-
-1. candidate 训练完成；
-2. 独立 Full-only validation 比较 Parent Full 与 Current Full，决定 accepted 或 rejected。
-
-只有 accepted checkpoint 封存后，才允许读取该边的 Reuse 结果。rejected candidate 不成为 cache producer，serving parent 和 cache lineage 保持不变。
-
-## 4. 当前 motivation 对照
-
-在固定 D=14/E=14 切片上，对每条 accepted edge 构造相同的：
-
-- 用户；
-- causal history 和 cutover prefix；
-- query、target、candidate；
-- 当前模型与 readout；
-- rolling append/eviction 规则。
-
-然后比较四个视图：
-
-| 视图 | 含义 | 主要用途 |
+| Version | training window | adjacent cutover |
 | --- | --- | --- |
-| Parent Full | 旧模型完整重算 | release gain 的旧模型基线 |
-| Current Full | 当前模型完整重算 | Full-only release gain |
-| Current Exact Rolling | 当前模型在 cutover 后完整重算并真实 append | rolling reference |
-| One-hop Reuse Rolling | 父模型 prefix KV，之后当前模型真实 append | 直接 persistent-state mismatch 对照 |
+| V0 | [0,217) | — |
+| V1 | [217,231) | day 231 |
+| V2 | [231,245) | day 245 |
+| V3 | [245,259) | day 259 |
+| V4 | [259,273) | day 273 |
+| V5 | [273,287) | day 287 |
 
-两类差值必须分开：
+观察边为 V0→V1、V1→V2、V2→V3、V3→V4、V4→V5。每条 edge 的 Translator 在两版
+checkpoint Full-only admission 后训练；backbone 参数和 readout 均不更新。
+
+这些模型只训练了 explicit-feedback candidate-conditioned binary ranking。现阶段不能把其结果外推为
+next-item/retrieval。RecFlow、theta3 和新 backbone 不进入本 Design 1 执行范围。
 
-~~~text
-Release gain = Quality(Current Full) - Quality(Parent Full)
+### 1.3 单边 reference paths
+
+每条 edge、同一历史和 query 构造：
+
+1. Parent Exact：Parent reader + Parent-produced prefix；
+2. Current Exact：Current reader + Current-produced prefix；
+3. Current Reuse：Current reader + Parent-produced prefix。
+
+compatibility target 是 Current Exact − Current Reuse。模型 admission 先于 Reuse/Design evaluation；
+近零或反号 Full–Reuse gap 按预注册 No-op 规则处理。
+
+## 2. 既有 Insight protocol
+
+### 2.1 Stage taxonomy
 
-Reuse harm = Quality(Current Exact Rolling) - Quality(One-hop Reuse Rolling)
-~~~
-
-第一类回答模型是否变好，第二类回答旧 KV 是否阻碍当前模型兑现收益。不能把 Current Full/rolling、Parent/Reuse 或 request-local/rolling 语义混在一个指标中。
-
-## 5. 评价指标
-
-### 5.1 主指标
-
-当前 motivation 重点报告：
-
-- ROC-AUC；
-- dislike PR-AUC；
-- event log-loss；
-- Brier；
-- user-equal 与 event-weighted paired difference。
-
-对正的 release gain，额外报告：
-
-~~~text
-erosion ratio = Reuse harm / Release gain
-retention = 1 - erosion ratio
-~~~
-
-当 release gain 很小时，erosion ratio 可能被分母放大，必须同时报告绝对差值，不能只报百分比。
-
-### 5.2 Companion
-
-同时保存：
-
-- Bernoulli JS；
-- normalized score RMS；
-- probability shift；
-- Top-K overlap 和 pairwise/margin disagreement；
-- user-level tail；
-- append count、old-state remaining fraction 和 cutover dilution；
-- exact-equivalent token-layer work、KV read/write bytes 和 makespan。
-
-状态 companion 用于解释为什么产生 mismatch，不用于事后反向选择 checkpoint、edge 或 headline。
-
-## 6. 分阶段研究目的与预期观察
-
-### Phase 0：数据与执行正确性
-
-目的：证明时间因果、mapping、manifest、Full/cache/append 语义正确。
-
-预期结果：相同模型下 Full 与合法 append/rolling 路径一致；未来事件和 label 不进入 prefix 或调度输入。失败时停止，不进入质量结论。
-
-### Phase 1：HSTU-native foundation
-
-目的：确认 HSTU-native 模型能够在固定历史和请求语义下稳定训练、物化和评测。
-
-预期结果：foundation checkpoint、cache producer hash、manifest 和 OOV 结果可复现；不把 bounded canary 当科学结果。
-
-### Phase 2：上游 release recipe
-
-目的：在不读取 Reuse 的情况下构造独立、连续、可接受或可拒绝的模型 release。
-
-预期结果：不同 update duration 可能产生不同 release gain；有些边可能无提升甚至退化，必须完整报告，不能筛掉。只有 Full-only 规则能决定 accepted release。
-
-### Phase 3：Motivation
-
-目的：检验新模型发布收益是否会被父版本 persistent KV 侵蚀。
-
-支持 motivation 的观察模式是：
-
-- Current Full 优于 Parent Full；
-- One-hop Reuse 低于 Current Exact Rolling；
-- 多条连续边重复出现，而不是单边偶然；
-- release gain 和 reuse harm 可以同时出现，说明模型更新收益与状态兼容性是两个问题。
-
-这一步不要求每条 edge 都有 harm，也不证明最终迁移策略。
-
-### Phase 4：Design I — Insight discovery
-
-该阶段已完成 Small/seed17 discovery 和机制裁决；结果见
-[核心 Motivation 与 Observation](motivation_observations.md) 和
-[Insight-Driven State Refinement Develop Map](insight_develop_map.md)。原始协议是先冻结 observation protocol 和切片定义，再对已保存的 raw
-result、state companion、请求属性、历史统计、item/catalog 漂移和 HSTU 中间状态做分析。分析
-必须同时保留总体配对结果和 cohort 内结果，不能只报告最显著的用户或请求子集。
-
-第一步先解决 evaluation characterization：比较 cutover 后 Day 1..7、full 7-day、append
-count、old-state remaining fraction、eviction 和 Current–Reuse gap 的关系。第一天可以作为
-primary candidate，但只有在 gap 确实集中于 cutover 且随 current-model append/state dilution
-衰减时才冻结为 primary；不能因为第一天数字更大就事后选择它。
-
-第二步按事前定义的维度观察风险来源：
-
-- 用户：long-history、heavy、repeat-heavy、preference-drifting；
-- 历史：recent/old segment、长期兴趣和偏好转换；
-- item/embedding：hot、new、快速变化或高 OOV item；
-- 模型：layer、head、projection、readout；
-- 版本：update direction、representation drift、producer age；
-- 执行：cutover gap、append dilution、eviction 和 remaining old-state fraction。
-
-重点不是重复已有的 Transformer hotspot 结论，而是寻找 recommendation-specific 结构，例如：
-
-- preference-drifting heavy user 是否比稳定用户更容易受到旧 state 影响；
-- long-term-interest segment 是否比 short-term intent 更容易失效；
-- item 热度、embedding 漂移、新 item/OOV 和用户兴趣变化是否共同决定 risk；
-- 某个 layer/head/readout 的敏感性是否只有在特定用户、历史区域或 item 类型下才出现；
-- release update direction 和 representation drift 是否改变 risk 的空间分布，而不是只改变一个全局 gap；
-- old-state remaining fraction 是否解释了 cutover 后 mismatch 的衰减。
-
-每个候选 observation 都必须经过总体重复性、cohort 规模、时间稳定性、edge 重复性和反例检查。
-没有足够稳定性的切片只能作为 hypothesis，不能直接变成 action feature。实验上 discovery 与
-mechanism qualification 可以分阶段执行；论文中这些结果直接进入第 3.1 节 `Design Insights`，
-不是独立 Insight 章节。每条阶段产出必须是：
-
-~~~text
-Observation
-  -> repeatable mechanism insight
-  -> Design implication
-  -> corresponding mechanism
-~~~
-
-例如，preference-drifting heavy users 的风险稳定集中，才可能支持 user-selective migration；
-high-drift item/embedding 与 mismatch 稳定相关，才可能支持 embedding-aware compatibility
-analysis；long-term-interest region 更易失效，才可能支持 semantic-region-aware state
-evolution。这里的例子是待验证假设，不是当前结论。
-
-当前 Small/seed17 discovery 已将主线收敛为 candidate-broadcast user evidence、typed
-coordinate→context residual 和 evidence mass 三条 recommendation-specific Insight。3,000-user
-observation 已完成，合同和结果为：
-
-- `configs/contracts/yambda500m_small_hstu_native_recommendation_state_structure_v1.yaml`；
-- `results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/`。
-- `configs/contracts/yambda500m_small_hstu_native_candidate_shared_causal_v1.yaml` 与
-  `results/yambda500m_small_seed17/insight_candidate_shared_causal_v1/`；
-- `configs/contracts/yambda500m_small_hstu_native_evidence_measure_basis_v1.yaml` 与
-  `results/yambda500m_small_seed17/insight_evidence_measure_basis_v1/`。
-- `configs/contracts/yambda500m_small_hstu_native_reader_compatibility_correction_v1.yaml` 与
-  `results/yambda500m_small_seed17/insight_reader_compatibility_correction_v1/`。该路线先定位
-  query-dependent reader correction 的最早 HSTU 阶段，再检查真实请求间持久性；两门通过前
-  不得执行 layerwise broadcast residual 机制 canary。
-- `configs/contracts/yambda500m_small_hstu_native_av_broadcast_residual_v1.yaml` 与
-  `results/yambda500m_small_seed17/insight_av_broadcast_residual_v1/`。两道门已通过，唯一
-  compact-probe AV sidecar 的无标签 score canary 为 4/5；正式 quality 与 action admission 仍锁定。
-- `configs/contracts/yambda500m_small_hstu_native_pro_lazy_reader_v1.yaml` 保留 dimensionful AV
-  absolute threshold 导致的失败；`yambda500m_small_hstu_native_pro_lazy_reader_v2.yaml` 在机制不变、
-  下一批 32 用户上通过 scale-aware fused equivalence、零 translated-prefix 物化和理论成本门。
-  对应结果为 `results/yambda500m_small_seed17/insight_pro_lazy_reader_v1/`；没有 score/quality 授权。
-
-仍保留四个精确缺口：
-
-- layer-0-only 已被否定、Tail-128 已证明有用但不完整；尚未做等宽
-  old/middle/recent/random-128 位置对照，所以不冻结“Tail 最敏感”；
-- aggregate layerwise CAST 已稳定正恢复；尚未分解 normalized layer bundle 和 token
-  quartile 贡献，所以不外推每层/每位置同样可转换；
-- GROUP64+SCALE 已有 matched quality 消融；包含 CAST 的完整计划为 Exact 的 48.0% 保守
-  causal FLOPs。kernel utilization、KV bandwidth 和 wall time 是 Design III Runtime 问题，
-  不作为 Design I Insight 缺口；
-- candidate-shared reader correction 的 signed causal structure 与真实 candidate 外部性已通过；
-  这不是可物化 history basis 的证明。第一个 matched-cost executable plan canary 为 0/5，未获
-  rolling quality 资格。stage localization 与跨请求 persistence 已分别定位 `qK·V/AV` 并以
-  5/5 通过；唯一 AV sidecar score canary 为 4/5，但 `v3→v4` 仍失败，尚未授权正式 quality。
-  raw same-item/action grouping 已被 3/5 mixed edge 结果否定，也不能作为替代。
-- lightweight PRO 的 32-carrier theoretical compute 为 Full 的 9.1%，action 内 translated-prefix
-  positions 为 0；新机制 rolling quality 已在五边完成，AUC 5/5、log-loss 3/5、五边均值两项均
-  改善。它仍不等价于真实 latency；Parent bandwidth 和 5.0 MiB conservative logical streams/user
-  必须在独立 admission/qualification 后单独 profile。
-
-### Phase 5：Design I — Lightweight PRO qualification
-
-这一阶段与 Phase 4 在论文中共同构成第 3 章 `Insight-Driven State Refinement`：Phase 4 提供
-Design Insights，Phase 5 将已执行的 CAST、compact contextual repair 和 `(r,c)` Design 0 保留为
-strong baseline，再按 stage→persistence→AV sidecar→no-materialized-prefix PRO 的顺序验证主方法。
-它只回答一次 `Parent -> Current` 怎样低成本转换，不承担连续版本管理和 GPU runtime。
-固定 `r=128,c=64` 的第一条 one-hop 路径已在五条 D14/E14 edge 上完成 rolling AUC，正式请求总数
-217,584；它在 4/5 edge 上提高 Reuse，前三条保留既有 Full-only release gain 的 97.2%、117.9% 和
-87.3%，但 v4->v5 比 Reuse 低 0.265765 AUC point。对应合同、raw seal 和逐 edge 表为：
-
-- `configs/contracts/yambda500m_small_hstu_native_d14_one_release_refinement_auc_v1.yaml`；
-- `results/yambda500m_small_seed17/hstu_native_rolling_recipe_matrix_v3/d14_one_release_refinement_auc_v1/`。
-
-因此 rolling 任务质量不再是完全未测；结果同时否定了“该固定配置可以无条件用于所有 edge”。
-在 512-position state 上，旧 Design 0 理论为 0.301 GFLOPs/user（Full 的 48.0%）。轻量 PRO 的
-32-carrier primary 为 0.057 GFLOPs/user（Full 的 9.1%），16-carrier diagnostic 为 5.2%；完全等价
-地将 fused map 用于每个 carrier query 的 32-carrier 版本为 40.0%，已在执行前因成本失败拒绝。
-Phase 5 下一步不再开放新的 operator/region 探索，也不实现复杂 scheduler：
-
-1. 在新 prospective contract 下验证最小的 label-free 事前安全判断与 Reuse/Exact fallback；
-2. lightweight PRO 正确性/成本及全人口 rolling quality 已完成；primary 32、latest-item、mass4
-   和 coverage decay 全程未改。其总体 Design viability 通过，但事前严格双门因 log-loss 3/5 未过。
-   本五边转为 development evidence；任何 admission/calibration 改动必须在新 seed 或新冻结 edge
-   验证，不得拟合 target K/V 或加入 per-candidate Route；
-3. 只有独立 quality gate 通过后，才执行额外 training seed 与同机 GPU/runtime/I/O profile。
-
-既有诊断性 region/layer splice 只保留为 Insight 因果证据，不加入已冻结的 scale action set。
-安全信号开发不得读取未来 label；新增 training seed 仍需独立合同、资源估算、canary 和明确 launch。
-机制和成本对照保留：
-
-- `CAST(stale)`；
-- `CAST + typed PATCH(residual scope)`；
-- `CAST(prefix) + GROUP -> PATCH -> SCALE + UNION`。
-- lightweight PRO：reader-pushed map + Parent-conditioned carrier32 + AV sidecar。
-
-对照为 No-op、Exact-All 和旧固定宏 baseline。Design I 报告 rolling AUC/log-loss、output fidelity、
-解析 FLOPs 和结构 token/pair work；raw-history/state I/O、CUDA time、storage、throughput 和 makespan
-统一在 Design III Runtime 中实测。
-
-Design I 的完整完成条件是：Design 0 作为 strong baseline 保留；事前固定的 lightweight PRO 与
-release-level Exact-shadow admission 在 rolling AUC/log-loss 上报告全部五边且不隐藏反例，并在解析
-FLOPs 上低于 Exact-All 20%。理论计算、正确性和五边质量评价对 PRO 已完成；总体可行性通过，但
-严格 edge-count gate 未过，故“always-on 固定配置”尚未通过。这里不要求先证明复杂 scheduler；
-PRO、edge-level safety contract 和 Reuse/Exact fallback 足以向 Continuous 层交付一跳 transition。理论 FLOPs
-不保证实际加速，后者由 Runtime 单独回答。
-
-不得用这五条 qualification label 调整 `r/c` 或选择报告 edge。若以后确实需要 population budget
-allocation，再在独立 development contract 下开放 target-free PATCH value estimator、threshold
-compiler、random/metadata-only allocation 和 offline oracle 对照。任何 policy 都不得使用 future
-label 或 target K/V fitting。
-
-Design I 仍按 typed IR 保留合法重放和 COMMIT 所需的内部 lineage；但 Continuous controller 的
-决策接口只暴露三个量，避免把底层状态布局扩展成第二套复杂算法：
-
-~~~text
-last_exact_or_rebase_version,
-approximation_depth,
-estimated_compatibility_debt
-~~~
-
-### Phase 6：Design II — Debt-Bounded Continuous State Evolution
-
-这是 One-Release 之后的下一项核心研究，当前先冻结为一个简单闭环：
-
-~~~text
-estimate remaining debt for candidate plans p=(r,c)
-  -> choose the cheapest plan with debt <= tau
-  -> execute incremental refinement
-  -> sampled Current-Exact shadow
-  -> keep / strengthen repair / Exact Rebase
-~~~
-
-第一轮优先复用已封存的 `v0..v5` checkpoint、请求和 state，做 focused inference/evolution probe；
-它不授权 theta3、Medium/Large 或新的长训练。
-
-#### 6.1 Debt-bounded plan selection
-
-对每个候选固定计划 `p=(r,c)`，构造发布前、target-free 的剩余误差估计 `D_hat(S,p)`，并选择：
-
-~~~text
-p* = argmin_p C(p), subject to D_hat(S,p) <= tau
-~~~
-
-候选集保持小而有序：No-op/CAST-only、当前固定 compact repair 的若干加固档，以及 Exact/Rebase。
-若低成本计划不满足 `tau`，逐级扩大 repair width、增加 carrier 或降低压缩；若所有近似计划失败，
-执行 Exact/Rebase，并将 debt 与 approximation depth 清零。
-
-同时施加硬上限 `approximation_depth <= H`。即使估计器持续判定安全，达到 `H` 后也必须建立新的
-Exact anchor。这只能保证近似过程和回退路径有界，不能声称 AUC 数学上永不下降。
-
-第一轮 `D_hat` 不需要立即训练复杂 predictor，可以从 producer/version span、当前计划配置和小规模
-Exact-shadow fidelity 的保守组合开始。`tau`、`H` 和特征必须在 prospective development contract 中
-固定，不能用 qualification/scale outcome 反向调节。
-
-#### 6.2 Sampled Exact feedback 与分级回退
-
-每个 release 事前固定一小部分 shadow population，同时计算 Continuous plan 和 Current Exact：
-
-- 即时无标签信号：normalized score RMS、Bernoulli JS、Top-K overlap、margin disagreement；
-- 延迟任务信号：封存 canary population 上的 AUC/log-loss 等真实质量，只做配置级 safety audit。
-
-控制器只有三个状态：
-
-1. **Normal**：保持当前 `(r,c)`；
-2. **Warning**：扩大 `r`、增加 `c` 或降低压缩；
-3. **Invalid**：对受影响的 release/lineage Exact Rebase，并暂时禁用该近似配置。
-
-进入阈值与恢复阈值分开，避免在边界附近反复切换。即时计划选择和用户级 migration 必须保持
-label-free；延迟行为标签不得回填到同一请求或单个用户的调度，只能按事前合同触发后续 release
-的全局/lineage 级保守回退或配置失效。
-
-#### 6.3 核心实验和最低完成条件
-
-Continuous 第一轮只回答三件事：
-
-1. debt estimate 是否能排序不同 `(r,c)` 计划的剩余 fidelity/quality risk；
-2. `tau + H` 是否能限制多 release 的最坏 approximation depth 和 Exact gap；
-3. sampled shadow 能否及时捕获失效配置，并以低于每版 Exact-All 的摊销成本触发 Rebase。
-
-主要比较保持简洁：每版 Exact-All、连续近似但无反馈、固定周期 Rebase，以及 debt-bounded +
-Exact-shadow feedback。报告每个 release 的 fidelity/rolling quality、Normal/Warning/Invalid 次数、
-Rebase 比例、shadow 开销、总转换开销和相对每版 Exact-All 的摊销节省。
-
-当前 producer-age 单调 observation 只动机化该闭环；固定 one-release plan 在 v4->v5 的失败说明
-feedback/rebase 有实际必要性，但仍没有验证 `D_hat`、`tau`、`H`、shadow rate 或质量回退。
-只有多 release 结果同时满足封存质量边界和摊销成本优势，Design II 才准入。
-
-### Phase 7：Design III — GPU Transformation Runtime
-
-Runtime 在 Design I/II 语义稳定后实现。逻辑计划允许每个用户/segment 使用不同 `(r,c)` 和 lineage；
-物理执行按以下 signature 量化并组成 GPU micro-batch：
-
-~~~text
-(source_version, target_version, cast_type,
- r_bucket, c_bucket, sequence_length_bucket, dtype)
-~~~
-
-执行数据面依次包括 metadata scan/plan lowering、state 与 raw-history prefetch、batched CAST、
-GROUP/gather、ragged Current PATCH、SCALE/layout、异步 writeback 和 atomic COMMIT。允许不同阶段
-在不同 micro-batch 上重叠，但不能牺牲 serving isolation 或覆盖 post-cutover append。
-
-Runtime 至少报告：operator 与 end-to-end CUDA time、GPU utilization、state/history bytes、write
-amplification、throughput、migration makespan、tail latency、失败恢复和 serving interference。
-在真实实现完成前，结构 token-layer work 不能替代这些系统数字。
-
-### Phase 8：规模与外部验证
-
-S/M/L 使用统一 Yambda-500M 母体，分别扩大模型计算量、context、catalog 和 state population；同一 checkpoint 的不同 cache length 是评测变量，不是重复训练模型。
-
-当前 Medium 的 prospective 执行边界已单独整理在
-[`medium_scale_training_plan.md`](medium_scale_training_plan.md)：沿用 day217 的 30k fixed-UID
-population、6L/H192/context1024 与 foundation item mapping，先训练一份共享 Full-only v0，再从同一
-v0 串行扫描 D7×10（E3/E7）和 D14×4（E3/E7/E14）。该方案只指导代码、合同、canary 和资源准备；
-在 Full-only recipe 稳定并完成独立 admission 前，不解锁 Reuse 或 PRO。
-
-RecFlow 是 prospective external validation：先验证 raw request-group、chronological history、multi-positive target 和 serving-space candidate 语义，再考虑受门控的 Medium 训练。它补充 Yambda-F，不替代当前 motivation。
-
-## 7. 实验纪律
-
-- model admission 不读 Reuse 或 compatibility 结果；
-- Reuse 只在 accepted release seal 之后执行；
-- 不用 future label、selected-edge reporting、target-KV fitting 或人工 K/V 扰动；
-- 不按结果移动时间窗、删除坏天、反向挑 checkpoint 或筛用户；
-- diagnostic splice 不进入 executable action；
-- 所有 seed、edge、horizon 和失败结果完整报告；
-- 任何 Medium/Large 长训练都需要独立合同、资源估计、focused canary 和显式启动。
-
-## 8. 主要产物
-
-每个阶段都应产出可独立审计的：
-
-1. immutable data/model/recipe contract；
-2. manifest、mapping、checkpoint 和 producer hash；
-3. raw-first evaluation table；
-4. seal 后的 label adjudication；
-5. paired metric、state companion 和 cost summary；
-6. 对当前阶段结论、反例和不能外推范围的短报告。
+| Stage | Transformer term | HSTU adapter |
+| --- | --- | --- |
+| S0 | input representation | item/action/time input；query token |
+| S1 | normalized input and Q/K/V | producer K/V；reader Q；transient self K/V |
+| S2 | query–key interaction | raw/activated qK |
+| S3 | position value contribution | activated qK × V，尚未 history sum |
+| S4 | raw context aggregate | position-summed per-head historical response |
+| S5 | transformed update | output projection、gate/FFN update |
+| S6 | residual state | residual + update |
+| S7 | final representation | final norm 前后 hidden |
+| S8 | readout | CC logit/probability |
+
+Sketch paired correction 的 HSTU 主注入点是 S4：聚合后 normalization 之前的可加 historical
+aggregate；合并历史与模型规定的暂态贡献后，按原模型顺序执行 normalization、gate、output
+projection 和 residual。S2/S3 仍是诊断 tensor，不自动成为 persistent action。
+
+### 2.2 既有用户/candidate 防泄漏
+
+| Split | selector-order indices | 既有用途 |
+| --- | --- | --- |
+| focused canary | [0,32) | instrumentation 与资源 |
+| discovery | [0,512) | Insight stage/representation development |
+| confirmation | [512,3000) | 配置冻结后一次读取 |
+
+每个 64-candidate panel 的偶数 32 个作为 anchors，奇数 32 个作为 held-out。现有 confirmation users
+在新 sketch schema、Translator、loss 和成本冻结前继续 unread。
+
+Translator calibration 需要新增、与整个 3,000 Insight cohort UID-disjoint 的 population，并在
+prospective contract 中封存。不得把同一用户同时用于 Translator fitting 和 final confirmation。
+
+### 2.3 已完成证据
+
+- Motivation、Full/Reuse 与 Medium locality 已封存；
+- S4 shared/low-rank oracle 显示 functional contraction；
+- fixed correction、tail、sparse carriers、paired replay、release-algebra 和多类 KV-only constructors
+  已形成正负证据；
+- ordinary KV、Full/Reuse、response instrumentation 和 diagnostic delta injection 已有代码。
+
+这些只决定为什么进入新的 state interface，不是 Sketch-to-Sketch 方法结果。
+
+## 3. Prospective state 与 Translator
+
+### 3.1 Fixed Source Sketch
+
+参考 schema 每段最多 64 个事件、每段每层两个固定事件区间 slots。边界对齐的 1,024-event
+窗口有 16 段、每层 32 slots；滑动边界与 release 提前封段的额外容量需单列：
+
+\[
+S_g^p=W(C_g^p;m_g).
+\]
+
+writer \(W\) 固定、可加减、可序列化。Source 保存实际持久化 K/V 的累加量、mass/count、
+mask、time/position；读取和翻译用均值载荷，每个 segment 保存 source version、schema、
+generation 和边界 metadata。assignment 随事件固定，不能随窗口移动重新分组。
+Source 只需持久化累加量，翻译和读取时计算均值，避免重复保存均值副本。累加与扣除使用同一份
+实际持久化 K/V 数值；累加精度、空 slot 和删除后的数值误差纳入状态检查及存储计量。
+
+Translator 只预测表示 payload：
+
+\[
+\widehat X_u^c=X_u^p+T_{p\rightarrow c}(X_u^p,m_u),
+\qquad \widehat S_u^c=(\widehat X_u^c,m_u).
+\]
+
+count、mask、time/position 不由 Translator 猜测。参考 Translator 输入该用户存活 Parent
+摘要的全部 segments 与各层载荷，允许跨段交互；whole/partial eviction 后刷新全部剩余 Parent
+翻译结果。segment-local 只能作为输入受限的独立变体，不能默认具有相同可预测性。
+
+### 3.2 Paired HSTU read
+
+\[
+\widetilde A_\ell^c(q_\ell)
+=
+A_\ell^{\mathrm{base}}(q_\ell)
++
+\sum_g
+\left[
+R_{c,\ell}(q_\ell,\widehat S_g^c)
+-
+R_{c,\ell}(q_\ell,S_g^p)
+\right].
+\]
+
+base 使用实际修正轨迹的同层 query 读取存储缓存，不从另一次 Reuse 前向搬运张量。
+参考 slot read 为 \(n_j\phi(\gamma q^\top\bar k_j+\bar b(q,j))\bar v_j\) 乘原模型统一缩放；
+不能按 slot 数重新归一化。验证单事件 slot 的 segmented reference、mask 和代表位置语义。
+代表时间采用存活事件平均时间，代表位置采用平均事件序号向下取整后对应的当前窗口位置，
+再使用原模型的偏置索引或桶化规则；checkpoint 未启用的偏置项保持关闭。
+批量追加必须提供逐前缀摘要或按事件顺序推进，暂态候选不入摘要。若实际路径存在跨 segment
+normalization，先改为可组合的接口，不能让 Translator 吞掉代数错误。
+
+softmax attention 不使用上述 normalized-output 求和；它需要组合 numerator/normalizer \((N,Z)\) 后再
+统一归一化。本轮完整实现只验证 HSTU-native 路径。
+
+### 3.3 Translator objectives
+
+两版 backbone 冻结。calibration users 可产生 Parent/Current Exact Sketch 和 response teacher：
+
+\[
+\mathcal L_{\mathrm{sketch}}
+=
+\sum_{\ell,g}
+\left\|
+D_\ell^{-1}(\widehat X_g^c-X_g^c)
+\right\|_2^2,
+\]
+
+\[
+\Delta A_\ell^*(q)
+=
+A_{c,\ell}(q;C_\ell^c)
+-
+A_{c,\ell}(q;C_\ell^p),
+\]
+
+\[
+\widehat{\Delta A}_\ell(q)
+=
+R_{c,\ell}(q,\widehat S_\ell^c)
+-
+R_{c,\ell}(q,S_\ell^p),
+\]
+
+\[
+\mathcal L_T
+=
+\lambda_s\mathcal L_{\mathrm{sketch}}
++
+\lambda_r
+\sum_\ell
+\left\|
+\widehat{\Delta A}_\ell(q)-\Delta A_\ell^*(q)
+\right\|_2^2.
+\]
+
+最终 functional query 必须来自部署式 Reuse + paired-correction closed loop。Current Exact query
+teacher forcing 可作辅助，不得替代 closed-loop training/evaluation。
+四次读取使用同一 query、mask、坐标和 Current reader，避免将 query 轨迹差异混入历史响应差。
+\(D_\ell\) 是校准集确定的固定 K/V 尺度，不做逐样本幅值归一化。
+校准前缀只包含查询之前可见的事件，覆盖追加查询和部分淘汰后的摘要形态。
+淘汰教师从匹配的既有 Parent/Current 缓存删除相同条目，沿用服务的保留与坐标语义。
+
+当前仓库规则禁止 target-KV fitting，而 \(\mathcal L_{\mathrm{sketch}}\) 使用 Current-KV-derived
+teacher。任何 S2 Translator 训练前必须建立 prospective contract，明确允许 disjoint calibration
+population 上的共享 edge-level supervision，并继续禁止 evaluation-user/per-user target fitting。
+本文档不是 launch authorization。
+
+### 3.4 连续发布设计的技术衔接
+
+论文 Design 1 第 3.5 节定义同一 release family 内的混合来源迁移：每个目标版本共享一个
+Translator，输入按事件顺序排列的待迁移 Source，并附各段 producer 标记；跨段、跨层读取后
+输出新目标载荷。原始 Source 作为每次转换的输入，上一轮 translated sketch 只承担当时的读取
+视图。稳态每段保留 Source 和一个目标视图，过渡缓冲与在途引用另计峰值存储。
+
+其校准输入需要沿既定发布与事件顺序保留实际迁移、追加生成的混合来源状态，并由最新目标模型
+提供教师。请求绑定目标模型和 source revision，旧目标迟到结果不能提交；新目标视图未就绪或
+来源未覆盖时使用该目标的 Reuse，并计入覆盖与总体质量。来源退出以缓存和在途任务不再引用
+为条件，旧目标 Translator 在相关服务与迁移任务结束后退出在线使用。
+
+这些是设计接口定义。后续多版本执行需单独封存发布序列、实际 Source 谱系、来源覆盖、混合
+校准人口、目标切换、资源和完整轨迹评价；现有五条相邻边不能作为连续迁移结果。
+本文件下述 S0–S5 保持单边含义，本次不新建运行合同或启动多版本校准。
+
+## 4. 分阶段 admission
+
+前一 gate 未通过时，不得用更复杂 Translator 掩盖问题。
+
+### S0 — Algebra、writer 与 lifecycle canary
+
+- 验证 HSTU S4 对不相交 history segments 可加；
+- 验证 count、mask、time/position 和 mass-aware sketch read；
+- 验证 writer add/subtract、partial/full eviction 和 empty slots；
+- 验证 serialization、schema/hash mismatch、generation atomicity 和 Reuse fallback；
+- 测 tiny-batch writer/backfill/read FLOPs、bytes 和 runtime。
+
+如果 S0 algebra 失败，修正 state interface；不能训练补偿 mapper。
+
+### S1 — Exact-Sketch representation reference
+
+直接从 frozen Exact caches 构造：
+
+\[
+S^p=W(C^p),\qquad S^c=W(C^c).
+\]
+
+不训练 Translator。对 held-out users/queries 比较：
+
+\[
+\Delta A_{\mathrm{sketch}}^*(q)
+=R_c(q,S^c)-R_c(q,S^p),
+\]
+
+\[
+\Delta A_{\mathrm{full}}^*(q)
+=A_c(q;C^c)-A_c(q;C^p).
+\]
+
+报告 layer/head/edge response recovery 和 end-to-end exact-sketch injection。S1 用真实摘要检查
+差分压缩误差，S2 再检查翻译误差。真实摘要不是 learned 方法的严格效果上界；响应训练可能补偿
+压缩误差。若 S1 不足，先停止当前 schema 的推进、审视表示假设；不能仅扩容 Translator 并声称
+已经验证“忠实翻译即可恢复响应”。这是一项设计推进规则，不是普遍不可能性定理。
+
+预注册表示 ablations：segment/slot count、K-only/V-only、count/time、paired versus
+Current-sketch-only。qualification users 不参与选择。
+
+### S2 — Translator calibration 与 generalization
+
+固定 S1 schema 后，在 UID-disjoint calibration users 上训练 \(T_{p\rightarrow c}\)。网络 class、
+capacity、loss weights、optimizer、sample count 和 stopping rule 在 development 阶段冻结。
+
+在 unseen users、histories 和 queries 上报告：
+
+- payload error relative to true Current Sketch；
+- response recovery relative to full differential；
+- 与 S1 真实摘要参考的差距，以及输出对真实摘要的偏离；
+- calibration population、slots 和 capacity curves；
+- 五条 adjacent edges 的完整结果。
+
+若 S1 强而 S2 弱，裁决为 estimator failure；不能把 oracle 当方法结果。
+
+### S3 — End-to-end single-edge quality
+
+在逐层 closed-loop 路径比较 Current Exact、Reuse、No-op、Exact-Sketch reference、
+Translated-Sketch、direct mapper 和 generic controls。higher-is-better 指标：
+
+\[
+\rho_M
+=
+\frac{M_{\mathrm{method}}-M_{\mathrm{reuse}}}
+{M_{\mathrm{exact}}-M_{\mathrm{reuse}}}.
+\]
+
+lower-is-better 指标使用方向一致定义。主要报告 response recovery、AUC、PR-AUC、log-loss、Brier、
+rank agreement 和 user-equal companion。
+
+目标：在预声明的一次性 release budget 0%–20% 内至少 80% quality recovery，90% 为 stretch goal。
+全部冻结 edges/seeds 均报告；允许在合同中预注册四条边达门，但不隐藏其余边。
+
+### S4 — Closed-loop append 与 eviction
+
+从迁移后的 edge 连续 append 真实 chronological events，并执行 fixed-window eviction。测量：
+
+- Current-produced descendant K/V、response 和 task error；
+- residual 随 append horizon 衰减、稳定或放大；
+- whole/partial eviction 后的全用户 Parent 摘要 refresh；
+- whole Parent-segment retirement；
+- Parent 全部淘汰后的 endpoint；
+- append/eviction 并发与事务顺序。
+
+Current producer tag 只证明参数/格式归属，不证明 exactness。若 descendant contamination 超过预注册
+tolerance，Design 1 不准入，除非另行定义并验证 bounded replay/rebase 或 clean-write mechanism。
+Parent 全部淘汰只消除直接旧版本项，不消除新增 K/V 的继承误差。所有对照采用相同的状态保留、
+追加、淘汰与位置规则；不能一条路径保留 K/V、另一条每次重建滑动窗口，却把全部差距算作版本误差。
+
+### S5 — Measured systems cost
+
+分别测量 writer、calibration teacher/training、existing-cache backfill、population translation、
+storage/I/O、per-request paired read、全摘要 refresh 和另行定义时的 rebase。
+理论估计不得冒充 GPU/system result。
+
+## 5. Cost contract
+
+一次性 release 与持续 request 使用不同分母：
+
+\[
+B_{\mathrm{release}}
+=
+\frac{
+F_{\mathrm{teacher}}+F_{\mathrm{train}}
++F_{\mathrm{backfill}}
++F_{\mathrm{translate}}
+}{
+F_{\mathrm{Exact\mbox{-}All}}
+},
+\]
+
+\[
+C_{\mathrm{request}}
+=
+\frac{
+C_{\mathrm{paired\ sketch\ read}}
+}{
+C_{\mathrm{ordinary\ history\ read}}
+}.
+\]
+
+这里 \(F\) 均为计算量。生命周期 aggregate 只有在服务 horizon 预先冻结后才报告，累计绝对工作量
+后统一除以分母，不混加比例与 FLOPs。I/O、storage 和实际运行时间单列。参考估计属于不同账本：
+
+| Quantity | Reference estimate | Ledger |
+| --- | ---: | --- |
+| Current summary translation | Translator 未确定；旧 0.60% 不作为当前估计 | one-time release |
+| two 32-slot payloads | 同精度为 6.25%；FP32 Source + 16-bit target/KV 为 9.375%，metadata、边界和缓冲另计 | storage |
+| two 32-slot reads / 1,024 history | 约 6.25% attention work | recurring request |
+
+calibration teacher 的最低人口摊销约为
+\(N_{\mathrm{cal}}/N_{\mathrm{target}}\) 次 Exact-All。3,000 users 对 30,000 target population
+为 10%；若正式分母只包含 21,200 eligible users，则为 14.15%，实际值还受 history length 影响。
+prospective contract 必须冻结 target population、eligibility 和 history-weighted Exact-All denominator。
+优先复用已有 Parent KV/Sketch；Translator training、response probes、backfill I/O 和 release write 另计。
+
+论文默认以一次性 population release compute 的 0%–20% 为主门，不称为总生命周期预算；
+同时计入 writer、paired read、全摘要 refresh，报告 latency、throughput、P99 和相对 Exact-All
+在固定服务时段的 break-even。
+
+## 6. 对照、失败与 fallback
+
+### 6.1 Matched controls
+
+- Current Exact、Reuse、No-op；
+- Exact-Sketch reference；
+- Current-Sketch-only add；
+- Parent→Current raw KV/sketch ridge 或 MLP mapper；
+- direct prediction 与 residual Translator；
+- fixed offset、PRO、generic Current-r8；
+- no response loss、no sketch loss、teacher-forced-only；
+- no count/time、global slots、chronological segments；
+- ordinary mixed-trajectory append 与 bounded replay/rebase。
+
+Translator 本身是 mapping。创新必须由 producer-time sketch、paired functional read 与 lifecycle 的
+完整收益承担；若直接 mapper 在相同监督、容量和成本下等价，论文不能只靠命名保留 Design claim。
+
+### 6.2 Failure rules
+
+- S0 failure：修正 state algebra；
+- S1 failure：拒绝或重定义 sketch；
+- S2 failure：报告 estimator failure，配置变化需新 prospective decision；
+- S3 failure：不继承 oracle contraction；
+- S4 failure：增加独立论证的 bounded refresh，或拒绝 persistent-state claim；
+- cost failure：降低 slots/refresh 或拒绝 operating point，不改变 workload/denominator。
+
+Current 已准入但 schema/hash/translation 缺失、generation 不一致时回退 Reuse；模型 admission
+失败则保持 Parent 服务和谱系。迁移尚未完成的用户与请求计入覆盖和完成时间。No-op 对无显著
+compatibility gap 的 edge 仍是合法结果。
+
+## 7. 实现状态与执行顺序
+
+### 7.1 已有
+
+- frozen V0–V5 HSTU checkpoints；
+- ordinary K/V、Full/Reuse 和 state transition primitives；
+- stage/response instrumentation；
+- diagnostic response-difference injection；
+- Insight 1/2 evidence 与 KV-only controls。
+
+### 7.2 未实现
+
+- fixed Sketch schema/writer/serialization；
+- backfill、segment add/subtract 和 transactional lifecycle；
+- exact-sketch S1 harness；
+- edge-specific Translator 和 calibration pipeline；
+- production paired reader；
+- closed-loop append/contamination control；
+- release executor 与 measured cost。
+
+执行顺序严格为 S0 → S1 → S2 → S3 → S4 → S5。S0/S1 可先做 CPU/tiny-GPU canary。S2 触及
+Current-derived supervision，必须先有新合同。任何 formal GPU population job 都需要 focused canary、
+资源估计和用户明确 launch；超过 30 分钟的作业使用 detached execution。
+
+四张 GPU 0/1/2/3 均在 allowlist，但同一时刻至多运行一个 four-rank long job。UID shard 可并行，
+edge/checkpoint 串行；CPU mapping、join 和 aggregation 可安全并行。
+
+## 8. 协议禁区与 out of scope
+
+- 不修改或覆盖 sealed contracts、hashes、raw、negative results 或 invalidations；
+- 不使用 future labels、score mixing、selected-edge reporting；
+- 不对 evaluation users 做 Current target-state 或 per-user fitting；
+- 不把 diagnostic Exact-KV splice 加入 executable frontier；
+- 不因 qualification outcome 调 population、slots、loss、capacity、edge 或 metric；
+- 不把 request count 当统计重复；
+- 不把 existing-cache backfill、calibration 或 paired-read overhead 记为零；
+- 不把 Current-produced state 未经验证称为 clean/exact；
+- 不用当前单边合同运行多版本校准或任意 source-version routing；论文设计中的混合来源扩展
+  另建协议，翻译不串联上一轮 translated sketch；
+- 不在没有 \((N,Z)\) adapter 时声称 softmax Transformer 使用相同 segment-sum 公式；
+- 不重新训练 V0–V5 backbone，不启动 RecFlow、theta3 或 next-item long training。

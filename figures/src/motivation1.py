@@ -1,99 +1,134 @@
-"""Motivation Figure 1: AUC loss from reusing an older persistent KV cache.
+"""Motivation Figure 1: six-layer Medium cross-version K/V compatibility.
 
-The matrix entry at row ``current_model`` and column ``cache_version`` is
+Read the completed Medium D14/E14 triangle and the matching adjacent
+three-path reports. No experiment is run and no source result is modified.
 
-    1 - AUC(current model + cache_version - old)
-        / AUC(current model + recomputed cache - old)
+The left column shows Current-minus-Parent ROC-AUC on the percentage scale
+(e.g., 0.02356 becomes +2.356%), from each release's adjacent three-path
+comparison. These are absolute AUC differences, not relative AUC growth.
+All left cells have the same size and color; gain magnitude is not encoded
+by bar length, position, or shading. A heatmap cell divides its
+within-run Current-minus-Reuse AUC loss by that release's reference gain.
+Older-producer runs did not recompute Parent; their ratios are a common
+reference scale, not newly measured three-path retained-gain estimates.
 
-which is reported here as the fraction of the Current-vs-Parent AUC release
-gain lost by Reuse.  Diagonal zero cases are omitted because they do not reuse
-an older cache.  Only sealed values from the D14/E14 motivation artifacts are
-entered below; unmeasured cells are left blank instead of being interpolated
-or inferred.
+Model: 30,000-user Yambda-500M Medium, 6L/H192/6 heads/C1024, seed 17.
+V0 and every V1--V5 update use one pass. The V5 E14 row includes the observed,
+incomplete day-300 tail, identified in the paper caption.
+The two panels share model rows but not units: absolute AUC gains on the
+left, negative percentages denoting lost improvement on the right. Bold typography and
+the original red/blue palette and heatmap color mapping are retained.
 
-Run from the repository root:
-
-    python figures/src/motivation1.py
-
-Outputs:
-    figures/pic/jpg/motivation1.jpg
-    figures/pic/pdf/motivation1.pdf
+Run: python figures/src/motivation1.py
+Outputs: figures/pic/{jpg,pdf}/motivation1.{jpg,pdf}
 """
 
 from __future__ import annotations
 
+import json
+import math
 from pathlib import Path
+from typing import Mapping
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, Normalize
-from matplotlib.patches import Patch, Rectangle
+from matplotlib.offsetbox import AnnotationBbox, HPacker, TextArea, VPacker
+from matplotlib.patches import Rectangle
 
 
 ROOT = Path(__file__).resolve().parents[2]
-JPG_OUT = ROOT / "figures" / "pic" / "jpg" / "motivation1.jpg"
-PDF_OUT = ROOT / "figures" / "pic" / "pdf" / "motivation1.pdf"
-
-# v0 can produce a cache but has no preceding release.  v5 cannot be an older
-# cache for any current version shown here, so the historical-cache axis ends
-# at v4.
-CACHE_VERSIONS = ["v0", "v1", "v2", "v3", "v4"]
-CURRENT_VERSIONS = ["v1", "v2", "v3", "v4", "v5"]
+RESULT_ROOT = Path("results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14")
+TRIANGLE_PATH = RESULT_ROOT / "direct_long_age_reuse_v1/summary.json"
+ADJACENT_PATHS = {
+    **{
+        f"v{i + 1}": RESULT_ROOT / f"reuse/E14/v{i}_to_v{i + 1}/adjudication.json"
+        for i in range(4)
+    },
+    "v5": RESULT_ROOT / "v5_extension_v1/reuse/E14_partial/v4_to_v5/adjudication.json",
+}
+JPG_OUT = ROOT / "figures/pic/jpg/motivation1.jpg"
+PDF_OUT = ROOT / "figures/pic/pdf/motivation1.pdf"
+CACHE_VERSIONS = tuple(f"v{i}" for i in range(5))
+CURRENT_VERSIONS = tuple(f"v{i}" for i in range(1, 6))
 CACHE_LABELS = ["C0", "C1", "C2", "C3", "C4"]
 CURRENT_LABELS = ["M1", "M2", "M3", "M4", "M5"]
-
-# Current-vs-Parent Full ROC-AUC release gains from the fixed D14/E14 table,
-# in percentage points.  This is shown as a line on the right.
-RELEASE_GAIN_PP = {
-    "v1": 1.199879,
-    "v2": 0.626216,
-    "v3": 0.310144,
-    "v4": 0.046331,
-    "v5": 0.220611,
-}
-
-# Reuse AUC harm (Current Exact Rolling - Reuse), in percentage points.
-# Values are from the sealed D14/E14 one-hop and direct long-age artifacts.
-DIRECT_REUSE_HARM_PP = {
-    ("v1", "v0"): 0.3060142481099315,
-    ("v2", "v0"): 0.5308523622681194,
-    ("v2", "v1"): 0.19966160704484315,
-    ("v3", "v0"): 0.45277684605078417,
-    ("v3", "v1"): 0.22470826426196355,
-    ("v3", "v2"): 0.14869348043838881,
-    ("v4", "v0"): 0.6941849652866039,
-    ("v4", "v1"): 0.3609879843375907,
-    ("v4", "v2"): 0.25316363131886455,
-    ("v4", "v3"): 0.1939839199060045,
-    ("v5", "v0"): 0.8486791613806388,
-    ("v5", "v1"): 0.34101845861639335,
-    ("v5", "v2"): 0.2589748042084894,
-    ("v5", "v3"): 0.2056131030367503,
-    ("v5", "v4"): 0.06373634986358567,
+EXPECTED_PAIRS = {
+    (f"v{current}", f"v{producer}")
+    for current in range(1, 6)
+    for producer in range(current)
 }
 
 
-def build_loss_matrix() -> np.ndarray:
-    """Return loss fractions in [row=current model, column=cache]."""
-    matrix = np.full(
-        (len(CURRENT_VERSIONS), len(CACHE_VERSIONS)), np.nan, dtype=float
-    )
-    current_index = {
-        version: index for index, version in enumerate(CURRENT_VERSIONS)
-    }
-    cache_index = {version: index for index, version in enumerate(CACHE_VERSIONS)}
+def load_measurements(
+    root: Path = ROOT,
+) -> tuple[dict[str, float], dict[tuple[str, str], float]]:
+    """Load matched release gains and within-run losses from sealed reports."""
+    triangle = json.loads((root / TRIANGLE_PATH).read_text(encoding="utf-8"))
+    if (
+        triangle["status"] != "medium_D14_E14_direct_long_age_triangle_complete"
+        or triangle["completed_triangle_cells"] != 15
+        or triangle["primary_comparison"] != "within_run_current_exact_vs_direct_reuse"
+        or not triangle["direct_non_recursive_reuse"]
+    ):
+        raise ValueError("Expected the complete, paired Medium direct-Reuse triangle")
 
-    for (current, producer), harm_pp in DIRECT_REUSE_HARM_PP.items():
-        # Express the calculation in the same form as the figure definition:
-        # AUC(recompute-old) is the Full-only release gain, and Reuse loses
-        # ``harm_pp`` of that gain.
-        gain_pp = RELEASE_GAIN_PP[current]
-        recompute_minus_old_pp = gain_pp
-        reuse_minus_old_pp = recompute_minus_old_pp - harm_pp
-        matrix[current_index[current], cache_index[producer]] = (
-            1.0 - reuse_minus_old_pp / recompute_minus_old_pp
-        )
+    gains: dict[str, float] = {}
+    adjacent = {}
+    for current, path in ADJACENT_PATHS.items():
+        record = json.loads((root / path).read_text(encoding="utf-8"))
+        three = record["three_path_summary"]
+        gain = 100.0 * (three["new_current"]["ROC_AUC"] - three["old_parent"]["ROC_AUC"])
+        if not math.isfinite(gain) or gain <= 0:
+            raise ValueError(f"Release-gain normalization requires a positive gain: {current}")
+        if not math.isclose(gain, three["current_minus_old_ROC_AUC_pp"], abs_tol=1e-10):
+            raise ValueError(f"Release gain differs from its source report: {current}")
+        gains[current] = gain
+        adjacent[current] = three
 
+    losses: dict[tuple[str, str], float] = {}
+    for row in triangle["rows"]:
+        pair = row["current"], row["producer"]
+        if pair in losses or pair not in EXPECTED_PAIRS:
+            raise ValueError(f"Unexpected or duplicate cache pair: {pair}")
+        # Each subtraction stays within this row's paired evaluation.
+        loss = 100.0 * (row["new_current"]["ROC_AUC"] - row["reuse"]["ROC_AUC"])
+        if not math.isfinite(loss) or not math.isclose(
+            loss, row["current_minus_reuse_ROC_AUC_pp"], abs_tol=1e-10
+        ):
+            raise ValueError(f"Paired loss differs from its source report: {pair}")
+        losses[pair] = loss
+        if row["version_gap"] == 1:
+            three = adjacent[row["current"]]
+            for row_key, three_key in (
+                ("new_current", "new_current"),
+                ("reuse", "adjacent_one_hop_reuse"),
+            ):
+                if not math.isclose(
+                    row[row_key]["ROC_AUC"], three[three_key]["ROC_AUC"], abs_tol=1e-12
+                ):
+                    raise ValueError(f"Adjacent reports use different AUC values: {pair}")
+    if set(losses) != EXPECTED_PAIRS:
+        raise ValueError("The figure must include all 15 measured producer/Current pairs")
+    return gains, losses
+
+
+def build_loss_matrix(
+    release_gains_pp: Mapping[str, float],
+    paired_losses_pp: Mapping[tuple[str, str], float],
+) -> np.ndarray:
+    """Return signed loss/reference-gain fractions; unused cells remain NaN."""
+    matrix = np.full((5, 5), np.nan, dtype=float)
+    for (current, producer), loss in paired_losses_pp.items():
+        row = CURRENT_VERSIONS.index(current)
+        column = CACHE_VERSIONS.index(producer)
+        gain = release_gains_pp[current]
+        if column > row or not math.isfinite(gain) or gain <= 0:
+            raise ValueError(f"Invalid cache pair or release gain: {(current, producer)}")
+        matrix[row, column] = loss / gain
     return matrix
 
 
@@ -110,7 +145,7 @@ def build_color_positions(matrix: np.ndarray) -> np.ndarray:
     positions[below] = split * np.power(np.clip(matrix[below], 0.0, 1.0), 0.55)
 
     # Start every >100% cell in the darker segment, then compress the long
-    # 100--1500% tail logarithmically so its internal ordering stays visible.
+    # above-100% tail logarithmically so its internal ordering stays visible.
     maximum = float(np.nanmax(matrix))
     if np.any(above):
         positions[above] = split + (1.0 - split) * np.power(
@@ -119,95 +154,93 @@ def build_color_positions(matrix: np.ndarray) -> np.ndarray:
     return positions
 
 
-def draw() -> None:
-    matrix = build_loss_matrix()
-    # Use a compact landscape aspect ratio for paper placement.  The extra
-    # width accommodates the release-gain annotations without increasing the
-    # figure's vertical footprint.
-    figure, axis = plt.subplots(figsize=(8.6, 3.45), dpi=180)
-    figure.subplots_adjust(left=0.10, right=0.97, bottom=0.12, top=0.98)
+def build_figure(
+    release_gains_pp: Mapping[str, float],
+    paired_losses_pp: Mapping[tuple[str, str], float],
+) -> tuple[plt.Figure, tuple[plt.Axes, plt.Axes]]:
+    """Build row-aligned panels without mixing absolute gains and loss ratios."""
+    matrix = build_loss_matrix(release_gains_pp, paired_losses_pp)
+    rows = np.arange(len(CURRENT_VERSIONS))
+    figure, (gain_axis, loss_axis) = plt.subplots(
+        1,
+        2,
+        sharey=True,
+        figsize=(8.6, 4.05),
+        dpi=180,
+        gridspec_kw={"width_ratios": [0.9, 2.0], "wspace": 0.16},
+    )
+    figure.subplots_adjust(left=0.10, right=0.985, bottom=0.17, top=0.80)
 
-    # Mask unmeasured cells.  They remain visibly blank.
+    # Separate panels and a shared row scale express the reading order:
+    # this release's gain -> how much of that gain each cache loses.
+    gain_axis.set_title(
+        "(a) Model-update improvement",
+        fontsize=14,
+        fontweight="bold",
+        color="black",
+        pad=15,
+    )
+    loss_axis.set_title(
+        "(b) Lost improvement (%)",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
+    )
+    # This is a numeric reference column, not a magnitude comparison chart.
+    # Each gain has identical placement, type, cell size, and background.
+    gain_axis.set_xlim(0.0, 1.0)
+    gain_axis.set_xticks([])
+    gain_axis.set_xlabel("AUC increase (%)", fontsize=14.5, fontweight="bold", labelpad=5)
+    gain_axis.set_ylabel(
+        "Current model version", fontsize=14.5, fontweight="bold", labelpad=6
+    )
+    gain_axis.set_yticks(rows, labels=CURRENT_LABELS)
+    for row, version in enumerate(CURRENT_VERSIONS):
+        gain_axis.add_patch(
+            Rectangle(
+                (0.0, row - 0.5),
+                1.0,
+                1.0,
+                facecolor="#fff7f5",
+                edgecolor="white",
+                linewidth=1.2,
+            )
+        )
+        gain_axis.text(
+            0.5,
+            row,
+            f"+{release_gains_pp[version]:.3f}%",
+            ha="center",
+            va="center",
+            color="#d62728",
+            fontsize=14,
+            fontweight="bold",
+        )
+
     color_positions = build_color_positions(matrix)
-    masked = np.ma.masked_invalid(color_positions)
     cmap = LinearSegmentedColormap.from_list(
         "reuse_loss", ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
     ).copy()
-    cmap.set_bad("#eeeeee")
-    # ``build_color_positions`` explicitly separates <=100% and >100% while
-    # preserving a monotonic light-to-dark ordering in both segments.
-    norm = Normalize(vmin=0.0, vmax=1.0)
-    image = axis.imshow(masked, cmap=cmap, norm=norm)
-    # Slightly wider cells make the complete figure more landscape-oriented
-    # for paper placement while keeping the matrix easy to scan.
-    axis.set_aspect(0.62)
+    cmap.set_bad("white")
+    # Retain the original monotonic two-segment color mapping; the printed
+    # percentages, not the nonlinear shading, give exact magnitudes.
+    loss_axis.imshow(
+        np.ma.masked_invalid(color_positions),
+        cmap=cmap,
+        norm=Normalize(vmin=0.0, vmax=1.0),
+        aspect="auto",
+        interpolation="nearest",
+    )
+    loss_axis.set_xlim(-0.5, len(CACHE_VERSIONS) - 0.5)
+    loss_axis.set_xticks(range(len(CACHE_VERSIONS)), labels=CACHE_LABELS)
+    loss_axis.set_xlabel(
+        "Cache producer version", fontsize=14.5, fontweight="bold", labelpad=5
+    )
+    loss_axis.tick_params(axis="y", left=False, labelleft=False)
 
-    gain_x = -1.22
-    axis.set_xticks(
-        [gain_x, *range(len(CACHE_VERSIONS))],
-        labels=["", *CACHE_LABELS],
-    )
-    axis.set_yticks(range(len(CURRENT_VERSIONS)), labels=CURRENT_LABELS)
-    axis.set_xlabel("Cache version", fontsize=14.5, fontweight="bold", labelpad=1)
-    axis.set_ylabel(
-        "Current model version", fontsize=14.5, fontweight="bold", labelpad=4
-    )
-    axis.tick_params(axis="both", labelsize=14, width=1.7, length=5)
-    axis.tick_params(axis="y", pad=10)
-    for tick_label in axis.get_xticklabels() + axis.get_yticklabels():
-        tick_label.set_fontweight("bold")
-    axis.text(
-        gain_x,
-        -0.04,
-        "Model\nImprovement",
-        transform=axis.get_xaxis_transform(),
-        ha="center",
-        va="top",
-        color="#d62728",
-        fontsize=12.0,
-        fontweight="bold",
-        linespacing=0.85,
-        clip_on=False,
-    )
-    axis.text(
-        gain_x,
-        -0.145,
-        "(vs. previous model)",
-        transform=axis.get_xaxis_transform(),
-        ha="center",
-        va="top",
-        color="#d62728",
-        fontsize=12.0,
-        fontweight="bold",
-        clip_on=False,
-    )
-
-    legend = axis.legend(
-        handles=[
-            Patch(
-                facecolor="#c6dbef",
-                edgecolor="#6baed6",
-                label=(
-                    "Earlier-cache reuse impact\n"
-                    "(% of model improvement)"
-                ),
-            )
-        ],
-        loc="upper right",
-        bbox_to_anchor=(0.995, 0.985),
-        frameon=False,
-        borderaxespad=0.0,
-        handlelength=2.775,
-        handleheight=2.775,
-        prop={"size": 12.0, "weight": "bold"},
-    )
-
-    # Draw only the meaningful lower-triangular cell grid.  Future-cache cells
-    # in the upper triangle are removed from the visual entirely.
-    axis.grid(False)
-    for row in range(len(CURRENT_VERSIONS)):
+    for row in rows:
         for column in range(row + 1):
-            axis.add_patch(
+            loss_axis.add_patch(
                 Rectangle(
                     (column - 0.5, row - 0.5),
                     1,
@@ -218,83 +251,114 @@ def draw() -> None:
                     zorder=3,
                 )
             )
-        for column in range(row + 1, len(CACHE_VERSIONS)):
-            axis.add_patch(
-                Rectangle(
-                    (column - 0.5, row - 0.5),
-                    1,
-                    1,
-                    facecolor="white",
-                    edgecolor="white",
-                    linewidth=0,
-                    zorder=3,
-                )
-            )
-
-    # Annotate measured values.  Values above 100%
-    # are retained because a small Full-only release gain can be fully
-    # overwhelmed by an otherwise real Reuse harm (v4 over older caches).
-    axis.set_xticks(np.arange(-0.5, len(CACHE_VERSIONS), 1), minor=True)
-    axis.set_yticks(np.arange(-0.5, len(CURRENT_VERSIONS), 1), minor=True)
-    axis.grid(which="minor", color="white", linewidth=1.2)
-    axis.tick_params(which="minor", bottom=False, left=False)
-
-    for row in range(len(CURRENT_VERSIONS)):
-        for column in range(len(CACHE_VERSIONS)):
             value = matrix[row, column]
-            if np.isfinite(value):
-                # Choose label contrast from the displayed colour rather than
-                # the raw ratio because the power normalization is nonlinear.
-                text_color = "white" if color_positions[row, column] >= 0.54 else "#123"
-                axis.text(
-                    column,
-                    row,
-                    f"−{value:.0%}",
-                    ha="center",
-                    va="center",
-                    color=text_color,
-                    fontsize=13,
-                    fontweight="bold",
-                )
-            # Missing measured cells remain blank; they are not zeroes.
-
-    # Put the absolute Full-only model release gain in a dedicated column to
-    # the left of the matrix's v0 column.
-    gain_values = np.full(len(CURRENT_VERSIONS), np.nan, dtype=float)
-    for row, version in enumerate(CURRENT_VERSIONS):
-        if version in RELEASE_GAIN_PP:
-            gain_values[row] = RELEASE_GAIN_PP[version]
-    axis.set_xlim(-1.94, len(CACHE_VERSIONS) - 0.5)
-    axis.axvspan(-1.94, -0.5, color="#fff7f5", zorder=0)
-    axis.axvline(
-        -0.5,
-        color="#d62728",
-        linestyle="--",
-        linewidth=1.6,
-        zorder=4,
-    )
-    for row, value in enumerate(gain_values):
-        label = "—" if not np.isfinite(value) else f"+{value:.3f}%"
-        if np.isfinite(value):
-            axis.text(
-                gain_x,
+            text_color = "white" if color_positions[row, column] >= 0.54 else "#123"
+            loss_axis.text(
+                column,
                 row,
-                label,
+                f"−{value:.0%}",
                 ha="center",
                 va="center",
-                color="#d62728",
-                fontsize=13.5,
+                color=text_color,
+                fontsize=14,
                 fontweight="bold",
             )
-        # v0 has no parent-release gain; leave the corresponding annotation blank.
 
-    figure.canvas.draw()
+    # Explain the normalization with one existing cell, not a new result.
+    # The arithmetic deliberately uses the rounded labels visible in the
+    # figure; the matrix itself still uses the full-precision measurements.
+    example_row = CURRENT_VERSIONS.index("v3")
+    example_column = CACHE_VERSIONS.index("v2")
+    example_ratio_pct = float(f"{100.0 * matrix[example_row, example_column]:.0f}")
+    example_improvement_pct = float(f"{release_gains_pp['v3']:.3f}")
+    example_loss_pct = example_ratio_pct / 100.0 * example_improvement_pct
+    callout_color = "#D5A021"
+    loss_axis.add_patch(
+        Rectangle(
+            (example_column - 0.48, example_row - 0.48),
+            0.96,
+            0.96,
+            fill=False,
+            edgecolor=callout_color,
+            linewidth=2.2,
+            zorder=5,
+        )
+    )
+    # Keep all callout text bold; only the improvement is red to link it
+    # to the left panel. All other text and calculation symbols stay black.
+    callout_style = {"fontsize": 11.5, "fontweight": "bold", "color": "black"}
+    calculation = HPacker(
+        children=[
+            TextArea(value, textprops={**callout_style, "color": color})
+            for value, color in (
+                (f"−{example_ratio_pct:.0f}%", "black"),
+                (" × ", "black"),
+                (f"{example_improvement_pct:.3f}%", "#d62728"),
+                (" ≈ ", "black"),
+                (f"−{example_loss_pct:.3f}%", "black"),
+                (".", "black"),
+            )
+        ],
+        align="baseline", pad=0, sep=0,
+    )
+    explanation = VPacker(
+        children=[
+            TextArea("For example, reusing cache produced", textprops=callout_style),
+            TextArea("by M2 in M3 changes AUC by", textprops=callout_style),
+            calculation,
+        ],
+        align="right", pad=0, sep=3,
+    )
+    loss_axis.add_artist(AnnotationBbox(
+        explanation, (4.38, -0.30), xycoords="data",
+        box_alignment=(1, 1), frameon=False, pad=0, annotation_clip=False,
+    ))
+    # Lead from the outlined cell into the explanation in the empty triangle.
+    loss_axis.annotate(
+        "",
+        xy=(3.5, 1.05),
+        xytext=(example_column + 0.48, example_row - 0.46),
+        arrowprops={
+            "arrowstyle": "->",
+            "color": callout_color,
+            "linewidth": 1.8,
+            "mutation_scale": 13,
+            "connectionstyle": "arc3,rad=0.12",
+            "shrinkA": 1,
+            "shrinkB": 2,
+        },
+        zorder=6,
+    )
+
+    # Fix identical row centers after imshow has initialized the shared axis.
+    gain_axis.set_ylim(len(CURRENT_VERSIONS) - 0.5, -0.5)
+    for axis in (gain_axis, loss_axis):
+        axis.spines["top"].set_visible(False)
+        axis.spines["right"].set_visible(False)
+        axis.spines["bottom"].set_linewidth(1.2)
+        axis.spines["left"].set_linewidth(1.2)
+        axis.tick_params(axis="x", labelsize=13, width=1.5, length=4)
+        axis.tick_params(axis="y", labelsize=14, width=1.5, length=4, pad=7)
+        for label in axis.get_xticklabels() + axis.get_yticklabels():
+            label.set_fontweight("bold")
+    loss_axis.spines["left"].set_visible(False)
+    for spine in gain_axis.spines.values():
+        spine.set_visible(False)
+    gain_axis.tick_params(axis="y", length=0)
+    # Keep both bottom labels on one baseline despite removing gain ticks.
+    gain_axis.xaxis.set_label_coords(0.5, -0.14)
+    loss_axis.xaxis.set_label_coords(0.5, -0.14)
+    return figure, (gain_axis, loss_axis)
+
+
+def draw() -> None:
+    release_gains_pp, paired_losses_pp = load_measurements()
+    figure, _ = build_figure(release_gains_pp, paired_losses_pp)
     JPG_OUT.parent.mkdir(parents=True, exist_ok=True)
     PDF_OUT.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(JPG_OUT, format="jpg", dpi=300, bbox_inches="tight")
     figure.savefig(PDF_OUT, format="pdf", bbox_inches="tight")
     plt.close(figure)
-
     print(f"wrote {JPG_OUT}")
     print(f"wrote {PDF_OUT}")
 

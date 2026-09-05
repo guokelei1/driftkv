@@ -103,6 +103,33 @@ filename does not authorize execution.
   unnecessary cross-run Current-equality assertion. New cells remain two-path
   Current/Reuse runs; cross-run Current drift is recorded, never gating, and
   all ten predeclared cells must be retained and reported.
+- `yambda500m_medium_hstu_native_insight1_locality_v1.yaml` freezes the
+  3,000-user, five-edge, 34-action Exact-KV locality diagnostic. Its splice
+  coverage is an optimistic intervention axis, not executable FLOPs.
+- `yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml` freezes
+  the architecture-neutral stage, anchor/heldout and discovery/confirmation
+  protocol. S4 is the earliest observed compact boundary; all Exact-derived
+  corrections remain oracle-only.
+- `yambda500m_medium_hstu_native_insight2_functional_probe_v1.yaml` and
+  `yambda500m_medium_hstu_native_insight2_time_aligned_probe_v1.yaml` preserve
+  the failed parameter/carrier estimator canaries. Neither authorizes a scale
+  action or tuning on the skipped 512-user scope.
+- `yambda500m_medium_hstu_native_insight2_release_basis_v1.yaml` freezes the
+  UID-disjoint response-subspace oracle. Exact coefficients and the full
+  Current-history query path prohibit executable-cost claims.
+- `yambda500m_medium_hstu_native_insight2_temporal_persistence_v1.yaml` freezes
+  the real E14 rolling test of one cutover S4 correction. Direction remains
+  aligned, while fixed and coverage-scaled offsets fail the persistence gate.
+- `yambda500m_medium_hstu_native_insight2_tail_functional_v1.yaml` preserves the
+  failed Tail-128-to-S4 executable canary at up to 19.02% theoretical compute;
+  its preregistered stop prohibits a 512-user launch.
+- `yambda500m_medium_hstu_native_insight2_temporal_coefficient_v1.yaml` freezes
+  the oracle one-global and six-layer coordinate diagnostic. Both fail 80%, so
+  they constrain representation geometry but cannot admit an estimator.
+- `yambda500m_medium_hstu_native_insight2_signed_response_coreset_v1.yaml`
+  prospectively freezes the next oracle: a fit-free, chronological signed K/V
+  coreset read by the Current native attention kernel. It can test the response-
+  operator hypothesis but cannot authorize executable causal replay.
 - `yambda500m_small_foundation_chain_v1.yaml` freezes Small foundation
   data/model/cache/metric semantics. It authorizes implementation and correctness
   canaries, not real Base fitting or HSTU training.

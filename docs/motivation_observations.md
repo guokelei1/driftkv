@@ -1,10 +1,41 @@
 # 核心 Motivation 与 Observation
 
-更新日期：2026-08-28
+更新日期：2026-09-03
 
 本文是当前论文最详细的结果文档。它只记录已经观察到的 HSTU-native motivation 和版本化状态 observation；没有观察到的系统设计效果、最终 EvoKV action 或 scheduler 结论不写成已验证结果。
 
-## 1. 当前结论
+## 0. 2026-09-02 口径更新
+
+本文第 1–9 节的大部分数字来自 Small/seed17 历史路线，必须原样保留为 motivation、先验与负结果；
+其中“AV 持久”“PRO 主设计”是旧实验口径，不再决定当前 Insight 2 或 Design 1。当前主线使用现有
+Yambda Medium `v0..v5` 六个模型，并已得到以下无标签 mechanism evidence：
+
+| observation | Medium discovery result | 当前含义 |
+| --- | ---: | --- |
+| Insight 1 best 10% / 20% token-local splice | 30.0% / 41.2% recovery | locality 不是主要迁移抽象 |
+| S4 shared response rank 0 / rank 1 | 95.34% / 99.46% | S4 是最早 observed response-contraction stage；oracle only，不是 persistent migration boundary |
+| UID-disjoint release response basis rank 8 | 94.18% | response range 紧凑；coefficient 为 oracle |
+| rolling cutover/current direction cosine | 0.9460 | 方向对齐不能推出固定状态可复用 |
+| coverage-scaled fixed S4 offset | 33.85% | static offset persistence 失败 |
+| current-target global / six-layer coefficient | 48.96% / 65.04% | 少量幅值也不足，且仍是 oracle |
+| Tail-128 functional estimator | 19.02% compute，-8.78% recovery | 合法局部 replay-to-offset 失败 |
+
+后续探索已经进一步否定 signed sparse memory、paired native response、defect coordinates、source
+residual、activation topology、causal suffix、head circuit、release algebra 与 post-hoc state ports。当前
+允许写成的阶段性 observation 是：跨版本误差在 attention aggregation 后形成紧凑 response range，但
+这种 compactness 是有限 query 读取后的性质，不等于 token support sparsity。更窄地说，在已审计的
+Parent-KV-only constructors 与 20% 预算内，没有找到可低成本构造并随 append/eviction 演化的 Current
+functional state；这一结果不是关于 ordinary KV 信息量的普遍不可能性证明。
+后继 Design 已转为 state creation 时主动写入的 Migration Sketch，但尚无方法结果。详见
+[当前接口裁决](../research_discussions/evokv_three_module/insight_two/current_kv_only_interface_adjudication.md)
+、[Insight 2 exploration log](../research_discussions/evokv_three_module/insight_two/exploration_log.md)与
+[统一论文材料](insight2_design1_expert_brief.md)。
+
+> 归档说明：下文第 1--9 节中的“最新”“当前主方法”或“PRO 已收敛”等措辞属于当时的 Small/seed17
+> evidence snapshot，原样保留以维护结果可追溯性；它们全部受本节口径覆盖，不代表 2026-09-03 的
+> active Migration Sketch Design 结论。
+
+## 1. 历史 Small 路线的完整观察
 
 在 Yambda-500M Small 的 HSTU-native foundation 上，模型更新带来的发布收益与 persistent KV 的跨版本兼容性是两个不同问题：
 

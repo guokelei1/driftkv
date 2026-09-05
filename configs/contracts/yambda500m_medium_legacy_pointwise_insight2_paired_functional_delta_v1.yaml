@@ -1,0 +1,283 @@
+contract: yambda500m_medium_legacy_pointwise_insight2_paired_functional_delta_v1
+date_frozen: 2026-09-02
+status: prospective_recursive_paired_functional_delta_canary_v1
+purpose: >-
+  Test whether a sparse cross-version functional delta can causally construct
+  its own upper-layer continuation. The decisive contrast keeps users,
+  carriers, weights, Parent control state, Current reader and serving read
+  fixed, and changes only whether earlier paired response defects are visible
+  to later carriers.
+
+claim_boundary:
+  insight2_status: causal_compositionality_hypothesis_not_frozen
+  design1_status: recursive_paired_functional_delta_candidate_not_frozen
+  recursive_causal_closure_implemented: true
+  legal_path_is_nonrecursive_lower_bound: true
+  moments_sampling_or_clustering_is_novelty: false
+  exact_carrier_oracle_is_executable: false
+  affine_moment_compiler_is_design_novelty: false
+  design1_admitted_by_this_canary: false
+  passing_canary_only_authorizes_new_prospective_discovery_contract: true
+  serving_action_or_cache_lineage_promotion: prohibited
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  checkpoint_versions: [v0, v1, v2, v3, v4, v5]
+  architecture: legacy_pointwise_6L_H192_heads6_context1024
+  architecture_claim: repository_legacy_sequential_transducer_not_faithful_HSTU_equation
+  attention_activation: elu_plus1
+  block_variant: legacy
+  relative_position_bias: false
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  history_positions: 1024
+  one_Parent_to_Current_transition_only: true
+  labels_read: false
+  future_events_read: false
+  confirmation_population_read: false
+
+population:
+  canary_indices_half_open: [0, 32]
+  reserved_discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  inactive_or_failed_users: retain_and_do_not_replace
+  same_UID_order_across_edges: true
+
+construction:
+  probe_source: fixed_equal_width_history_item_ids
+  probe_counts: [8, 32]
+  primary_probe_count: 8
+  probe_query_encoder: Current_native_recommendation_query_token_encoder
+  carrier_counts: [64, 128]
+  primary_budget_carriers: 64
+  diagnostic_only_carriers: 128
+  full_Current_layer0_projection:
+    source: raw_history_only
+    outputs: [K0_Current, V0_Current]
+    Current_Exact_cache_api: prohibited
+    role: legal_selector_features_and_exact_selected_carrier_seed
+  selector:
+    features: normalized_concatenation_of_K0_Current_and_K0_Parent
+    ordering: deterministic_nested_farthest_first
+    assignment: nearest_center_Voronoi
+    candidate_or_label_input: none
+    qualification_tuning: prohibited
+  causal_mass:
+    serving_read: complete_cluster_mass_at_cutover
+    carrier_read: prefix_valid_partial_mass_only
+    future_center_visible_to_earlier_carrier: false
+    selected_carriers_processed_in_source_position_order: true
+  primary_layer0_prefix_mode: paired_closure
+  primary_recurrence: >-
+    full causal Parent response plus response of earlier paired
+    Current-minus-Parent carriers, followed by the native Current block
+  exact_Current_layer0_prefix_mode: legal_consistency_ablation_only
+  Current_Exact_upper_layer_KV_in_legal_constructor: prohibited
+  native_signed_atoms:
+    Current_arm: generated_Current_carrier_KV
+    Parent_arm: references_existing_Parent_KV_at_same_source_positions
+    read: Current_native_pointwise_attention_kernel
+  affine_compiler:
+    role: optional_legacy_ELU_positive_region_storage_ablation
+    novelty_claim: prohibited
+    negative_branch_not_silently_exact: required
+
+candidate_evaluation:
+  construction_candidates: null
+  heldout_indices: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63]
+  heldout_role: evaluation_only_after_all_legal_construction
+  Current_Exact_instantiation: after_all_legal_memories_are_built
+
+methods:
+  serving_baseline: [Current_Reuse]
+  representation_oracles:
+    - representation_full_affine_bulk_P8
+    - representation_full_affine_bulk_P32
+  exact_carrier_oracles:
+    - carrier_oracle_native_R64
+    - carrier_oracle_native_R128
+  matched_no_closure_controls:
+    - native_parent_conditioned_R64
+    - native_parent_conditioned_R128
+  recursive_candidates:
+    - native_causal_closure_R64
+    - native_causal_closure_R128
+  consistency_ablation: [native_exact_layer0_closure_R64]
+  compiler_ablations:
+    - closure_affine_compiler_R64_P8
+    - closure_affine_compiler_R128_P8
+  primary_design_contrast: native_causal_closure_R64_minus_native_parent_conditioned_R64
+  selector_positions_masses_and_budget_identical_in_primary_contrast: required
+
+theoretical_compute:
+  denominator: Current_Exact_full_1024_history_recomputation
+  multiply_add_convention: two_FLOPs
+  includes:
+    - full_Current_layer0_input_and_KV_projection
+    - discarded_Q_projection_in_current_project_kv_implementation
+    - address_feature_normalization_farthest_first_and_Voronoi
+    - all_Current_carrier_linear_gate_and_Parent_prefix_reads
+    - recursive_positive_and_negative_paired_atom_reads
+  excludes_from_FLOPs_but_reports_separately:
+    - comparisons_and_integer_index_operations
+    - logical_IO_and_materialized_bytes
+  grid:
+    - carriers: 64
+      recursive_delta: false
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 767597568
+      neural_over_full_fraction: 0.12868283336080436
+      selection_over_full_fraction: 0.03219581856766112
+      over_full_fraction: 0.16087865192846548
+      maximum_total_over_full_fraction: 0.19054735145046975
+      within_20_percent_for_all_unique_position_sets: true
+    - carriers: 64
+      recursive_delta: true
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 786541056
+      neural_over_full_fraction: 0.13265314663342673
+      selection_over_full_fraction: 0.03219581856766112
+      over_full_fraction: 0.16484896520108785
+      maximum_total_over_full_fraction: 0.19451766472309215
+      within_20_percent_for_all_unique_position_sets: true
+    - carriers: 128
+      recursive_delta: false
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 1216887808
+      neural_over_full_fraction: 0.19122919070380748
+      selection_over_full_fraction: 0.06381496037305642
+      over_full_fraction: 0.2550441510768639
+      maximum_total_over_full_fraction: 0.31042572351793857
+      within_20_percent_for_all_unique_position_sets: false
+    - carriers: 128
+      recursive_delta: true
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 1293113344
+      neural_over_full_fraction: 0.20720509003626175
+      selection_over_full_fraction: 0.06381496037305642
+      over_full_fraction: 0.27102005040931815
+      maximum_total_over_full_fraction: 0.3264016228503928
+      within_20_percent_for_all_unique_position_sets: false
+  R128_can_enter_primary_frontier: false
+  actual_carrier_position_sum_and_per_user_total_reported: required
+
+storage:
+  R64_incremental_Current_carrier_KV_ratio: 0.0625
+  R64_positions_and_masses_reported_separately: required
+  Parent_arm_must_reuse_existing_cache_not_count_as_incremental_state: required
+  materialized_intervention_pair_storage_reported_separately: required
+  affine_compiler_persistent_scalars: 38016
+
+metrics:
+  primary: unclipped_probability_gap_recovery_on_heldout_odd32
+  aggregation: per_user_then_user_equal_within_edge_then_edge_equal
+  companions:
+    - logit_gap_recovery
+    - Bernoulli_JS_to_Current_Exact
+    - top1_agreement_with_Current_Exact
+    - top10_overlap_with_Current_Exact
+    - within_user_rank_correlation_with_Current_Exact
+    - exact_selected_carrier_upper_layer_relative_L2
+    - represented_prefix_coverage
+    - neural_selection_and_total_compute
+    - incremental_and_materialized_storage
+  every_edge_and_pre_registered_method_reported: required
+  recovery_clipping: prohibited
+  small_gap_filtering: prohibited
+
+gates:
+  instrumentation:
+    singleton_full_support_reconstructs_Current_Exact_in_unit_test: required
+    no_Current_Exact_argument_to_legal_constructor: required
+    Current_Exact_created_after_legal_construction: required
+    suffix_causality_test: required
+    Parent_cache_unchanged: required
+    full_layer0_projection_matches_evaluation_Exact_layer0: required
+    nested_R64_prefix_of_R128: required
+    finite_all_paths: required
+  representation_support:
+    P8_edge_equal_recovery_at_least: 0.90
+    P8_minimum_edge_recovery_at_least: 0.80
+    P8_positive_edges_minimum: 5
+    P8_P32_absolute_difference_at_most: 0.02
+  carrier_oracle_support:
+    R64_edge_equal_recovery_at_least: 0.70
+    R64_positive_edges_minimum: 4
+  causal_closure_design_candidate:
+    R64_edge_equal_recovery_at_least: 0.70
+    R64_positive_edges_minimum: 4
+    R64_closure_minus_control_at_least: 0.10
+    R64_closure_winning_edges_minimum: 4
+    R64_total_compute_fraction_at_most: 0.20
+    paired_bootstrap_seed: 170902
+    paired_bootstrap_resamples: 10000
+    paired_bootstrap_CI_lower_strictly_above: 0.0
+  discovery:
+    automatically_authorized_by_this_contract: false
+    requires_new_contract_and_resource_estimate: true
+  failure:
+    if_representation_fails: reject_current_functional_boundary_hypothesis
+    if_oracle_fails: reject_R64_support_not_tune_selector
+    if_closure_quality_fails: reject_current_recursive_constructor
+    if_closure_gain_fails: classify_as_paired_quadrature_not_new_Design
+    if_budget_fails: retain_mechanism_only_not_action
+
+execution:
+  GPUs: [0, 1, 2, 3]
+  independent_UID_shards: true
+  checkpoints_and_edges_serial_within_rank: true
+  canary_users: 32
+  raw_first_and_no_overwrite: true
+  expected_duration_under_30_minutes: true
+  launch_mode: interactive_four_rank_allowed
+
+preflight_disclosure:
+  toy_tests_used_for_correctness_only: true
+  one_UID_five_edge_feasibility_values_are_not_formal_evidence: true
+  one_UID_values_cannot_change_support_selector_probe_or_gate: true
+  confirmation_population_was_not_read: true
+
+frozen_inputs:
+  functional_boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  attention_region_adjudication:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_attention_cone_moments_v1/canary/analysis/summary.json
+    sha256: 5bc9952d9e719ff87aa61c8bc2665f00b428f403caee5dcc49f60407fa6302ec
+  mechanism_review:
+    path: research_discussions/evokv_three_module/insight_two/recursive_paired_functional_delta_closure.md
+    sha256: 8ec0c991c6d6082897527edd89c6ae468a9682604f9bf3ab86d7e147ce7a65aa
+  paired_primitives_and_cost:
+    path: scripts/insight_two/paired_region_delta.py
+    sha256: a39352b1e8d077ab8456f2a33f1e34d3b5f115500e99c6342268e3a7ce8f19c9
+  recursive_closure:
+    path: scripts/insight_two/causal_delta_closure.py
+    sha256: 8c81300eca83ad0a22366cfeed7e9726e352669e926a88748efc2937877d5e8e
+  runner:
+    path: scripts/insight_two/run_paired_functional_delta_canary.py
+    sha256: 9d83dc07a2f5dc7bde3896fdbe1528999e23d45d967867c4a0ad972d3a7d3a02
+  adjudicator:
+    path: scripts/insight_two/adjudicate_paired_functional_delta.py
+    sha256: 0f022dd66aa392917f02d86909f8effad35f23c90e4c80695999b1511ce057d9
+  paired_cost_tests:
+    path: tests/test_insight_two_paired_region_delta.py
+    sha256: 5a3b9e7be7d4c3fe31ca30e9b4115177e0875bb814a12c1ad2fe8b654c7b8c43
+  closure_tests:
+    path: tests/test_insight_two_causal_delta_closure.py
+    sha256: e637636bd1703a9e0a8f18c601ec94db499e7f2083da033ef2c38d71d363b7a4
+  formal_runner_tests:
+    path: tests/test_insight_two_paired_functional_canary.py
+    sha256: 80d618dda6f2edaaad0c43f3e4d21483550c8859dcd86ee9c0292d045640dc6a
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_paired_functional_delta_v1
+  raw_first: true
+  overwrite_existing_evidence: prohibited
+
+authorization:
+  diagnostic_implementation_and_tests: authorized_by_user_2026_09_02
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  512_user_discovery: false_pending_canary_new_contract_and_resource_estimate
+  confirmation_or_quality_label_join: false
+  new_training: false

@@ -1,0 +1,167 @@
+contract: yambda500m_medium_hstu_native_insight2_address_response_coreset_v1
+date_frozen: 2026-09-02
+status: prospective_oracle_attention_address_diagnostic_v1
+purpose: >-
+  Test the Transformer-specific hypothesis that a cross-version signed
+  attention-response defect is compact in query-key address space even though
+  the already-sealed chronological-position coreset failed.
+
+claim_boundary:
+  insight2_status: attention_address_contraction_hypothesis_not_frozen
+  design1_status: signed_control_variate_causal_replay_candidate_not_frozen
+  address_clustering_alone_is_a_design_contribution: false
+  Exact_Current_cache_in_construction: required_and_oracle_only
+  executable_constructor_or_cost_claim: prohibited
+  serving_action_or_lineage_promotion: prohibited
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: hstu_native_cc_6L_H192_heads6_context1024
+  attention_activation: elu_plus1
+  attention: Current_native_unnormalized_activated_qK_times_V
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  history_positions: 1024
+  stage: S4_aggregated_context_before_gate_and_residual
+  one_Parent_to_Current_transition_only: true
+  labels_read: false
+  future_events_read: false
+  confirmation_population_read: false
+
+population:
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  inactive_or_failed_users: retain_and_do_not_replace
+  same_UID_order_across_edges: true
+
+candidate_evaluation:
+  construction_candidates: none
+  heldout_indices: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63]
+  candidate_identity_or_score_in_construction: prohibited
+  role: fixed_label_free_queries_for_causal_evaluation_only
+
+address_quadrature:
+  control_path: complete_Current_reader_with_Parent_cache_response
+  residual: Current_Exact_attention_measure_minus_Parent_attention_measure
+  selection_layer: 0
+  per_position_feature: concatenate_Current_layer0_K_and_Parent_layer0_K
+  feature_normalization: one_L2_normalization_after_concatenation_in_float32
+  ordering: deterministic_nested_farthest_first
+  first_center: farthest_from_population_mean
+  later_center: maximum_minimum_squared_euclidean_distance
+  tie_break: smallest_source_token_index
+  quadrature: nearest_center_Voronoi_cluster_mass
+  positive_atom: selected_Current_Exact_KV
+  negative_atom: paired_selected_Parent_KV
+  query_read: real_Current_candidate_query_through_native_attention_kernel
+  injected_before: Current_native_output_transform_gate_and_residual
+  fitting_or_optimization: none
+  token_importance_or_attention_score_selection: prohibited
+  sample_counts: [8, 16, 32, 64, 128]
+  instrumentation_full_count: 1024
+  same_positions_all_layers_heads: required
+  preserve_source_position_metadata: required
+  append_memory_to_normal_cache: prohibited
+
+single_changed_scientific_variable:
+  sealed_control: fixed_equal_width_chronological_lower_midpoints
+  new_rule: layer0_cross_version_attention_address_coverage
+  unchanged:
+    - Parent_control_response
+    - paired_Current_minus_Parent_signed_atoms
+    - native_query_reader
+    - heldout_candidate_panel
+    - S4_injection_boundary
+    - sample_count_grid
+    - primary_metrics
+
+paths:
+  Current_Exact: Current_reader_with_Current_exact_cache
+  Current_Reuse: Current_reader_with_complete_Parent_cache
+  address_R8: Reuse_plus_native_address_signed_coreset_R8
+  address_R16: Reuse_plus_native_address_signed_coreset_R16
+  address_R32: Reuse_plus_native_address_signed_coreset_R32
+  address_R64: Reuse_plus_native_address_signed_coreset_R64
+  address_R128: Reuse_plus_native_address_signed_coreset_R128
+  full_R1024: instrumentation_only_all_position_signed_residual
+
+metrics:
+  primary: unclipped_probability_gap_recovery_on_heldout_candidates
+  aggregation: per_user_then_user_equal_within_edge_then_edge_equal
+  companions:
+    - logit_gap_recovery
+    - Bernoulli_JS_to_Current_Exact
+    - top1_agreement_with_Current_Exact
+    - top10_overlap_with_Current_Exact
+    - within_user_rank_correlation_with_Current_Exact
+    - cluster_mass_min_max_and_sum
+    - layer0_address_covering_radius
+    - sidecar_scalars_and_ratio_to_full_KV
+    - wall_time_and_peak_GPU_memory
+  every_edge_and_sample_count_reported: required
+  recovery_clipping: prohibited
+  small_gap_filtering: prohibited
+
+gates:
+  instrumentation:
+    full_R1024_max_abs_logit_error: 0.00002
+    full_R1024_max_abs_readout_error: 0.00002
+    cluster_mass_sum_equals_history_length: required
+    nested_landmark_prefixes: required
+    finite_all_paths: required
+    input_caches_unchanged: required
+  canary_to_discovery:
+    one_of_R64_or_R128_edge_equal_probability_recovery_at_least: 0.70
+    selected_R_positive_edges_minimum: 4
+    selection: smallest_passing_R_not_best_edge
+  insight_support:
+    one_of_R64_or_R128_edge_equal_probability_recovery_at_least: 0.80
+    selected_R_positive_edges_minimum: 4
+    selected_R_improvement_over_sealed_chronological_control_at_least: 0.50
+    sample_count_selected_by_smallest_passing_R_not_best_edge: required
+  failure:
+    if_neither_R64_nor_R128_reaches_0_70: retire_attention_address_coreset_hypothesis
+    if_oracle_passes_but_legal_constructor_fails: retain_observation_reject_Design1
+  gate_cannot_authorize_executable_design1: true
+
+execution:
+  GPUs: [0, 1, 2, 3]
+  independent_UID_shards: true
+  checkpoints_and_edges_serial_within_rank: true
+  canary_users: 32
+  discovery_users: 512
+  resource_estimate_before_discovery: required
+  detached_if_estimated_minutes_exceed: 30
+  raw_first_and_no_overwrite: true
+
+frozen_inputs:
+  functional_boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  chronological_coreset_negative_adjudication:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_signed_response_coreset_v1/canary/analysis/summary.json
+    sha256: df9f084c56d207a1896c8f529780700e37e9f25612cc6d1b5d30a50090e9c692
+  followup_hypothesis:
+    path: research_discussions/evokv_three_module/insight_two/address_aware_response_followup.md
+    sha256: 9b1663d31c4bd49afd76474dc07371ce3fe219a8a0c424e389d4ecd441e31242
+  address_quadrature_implementation:
+    path: scripts/insight_two/address_response_memory.py
+    sha256: 355e27e48bb66b7c61f91bdcc8431ff5ccaeb14d040508e8fe5562f40fc070ce
+  signed_native_reader_implementation:
+    path: scripts/insight_two/signed_response_memory.py
+    sha256: 6ca1225cdd78abfa52fc7caf3423d78f9bb3b4d4fd495c7f55d40f49b191c90c
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_address_response_coreset_v1
+  raw_first: true
+  overwrite_existing_evidence: prohibited
+
+authorization:
+  diagnostic_implementation_and_tests: authorized_by_user_2026_09_02
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  512_user_discovery_after_passing_canary_and_resource_estimate: authorized_by_user_2026_09_02
+  executable_sparse_causal_replay: false_pending_oracle_gate_and_new_contract
+  confirmation_or_quality_label_join: false
+  new_training: false

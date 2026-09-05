@@ -60,13 +60,13 @@ class HSTUConfig:
 
 
 class HSTU(nn.Module):
-    """Hierarchical Sequential Transductive Unit (Zhai et al., ICML'24).
+    """Research implementation of sequential-transduction recommendation blocks.
 
-    Faithful re-implementation of the defining features, modular for research:
-      * Pointwise aggregated attention (elu+1, unnormalised) - in PointwiseAttention.
-      * RMSNorm, no absolute positional embedding (temporal time-deltas instead).
-      * FFN merged into attention via pointwise gating - in HSTUBlock.
-      * Tied item-embedding output head.
+    ``block_variant="hstu_reference"`` follows the SiLU attention/gating form
+    of Zhai et al. (ICML'24). The older ``legacy`` path used by this
+    repository's existing checkpoints has separate Q/K/V projections and
+    unnormalised ELU+1 pointwise attention; it must not be presented as the
+    paper's exact attention equation.
 
     ``forward`` returns hidden states; ``compute_kv`` returns the batched
     derived prefix K/V cache F(theta, x), which can be captured under one

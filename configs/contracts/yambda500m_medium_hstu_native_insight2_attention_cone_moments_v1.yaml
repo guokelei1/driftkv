@@ -1,0 +1,186 @@
+contract: yambda500m_medium_hstu_native_insight2_attention_cone_moments_v1
+date_frozen: 2026-09-02
+status: prospective_attention_cone_response_moment_diagnostic_v1
+purpose: >-
+  Test whether recommendation queries for one user share an HSTU ELU+1
+  attention cone in which cross-version history response is represented by
+  exact signed affine moments rather than token K/V or a learned mapping.
+
+claim_boundary:
+  insight2_status: user_attention_cone_response_moment_hypothesis_not_frozen
+  design1_status: sparse_replay_moment_migration_candidate_not_frozen
+  algebraic_identity_not_a_fitted_mapper: true
+  full_Current_cache_in_full_moment_construction: oracle_only
+  sampled_Current_upper_layer_KV: oracle_only
+  executable_sparse_replay_or_compute_claim: prohibited
+  serving_action_or_lineage_promotion: prohibited
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: hstu_native_cc_6L_H192_heads6_context1024
+  attention_activation: elu_plus1
+  attention_scale: checkpoint_native
+  block_variant: legacy
+  relative_position_bias: false
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  history_positions: 1024
+  stage: S4_aggregated_context_before_gate_and_residual
+  one_Parent_to_Current_transition_only: true
+  labels_read: false
+  future_events_read: false
+  confirmation_population_read: false
+
+population:
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  inactive_or_failed_users: retain_and_do_not_replace
+  same_UID_order_across_edges: true
+
+candidate_split:
+  anchor_indices: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62]
+  heldout_indices: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63]
+  anchor_count: 32
+  anchor_role: label_free_fixed_release_probes
+  heldout_role: causal_evaluation_only
+  anchor_heldout_overlap: prohibited
+  candidate_identity_or_score_as_moment_feature: prohibited
+
+cone_definition:
+  anchor_query_path: Current_reader_with_complete_Parent_cache
+  query_path_is_coherent_across_layers: true
+  current_positive_set: Current_K_positions_with_at_least_16_of_32_nonnegative_anchor_qk
+  parent_positive_set: Parent_K_positions_with_at_least_16_of_32_nonnegative_anchor_qk
+  current_and_parent_masks_kept_separate: required
+  fitted_query_classifier_or_output_loss: none
+
+moment_state:
+  current_base: sum_Current_positive_values
+  current_linear: sum_Current_positive_key_outer_value
+  parent_base: sum_Parent_positive_values
+  parent_linear: sum_Parent_positive_key_outer_value
+  persisted_base: current_base_minus_parent_base
+  persisted_linear: current_linear_minus_parent_linear
+  read: complete_Parent_response_plus_DeltaB_plus_native_scale_q_times_DeltaM
+  injected_before: Current_native_output_transform_gate_and_residual
+  floating_scalars_per_user: 38016
+  ratio_to_full_Current_KV: 0.01611328125
+  masks_and_probe_metadata_reported_separately: required
+  negative_ELU_branch_not_silently_included: required
+
+current_moment_construction_oracles:
+  full:
+    positions: all_1024
+    weights: one
+    role: representation_ceiling_only
+  chronological:
+    positions: fixed_equal_width_lower_midpoints
+    weights: inverse_stratum_inclusion_mass
+    sample_counts: [8, 16, 32, 64, 128]
+    role: storage_matched_sampling_control
+  address:
+    positions: deterministic_nested_layer0_Current_Parent_K_farthest_first
+    weights: nearest_center_Voronoi_cluster_mass
+    sample_counts: [8, 16, 32, 64, 128]
+    role: oracle_upper_layer_sampled_Current_moment
+  Parent_moment_always_uses_complete_Parent_cache: true
+  sampled_Current_exact_upper_layer_state_makes_all_compact_rows_oracle: true
+
+paths:
+  Current_Exact: Current_reader_with_Current_exact_cache
+  Current_Reuse: Current_reader_with_complete_Parent_cache
+  full_cone_moment: Reuse_plus_full_Current_minus_Parent_majority_cone_moments
+  chronological_R: Reuse_plus_chronological_sampled_Current_minus_full_Parent_moments
+  address_R: Reuse_plus_address_sampled_Current_minus_full_Parent_moments
+
+metrics:
+  primary: unclipped_probability_gap_recovery_on_heldout_candidates
+  aggregation: per_user_then_user_equal_within_edge_then_edge_equal
+  cone_diagnostics:
+    - anchor_majority_sign_agreement
+    - heldout_agreement_with_anchor_majority_Current_and_Parent
+    - Current_Parent_heldout_sign_crossing_fraction
+    - negative_activation_mass_fraction
+    - negative_response_norm_fraction
+    - qk_absolute_margin_quantiles
+  companions:
+    - logit_gap_recovery
+    - Bernoulli_JS_to_Current_Exact
+    - top1_agreement_with_Current_Exact
+    - top10_overlap_with_Current_Exact
+    - within_user_rank_correlation_with_Current_Exact
+    - persistent_moment_scalars_and_bytes
+    - sampled_Current_positions_and_temporary_KV_ratio
+    - wall_time_and_peak_GPU_memory
+  every_edge_and_pre_registered_method_reported: required
+  recovery_clipping: prohibited
+  small_gap_filtering: prohibited
+
+gates:
+  instrumentation:
+    finite_all_paths: required
+    input_caches_unchanged: required
+    stored_scalars_exactly: 38016
+    storage_ratio_exactly: 0.01611328125
+    full_sample_positions_reproduce_full_moments_in_unit_test: required
+  representation_support:
+    full_moment_edge_equal_probability_recovery_at_least: 0.90
+    full_moment_minimum_edge_probability_recovery_at_least: 0.80
+    full_moment_positive_edges_minimum: 5
+  canary_to_discovery:
+    address_R128_edge_equal_probability_recovery_at_least: 0.70
+    address_R128_positive_edges_minimum: 4
+    address_R128_minus_chronological_R128_at_least: 0.10
+  sampled_moment_support:
+    one_of_address_R64_or_R128_edge_equal_probability_recovery_at_least: 0.80
+    selected_R_positive_edges_minimum: 4
+    sample_count_selected_by_smallest_passing_R_not_best_edge: required
+  failure:
+    if_full_moment_fails: reject_attention_cone_functional_state
+    if_full_passes_but_R128_below_0_70: retain_representation_reject_current_constructor
+  gates_cannot_authorize_executable_Design1: true
+
+execution:
+  GPUs: [0, 1, 2, 3]
+  independent_UID_shards: true
+  checkpoints_and_edges_serial_within_rank: true
+  canary_users: 32
+  discovery_users: 512
+  resource_estimate_before_discovery: required
+  detached_if_estimated_minutes_exceed: 30
+  raw_first_and_no_overwrite: true
+
+frozen_inputs:
+  functional_boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  address_coreset_negative_adjudication:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_address_response_coreset_v1/canary/analysis/summary.json
+    sha256: bfb5e937945824ee607be2d1158730092444b06807d109bbf40d42295b9e01c2
+  hypothesis:
+    path: research_discussions/evokv_three_module/insight_two/attention_cone_response_moments.md
+    sha256: 1b9870ad5645f745c310c379b747c7d2a7553bab034d83c8c45ed2a6dd1e214d
+  cone_algebra:
+    path: scripts/insight_two/attention_cone_moments.py
+    sha256: 4de734084ddc54ddd557c88cc88f36820596fdecd51a8841173d8f5f0128d6da
+  cone_memory_implementation:
+    path: scripts/insight_two/cone_response_memory.py
+    sha256: bc0dcef34a6e3765daa81557c7be746437d3c679fd928e312d25865b2ebcbd22
+  address_selector:
+    path: scripts/insight_two/address_response_memory.py
+    sha256: 355e27e48bb66b7c61f91bdcc8431ff5ccaeb14d040508e8fe5562f40fc070ce
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_attention_cone_moments_v1
+  raw_first: true
+  overwrite_existing_evidence: prohibited
+
+authorization:
+  diagnostic_implementation_and_tests: authorized_by_user_2026_09_02
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  512_user_discovery_after_passing_canary_and_resource_estimate: authorized_by_user_2026_09_02
+  executable_sparse_causal_replay: false_pending_oracle_gate_and_new_contract
+  confirmation_or_quality_label_join: false
+  new_training: false

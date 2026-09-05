@@ -1,0 +1,123 @@
+contract: yambda500m_medium_hstu_native_insight2_release_basis_v1
+date_frozen: 2026-09-02
+status: prospective_oracle_release_structure_diagnostic_v1
+purpose: >-
+  Test two prerequisites for any future release-calibrated functional
+  migration: whether eight fixed pre-cutover history queries recover the S4
+  candidate-shared target when Exact state is available, and whether S4 target
+  corrections from different users share a small set of directions within one
+  model-release edge.
+
+claim_boundary:
+  insight2_status: strong_candidate_not_frozen
+  design1_status: open
+  executable_estimator_claim_from_this_run: prohibited
+  population_calibration_action_from_this_run: prohibited
+  target_coefficients_for_evaluation_users: Exact_oracle_diagnostic_only
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: hstu_native_cc_6L_H192_heads6_context1024
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  stage: S4_aggregated_context
+  one_release_transition_only: true
+  labels: prohibited
+  future_events: prohibited
+  new_training: false
+  confirmation_population: prohibited
+
+population:
+  canary:
+    users_indices_half_open: [0, 32]
+    basis_indices_half_open: [0, 8]
+    evaluation_indices_half_open: [8, 32]
+  discovery:
+    users_indices_half_open: [0, 512]
+    basis_indices_half_open: [0, 64]
+    evaluation_indices_half_open: [64, 512]
+  confirmation_indices_half_open: [512, 3000]
+  basis_and_evaluation_UID_disjoint: required
+  same_UID_sets_across_edges: true
+
+fixed_history_query_ceiling:
+  items: eight_strictly_pre_cutover_history_items
+  offsets: [-128, -110, -92, -74, -55, -37, -19, -1]
+  query_time_delta: cutover_timestamp_minus_latest_history_timestamp
+  target: mean_Current_Exact_minus_Current_Reuse_S4_response
+  injection_evaluation: frozen_32_heldout_candidates
+  request_candidate_in_target: false
+  Current_Exact_required: true
+  role: oracle_query_sampling_ceiling_not_action
+
+release_basis:
+  unit: user_within_release_edge_and_layer
+  fit_target: fixed_history_query_S4_correction
+  centered_per_layer_SVD: true
+  rank_axis: [0, 1, 2, 4, 8, 16, 32]
+  rank0: basis_user_mean
+  positive_rank_coefficients: projection_of_each_evaluation_users_Exact_target
+  cross_layer_mapping: prohibited
+  target_KV_fitting: false
+  functional_target_only: true
+  output: oracle_projected_S4_sidecar
+  executable_frontier_entry: prohibited
+
+metrics:
+  fixed_history_to_candidate_anchor:
+    - correction_cosine
+    - correction_norm_ratio
+    - correction_relative_L2
+    - heldout_probability_gap_recovery
+  release_structure:
+    - per_layer_rank_at_90_and_95_percent_energy
+    - rank1_rank2_rank4_energy
+    - UID_disjoint_oracle_projection_recovery
+    - projected_correction_similarity_to_candidate_anchor_target
+  primary_recovery: unclipped_per_user_then_edge_equal_mean
+  all_edges_and_ranks_reported: required
+
+interpretation:
+  fixed_history_ceiling_below_80: >-
+    Candidate-free Exact target sampling is insufficient; do not propose
+    release calibration from these probes.
+  basis_projection_ceiling_below_80: >-
+    Cross-user shared directions are insufficient; do not add a global
+    functional predictor.
+  both_above_80: >-
+    Structural prerequisites pass, but a population-calibrated action still
+    needs explicit user authorization, a new prospective contract and complete
+    population-average plus worst-user cost accounting.
+
+execution:
+  GPUs: [0, 1, 2, 3]
+  independent_UID_shards: true
+  checkpoints_and_edges_serial_within_rank: true
+  canary_users: 32
+  discovery_users: 512
+  resource_estimate_before_discovery: required
+  raw_first_and_no_overwrite: true
+  detached_if_estimated_minutes_exceed: 30
+
+frozen_inputs:
+  functional_boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  functional_boundary_discovery:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/discovery_functional_boundary/analysis_v2/summary.json
+    sha256: 022131c95b681b5941994d9e573ad0979a9e9ae1ce8548b966a115f79ddd67d4
+  retired_estimator_adjudication:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/estimator_time_aligned_probe_v1/canary/analysis/summary.json
+    sha256: 2cc2caecc879c0e6b066d253314ab7fc616d062f2cd9b8f72b8181dd4d41d17e
+  basis_implementation:
+    path: scripts/insight_two/release_functional_basis.py
+    sha256: d35de19d3bb62e606f9ae683d716eb848e83e58ca6e94619611a4115ab150682
+
+authorization:
+  diagnostic_implementation_and_tests: true
+  focused_four_GPU_canary: true
+  512_user_diagnostic_after_valid_canary_and_resource_estimate: true
+  executable_population_calibration: false
+  new_predictor_in_scale_frontier: false
+  quality_label_join: false
+  new_training: false

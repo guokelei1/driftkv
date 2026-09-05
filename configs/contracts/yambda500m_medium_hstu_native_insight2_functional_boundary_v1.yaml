@@ -1,0 +1,208 @@
+contract: yambda500m_medium_hstu_native_insight2_functional_boundary_v1
+date_frozen: 2026-09-02
+status: prospective_medium_insight2_functional_boundary_v1
+purpose: >-
+  Discover, without presupposing AV or PRO, the earliest compact and causally
+  sufficient Current-reader functional boundary for one-release migration of
+  Parent persistent state.
+
+claim_boundary:
+  insight1_complete: token_layer_and_KV_locality_is_not_the_primary_migration_abstraction
+  insight2_status: open_and_falsifiable
+  design1_status: functional_state_migration_framework_only_not_a_frozen_algorithm
+  PRO_role: prior_HSTU_candidate_baseline_not_final_answer
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: hstu_native_cc
+  versions: [v0, v1, v2, v3, v4, v5]
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  history_positions: 1024
+  candidate_width: 64
+  new_training: false
+  task: explicit_feedback_candidate_conditioned_ranking
+  next_item_or_retrieval_claim: prohibited_without_a_separate_trained_workload_contract
+  multi_release_or_continuous_claim: prohibited
+  serving_lineage_promotion: prohibited
+
+population:
+  source: prior_frozen_medium_insight1_population
+  total_users: 3000
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  confirmation_read_before_design_freeze: prohibited
+  fixed_across_edges: true
+
+candidate_split:
+  ordering: prior_frozen_label_free_panel_order
+  anchor_indices: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62]
+  heldout_indices: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63]
+  split_semantics: stable_alternation_within_the_existing_recent_old_novel_order
+  labels_or_negative_semantics: prohibited
+  target_candidate_exact_delta_in_estimator: prohibited
+
+paths:
+  parent_exact: Parent_reader_with_Parent_exact_state
+  current_exact: Current_reader_with_Current_exact_state
+  current_reuse: Current_reader_with_Parent_exact_state
+  compatibility_delta: current_exact_minus_current_reuse
+  parent_exact_role: model_and_readout_change_control_not_the_compatibility_reference
+
+stage_taxonomy:
+  architecture_neutral_order:
+    - input_representation
+    - qkv_projection
+    - query_key_interaction
+    - positionwise_value_response
+    - aggregated_context
+    - transformed_attention_or_gated_update
+    - post_block_residual
+    - final_query_or_user_representation
+    - readout
+  first_canary_adapter:
+    s3_positionwise_value_response:
+      hstu_name: kv_prefix_contribution
+      caveat: intervention_sums_history_before_injection_and_cannot_localize_a_positionwise_executable_boundary
+    s4_aggregated_context: {hstu_name: av_aggregation}
+    s5_transformed_update: {hstu_name: u_gated_update}
+    s6_post_block_residual: {hstu_name: layer_hidden}
+    s7_final_representation: {hstu_name: final_readout}
+  readout_low_dimension_as_insight: prohibited
+
+trace_semantics:
+  coherent_native_paths: required
+  same_hidden_counterfactual_paths: required_for_causal_intervention
+  roles:
+    history_producer_state: Parent_or_Current_prefix_KV
+    request_reader_state: Current_query_and_transient_self_KV
+  rank0_estimator: signed_anchor_candidate_mean_delta
+  rank0_role: PRO_compatible_representation_baseline_not_PRO_estimator
+  low_rank_ranks: [1, 2, 4, 8]
+  low_rank_status: required_after_rank0_instrumentation_canary
+  full_exact_delta: oracle_correctness_ceiling_only
+  diagnostic_exact_state_or_stage_delta_as_scale_action: prohibited
+
+metrics:
+  primary:
+    - anchor_to_heldout_probability_gap_recovery
+    - anchor_to_heldout_logit_gap_recovery
+  robustness:
+    - Bernoulli_JS_to_Current_Exact
+    - top1_agreement_with_Current_Exact
+    - top10_overlap_with_Current_Exact
+    - within_user_rank_correlation_with_Current_Exact
+  structure:
+    - uncentered_and_candidate_centered_spectrum
+    - rank_at_90_and_95_percent_energy
+    - participation_ratio_effective_rank
+    - token_head_layer_error_energy_and_topk_coverage
+    - candidate_mean_energy_fraction
+  recovery_clipping: prohibited
+  every_edge_reported: required
+
+gates:
+  instrumentation:
+    native_and_reconstructed_max_abs_logit_error: 0.00002
+    full_delta_intervention_max_abs_logit_error: 0.00002
+    finite_all_paths: required
+    labels_read: false
+  functional_boundary:
+    edge_equal_mean_recovery_at_least: 0.80
+    ordinary_rule_edges_at_or_above_0_80: 4
+    tolerance_rule_edges_at_or_above_0_90: 3
+    tolerance_rule_edge_equal_mean_still_at_least: 0.80
+    scalar_readout_only: fail
+  persistence:
+    fixed_cutover_correction: required
+    positive_recovery_edges_minimum: 4
+    edge_equal_mean_recovery_target: 0.70
+  executable_design:
+    theoretical_compute_fraction_of_Exact_All_min: 0.0
+    theoretical_compute_fraction_of_Exact_All_max: 0.20
+    discovery_recovery_at_least: 0.80
+    stretch_recovery_at_least: 0.90
+    full_Current_KV_or_future_label_in_estimator: prohibited
+
+focused_canary:
+  users: 32
+  edges: all_five
+  candidate_anchors: 32
+  heldout_candidates: 32
+  physical_gpus: [0, 1, 2, 3]
+  parallelism: independent_UID_shards
+  checkpoints_and_edges_within_rank: serial
+  batch_size: 1
+  on_correctness_failure: stop_and_retain_invalid_evidence
+  resource_and_makespan_estimate_before_discovery: required
+
+discovery_after_canary:
+  users: 512
+  edges: all_five
+  detached_if_estimated_minutes_exceed: 30
+  raw_first: true
+  overwrite_existing_evidence: prohibited
+  all_frozen_stages_ranks_and_edges: required
+
+protocol:
+  future_labels: prohibited
+  target_KV_predictor_fitting: prohibited
+  outcome_based_user_candidate_stage_rank_budget_or_edge_selection: prohibited
+  selected_edge_reporting: prohibited
+  qualification_label_tuning: prohibited
+  exact_splice_or_oracle_is_diagnostic_only: required
+  preserve_all_negative_and_invalid_results: required
+
+frozen_inputs:
+  research_plan:
+    path: research_discussions/evokv_three_module/insight_two/insight_two_exploration_plan.md
+    sha256: 252897158958975a93229a73297f99003b4af900b29f6c2f98706d6bc48bf0d2
+  insight1_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight1_locality_v1.yaml
+    sha256: 6e7e139edb98a83856edb8d6ebe3e58a56105f52c5095f5d99291f0f19caea39
+  insight1_report:
+    path: results/yambda500m_medium_seed17/insight1_locality_v1/analysis/report.md
+    sha256: 0096ba4deb54f03b19990ec8a0950d81be90d4a7c7a71e313937a0b3fae1b5ae
+  dataset:
+    path: data/processed/yambda500m_unified_v1/scales/medium/dataset.json
+    sha256: d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb
+  users:
+    path: data/processed/yambda500m_unified_v1/scales/medium/users.parquet
+    sha256: bc3753cf0b5de618cb55101f2369e30ab8bbc39608245541cf9a635dd9fe7832
+  item_mapping:
+    path: data/processed/yambda500m_unified_v1/scales/medium/item_mapping.parquet
+    sha256: 57b3e1e83625367777cc5cb1f932cb9a6df200352ba07cfdc7bb346a5504bbe7
+  input_manifest:
+    path: data/manifests/yambda500m_medium_insight1_locality_v1/manifest.json
+    sha256: aeba6e3fc5442a0ab548414c6d10a46a197cfb6e5f9fc456b9f2b572c68affb4
+  population:
+    path: data/manifests/yambda500m_medium_insight1_locality_v1/population.npz
+    sha256: a52090a5ce36be7906521cbc2d373ca35facd92a7480a30e8c2441d1cb03297d
+  candidate_panels:
+    path: data/manifests/yambda500m_medium_insight1_locality_v1/candidate_panels.npz
+    sha256: f6b13cb2685f2156045bb1773489e6d781731fb11c304ed552b7e21e5cc2fe22
+  candidate_panel_audit:
+    path: data/manifests/yambda500m_medium_insight1_locality_v1/candidate_panel_audit.json
+    sha256: 00dee267ba2cfddb7f4b3144e1a72e7ba1bd4662d09edee9b2ca252e6b92e17e
+  checkpoints:
+    v0: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/shared_v0/checkpoint_100.pt, sha256: 4a51957fe7c7d89132b315ba9b34c442c77c9cb07fc8b09e70f3b5e8c3750586}
+    v1: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v1/checkpoint_100.pt, sha256: 72fdc2011f5e2f5c21ee995406b09fcb82d60fbbd52888cc5d561a8fd30fe124}
+    v2: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v2/checkpoint_100.pt, sha256: 74d535a68d719d0399f968c39477db861dcfb805086b99618f926f1a0c0ac8be}
+    v3: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v3/checkpoint_100.pt, sha256: 9942e1dab6a5e45d638a4d045670593b6370ec50043ecbec174e8a7cd68437d0}
+    v4: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v4/checkpoint_100.pt, sha256: a8f2d57d3ebbcfbf294949ef628c310e06a22afb1ad9d7064f77a2ef35c397e6}
+    v5: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/checkpoint/checkpoint_100.pt, sha256: 6047162ea0d2dd996104f950808e7ff2c84e90a99ec61d554848568cd6edd064}
+
+outputs:
+  code_root: scripts/insight_two
+  result_root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1
+  log: research_discussions/evokv_three_module/insight_two/exploration_log.md
+
+authorization:
+  design_and_implementation: authorized_by_user_2026_09_02
+  focused_four_gpu_canary: authorized_by_user_2026_09_02
+  512_user_discovery_after_passing_canary_and_resource_estimate: authorized_by_user_2026_09_02
+  3000_user_confirmation_before_design_freeze: false
+  new_training: false
+  serving_lineage_promotion: false

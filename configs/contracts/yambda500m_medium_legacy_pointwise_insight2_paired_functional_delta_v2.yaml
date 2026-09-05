@@ -1,0 +1,137 @@
+contract: yambda500m_medium_legacy_pointwise_insight2_paired_functional_delta_v2
+date_frozen: 2026-09-02
+status: prospective_execution_only_amendment_of_v1
+purpose: >-
+  Re-execute the unchanged v1 paired functional-delta canary after fixing only
+  its metadata finite-check type guard. No method, user, carrier, selector,
+  weight, metric, cost, gate or claim boundary changes from v1.
+
+amends:
+  contract: configs/contracts/yambda500m_medium_legacy_pointwise_insight2_paired_functional_delta_v1.yaml
+  sha256: 605fc606d1e1ba0f78c17841a6580d807a97cf25d6775dbfedb6ee320a460e83
+  failure_class: instrumentation_type_guard_before_first_metric_row
+  scientific_protocol_changed: false
+
+claim_boundary:
+  recursive_causal_closure_implemented: true
+  legal_path_is_nonrecursive_lower_bound: true
+  moments_sampling_or_clustering_is_novelty: false
+  design1_admitted_by_this_canary: false
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: legacy_pointwise_6L_H192_heads6_context1024
+  attention_activation: elu_plus1
+  block_variant: legacy
+  relative_position_bias: false
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  history_positions: 1024
+  one_Parent_to_Current_transition_only: true
+  labels_read: false
+
+population:
+  canary_indices_half_open: [0, 32]
+  confirmation_indices_half_open: [512, 3000]
+
+construction:
+  probe_source: fixed_equal_width_history_item_ids
+  probe_counts: [8, 32]
+  primary_probe_count: 8
+  carrier_counts: [64, 128]
+  primary_budget_carriers: 64
+  primary_layer0_prefix_mode: paired_closure
+  Current_Exact_upper_layer_KV_in_legal_constructor: prohibited
+
+candidate_evaluation:
+  construction_candidates: null
+  heldout_indices: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63]
+
+theoretical_compute:
+  denominator: Current_Exact_full_1024_history_recomputation
+  grid:
+    - carriers: 64
+      recursive_delta: false
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 767597568
+      over_full_fraction: 0.16087865192846548
+    - carriers: 64
+      recursive_delta: true
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 786541056
+      over_full_fraction: 0.16484896520108785
+    - carriers: 128
+      recursive_delta: false
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 1216887808
+      over_full_fraction: 0.2550441510768639
+    - carriers: 128
+      recursive_delta: true
+      full_recompute_flops_per_user: 4771282944
+      total_generation_flops_per_user: 1293113344
+      over_full_fraction: 0.27102005040931815
+
+gates:
+  representation_support:
+    P8_edge_equal_recovery_at_least: 0.90
+    P8_minimum_edge_recovery_at_least: 0.80
+    P8_positive_edges_minimum: 5
+    P8_P32_absolute_difference_at_most: 0.02
+  carrier_oracle_support:
+    R64_edge_equal_recovery_at_least: 0.70
+    R64_positive_edges_minimum: 4
+  causal_closure_design_candidate:
+    R64_edge_equal_recovery_at_least: 0.70
+    R64_positive_edges_minimum: 4
+    R64_closure_minus_control_at_least: 0.10
+    R64_closure_winning_edges_minimum: 4
+    R64_total_compute_fraction_at_most: 0.20
+    paired_bootstrap_seed: 170902
+    paired_bootstrap_resamples: 10000
+    paired_bootstrap_CI_lower_strictly_above: 0.0
+
+execution:
+  GPUs: [0, 1, 2, 3]
+  canary_users: 32
+  raw_first_and_no_overwrite: true
+
+finite_check_amendment:
+  strings_and_bytes: metadata_not_numeric_return_true
+  numeric_scalars_and_arrays: original_numpy_isfinite
+  other_numpy_operations: forwarded_unchanged
+
+frozen_inputs:
+  v1_contract:
+    path: configs/contracts/yambda500m_medium_legacy_pointwise_insight2_paired_functional_delta_v1.yaml
+    sha256: 605fc606d1e1ba0f78c17841a6580d807a97cf25d6775dbfedb6ee320a460e83
+  v1_failure_record:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_paired_functional_delta_v1/execution_failure_2026-09-02.json
+    sha256: 6a86f03550dff22c734d98539a61519e3ee4fd756339feb8bcbd79e484df02de
+  frozen_v1_runner:
+    path: scripts/insight_two/run_paired_functional_delta_canary.py
+    sha256: 9d83dc07a2f5dc7bde3896fdbe1528999e23d45d967867c4a0ad972d3a7d3a02
+  v2_execution_wrapper:
+    path: scripts/insight_two/run_paired_functional_delta_canary_v2.py
+    sha256: 80468faf725308a7b546ddc2eaa3dc5aef85b7092b49e443d49fb4d2ac2efa0f
+  frozen_v1_adjudicator:
+    path: scripts/insight_two/adjudicate_paired_functional_delta.py
+    sha256: 0f022dd66aa392917f02d86909f8effad35f23c90e4c80695999b1511ce057d9
+  v2_adjudication_wrapper:
+    path: scripts/insight_two/adjudicate_paired_functional_delta_v2.py
+    sha256: f774dac83a06565ac5748e899b7688f43ae602d1ade45c023d289f400775b62c
+  v2_guard_tests:
+    path: tests/test_insight_two_paired_functional_canary_v2.py
+    sha256: 33f0daa3ceacec3353de03f46315523350101b6193e5625ff13b00bae0029db2
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_paired_functional_delta_v2
+  raw_first: true
+  overwrite_existing_evidence: prohibited
+
+authorization:
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  execution_only_amendment: true
+  512_user_discovery: false_pending_canary_new_contract_and_resource_estimate
+  confirmation_or_quality_label_join: false
+  new_training: false

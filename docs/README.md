@@ -1,53 +1,96 @@
 # EvoKV 文档入口
 
-当前文档保留 README、五份研究文档、Medium 执行/结果文档、Large sizing 裁决输入和 Large
-正式执行记录，各自职责不同：
+更新日期：2026-09-05
 
-1. [论文总体设计](paper_design.md)：概念层问题定义与论文结构：Background & Motivation、简洁的
-   System Overview、candidate-shared reader compatibility correction 等三条 recommendation-specific Insight、
-   One-Release Refinement、Debt-Bounded
-   Continuous State Evolution、GPU Transformation Runtime。内容应稳定，避免写入某次实验细节。
-2. [论文具体实验设计](experimental_design.md)：当前架构、数据、版本训练、对照路径，以及 Design I、
-   bounded-debt + Exact-shadow Continuous、Runtime、规模/外部验证的分阶段研究协议。
-3. [核心 Motivation 与 Observation](motivation_observations.md)：目前已经观察到的 HSTU-native
-   motivation、D14/E14 数字、固定 one-release 路径的完整 rolling AUC、版本年龄结果、3,000-user
-   recommendation-state structure、signed causal/真实 exposed candidate 复核、reader stage、
-   跨请求 persistence、history-basis 负结果、AV-sidecar 4/5 score canary、无 translated-prefix
-   物化的轻量 PRO 正确性/成本、五边全人口 rolling quality，以及最新 progressive PRO 无标签
-   error decomposition/C32-C48-C64 fidelity frontier、companion 和结论边界。本次 v0–v5 探索与专家意见后的推进另有一份可直接用于
-   复核与专家讨论的[单篇总结](../results/yambda500m_small_seed17/insight_recommendation_state_structure_v1/expert_discussion_summary.md)。
-4. [Insight-Driven State Refinement Develop Map](insight_develop_map.md)：论文第 3 章的研究支撑文档，
-   将 reader-correction/typed-coordinate/evidence-mass Insight、Design 0、已有证据、反证边界和补强路线放在同一设计链中；它不是
-   独立的论文 Insight 章节，也不声称已经推出 Continuous 或 Runtime。
-5. [One-Release State Refinement 与 Typed Plan IR](typed_state_refinement_algebra.md)：Design I 底层的
-   `CAST / PATCH / GROUP / SCALE` typed semantics、聚焦机制实验、成本边界，以及向 Continuous
-   交付的 lineage metadata；不将四个 operator 包装成四条并列论文 Insight。
-6. [Medium Full-only 训练推进方案](medium_scale_training_plan.md)：冻结 day217、30k/6L Medium 的
-   D7/D14 训练矩阵、GPU2/3 双卡执行、Full-only→Reuse admission 顺序、资源估算与 launch gate；
-   当前 checkpoint、Full/Reuse、D7 forced diagnostic 与 D14 v5 扩展均已完成，文档保留实际执行记录。
-7. [Medium 全轮实验总结](../results/yambda500m_medium_seed17/full_reuse_matrix_v1/medium_scale_experiment_summary.md)：
-   已完成 seed17 的 checkpoint、D7/D14 Full/Reuse、D7 forced diagnostic、D14 v5、统一同-cohort 百分比、
-   运行成本、异常边、结论边界和专家讨论问题；D14/E14 的10个非相邻 direct Reuse 格子由独立合同和
-   总控脚本补齐，最终与5个相邻格子合并成完整15格三角矩阵。
-8. [Large 模型规模讨论稿](large_scale_model_sizing_discussion.md)：对齐 Small/Medium/Large 的人口、
-   catalog、请求、参数、persistent-state 和 A40 资源，比较 8L/H256、10L/H320 与 12L/H320；它是
-   专家裁决时使用的历史输入，训练授权不由该文档提供。
-9. [Large 训练与验证执行记录](large_scale_training_and_qualification_plan.md)：记录专家裁决后冻结的
-   10L/H320、D7/D14 训练与 Full 协议、真实 manifest、四卡 canary、runtime 选择，以及 2026-08-31
-   最终在首个正式 Reuse/PRO cell 前取消并于 Full-only 后结束的范围与证据边界。
+当前论文主线研究 **模型发布时的 persistent state migration**，以一次 Parent → Current 更新
+说明基础流程，并在设计中覆盖连续发布的状态管理。Motivation、
+Medium Insight 1 与 scoped Insight 2 已形成；当前 Design 1 是
+**Sketch-to-Sketch State Migration**：
 
-README 是仓库入口；上面五份研究文档、Medium 执行/结果文档与 Large 两份文档是当前文档层次。
-代码、合同、脚本和测试的职责以仓库目录及其 README 为准，不再维护另一套路线文档。
+- ordinary Parent K/V 保持不变；
+- 固定、支持加减更新的 writer 随 K/V 生成 producer-native Source Sketch；
+- Current checkpoint 定版后冻结 backbones，独立校准面向该目标版本的共享 Translator；
+- release 时只把 Source Sketch 翻译为 Current Sketch；
+- request 时由同一 Current query paired-read 新旧 sketches，并将 response difference 注入 HSTU
+  聚合后归一化之前。
 
-文档维护规则：
+参考 Translator 使用同用户待迁移 Source 的跨段、跨层信息；连续发布时额外按段识别 producer，
+将混合来源的原始 Source 直接翻译到新目标。Source 淘汰更新后刷新剩余旧段的翻译结果。
+确定性摘要提供写入期预计算与发布期快速访问，不宣称新增普通 K/V 所缺失的信息。
 
-- 总体设计只写相对稳定的概念和论文边界；
-- 具体实验设计写“如何做”和“希望观察什么”，不把预期写成结果；
-- Insight-Driven State Refinement Develop Map 服务论文 Design I：每条 Insight 直接收束到对应
-  mechanism，不再维护独立 Design Principles 层，也不把候选机制写成已验证；
-- Typed State Refinement 文档只记录 One-Release instruction semantics 和 handoff contract，
-  不把诊断 residual splice 直接加入 scale action set，也不代替 Continuous 设计；
-- 核心结果文档只写已经封存或可复核的 observation，不把未来设计写成已验证；
-- 新结果先更新核心 observation，再按需同步实验设计；不要重新创建阶段性路线文档；
-- Continuous 和 Runtime 在研究成熟前统一维护在总体设计与具体实验设计中，不新建分散的路线文档；
-- 旧 archive、legacy、开发阶段报告和重复路线说明已删除。
+历史 AV/PRO、common-mode canonical writer、per-version interpreter \(D_v\) 和 clean writer \(G_v\)
+均不再定义当前 Design 1。它们只作为历史证据、旧候选或 baseline 保留。
+连续发布的状态接口与版本管理纳入当前设计；更广泛的 Runtime 控制、RecFlow 和 theta3 仍在范围外。
+现有观察和执行合同保持单边范围，新增连续发布设计不扩大运行授权。
+
+## 当前权威入口
+
+1. [Insight 2 / Design 1 论文稿](insight2_design1_expert_brief.md)：当前 Design 1 的唯一规范设计稿；
+   第 1–2 节连接 Motivation 与 Insights，第 3 节包含总体架构、版本化摘要、校准与发布迁移、
+   查询修正、持续状态管理五个小节，仅保留两条核心公式。
+2. [论文总体设计](paper_design.md)：稳定的问题定义、Insight 1 → Insight 2 →
+   Sketch-to-Sketch Design 1、架构边界和论文主张。
+3. [论文具体实验设计](experimental_design.md)：现有 Medium V0–V5 资产、sealed discovery 证据、
+   真实摘要参考、Translator calibration、closed-loop evaluation 和成本合同。
+4. [核心 Motivation 与 Observation](motivation_observations.md)：已经封存的 motivation、观察和结果。
+   结果数字保持原证据范围，不因 Design 1 更新而改写。
+5. [Insight 2 / Design 1 探索计划](../research_discussions/evokv_three_module/insight_two/insight_two_exploration_plan.md)
+   与[追加式探索日志](../research_discussions/evokv_three_module/insight_two/exploration_log.md)：保留发现
+   过程、候选、反例与历史裁决，不再作为现行 Design 规范。
+6. [当前 KV-only 接口裁决](../research_discussions/evokv_three_module/insight_two/current_kv_only_interface_adjudication.md)：
+   汇总 KV-only generator-closure 缺口、强 generic control 和已退休机制。
+7. [Medium Insight 1 locality 结果](../results/yambda500m_medium_seed17/insight1_locality_v1/analysis/report.md)：
+   五条 D14 edge、34 个预指定 Exact-KV splice 的无标签诊断。
+8. [Medium 全轮实验总结](../results/yambda500m_medium_seed17/full_reuse_matrix_v1/medium_scale_experiment_summary.md)：
+   六个 D14 V0–V5 checkpoints、Full/Reuse 和数据范围的事实入口。
+
+若文档冲突：
+
+- 观察事实以 sealed result、[motivation_observations.md](motivation_observations.md) 和对应合同为准；
+- 当前 Design 1 机制以 [insight2_design1_expert_brief.md](insight2_design1_expert_brief.md) 为准；
+- prospective 执行必须同时满足 [experimental_design.md](experimental_design.md)、新合同和仓库授权规则。
+
+## 当前状态
+
+已经具备 ordinary K/V、Full/Reuse、reader instrumentation、diagnostic response-difference injection、
+Insight 1 负结果和 Insight 2 oracle contraction evidence。尚未实现固定 Sketch writer、edge Translator、
+production paired reader、完整 append/eviction lifecycle、release executor 和方法 qualification。
+
+因此：
+
+- oracle 95.34%/99.46%、PRO 或 generic-rank 结果不能表述为 Sketch-to-Sketch 方法结果；
+- 旧 0.60% translation 与约 7% storage 不作为当前方法估计；32/1024 配置的 paired read
+  约 6.25% 只表示 QK/AV 算术增量，FP32 Source 的存储需按实际精度重新计量；
+- Current-produced appended K/V 不能未经 closed-loop 实验称为 clean/exact；
+- 现有 V0–V5 backbone 可以冻结复用，但旧 cache 没有预存 Source Sketch，第一轮需要 backfill。
+- 真实 Current Sketch 是差分压缩的诊断参考，不是所有 learned response 方法的严格上界；
+- 本设计尚未证明持续追加收敛，Parent 淘汰不能作为误差消失的证明。
+
+## 历史与支撑文档
+
+- [Insight-Driven State Refinement Develop Map](insight_develop_map.md)保留旧 reader correction、
+  typed coordinate、evidence mass、PRO 和负结果，不决定当前 Design。
+- [One-Release State Refinement 与 Typed Plan IR](typed_state_refinement_algebra.md)保留旧
+  CAST/PATCH/GROUP/SCALE 语义和 strong baselines，不决定当前 Design。
+- [Medium 训练推进方案](medium_scale_training_plan.md)保留已完成训练记录；当前默认不重新训练
+  V0–V5 backbone。
+- [Large 模型规模讨论稿](large_scale_model_sizing_discussion.md)与
+  [Large 训练记录](large_scale_training_and_qualification_plan.md)是历史 scale 材料，不授权本轮训练。
+
+## 维护规则
+
+- 只同步更新本 README、paper design、experimental design 和唯一指导稿；不为同一机制创建重复真源。
+- 总体设计写稳定概念；实验设计写如何否证，不把预期或 oracle 写成方法结果。
+- Design 正文说明组件职责、输入输出、设计动机和执行连接；有效性由实验评价，技术约定放在
+  experimental design，避免把正文写成逐模块等价证明或反例清单。
+- frozen contracts、hashes、raw seals、adjudications、negative results 和 invalidations 不覆盖、不改写。
+- diagnostic Exact-KV/stage splice 永远不是 executable action；KV coverage 不能冒充 GPU FLOPs。
+- Design 1 包含连续发布的混合来源、目标切换和版本退出规则；翻译始终从原始 Source 出发，
+  不串联上一轮 translated sketch。多版本校准及连续轨迹评价需独立 prospective contract，
+  不将已有五条相邻边结果合并冒充连续迁移结果。
+- HSTU 的 additive paired-read 公式不能原样推广到 softmax attention；后者需要 numerator/normalizer
+  sufficient-statistics adapter。
+- Translator calibration 涉及 Current-derived teacher。运行前必须建立 prospective contract，明确
+  disjoint calibration population 的共享 edge-level supervision，并继续禁止 evaluation-user/per-user
+  target fitting。
+- 代码与结果状态必须明确区分 specified、implemented、canary-validated 和 paper-qualified。

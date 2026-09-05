@@ -17,7 +17,8 @@ class PointwiseAttentionConfig:
     qk_scale: float = 1.0
     # Dropout on the (post-activation) attention matrix. 0 = off.
     attn_dropout: float = 0.0
-    # Activation type: "elu_plus1" (HSTU original), "relu" (no +1 baseline, forces peaked attention)
+    # Attention-score activation. The repository's legacy checkpoints use
+    # ``elu_plus1``; the faithful HSTU-reference block uses ``silu``.
     activation: str = "elu_plus1"
     max_seq_len: int = 2048
     block_variant: str = "legacy"

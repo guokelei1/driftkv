@@ -2,6 +2,13 @@
 
 更新日期：2026-08-28
 
+> **历史文档（2026-09-02 起 superseded）。** 本文保留 Small/seed17 的完整推导、PRO 数字与
+> negative results，但其中“论文主设计仍为 C32 lightweight PRO”“AV correction 已冻结”等表述
+> 不再代表当前研究裁决。当前权威方向是 Medium Insight 1/Insight 2 与 Migration Sketch Design；入口见
+> [paper design](paper_design.md)与
+> [Insight 2 / Design 1 统一稿](insight2_design1_expert_brief.md)。不要用本文
+> 的旧结论反向选择新的 boundary、estimator 或 action。
+
 本文是论文第 3 章 `Insight-Driven State Refinement` 的研究支撑文档，回答：
 
 > 推荐系统中一份 persistent user state 被整个 candidate bank 重复读取；跨版本 compatibility

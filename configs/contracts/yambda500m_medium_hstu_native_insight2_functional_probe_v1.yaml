@@ -1,0 +1,160 @@
+contract: yambda500m_medium_hstu_native_insight2_functional_probe_v1
+date_frozen: 2026-09-02
+status: prospective_label_free_executable_functional_probe_v1
+purpose: >-
+  Test whether the earliest observed S4 functional boundary can be estimated
+  from Parent persistent state, Current parameters and a few fixed
+  pre-cutover history probes without Current-Exact K/V or request candidates.
+
+claim_boundary:
+  representation_observation: S4_candidate_shared_rank0_is_the_earliest_strong_oracle_boundary
+  representation_recovery_is_not_estimator_recovery: required
+  insight2_status_before_run: candidate_not_frozen
+  design1_status_before_run: framework_not_PRO
+  this_run_role: executable_cutover_estimator_canary_and_discovery
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: hstu_native_cc_6L_H192_heads6_context1024
+  versions: [v0, v1, v2, v3, v4, v5]
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  task: explicit_feedback_candidate_conditioned_ranking
+  one_release_transition_only: true
+  new_training: false
+  request_labels: prohibited
+  future_events: prohibited
+  request_candidates_in_estimator: prohibited
+  Current_Exact_KV_in_estimator: prohibited
+  materialized_version_translated_prefix: prohibited
+
+population:
+  source: frozen_3000_user_medium_population
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  confirmation_read: prohibited_before_design_freeze
+  fixed_across_edges: true
+
+mechanism:
+  stage: S4_aggregated_context
+  serving_base: Parent_persistent_KV
+  parameter_map: parameter_only_joint_Parent_KV_to_Current_KV_projection
+  old_prefix_execution: fused_query_read_without_translated_KV_materialization
+  recent_evidence_positions: 128
+  carrier_axis: [8, 16, 32, 64]
+  carrier_dependency_source: unmodified_Parent_prefix_first_896_positions
+  probe_axis: [1, 2, 4, 8]
+  eight_probe_history_offsets: [-128, -110, -92, -74, -55, -37, -19, -1]
+  probe_index_sets:
+    1: [7]
+    2: [0, 7]
+    4: [0, 2, 5, 7]
+    8: [0, 1, 2, 3, 4, 5, 6, 7]
+  probe_query_time_delta: 0
+  estimator: arithmetic_mean_of_probe_S4_response_differences_per_layer
+  sidecar_scalars_fp32_per_user: 1152
+  sidecar_bytes_fp32_per_user: 4608
+  online_injection: broadcast_same_layer_correction_to_all_request_candidates
+  rank: 0
+
+cost:
+  convention: one_multiply_plus_one_add_equals_two_FLOPs
+  denominator: complete_Current_Exact_All_prefix_recompute_at_context1024
+  full_recompute_flops_per_user: 4771282944
+  maximum_fraction: 0.20
+  one_time_parameter_map_per_release_edge_excluded_but_reported: true
+  memory_IO_reported_separately: true
+  grid:
+    - {carriers: 8, probes: 1, over_full_fraction: 0.023046601362905886}
+    - {carriers: 8, probes: 2, over_full_fraction: 0.03528099632231745}
+    - {carriers: 8, probes: 4, over_full_fraction: 0.0597497862411406}
+    - {carriers: 8, probes: 8, over_full_fraction: 0.10868736607878687}
+    - {carriers: 16, probes: 1, over_full_fraction: 0.033928343780904896}
+    - {carriers: 16, probes: 2, over_full_fraction: 0.04617046496415032}
+    - {carriers: 16, probes: 4, over_full_fraction: 0.07065470733064118}
+    - {carriers: 16, probes: 8, over_full_fraction: 0.11962319206362287}
+    - {carriers: 32, probes: 1, over_full_fraction: 0.05587725798891544}
+    - {carriers: 32, probes: 2, over_full_fraction: 0.06813483161982858}
+    - {carriers: 32, probes: 4, over_full_fraction: 0.09264997888165485}
+    - {carriers: 32, probes: 8, over_full_fraction: 0.1416802734053074}
+    - {carriers: 64, probes: 1, over_full_fraction: 0.10051680389298664}
+    - {carriers: 64, probes: 2, over_full_fraction: 0.11280528241923521}
+    - {carriers: 64, probes: 4, over_full_fraction: 0.1373822394717323}
+    - {carriers: 64, probes: 8, over_full_fraction: 0.18653615357672657}
+
+evaluation:
+  candidates: frozen_32_heldout_candidates_per_user_edge
+  oracle_shape_diagnostic: frozen_32_anchor_Current_Exact_delta_evaluation_only
+  oracle_shape_diagnostic_must_not_enter_estimator: true
+  primary_metric: unclipped_per_user_probability_gap_recovery_then_edge_equal_mean
+  sensitivity_metric: gap_weighted_probability_recovery
+  other_metrics:
+    - logit_gap_recovery
+    - rank_correlation
+    - top1_agreement
+    - correction_cosine_to_oracle
+    - correction_norm_ratio_to_oracle
+    - correction_relative_L2_to_oracle
+  all_sixteen_configurations_and_five_edges_reported: required
+  outcome_based_edge_or_user_selection: prohibited
+
+gates:
+  correctness:
+    fused_probe_replay_max_abs_error: 0.00002
+    finite_all_rows: required
+    labels_read: false
+    Current_Exact_used_by_estimator: false
+  estimator:
+    theoretical_compute_fraction_max: 0.20
+    edge_equal_probability_recovery_min: 0.80
+    positive_edges_min: 4
+    ordinary_edges_at_80_min: 4
+    tolerance_edges_at_90_min: 3
+    stretch_edge_equal_probability_recovery: 0.90
+  persistence: not_tested_by_this_cutover_run
+  task_quality: not_tested_by_this_label_free_run
+
+execution:
+  canary_users: 32
+  discovery_users_after_canary: 512
+  physical_gpus: [0, 1, 2, 3]
+  parallelism: independent_UID_shards
+  checkpoints_and_edges_within_rank: serial
+  raw_first: true
+  overwrite_existing_evidence: prohibited
+  resource_estimate_before_discovery: required
+  detached_if_estimated_minutes_exceed: 30
+
+selection:
+  retain_complete_cost_recovery_frontier: true
+  cheapest_passing_and_highest_recovery_passing_both_reported: true
+  no_configuration_passes: preserve_negative_and_open_new_error_decomposition_contract
+  canary_outcomes_must_not_change_this_grid: true
+  discovery_outcomes_must_not_select_confirmation_users: true
+
+frozen_inputs:
+  functional_boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  functional_boundary_discovery:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/discovery_functional_boundary/analysis_v2/summary.json
+    sha256: 022131c95b681b5941994d9e573ad0979a9e9ae1ce8548b966a115f79ddd67d4
+  estimator_implementation:
+    path: scripts/insight_two/functional_probe_estimator.py
+    sha256: d738fc6a29b7548a9999d9d3b0de8f783c9b691322afdded7900ef2920f7a317
+  fused_reader_primitive:
+    path: scripts/insight/pro_lazy_reader.py
+    sha256: 695c303196a85b1a1e2a9e019abd6e4ff2da669cc5536058ef247a9423d5f2a2
+  parameter_map_primitive:
+    path: scripts/insight/one_release_refinement.py
+    sha256: af10eeca78e476c5cd094bc2ad82b793b5b00426960a77dda1ad8db1e4f48c15
+
+authorization:
+  implementation_and_unit_tests: true
+  focused_four_GPU_canary: true
+  512_user_discovery_after_passing_canary_and_resource_estimate: true
+  confirmation_population: false
+  quality_label_join: false
+  new_training: false
+  serving_lineage_promotion: false

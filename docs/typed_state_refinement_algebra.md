@@ -2,6 +2,12 @@
 
 更新日期：2026-08-27
 
+> **Design 0 历史 companion（2026-09-02 起 superseded）。** 本文的 typed operators、证据与反例
+> 继续作为 strong baseline 保留；“当前主方法已收敛为 lightweight PRO”不再是有效的 Design 1
+> 裁决。新的主线由 Transformer functional contraction 导出 proactive Migration Sketch，见
+> [paper design](paper_design.md)和
+> [Insight 2 / Design 1 统一稿](insight2_design1_expert_brief.md)。
+
 本文是论文第 3 章 `Insight-Driven State Refinement` 的底层 plan-IR companion。本文只展开
 Design 0 strong baseline 的 typed semantics。当前主方法已收敛为 lightweight PRO；它只借用
 version-map、coverage 和 mass 合同，不物化 Design 0 的 translated prefix state。本文替换旧的

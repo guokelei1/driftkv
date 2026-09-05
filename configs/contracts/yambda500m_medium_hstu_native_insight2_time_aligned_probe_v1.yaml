@@ -1,0 +1,105 @@
+contract: yambda500m_medium_hstu_native_insight2_time_aligned_probe_v1
+date_frozen: 2026-09-02
+status: prospective_label_free_time_semantics_correction_v1
+purpose: >-
+  Isolate whether the failed executable S4 probe estimator used the wrong
+  request-time semantics by replacing its hard-coded zero delta with the known
+  release-cutover delta, without adding probes, a predictor or Exact state.
+
+prior_result:
+  fixed_history_probe_grid: valid_negative
+  best_user_equal_probability_recovery: -0.9288123182952404
+  best_configuration: C16_P2
+  interpretation: >-
+    More probes and carriers did not solve the parameter-map/carrier estimator;
+    this run changes only the probe time coordinate before retiring that family.
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  one_release_transition_only: true
+  new_training: false
+  labels: prohibited
+  future_events: prohibited
+  request_candidates_in_estimator: prohibited
+  Current_Exact_in_estimator: prohibited
+  predictor_fit: none
+
+population:
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  confirmation_read: prohibited
+
+mechanism:
+  stage: S4_aggregated_context
+  serving_base: Parent_persistent_KV
+  carrier_axis: [32, 64]
+  repair_evidence: 128
+  probes: 1
+  probe_item: latest_strictly_pre_cutover_history_item
+  old_probe_time: zero
+  new_probe_time: release_cutover_timestamp_minus_latest_history_timestamp
+  new_probe_time_availability: known_at_release_and_label_free
+  parameter_map: unchanged_parameter_only_joint_map
+  translated_prefix_positions: 0
+  sidecar_values_fp32_per_user: 1152
+
+cost:
+  denominator: complete_Current_Exact_All_prefix_recompute_at_context1024
+  time_semantics_change_has_zero_extra_FLOPs: true
+  fraction_by_carriers:
+    32: 0.05587725798891544
+    64: 0.10051680389298664
+  maximum_fraction: 0.20
+
+evaluation:
+  heldout_candidates: frozen_odd_32_panel_positions
+  Current_Exact_role: evaluation_reference_and_shape_diagnostic_only
+  primary_metric: unclipped_per_user_probability_gap_recovery_then_edge_equal_mean
+  all_edges_and_both_configurations_reported: required
+  compare_to_zero_time_raw_without_overwriting: required
+
+gates:
+  correctness:
+    probe_replay_max_abs_error: 0.00002
+    labels_read: false
+    Current_Exact_used_by_estimator: false
+  estimator:
+    edge_equal_probability_recovery_min: 0.80
+    edges_at_80_min: 4
+    theoretical_compute_fraction_max: 0.20
+  on_fail: retire_parameter_map_plus_Parent_conditioned_carrier_estimator_family
+  on_pass: run_512_user_discovery_before_persistence
+
+execution:
+  GPUs: [0, 1, 2, 3]
+  independent_UID_shards: true
+  checkpoints_and_edges_serial_within_rank: true
+  canary_users: 32
+  discovery_users: 512
+  resource_estimate_before_discovery: required
+  raw_first_and_no_overwrite: true
+
+frozen_inputs:
+  functional_boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  failed_probe_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_probe_v1.yaml
+    sha256: d3ed8e6a89c33c007780770acfcd0a453f9d36013ebe278576306c4f0d0af0f5
+  failed_probe_adjudication:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/estimator_functional_probe_v1/canary/analysis/summary.json
+    sha256: 8a228c947d2bee796e10b0373848c5d38e508a9049d0e5bb8856a6955f65485b
+  implementation:
+    path: scripts/insight_two/time_aligned_functional_probe.py
+    sha256: 2c5145482440bc6def6c53f0980834909c5acef51bf6e860fd1f028ce8d74949
+
+authorization:
+  implementation_and_tests: true
+  four_GPU_canary: true
+  discovery_only_after_gate: true
+  population_calibration_or_predictor: false
+  quality_labels: false
+  new_training: false

@@ -1,0 +1,115 @@
+contract: yambda500m_medium_hstu_native_insight2_tail_functional_v1
+date_frozen: 2026-09-02
+status: prospective_focused_executable_estimator_canary_v1
+purpose: >-
+  Test the last currently authorized no-new-predictor estimator family: use a
+  dependency-closed Parent-base Current Tail-128 replay once at release time,
+  read its functional response with fixed history probes, discard the mixed
+  cache and persist only an S4 sidecar.
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  context: 1024
+  stage: S4_aggregated_context
+  one_Parent_to_Current_transition_only: true
+  focused_users: 32
+  discovery_users_if_canary_passes: 512
+  confirmation_users: prohibited
+  labels_read: false
+  new_training: false
+
+mechanism:
+  Parent_persistent_prefix_positions: 896
+  Current_replay_tail_positions: 128
+  tail_base: untouched_Parent_first_896_KV
+  tail_replay: chronological_Current_forward_against_Parent_base
+  probe_source: eight_fixed_strictly_pre_cutover_history_items
+  probe_counts: [1, 2, 4]
+  probe_subsets: inherited_nested_indices_from_functional_probe_v1
+  probe_query_delta: cutover_minus_last_prefix_event
+  probe_attention_semantics: each_probe_is_an_independent_query_not_a_causal_probe_sequence
+  response_difference: mixed_tail_cache_minus_Parent_cache_at_S4
+  output: six_layer_candidate_shared_S4_sidecar
+  output_scalars_fp32: 1152
+  output_bytes_fp32: 4608
+  transient_Current_KV_positions: 128
+  persistent_Current_KV_positions: 0
+  parameter_map: none
+  predictor_fit: none
+
+allowed_inputs:
+  - Parent_persistent_KV
+  - Parent_and_Current_parameters
+  - strictly_pre_cutover_raw_tail
+  - fixed_history_probe_items
+forbidden_inputs:
+  - Current_Exact_KV
+  - anchor_or_heldout_request_candidates_in_estimator
+  - future_events_or_labels
+  - target_KV_or_functional_target_fit
+  - qualification_outcome
+
+evaluation:
+  Current_Exact_role: evaluation_reference_only_after_estimator_is_generated
+  heldout_candidates: frozen_odd_32_candidate_panel
+  oracle_correction: frozen_even_32_candidate_panel_for_diagnostics_only
+  primary_metric: unclipped_per_user_probability_gap_recovery
+  aggregation: user_mean_within_edge_then_edge_equal
+  every_edge_reported: required
+  correction_companions: [cosine_to_oracle, norm_ratio_to_oracle, relative_l2_to_oracle]
+
+cost:
+  denominator: Medium_6L_H192_context1024_ideal_causal_Exact_All
+  full_recompute_flops_per_user: 4771282944
+  generation_primary_request_injection_reported_separately: true
+  grid:
+    - {probes: 1, total_generation_flops_per_user: 872392320, over_full_fraction: 0.18284229425065932}
+    - {probes: 2, total_generation_flops_per_user: 884133120, over_full_fraction: 0.18530301606024394}
+    - {probes: 4, total_generation_flops_per_user: 907614720, over_full_fraction: 0.19022445967941323}
+  request_injection_adds_per_candidate: 1152
+  actual_GPU_runtime_and_IO: report_separately
+
+gates:
+  instrumentation:
+    single_probe_mixed_reader_replay_max_abs_error: 0.00002
+    Parent_prefix_or_cache_mutation_max_abs_error: 0.0
+    finite_all_rows: required
+    labels_read: false
+  focused_family_gate:
+    primary_configuration: P4
+    edge_equal_probability_recovery_at_least: 0.80
+    positive_edges_minimum: 4
+  stretch_recovery: 0.90
+  stop_rule: >-
+    If P4 fails either focused family gate, retire Tail-128 functional
+    estimation without changing width, positions, scale or probes and do not
+    launch the 512-user discovery run.
+
+frozen_inputs:
+  boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  estimator_helper:
+    path: scripts/insight_two/tail_functional_estimator.py
+    sha256: ce0a432906b204da2c7a4006ce1502f143f3697214ba36e3f04920ef38564c41
+  probe_selector:
+    path: scripts/insight_two/functional_probe_estimator.py
+    sha256: d738fc6a29b7548a9999d9d3b0de8f783c9b691322afdded7900ef2920f7a317
+  dependency_closed_transition:
+    path: src/hstu_kvcache/models/state_transition.py
+    sha256: 3e9e921cbbe599233ea1e6060d0c5a8f9480047db58f5641f4aa11d458354e92
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/estimator_tail_functional_v1
+  overwrite_existing_evidence: prohibited
+  raw_first: true
+  negative_result_retention: required
+
+authorization:
+  rationale: reuses_the_frozen_dependency_closed_Tail_128_action_without_new_predictor_complexity
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  512_user_discovery: only_if_focused_family_gate_passes
+  serving_action_or_scale_frontier_admission: false
+  long_training: false
