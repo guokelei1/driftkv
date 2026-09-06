@@ -170,6 +170,7 @@ class PointwiseAttention(nn.Module):
         x_new: torch.Tensor,
         cached_k: torch.Tensor,
         cached_v: torch.Tensor,
+        window_size: int | None = None,
     ):
         """Incremental attention with a prefix KV cache (possibly from a different theta).
 
@@ -197,6 +198,8 @@ class PointwiseAttention(nn.Module):
         ).tril(diagonal=diagonal)
         query_positions = torch.arange(n, n + m, device=x_new.device)
         key_positions = torch.arange(n + m, device=x_new.device)
+        if window_size is not None:
+            mask *= (key_positions[None, :] > query_positions[:, None] - window_size)
         out = self._finish(
             self._aggregate(
                 q,

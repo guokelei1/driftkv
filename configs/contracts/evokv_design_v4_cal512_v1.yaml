@@ -1,0 +1,44 @@
+schema_version: 1
+status: prospective_development_calibration
+run_id: v4_cal512_01
+authorization: user_2026_09_06_entire_six_layer_design_exploration
+method_and_input_reference: configs/contracts/evokv_design_v4_full_history_development_v1.yaml
+scope:
+  model: same_frozen_six_layer_Medium_seed17_V0_to_V5
+  backbone_training: false
+  theta3_access: false
+  confirmation_read: false
+  calibration_users: first_512_of_existing_disjoint_calibration_order
+  lifetime_users: same_first_32
+  development_users: same_first_128
+  trajectory_users: 0
+  calibration_data: strictly_before_each_release
+  targets: [1, 2, 3, 4, 5]
+  last_cutover_day: 287
+changes:
+  calibration_users: 128_to_512
+  calibration_batch: 16
+  mathematical_method: unchanged_v4_full_history_rank32_three_pass_ridge
+  native_states_and_features: reused_across_passes_because_writes_do_not_consume_mapper
+  actual_corrected_queries: recomputed_every_pass
+evidence:
+  motivation: results/design/v4_response_v5_probe_01/summary.json
+  canary: results/design/v4_batch_canary_01/loaded_reference_check.json
+  passed: true
+  maximum_canary_logit_difference: 0.000000954
+evaluation:
+  this_run: all_five_adjacent_cutovers_on_fixed_development_users
+  later_trajectory: frozen_weights_same_512_development_users_if_direction_improves
+  preserve_all_negative_results: true
+  no_population_cost_or_confirmation_claim: true
+resources:
+  gpu: 0
+  expected_seconds_range: [350, 600]
+  conservative_seconds: 2871
+  peak_gpu_mib_range: [28672, 45056]
+  estimate: results/design/analysis/v4_cal512_resource_probe.json
+  execution: detached_tmux
+artifacts:
+  output: results/design/v4_cal512_01
+  log: results/design/v4_cal512_01.log
+  exit_status: results/design/v4_cal512_01.exit_status.txt

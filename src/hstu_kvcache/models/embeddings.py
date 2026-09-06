@@ -23,13 +23,16 @@ class TemporalEncoder(nn.Module):
         self.proj = nn.Linear(2 * num_freqs, hidden_size, bias=False)
 
     def forward(self, time_delta: torch.Tensor) -> torch.Tensor:
+        return self.proj(self.features(time_delta))
+
+    def features(self, time_delta: torch.Tensor) -> torch.Tensor:
+        """Expose the unchanged native Fourier basis for read-time weighting."""
         # time_delta: [B, L] in seconds (>=0). 0 for the first event.
         freqs = torch.exp(
             -math.log(self.max_period) * torch.arange(self.num_freqs, device=time_delta.device) / self.num_freqs
         )  # [num_freqs]
         phases = time_delta.unsqueeze(-1) * freqs  # [B, L, num_freqs]
-        emb = torch.cat([torch.sin(phases), torch.cos(phases)], dim=-1)  # [B, L, 2*num_freqs]
-        return self.proj(emb)
+        return torch.cat([torch.sin(phases), torch.cos(phases)], dim=-1)  # [B, L, 2*num_freqs]
 
 
 class BehaviorEncoder(nn.Module):

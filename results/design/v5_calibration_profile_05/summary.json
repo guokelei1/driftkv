@@ -1,0 +1,224 @@
+{
+  "status": "diagnostic_complete",
+  "elapsed_seconds": 77.01207443606108,
+  "peak_allocated_mib": 13511.78857421875,
+  "calibration_scenes": 428,
+  "ledger_seconds": {
+    "history_io": 7.908877493813634,
+    "model_io": 3.6008010571822524,
+    "diagnostic_prefix_reference": 0.347601848654449,
+    "prefix_compilation_and_warmup": 26.423109013587236,
+    "calibration_source_backfill": 0.5515648862347007,
+    "teacher_build": 0.676061530597508,
+    "calibration_lifetime_source": 0.3850869722664356,
+    "teacher_replay": 1.8439819207414985,
+    "calibration_lifetime_replay": 1.4508579475805163,
+    "response_compilation_and_warmup": 28.82696690969169,
+    "translator_fit": 2.53374448698014
+  },
+  "fitting_breakdown_seconds": {
+    "ridge_fit": 0.822128432802856,
+    "linear_solve": 0.052754076197743416,
+    "svd": 0.7564799534156919,
+    "response_generation_and_setup": 1.7116160541772842
+  },
+  "phases": [
+    {
+      "phase": "linear_solve",
+      "seconds": 0.03955389931797981,
+      "input_shape": [
+        1712,
+        1712
+      ]
+    },
+    {
+      "phase": "svd",
+      "seconds": 0.25648741610348225,
+      "input_shape": [
+        1712,
+        1152
+      ]
+    },
+    {
+      "phase": "ridge_fit",
+      "seconds": 0.30057298205792904,
+      "input_shape": [
+        1712,
+        4675
+      ]
+    },
+    {
+      "phase": "linear_solve",
+      "seconds": 0.006602603942155838,
+      "input_shape": [
+        1712,
+        1712
+      ]
+    },
+    {
+      "phase": "svd",
+      "seconds": 0.24727031588554382,
+      "input_shape": [
+        1712,
+        1152
+      ]
+    },
+    {
+      "phase": "ridge_fit",
+      "seconds": 0.25810038670897484,
+      "input_shape": [
+        1712,
+        4675
+      ]
+    },
+    {
+      "phase": "linear_solve",
+      "seconds": 0.006597572937607765,
+      "input_shape": [
+        1712,
+        1712
+      ]
+    },
+    {
+      "phase": "svd",
+      "seconds": 0.2527222214266658,
+      "input_shape": [
+        1712,
+        1152
+      ]
+    },
+    {
+      "phase": "ridge_fit",
+      "seconds": 0.2634550640359521,
+      "input_shape": [
+        1712,
+        4675
+      ]
+    }
+  ],
+  "fit_records": [
+    {
+      "effective_rank": 32,
+      "centered_prediction_energy_retained": 0.99997878074646,
+      "normalized_fit_mse": 0.01156756840646267,
+      "supported_producers": [
+        0,
+        1
+      ],
+      "target": 1,
+      "pass_index": 0,
+      "calibration_scenes": 428,
+      "history_scope": "all",
+      "calibration_batch": 16,
+      "query_time_groups": 4,
+      "fitting": "shared ridge at recomputed corrected queries; native-write states fixed across passes"
+    },
+    {
+      "effective_rank": 32,
+      "centered_prediction_energy_retained": 0.9999799728393555,
+      "normalized_fit_mse": 0.011502714827656746,
+      "supported_producers": [
+        0,
+        1
+      ],
+      "target": 1,
+      "pass_index": 1,
+      "calibration_scenes": 428,
+      "history_scope": "all",
+      "calibration_batch": 16,
+      "query_time_groups": 4,
+      "fitting": "shared ridge at recomputed corrected queries; native-write states fixed across passes"
+    },
+    {
+      "effective_rank": 32,
+      "centered_prediction_energy_retained": 0.9999802112579346,
+      "normalized_fit_mse": 0.011462869122624397,
+      "supported_producers": [
+        0,
+        1
+      ],
+      "target": 1,
+      "pass_index": 2,
+      "calibration_scenes": 428,
+      "history_scope": "all",
+      "calibration_batch": 16,
+      "query_time_groups": 4,
+      "fitting": "shared ridge at recomputed corrected queries; native-write states fixed across passes"
+    }
+  ],
+  "prefix_checks": [
+    {
+      "model": "parent",
+      "batch": 1,
+      "max_difference": {
+        "k": 2.86102294921875e-06,
+        "v": 3.814697265625e-06
+      }
+    },
+    {
+      "model": "parent",
+      "batch": 16,
+      "max_difference": {
+        "k": 4.76837158203125e-06,
+        "v": 5.7220458984375e-06
+      }
+    },
+    {
+      "model": "current",
+      "batch": 1,
+      "max_difference": {
+        "k": 2.86102294921875e-06,
+        "v": 3.814697265625e-06
+      }
+    },
+    {
+      "model": "current",
+      "batch": 16,
+      "max_difference": {
+        "k": 4.76837158203125e-06,
+        "v": 6.67572021484375e-06
+      }
+    }
+  ],
+  "response_checks": {
+    "passed": true,
+    "comparisons": [
+      {
+        "batch": 1,
+        "max_abs": 0.0003662109375,
+        "relative_rms": 1.5496995331432117e-07,
+        "layer_relative_rms": [
+          1.6561757831823343e-07,
+          9.596111283372011e-08,
+          8.54063557653717e-08,
+          1.0316495036022388e-07,
+          8.36427105355142e-08,
+          1.1240320674232862e-07
+        ],
+        "eager_max_abs": 0.0,
+        "original_elementwise_threshold_misses": 1
+      },
+      {
+        "batch": 16,
+        "max_abs": 0.00054931640625,
+        "relative_rms": 7.608377217138695e-08,
+        "layer_relative_rms": [
+          9.182337379343153e-08,
+          7.27695734781264e-08,
+          6.9186242512842e-08,
+          6.609801062040788e-08,
+          6.820672382445991e-08,
+          7.105697363840591e-08
+        ],
+        "eager_max_abs": 0.0,
+        "original_elementwise_threshold_misses": 1359
+      }
+    ],
+    "rate_outputs_own_storage": true,
+    "criterion": "eager vs old elementwise formula; compiled relative RMS below1e-4 globally and in every layer; original elementwise misses retained",
+    "scenarios": "Parent source, real early replay, lifetime descendant and Current-Exact zero control"
+  },
+  "scope": "single fixed calibration edge; solve/SVD timers nested within ridge_fit, not additive with it",
+  "limitation": "synchronized instrumentation adds overhead; no new quality or population result",
+  "confirmation_read": false
+}

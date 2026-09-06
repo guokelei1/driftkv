@@ -1,0 +1,45 @@
+schema_version: 1
+status: prospective_development_calibration
+run_id: v4_score512_01
+authorization: user_2026_09_06_entire_six_layer_design_exploration
+method_and_input_reference: configs/contracts/evokv_design_v4_cal512_v1.yaml
+scope:
+  model: same_frozen_six_layer_Medium_seed17_V0_to_V5
+  backbone_training: false
+  theta3_access: false
+  confirmation_read: false
+  calibration_users: same_first_512
+  lifetime_users: same_first_32
+  development_users: same_first_128
+  trajectory_users: 0
+  targets: [1, 2, 3, 4, 5]
+  calibration_data: strictly_before_each_release
+change:
+  base: same_rank32_ridge_three_pass_full_history_map
+  decoder_refinement_steps: 256
+  users_per_step: 4
+  learning_rate: 0.0003
+  loss: normalized_CC_logit_distillation_plus_0.1_response_constraint_plus_0.0001_residual_penalty
+  source_projection: frozen_during_refinement
+  inference: fold_refinement_into_same_shared_decode_and_offset
+  no_score_mixing: true
+execution_optimizations:
+  calibration_batch: 16
+  short_native_calibration_replay: same_validated_rolling_band
+  teacher_logits: retained_because_this_objective_uses_them
+canary:
+  reference: results/design/v4_score_canary_01/canary.pass.json
+  finite_refinement_reference: results/design/v4_score_canary_01/summary.json
+  passed: true
+resources:
+  gpu: 0
+  expected_seconds_range: [400, 650]
+  conservative_seconds: 3179
+  estimate: results/design/analysis/v4_score512_resource_probe.json
+  peak_gpu_mib_range: [28672, 45056]
+  execution: detached_tmux
+artifacts:
+  output: results/design/v4_score512_01
+  log: results/design/v4_score512_01.log
+  exit_status: results/design/v4_score512_01.exit_status.txt
+  retain_all_negative_results: true

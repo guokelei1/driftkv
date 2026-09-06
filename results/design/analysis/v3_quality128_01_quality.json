@@ -1,0 +1,441 @@
+{
+  "run": "v3_quality128_01",
+  "configuration_sha256": "d078f088500ff8c5912cc66894921c6133629401457687eb5bb61fe335b946da",
+  "raw_sha256": "937458051b6c4d34da520def4ba12b0913dbf47b81812233e50d0c0b090d4284",
+  "confirmation_read": false,
+  "backbone_seed_repeats": 1,
+  "quality": [
+    {
+      "target": 1,
+      "all_requests": {
+        "requests": 649,
+        "users": 79,
+        "positives": 603,
+        "metrics": {
+          "exact": {
+            "log_loss": 0.23495765843948682,
+            "Brier": 0.06192047521951113,
+            "ROC_AUC": 0.7542360660465787,
+            "dislike_PR_AUC": 0.274579005555534,
+            "dislike_only_log_loss": 2.1399348809757366
+          },
+          "reuse": {
+            "log_loss": 0.23579285591101318,
+            "Brier": 0.06203902501052309,
+            "ROC_AUC": 0.7454394693200663,
+            "dislike_PR_AUC": 0.2736705970465663,
+            "dislike_only_log_loss": 2.132588505669129
+          },
+          "learned": {
+            "log_loss": 0.23475646413652354,
+            "Brier": 0.0618668901320548,
+            "ROC_AUC": 0.7538394981613671,
+            "dislike_PR_AUC": 0.25826417484775244,
+            "dislike_only_log_loss": 2.1388112040108043
+          }
+        },
+        "exact_minus_reuse_auc": 0.00879659672651234,
+        "learned_minus_reuse_auc": 0.008400028841300755,
+        "auc_gap_recovery": 0.9549180327868895,
+        "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+        "probability_gap_to_exact": {
+          "reuse": 0.003772975134997905,
+          "learned": 0.0010890571704228946
+        }
+      },
+      "bootstrap": {
+        "repetitions": 1000,
+        "valid_samples": 1000,
+        "seed": 17,
+        "scope": "paired UID sampling uncertainty conditional on this one backbone seed; not training-seed replication",
+        "auc_difference_95ci": {
+          "exact_minus_reuse": [
+            -0.005258981848364366,
+            0.02785315465436825
+          ],
+          "learned_minus_reuse": [
+            -0.004967531306817025,
+            0.0278543028947357
+          ],
+          "learned_minus_exact": [
+            -0.004331608865490258,
+            0.004459670523526291
+          ]
+        }
+      },
+      "coverage": {
+        "producer_supported_fraction": 1.0,
+        "correction_active_fraction": 0.8705701078582434,
+        "no_old_state_requests": 84
+      },
+      "old_state_strata": {
+        "none": {
+          "requests": 84,
+          "users": 11,
+          "positives": 75,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.2971774833574198,
+              "Brier": 0.08811759587459085,
+              "ROC_AUC": 0.8533333333333334,
+              "dislike_PR_AUC": 0.3751201294679556,
+              "dislike_only_log_loss": 1.9306955719734578
+            },
+            "reuse": {
+              "log_loss": 0.2971772885206991,
+              "Brier": 0.08812423488140882,
+              "ROC_AUC": 0.8533333333333334,
+              "dislike_PR_AUC": 0.3751201294679556,
+              "dislike_only_log_loss": 1.9309039478525938
+            },
+            "learned": {
+              "log_loss": 0.2971772882495197,
+              "Brier": 0.08812423483700867,
+              "ROC_AUC": 0.8533333333333334,
+              "dislike_PR_AUC": 0.3751201294679556,
+              "dislike_only_log_loss": 1.9309039478525938
+            }
+          },
+          "exact_minus_reuse_auc": 0.0,
+          "learned_minus_reuse_auc": 0.0,
+          "auc_gap_recovery": null,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.00016584236465228526,
+            "learned": 0.00016584261143450028
+          }
+        },
+        "1_to_256": {
+          "requests": 33,
+          "users": 12,
+          "positives": 33,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.10632026820526508,
+              "Brier": 0.011729515492309963,
+              "ROC_AUC": null,
+              "dislike_PR_AUC": null,
+              "dislike_only_log_loss": null
+            },
+            "reuse": {
+              "log_loss": 0.10514807249537594,
+              "Brier": 0.011523079915262243,
+              "ROC_AUC": null,
+              "dislike_PR_AUC": null,
+              "dislike_only_log_loss": null
+            },
+            "learned": {
+              "log_loss": 0.10652883309017677,
+              "Brier": 0.011805264432930023,
+              "ROC_AUC": null,
+              "dislike_PR_AUC": null,
+              "dislike_only_log_loss": null
+            }
+          },
+          "exact_minus_reuse_auc": null,
+          "learned_minus_reuse_auc": null,
+          "auc_gap_recovery": null,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.001516721214150134,
+            "learned": 0.0007193613983724689
+          }
+        },
+        "257_to_768": {
+          "requests": 235,
+          "users": 40,
+          "positives": 212,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.2909961892562043,
+              "Brier": 0.0815715042341664,
+              "ROC_AUC": 0.716160787530763,
+              "dislike_PR_AUC": 0.40494974623365076,
+              "dislike_only_log_loss": 2.1477527280117714
+            },
+            "reuse": {
+              "log_loss": 0.292056680469552,
+              "Brier": 0.08175199989073824,
+              "ROC_AUC": 0.7087776866283839,
+              "dislike_PR_AUC": 0.40255582883387175,
+              "dislike_only_log_loss": 2.1573615108229904
+            },
+            "learned": {
+              "log_loss": 0.29043288421539376,
+              "Brier": 0.08140642542531451,
+              "ROC_AUC": 0.7175963904840033,
+              "dislike_PR_AUC": 0.4210801039262759,
+              "dislike_only_log_loss": 2.147158768857972
+            }
+          },
+          "exact_minus_reuse_auc": 0.007383100902379036,
+          "learned_minus_reuse_auc": 0.008818703855619336,
+          "auc_gap_recovery": 1.1944444444444353,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.0030735731447399622,
+            "learned": 0.001364938128014698
+          }
+        },
+        "769_to_1024": {
+          "requests": 297,
+          "users": 68,
+          "positives": 283,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.18731292390310417,
+              "Brier": 0.04453916787111704,
+              "ROC_AUC": 0.7645128722867238,
+              "dislike_PR_AUC": 0.13834714644423482,
+              "dislike_only_log_loss": 2.2616022594894303
+            },
+            "reuse": {
+              "log_loss": 0.1884291749084737,
+              "Brier": 0.04467646427698317,
+              "ROC_AUC": 0.7599697122665321,
+              "dislike_PR_AUC": 0.1403105737379677,
+              "dislike_only_log_loss": 2.221544355798416
+            },
+            "learned": {
+              "log_loss": 0.18729587114158505,
+              "Brier": 0.04454239820929037,
+              "ROC_AUC": 0.7627460878344271,
+              "dislike_PR_AUC": 0.13581650103754703,
+              "dislike_only_log_loss": 2.2587520121493054
+            }
+          },
+          "exact_minus_reuse_auc": 0.004543160020191728,
+          "learned_minus_reuse_auc": 0.0027763755678950064,
+          "auc_gap_recovery": 0.6111111111111247,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.005597268063643106,
+            "learned": 0.0011729560202498825
+          }
+        }
+      }
+    },
+    {
+      "target": 2,
+      "all_requests": {
+        "requests": 495,
+        "users": 66,
+        "positives": 468,
+        "metrics": {
+          "exact": {
+            "log_loss": 0.2220607653962318,
+            "Brier": 0.0540040675349424,
+            "ROC_AUC": 0.6301044634377968,
+            "dislike_PR_AUC": 0.0984820161080405,
+            "dislike_only_log_loss": 2.1560070240383644
+          },
+          "reuse": {
+            "log_loss": 0.2195722860652651,
+            "Brier": 0.05340017808368962,
+            "ROC_AUC": 0.6339822728711617,
+            "dislike_PR_AUC": 0.10414910592057997,
+            "dislike_only_log_loss": 2.1837773923934027
+          },
+          "learned": {
+            "log_loss": 0.2244456874424153,
+            "Brier": 0.054580489333474994,
+            "ROC_AUC": 0.6244064577397911,
+            "dislike_PR_AUC": 0.09565332501658226,
+            "dislike_only_log_loss": 2.1542175700961916
+          }
+        },
+        "exact_minus_reuse_auc": -0.0038778094333649094,
+        "learned_minus_reuse_auc": -0.009575815131370624,
+        "auc_gap_recovery": null,
+        "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+        "probability_gap_to_exact": {
+          "reuse": 0.006026600488491457,
+          "learned": 0.0029532868915535734
+        }
+      },
+      "bootstrap": {
+        "repetitions": 1000,
+        "valid_samples": 1000,
+        "seed": 17,
+        "scope": "paired UID sampling uncertainty conditional on this one backbone seed; not training-seed replication",
+        "auc_difference_95ci": {
+          "exact_minus_reuse": [
+            -0.021040269413595113,
+            0.013172389870877595
+          ],
+          "learned_minus_reuse": [
+            -0.02732026770878047,
+            0.008845936528312854
+          ],
+          "learned_minus_exact": [
+            -0.01146691520467843,
+            0.0024261864338263987
+          ]
+        }
+      },
+      "coverage": {
+        "producer_supported_fraction": 1.0,
+        "correction_active_fraction": 0.9212121212121213,
+        "no_old_state_requests": 39
+      },
+      "old_state_strata": {
+        "none": {
+          "requests": 39,
+          "users": 8,
+          "positives": 34,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.32816665288503033,
+              "Brier": 0.09928308167264352,
+              "ROC_AUC": 0.8647058823529412,
+              "dislike_PR_AUC": 0.6139194139194138,
+              "dislike_only_log_loss": 1.938523977298883
+            },
+            "reuse": {
+              "log_loss": 0.3278579248376401,
+              "Brier": 0.0992406478518261,
+              "ROC_AUC": 0.8647058823529412,
+              "dislike_PR_AUC": 0.6139194139194138,
+              "dislike_only_log_loss": 1.9367130516750486
+            },
+            "learned": {
+              "log_loss": 0.3278579244682279,
+              "Brier": 0.09924064777332656,
+              "ROC_AUC": 0.8647058823529412,
+              "dislike_PR_AUC": 0.6139194139194138,
+              "dislike_only_log_loss": 1.9367130516750486
+            }
+          },
+          "exact_minus_reuse_auc": 0.0,
+          "learned_minus_reuse_auc": 0.0,
+          "auc_gap_recovery": null,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.00025803758123728207,
+            "learned": 0.0002580372564705814
+          }
+        },
+        "1_to_256": {
+          "requests": 48,
+          "users": 7,
+          "positives": 47,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.13382516359735866,
+              "Brier": 0.026692429844081877,
+              "ROC_AUC": 0.8723404255319149,
+              "dislike_PR_AUC": 0.14285714285714285,
+              "dislike_only_log_loss": 1.5634840649586652
+            },
+            "reuse": {
+              "log_loss": 0.13360720383824332,
+              "Brier": 0.026675146457797255,
+              "ROC_AUC": 0.8723404255319149,
+              "dislike_PR_AUC": 0.14285714285714285,
+              "dislike_only_log_loss": 1.570492571475122
+            },
+            "learned": {
+              "log_loss": 0.13384923915209004,
+              "Brier": 0.026682662129894886,
+              "ROC_AUC": 0.8723404255319149,
+              "dislike_PR_AUC": 0.14285714285714285,
+              "dislike_only_log_loss": 1.5638187481971972
+            }
+          },
+          "exact_minus_reuse_auc": 0.0,
+          "learned_minus_reuse_auc": 0.0,
+          "auc_gap_recovery": null,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.0003788437186453923,
+            "learned": 0.0002132930793086902
+          }
+        },
+        "257_to_768": {
+          "requests": 194,
+          "users": 33,
+          "positives": 181,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.2636035676419204,
+              "Brier": 0.06654496738838926,
+              "ROC_AUC": 0.5036124096897577,
+              "dislike_PR_AUC": 0.07972649419342169,
+              "dislike_only_log_loss": 2.255423589479029
+            },
+            "reuse": {
+              "log_loss": 0.25747805075994196,
+              "Brier": 0.06511136360679295,
+              "ROC_AUC": 0.5240118997025074,
+              "dislike_PR_AUC": 0.08525975996491106,
+              "dislike_only_log_loss": 2.291569724180915
+            },
+            "learned": {
+              "log_loss": 0.2672683304978659,
+              "Brier": 0.06744422523323826,
+              "ROC_AUC": 0.5002124946876328,
+              "dislike_PR_AUC": 0.07584958184171413,
+              "dislike_only_log_loss": 2.2530155896302797
+            }
+          },
+          "exact_minus_reuse_auc": -0.020399490012749655,
+          "learned_minus_reuse_auc": -0.023799405014874542,
+          "auc_gap_recovery": null,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.008078623571052644,
+            "learned": 0.0038588679010039782
+          }
+        },
+        "769_to_1024": {
+          "requests": 214,
+          "users": 58,
+          "positives": 206,
+          "metrics": {
+            "exact": {
+              "log_loss": 0.18485457679164846,
+              "Brier": 0.04050940625560723,
+              "ROC_AUC": 0.6298543689320388,
+              "dislike_PR_AUC": 0.09719670262365648,
+              "dislike_only_log_loss": 2.2044473792944217
+            },
+            "reuse": {
+              "log_loss": 0.18475670514941053,
+              "Brier": 0.040423791193986175,
+              "ROC_AUC": 0.6152912621359223,
+              "dislike_PR_AUC": 0.12372901989793139,
+              "dislike_only_log_loss": 2.2396906688024503
+            },
+            "learned": {
+              "log_loss": 0.18709970389648772,
+              "Brier": 0.041037427473958936,
+              "ROC_AUC": 0.6195388349514563,
+              "dislike_PR_AUC": 0.0970173276068409,
+              "dislike_only_log_loss": 2.2034109651038856
+            }
+          },
+          "exact_minus_reuse_auc": 0.014563106796116498,
+          "learned_minus_reuse_auc": 0.0042475728155340065,
+          "auc_gap_recovery": 0.2916666666666686,
+          "ratio_reporting_rule": "only if Exact-Reuse AUC > 0.0001; never a serving gate",
+          "probability_gap_to_exact": {
+            "reuse": 0.006484421985307599,
+            "learned": 0.0032381080267059694
+          }
+        }
+      }
+    }
+  ],
+  "elapsed_seconds": 957.5808526752517,
+  "cost": {
+    "calibration_reference": "v3_query_only128_01",
+    "original_teacher_and_fit_seconds": 30.396303527988493,
+    "original_calibration_lineage_seconds": 127.14645825698972,
+    "original_calibration_source_build_seconds": 2.172600382938981,
+    "measured_initial_summary_backfill_seconds": 0.09196664486080408,
+    "measured_method_service_seconds": 287.01007248740643,
+    "measured_exact_service_seconds": 318.1956187803298,
+    "service_ratio_excluding_calibration_and_initial_backfill": 0.9019925339875509,
+    "scope": "separate actual execution costs; no population extrapolation or 20-percent qualification"
+  }
+}

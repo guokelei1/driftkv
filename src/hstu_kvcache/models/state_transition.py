@@ -91,6 +91,36 @@ def append_with_rolling_cap(
 
 
 @torch.no_grad()
+def append_with_rolling_band(
+    current: HSTU,
+    cache: HSTUKVCache,
+    item_ids: torch.Tensor,
+    behaviors: torch.Tensor,
+    time_deltas: torch.Tensor,
+    max_length: int,
+) -> HSTUKVCache:
+    """Batch native writes with the same per-query cap as sequential eviction.
+
+Every new row can read only itself and the preceding ``max_length - 1``
+positions. Old entries excluded by its sliding mask cannot influence that row
+through later layers either. This is intended for replay intervals containing
+no intervening candidate request, with no learned correction on write tokens.
+It reuses the native block update; existing unbounded append defaults remain.
+"""
+    if current.cfg.relative_position_bias:
+        raise ValueError("rolling-band replay is checked for the frozen no-position-bias models")
+    x = current.embed_inputs(item_ids, behaviors, time_deltas)
+    layers = []
+    for layer, block in enumerate(current.blocks):
+        x, values = block.forward_with_cache(
+            x, cache.k[layer], cache.v[layer], window_size=max_length
+        )
+        layers.append(values)
+    result = HSTUKVCache.from_layer_list(layers, cache.seq_len + item_ids.shape[1])
+    return retain_latest_cache(result, min(max_length, result.seq_len))
+
+
+@torch.no_grad()
 def project_exact_layer0_segment(
     current: HSTU,
     parent_cache: HSTUKVCache,

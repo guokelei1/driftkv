@@ -1,6 +1,6 @@
 # 文档地图
 
-更新日期：2026-09-06
+更新日期：2026-09-07
 
 ## 当前阅读顺序
 
@@ -8,17 +8,28 @@
 | --- | --- |
 | 论文现在如何定义方法 | [论文正文](../../paper/main.tex) |
 | 方法结构和实现边界 | [paper_design.md](paper_design.md) |
-| 下一阶段实验方案草稿（待讨论） | [experimental_design.md](experimental_design.md) |
+| 本阶段历史计划、执行边界与停止状态 | [design/plan.md](design/plan.md) |
+| 当前方案、探索经过与失败记录 | [design/iterations.md](design/iterations.md) |
+| 方案0–15的论文设计复盘、弱点与未来方向 | [研究总结](design/research_summary_2026-09-07.md) |
+| 代码、实验执行、成本账本与停止点 | [工程总结](design/engineering_summary_2026-09-07.md) |
+| 实验公式、资产与评价定义 | [experimental_design.md](experimental_design.md) |
 | 已有测量及其证据范围 | [motivation_observations.md](motivation_observations.md) |
 | 六层模型的已完成训练与评估 | [medium_scale_training_plan.md](medium_scale_training_plan.md) |
 | 十层当前模型指针及历史对照 | [large_scale_training_and_qualification_plan.md](large_scale_training_and_qualification_plan.md) |
 
 论文正文是设计文字的唯一来源；paper_design 是研究实现的简要映射，experimental_design
-记录技术和执行约束。旧的独立 Design 1 中文长稿、设计候选和专家讨论已退出活动目录，
+记录技术和执行约束。design/ 集中保存本阶段的落地计划和迭代记录，从六层完整 v0 开始，
+再联动改进摘要、翻译、读取和连续维护，不另写平行论文。
+旧的独立 Design 1 中文长稿、设计候选和专家讨论已退出活动目录，
 不再维护第二套方法定义。motivation_observations 现只索引当前论文证据，
 原来的长篇 Small 观察文档已完整归档；原始裁决不会因目录清理而改写。
 两份训练记录中的早期预算、阶段和命令用于解释已有资产，不是当前待办。
-experimental_design 中的训练边界与首版实现约定仍待讨论，本轮状态整理不替代这些决定。
+用户已撤销笼统 target-KV fitting 禁令，明确连续优化为缓存跨多个版本的实际演化，
+并要求初期也检验低计算、实质恢复的方向。决定与 review 见 design/plan.md 和迭代记录；
+六层探索已覆盖方案0–15，最后四边适配的6000用户评价完成；按用户要求，在两份总结后
+收束本轮goal，不再自动继续实验。当前尚未通过质量与完整成本联合验证。
+结果属于开发证据，未读取独立确认。实际冻结Medium为legacy ELU+1，读取严格复用其算子；
+不能将其方法结果描述为SiLU-native模型验证。
 
 开发与实验遵循 [AGENTS.md](../AGENTS.md) 的论文研究原则：优先用最小实现与小样本
 验证想法，只做与当前问题相关的检查。已有计划中的阶段是研究问题和历史记录，

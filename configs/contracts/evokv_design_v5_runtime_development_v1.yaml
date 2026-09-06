@@ -1,0 +1,42 @@
+schema_version: 1
+status: prospective_development_run
+run_id: v5_efficient512_01
+authorization: user_2026_09_06_entire_six_layer_design_exploration
+method_input_and_evaluation_reference: configs/contracts/evokv_design_v5_temporal_development_v1.yaml
+scope:
+  frozen_backbone: same_six_layer_Medium_seed17_V0_to_V5
+  calibration_users: same_first_128
+  lifetime_users: same_first_32
+  development_and_trajectory_users: same_512
+  targets: [1, 2, 3, 4, 5]
+  tail_days: 14
+  confirmation_read: false
+  theta3_access: false
+  backbone_training: false
+changes:
+  mathematical_method_and_fitting_examples: unchanged_v5_temporal_rank32_three_passes
+  source_metadata: CPU_integer_counts_ordinals_timestamps_materialized_when_read
+  eviction: contiguous_fixed_slot_ranges_no_advanced_index_gather
+  refresh: direct_writer_statistics_and_fused_view_install_preserve_actual_release_age
+  time_response: same_coefficients_combined_for_all_layers_before_reader_loop
+  lifetime_preparation: batch16_native_rolling_kernel_on_equal_actual_lengths
+  source_and_teacher_lifetime_costs: separately_measured_and_fully_retained
+canary:
+  reference: results/design/v5_preparation_canary_01/canary.pass.json
+  calibration_and_real_quality: results/design/v5_preparation_canary_01/loaded_reference_check.json
+  prior_full_runtime_comparison: results/design/v5_runtime_quality512_01/loaded_reference_check.json
+  passed: true
+  native_batched_KV_max_abs: 0.0
+  tensor_checks: eight_passed
+resources:
+  gpu: 0
+  expected_seconds_range: [450, 600]
+  conservative_seconds: 4267
+  estimate_reference: results/design/analysis/v5_temporal512_resource_probe.json
+  peak_gpu_mib_range: [28672, 43008]
+  execution: detached_tmux
+artifacts:
+  output: results/design/v5_efficient512_01
+  log: results/design/v5_efficient512_01.log
+  exit_status: results/design/v5_efficient512_01.exit_status.txt
+  all_previous_results_retained: true

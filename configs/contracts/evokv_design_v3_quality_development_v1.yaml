@@ -1,0 +1,71 @@
+schema_version: 1
+status: prospective_development_run
+run_id: v3_quality128_01
+authorization: user_2026_09_06_entire_six_layer_design_exploration_including_long_calibration_and_evaluation
+scope:
+  model: frozen_Medium_6L_H192_heads6_context1024_legacy_ELU_plus_1
+  backbone_seed: 17
+  targets: [1, 2]
+  release_days: [231, 245]
+  service_range_half_open_days: [231, 259]
+  development_users: 128
+  trajectory_users: 128
+  confirmation_read: false
+  population_cost_qualification: false
+  backbone_training: false
+  theta3_access: false
+frozen_method:
+  reference: results/design/v3_query_only128_01/configuration.json
+  translators: results/design/v3_query_only128_01/translator_v{1,2}.pt
+  representation: producer_conditioned_rank32_ridge_per_old_event_response_rate
+  calibration: original_128_disjoint_users_with_adjacent_parent_source_scenes
+  fitting_during_this_run: false
+  source_summary: release_sealed_segments_max1024_events_one_slot
+  writes: original_model_on_actual_cache_no_CC_correction
+  candidate_reads: paired_constant_ELU_correction
+  refresh: release_and_before_candidate_read_if_old_source_changed
+  lineage: actual_persistent_method_and_reuse_cache_Exact_reset_only_at_release
+inputs:
+  uid_order_reference: results/design/v3_query_only128_01/configuration.json
+  split: data/manifests/evokv_design_medium_v0/split.json
+  split_sha256: bc44ca5ea6cac5dcfaa729c0ea78983f4b79c0572885c5974117b5e7e0d53d87
+  checkpoint_and_admission_references: results/design/v3_query_only128_01/configuration.json
+  quality_manifest: data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/manifest.json
+evaluation:
+  quality_primary: ROC_AUC
+  quality_absolute: [ROC_AUC, dislike_PR_AUC, log_loss, Brier]
+  mechanism: equal_user_unclipped_probability_gap_recovery_plus_absolute_gaps
+  small_or_reversed_quality_gap: report_absolute_values_do_not_claim_ratio_success
+  same_timestamp: all_requests_before_any_writes
+  include_no_old_state_and_uncovered_requests: true
+  metrics_are_development_only: true
+  release_views: synchronous_ready_mechanism_no_waiting_period_coverage_claim
+cost:
+  preparation_reference: results/design/v3_query_only128_01/summary.json
+  include_reference_teacher_fitting_and_lineage_in_method_cost_accounting: true
+  service_read_append_and_refresh: measured_synchronized_wall_clock
+  population_extrapolation_reference_only: 30000
+resources:
+  gpu_allowlist_used: [0]
+  simultaneous_jobs: 1
+  cpu_history_threads: 8
+  cpu_torch_threads: 4
+  actual_three_branch_events: 106477
+  expected_seconds: 1158.01
+  conservative_estimated_seconds: 1823.63
+  calculation: 120_seconds_fixed_plus_0.016_seconds_per_three_branch_event
+  estimate_reference: results/design/analysis/v3_quality_resource_probe.json
+  expected_peak_gpu_mib_range: [4096, 12288]
+  execution: detached_tmux_because_conservative_estimate_exceeds_30_minutes
+canary:
+  reference: results/design/v3_frozen_eval_canary_01/loaded_reference_check.json
+  passed: true
+  matched_cutover_rows: 48
+  max_cutover_probability_gap_difference: 0.0
+  max_continuous_cutover_probability_gap_difference: 0.0
+artifacts:
+  output: results/design/v3_quality128_01
+  log: results/design/v3_quality128_01.log
+  exit_status: results/design/v3_quality128_01.exit_status.txt
+  preserve_all_positive_and_negative_rows: true
+  no_confirmation_based_tuning: true

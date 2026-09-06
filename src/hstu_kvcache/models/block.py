@@ -102,6 +102,7 @@ class HSTUBlock(nn.Module):
         cached_v: torch.Tensor,
         residual_scale: float = 1.0,
         attention_scale: float = 1.0,
+        window_size: int | None = None,
     ):
         """Incremental forward: prefix KV from old model + new positions with current model.
 
@@ -113,7 +114,9 @@ class HSTUBlock(nn.Module):
         """
         residual = x_new
         x_norm = self.norm(x_new)
-        attn_out, (k_all, v_all) = self.attn.forward_with_cache(x_norm, cached_k, cached_v)
+        attn_out, (k_all, v_all) = self.attn.forward_with_cache(
+            x_norm, cached_k, cached_v, window_size=window_size
+        )
 
         if self.block_variant == "hstu_reference":
             assert self.attn_output_norm is not None

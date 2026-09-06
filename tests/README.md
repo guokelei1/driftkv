@@ -15,6 +15,11 @@
   用户选择、OOV、反馈时间边界、增量时间与窗口；使用小型输入，不扫描本机完整数据。
 - test_medium_*、test_large_*：六层和十层现行队列、模型选择记录与运行边界。
 - test_append_only_kv、test_state_transition：追加、淘汰与状态依赖。
+- test_adaptation：固定归属的摘要增减、原算子的count权重和局部刷新等价性；真实六层梯度/追加canary在Design runner内。
+- test_design_quality：配对UID bootstrap的计数实现与显式重复用户一致，覆盖概率并列及单类别重采样；使用`PYTHONPATH=src:scripts`。
+- test_design_ridge：完整UID删除的岭回归残差，对照显式删除后重拟合；使用`PYTHONPATH=src:scripts`。
+- test_design_kernel：非线性source kernel的自由截距方程、未拟合输入预测和发布后时间分解。
+- test_design_query_view：query坐标折叠、count加权、标量/批量发布和逐层消退的张量参考。
 - test_insight_one_locality：论文局部替换诊断。
 - test_insight_two_functional_boundary：候选划分、聚合指标、rank-0/low-rank、持续性统计。
 - test_reader_compatibility_correction、test_pro_lazy_reader 及其余 reader 测试：

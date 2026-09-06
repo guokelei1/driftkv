@@ -23,6 +23,7 @@
 | 论文重算成本表 | benchmark_release_cost.py |
 | Insight 1 局部替换诊断 | [insight_one_locality/README.md](insight_one_locality/README.md) |
 | Insight 2 响应修正和持续性诊断 | [insight_two/README.md](insight_two/README.md) |
+| 六层 Design 四组件原型、校准与连续评价 | [design/README.md](design/README.md) |
 | 只修改或生成论文图片 | [../figures/README.md](../figures/README.md) |
 
 Medium 和 Large 的具体命令、GPU 设置、窗口、epoch、hash 和历史范围分别在

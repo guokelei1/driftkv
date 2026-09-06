@@ -31,9 +31,10 @@ exhaustive edge-case handling and test coverage are not project goals.
 
 The current EvoKV design is Cross-Version Cache Adaptation: write-time
 summarization, release-time translation, read-time correction, and state
-maintenance across releases. The existing code provides the model foundation,
-Full/Reuse evaluation and paper diagnostics; the new adaptation method remains
-prospective, not an implemented or validated system.
+maintenance across releases. The code provides the model foundation,
+Full/Reuse evaluation, paper diagnostics and complete development adaptation
+prototypes. The adaptation method is not yet validated; current negative results
+and active iterations are recorded in `docs/design/iterations.md`.
 
 The paper studies Transformer recommender state compatibility across model
 releases; the concrete experimental models use HSTU. The motivation is that a new model
@@ -51,6 +52,8 @@ Authoritative entry points:
 - `docs/paper_design.md`: stable conceptual paper design and comparison boundary;
 - `docs/experimental_design.md`: concrete architecture, data, version training,
   evaluation and phase plan;
+- `docs/design/plan.md` and `docs/design/iterations.md`: current six-layer
+  adaptation plan, implementation choices and exploration record;
 - `docs/motivation_observations.md`: current observed motivation and results.
 - `figures/README.md`: generators and source records for the actual paper figures.
 - `scripts/README.md`: retained executable workflows and shared dependencies.
@@ -77,7 +80,18 @@ draft or use Sketch-to-Sketch as the current method name.
   for a cost-only scope change; it has no H/S/quality interpretation.
 - Current implementation scope is Yambda-500M audit, fixed-UID population,
   compact item mapping, manifests, HSTU-native foundation, Full-only release
-  evaluation and motivation correctness canaries.
+  evaluation, motivation correctness canaries and the six-layer adaptation
+  prototype in `docs/design/plan.md`. All new method experiments use the frozen
+  six-layer Medium models; four-layer and ten-layer experiments are out of scope.
+- The user removed the blanket target-KV-fitting restriction on 2026-09-06.
+  Summary/KV-derived supervision, reconstruction losses and shared Translator
+  calibration are allowed within the adaptation research. Do not gate a design
+  on whether it can be called KV fitting. Use the summary, translation, read
+  correction and multi-version state pipeline, and assess actual quality/cost.
+  Routine implementation and small development calibration follow the plan;
+  they do not need another permission step merely for this supervision.
+  Keep fitting/development/final evaluation separate and report teacher access
+  and its cost. Historical sealed contracts still describe their original runs.
 - Any Medium/Large long training requires a prospective contract, resource
   estimate, passing canary and explicit user launch.
 - Theta3 remains untouched. Its data/release/admission/metric/failure contract
@@ -96,8 +110,11 @@ predictor complexity on the scale development point.
   transitions.
 - `src/hstu_kvcache/data/`: Yambda readers, manifests, release windows,
   population maps and frozen workload/release data primitives.
+- `src/hstu_kvcache/adaptation/`: experimental summary, Translator, paired reader
+  and in-memory multi-version state implementation.
 - `configs/contracts/`: immutable development evidence and prospective scale contracts.
-- `scripts/`: current data, foundation, Full-only and motivation entry points only.
+- `scripts/`: current data, foundation, Full-only and motivation entry points;
+  new adaptation experiment orchestration is concentrated in `scripts/design/`.
 - `figures/src/`: all Python plotting code; read existing results without running experiments.
 - `tests/`: current motivation time causality, cache lineage, manifests and executor.
 - `results/`: development evidence; presence does not imply paper qualification.
@@ -116,7 +133,14 @@ do not clone the full pipeline for the scale point.
 - Do not tune workload, release, history, task weights, seeds, metrics, action
   set, predictor or probe rate using qualification/scale outcomes.
 - Keep protocol decisions label-free: no future-label scheduling, score mixing,
-  selected-edge reporting, artificial K/V perturbation or target-KV fitting.
+  selected-edge reporting or artificial K/V perturbation.
+- Build all four adaptation components into the first prototype and iterate
+  their interfaces together. A runnable pipeline is an intermediate milestone;
+  a useful method must show substantial gap recovery at a small fraction of
+  Exact-All compute. High-cost, weak-recovery results require further iteration.
+- Continuous adaptation means the actual cache lifetime across releases:
+  mixed producers, appends, evictions, long-lived old state and inherited error.
+  Reinitialized single-edge runs do not establish continuous behavior.
 - Keep model admission separate from cache compatibility; low H/S is a valid
   No-op condition.
 - Do not treat a fixed training endpoint as a release. Seal Parent/Current
@@ -159,6 +183,10 @@ The user expanded the scale allowlist to GPU 0/1/2/3. A scale model uses at most
 one four-rank FSDP job at a time; seeds/releases are queued serially. Parallelize
 CPU mapping, joins and aggregation when safe. Every long scale job needs a
 focused canary first.
+Estimate each experiment's runtime from a small probe or a stated calculation.
+Use detached tmux execution for jobs expected to exceed 30 minutes, retain the
+log/exit status, and resume analysis when they finish. Monitor shorter jobs
+directly; tmux does not replace long-job launch authorization.
 
 ## Safety and storage
 

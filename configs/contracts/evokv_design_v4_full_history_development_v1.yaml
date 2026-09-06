@@ -1,0 +1,61 @@
+schema_version: 1
+status: prospective_development_run
+run_id: v4_full_history512_01
+authorization: user_2026_09_06_entire_six_layer_design_exploration
+scope:
+  model: frozen_Medium_6L_H192_heads6_context1024_legacy_ELU_plus_1
+  backbone_seed: 17
+  targets: [1, 2, 3, 4, 5]
+  release_days: [231, 245, 259, 273, 287]
+  service_range_half_open_days: [231, 301]
+  v5: E14_partial_diagnostic_serving_admission_false
+  calibration_users: 128
+  lifetime_calibration_users: 32
+  development_and_trajectory_users: 512
+  confirmation_read: false
+  backbone_training: false
+  theta3_access: false
+method:
+  source: all_actual_retained_KV_producer_conditioned_means
+  additional_feature: actual_writes_since_release_clamped_at_6144
+  translator: shared_rank32_ridge_three_passes_at_actual_corrected_queries
+  supervision: full_history_response_at_same_visible_prefix_detached_teacher
+  lifetime_calibration_tails: [64, 256, 1024, 2048, 4096, 6144]
+  lifetime_sources: independent_Parent_Exact_then_real_native_Current_writes
+  zero_control: independent_Current_Exact_initialization
+  retain_original_mixed_lineage_and_adjacent_calibration: true
+  writes: native_Current_on_actual_cache
+  reads: paired_constant_ELU_response_correction
+  refresh: any_write_invalidates_view_refresh_before_next_CC
+  replay_chunk: 128
+inputs:
+  split: data/manifests/evokv_design_medium_v0/split.json
+  split_sha256: bc44ca5ea6cac5dcfaa729c0ea78983f4b79c0572885c5974117b5e7e0d53d87
+  frozen_inputs_and_admission_reference: results/design/v3_five_edges512_01/configuration.json
+evaluation:
+  primary: ROC_AUC
+  absolute: [ROC_AUC, dislike_PR_AUC, log_loss, Brier]
+  mechanism: equal_user_unclipped_probability_gap_recovery_and_absolute_gaps
+  all_requests_including_no_old_producer: true
+  same_timestamp_requests_precede_writes: true
+  synchronous_ready_views: true
+  no_population_cost_qualification: true
+cost:
+  include_all_teacher_fitting_source_and_lifetime_replay: true
+  fixed_population_for_future_cost_measurement: 30000
+resources:
+  gpu: 0
+  expected_seconds_range: [650, 900]
+  conservative_seconds: 2694
+  estimate_reference: results/design/analysis/v4_full_history512_resource_probe.json
+  peak_gpu_mib_range: [24576, 40960]
+  execution: detached_tmux
+canary:
+  reference: results/design/v4_full_history_canary_01/canary.pass.json
+  passed: true
+  tensor_checks: seven_passed
+artifacts:
+  output: results/design/v4_full_history512_01
+  log: results/design/v4_full_history512_01.log
+  exit_status: results/design/v4_full_history512_01.exit_status.txt
+  retain_all_positive_and_negative_results: true

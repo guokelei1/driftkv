@@ -1,0 +1,185 @@
+{
+  "status": "diagnostic_complete",
+  "elapsed_seconds": 46.299872513860464,
+  "peak_allocated_mib": 13511.78857421875,
+  "calibration_scenes": 428,
+  "ledger_seconds": {
+    "history_io": 7.568662418983877,
+    "model_io": 3.620306278578937,
+    "diagnostic_prefix_reference": 0.30555811058729887,
+    "prefix_compilation_and_warmup": 24.595623617060483,
+    "calibration_source_backfill": 0.5545742437243462,
+    "teacher_build": 0.6785236597061157,
+    "calibration_lifetime_source": 0.39155507180839777,
+    "teacher_replay": 1.8489626832306385,
+    "calibration_lifetime_replay": 1.4550416702404618,
+    "translator_fit": 3.1698406599462032
+  },
+  "fitting_breakdown_seconds": {
+    "ridge_fit": 0.8178240917623043,
+    "linear_solve": 0.05506195593625307,
+    "svd": 0.749895048327744,
+    "response_generation_and_setup": 2.352016568183899
+  },
+  "phases": [
+    {
+      "phase": "linear_solve",
+      "seconds": 0.04186883568763733,
+      "input_shape": [
+        1712,
+        1712
+      ]
+    },
+    {
+      "phase": "svd",
+      "seconds": 0.25644458178430796,
+      "input_shape": [
+        1712,
+        1152
+      ]
+    },
+    {
+      "phase": "ridge_fit",
+      "seconds": 0.30293102748692036,
+      "input_shape": [
+        1712,
+        4675
+      ]
+    },
+    {
+      "phase": "linear_solve",
+      "seconds": 0.006589073687791824,
+      "input_shape": [
+        1712,
+        1712
+      ]
+    },
+    {
+      "phase": "svd",
+      "seconds": 0.24779776390641928,
+      "input_shape": [
+        1712,
+        1152
+      ]
+    },
+    {
+      "phase": "ridge_fit",
+      "seconds": 0.2585178166627884,
+      "input_shape": [
+        1712,
+        4675
+      ]
+    },
+    {
+      "phase": "linear_solve",
+      "seconds": 0.006604046560823917,
+      "input_shape": [
+        1712,
+        1712
+      ]
+    },
+    {
+      "phase": "svd",
+      "seconds": 0.24565270263701677,
+      "input_shape": [
+        1712,
+        1152
+      ]
+    },
+    {
+      "phase": "ridge_fit",
+      "seconds": 0.25637524761259556,
+      "input_shape": [
+        1712,
+        4675
+      ]
+    }
+  ],
+  "fit_records": [
+    {
+      "effective_rank": 32,
+      "centered_prediction_energy_retained": 0.99997878074646,
+      "normalized_fit_mse": 0.011567567475140095,
+      "supported_producers": [
+        0,
+        1
+      ],
+      "target": 1,
+      "pass_index": 0,
+      "calibration_scenes": 428,
+      "history_scope": "all",
+      "calibration_batch": 16,
+      "query_time_groups": 4,
+      "fitting": "shared ridge at recomputed corrected queries; native-write states fixed across passes"
+    },
+    {
+      "effective_rank": 32,
+      "centered_prediction_energy_retained": 0.9999800324440002,
+      "normalized_fit_mse": 0.011502628214657307,
+      "supported_producers": [
+        0,
+        1
+      ],
+      "target": 1,
+      "pass_index": 1,
+      "calibration_scenes": 428,
+      "history_scope": "all",
+      "calibration_batch": 16,
+      "query_time_groups": 4,
+      "fitting": "shared ridge at recomputed corrected queries; native-write states fixed across passes"
+    },
+    {
+      "effective_rank": 32,
+      "centered_prediction_energy_retained": 0.9999803304672241,
+      "normalized_fit_mse": 0.01146226841956377,
+      "supported_producers": [
+        0,
+        1
+      ],
+      "target": 1,
+      "pass_index": 2,
+      "calibration_scenes": 428,
+      "history_scope": "all",
+      "calibration_batch": 16,
+      "query_time_groups": 4,
+      "fitting": "shared ridge at recomputed corrected queries; native-write states fixed across passes"
+    }
+  ],
+  "prefix_checks": [
+    {
+      "model": "parent",
+      "batch": 1,
+      "max_difference": {
+        "k": 2.86102294921875e-06,
+        "v": 3.814697265625e-06
+      }
+    },
+    {
+      "model": "parent",
+      "batch": 16,
+      "max_difference": {
+        "k": 4.76837158203125e-06,
+        "v": 5.7220458984375e-06
+      }
+    },
+    {
+      "model": "current",
+      "batch": 1,
+      "max_difference": {
+        "k": 2.86102294921875e-06,
+        "v": 3.814697265625e-06
+      }
+    },
+    {
+      "model": "current",
+      "batch": 16,
+      "max_difference": {
+        "k": 4.76837158203125e-06,
+        "v": 6.67572021484375e-06
+      }
+    }
+  ],
+  "scope": "single fixed calibration edge; solve/SVD timers nested within ridge_fit, not additive with it",
+  "limitation": "synchronized instrumentation adds overhead; no new quality or population result",
+  "confirmation_read": false
+}

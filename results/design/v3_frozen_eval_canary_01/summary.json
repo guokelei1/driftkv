@@ -1,0 +1,170 @@
+{
+  "status": "development_complete",
+  "configuration_sha256": "63db60a6c72500f078f0985bbd920f9f666557ed2bfd92c9d3426158b6e046bb",
+  "canary": {
+    "passed": true,
+    "identity_max_abs": 2.384185791015625e-07,
+    "exact_delta_max_abs": 4.76837158203125e-07,
+    "lower_payload_to_final_query_gradient": 6.16663892287761e-05,
+    "real_append_checked": true,
+    "checkpoint_operator": "elu_plus1"
+  },
+  "mechanisms": [
+    {
+      "target": 1,
+      "method": "exact_summary_diagnostic",
+      "probability_gap_recovery": -7.15519280731678,
+      "observed_probability_gap": 0.009298785356804729,
+      "reuse_probability_gap": 0.00508143228944391
+    },
+    {
+      "target": 1,
+      "method": "learned",
+      "probability_gap_recovery": -0.4165326878428459,
+      "observed_probability_gap": 0.001801714883185923,
+      "reuse_probability_gap": 0.00508143228944391
+    },
+    {
+      "target": 1,
+      "method": "reuse",
+      "probability_gap_recovery": 0.0,
+      "observed_probability_gap": 0.00508143228944391,
+      "reuse_probability_gap": 0.00508143228944391
+    },
+    {
+      "target": 2,
+      "method": "exact_summary_diagnostic",
+      "probability_gap_recovery": -0.40825872123241425,
+      "observed_probability_gap": 0.007227804744616151,
+      "reuse_probability_gap": 0.008673484087921679
+    },
+    {
+      "target": 2,
+      "method": "learned",
+      "probability_gap_recovery": -0.01648057997226715,
+      "observed_probability_gap": 0.0033275459427386522,
+      "reuse_probability_gap": 0.008673484087921679
+    },
+    {
+      "target": 2,
+      "method": "reuse",
+      "probability_gap_recovery": 0.0,
+      "observed_probability_gap": 0.008673484087921679,
+      "reuse_probability_gap": 0.008673484087921679
+    }
+  ],
+  "quality": [
+    {
+      "target": 1,
+      "requests": 30,
+      "users": 1,
+      "metrics": {
+        "exact": {
+          "log_loss": 0.07121056273844192,
+          "Brier": 0.004953102201974916,
+          "ROC_AUC": null,
+          "dislike_PR_AUC": null,
+          "dislike_only_log_loss": null
+        },
+        "reuse": {
+          "log_loss": 0.06904553037862067,
+          "Brier": 0.0046609004678678494,
+          "ROC_AUC": null,
+          "dislike_PR_AUC": null,
+          "dislike_only_log_loss": null
+        },
+        "learned": {
+          "log_loss": 0.07089199218212446,
+          "Brier": 0.00490113691585277,
+          "ROC_AUC": null,
+          "dislike_PR_AUC": null,
+          "dislike_only_log_loss": null
+        }
+      }
+    }
+  ],
+  "chain_releases": [
+    {
+      "uid": 1930,
+      "target": 1,
+      "producer_counts": {
+        "0": 1024,
+        "1": 0
+      },
+      "reuse_logit_gap": 0.05688192695379257,
+      "observed_logit_gap": 0.014042563736438751,
+      "logit_gap_recovery": 0.7531278133392334,
+      "reuse_probability_gap": 0.004736331291496754,
+      "observed_probability_gap": 0.0011916626244783401,
+      "probability_gap_recovery": 0.7483996152877808,
+      "bernoulli_js_to_exact": 2.142674702554359e-06,
+      "top1_agreement": 1.0,
+      "top10_overlap": 0.800000011920929,
+      "rank_correlation": 0.99757319688797
+    },
+    {
+      "uid": 1930,
+      "target": 2,
+      "producer_counts": {
+        "0": 381,
+        "1": 643,
+        "2": 0
+      },
+      "reuse_logit_gap": 0.10986532270908356,
+      "observed_logit_gap": 0.006830140948295593,
+      "logit_gap_recovery": 0.937831699848175,
+      "reuse_probability_gap": 0.00918271392583847,
+      "observed_probability_gap": 0.0005957521498203278,
+      "probability_gap_recovery": 0.9351224303245544,
+      "bernoulli_js_to_exact": 5.244377234703279e-07,
+      "top1_agreement": 1.0,
+      "top10_overlap": 1.0,
+      "rank_correlation": 0.9990841746330261
+    }
+  ],
+  "ledger_seconds": {
+    "history_io": 1.6292102839797735,
+    "model_io": 5.557748636230826,
+    "diagnostic_parent_build": 0.08541424199938774,
+    "diagnostic_exact_build": 0.0840958608314395,
+    "summary_backfill": 0.0076609449461102486,
+    "release_translation": 0.00956268422305584,
+    "reuse_read": 0.05900775361806154,
+    "reference_read": 0.04279165994375944,
+    "paired_read": 0.048305866308510303,
+    "chain_release_translation": 0.0013284366577863693,
+    "chain_exact_release": 0.01051846332848072,
+    "service_reuse_append": 2.097019737586379,
+    "service_exact_append": 2.075300605967641,
+    "service_learned_append": 1.861469211988151,
+    "service_reuse_read": 0.07646528352051973,
+    "service_exact_read": 0.07496252004057169,
+    "service_learned_read": 0.10075593367218971
+  },
+  "elapsed_seconds": 15.889921246096492,
+  "peak_allocated_mib": 2302.58349609375,
+  "peak_reserved_mib": 2398.0,
+  "last_user_source_storage_bytes": 42028,
+  "last_user_translated_storage_bytes": 9216,
+  "last_user_source_view_bytes": 9244,
+  "storage_scope": "tensor and logical metadata bytes; excludes Python allocator/container overhead",
+  "state_counts": {
+    "1930": {
+      "releases": 2,
+      "refreshes": 30,
+      "translated_segments": 31,
+      "appends": 643,
+      "evictions": 643,
+      "old_evictions": 643,
+      "reuse_reads": 0
+    }
+  },
+  "model_seed_repeats": 1,
+  "confirmation_read": false,
+  "limitations": [
+    "small development cohort",
+    "synchronous ready views; no waiting-period coverage claim",
+    "no population cost qualification",
+    "legacy ELU+1 frozen checkpoint semantics"
+  ]
+}
