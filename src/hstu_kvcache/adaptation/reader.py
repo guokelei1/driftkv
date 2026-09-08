@@ -43,12 +43,14 @@ class ReadResult:
     queries: tuple[torch.Tensor, ...]
     corrections: tuple[torch.Tensor, ...]
     history_heads: tuple[torch.Tensor, ...]
+    layer_outputs: tuple[torch.Tensor, ...] = ()
 
 
 def read_embedded(model, cache, x, source=None, translated=None, *, trace=False, response_delta=None,
-                  response_time_delta=None, time_features=None, response_query_delta=None):
+                  response_time_delta=None, time_features=None, response_query_delta=None, history_override=None):
     """The six-layer query path stays differentiable with a frozen backbone."""
     kvs, queries, corrections, history_heads = [], [], [], []
+    layer_outputs = []
     constant_delta = None
     if translated is not None and translated.read_mode == "constant_elu":
         value_delta = ((translated.payload[..., 1, :] - source.payload[..., 1, :])
@@ -87,6 +89,10 @@ def read_embedded(model, cache, x, source=None, translated=None, *, trace=False,
             query_correction = q @ query_coefficients[:, layer]
             delta = delta+query_correction
             heads = heads+query_correction
+        if history_override is not None:
+            # Read-response prototypes and diagnostic replacement use THIS
+            # branch's query. Self and the remaining native block stay below.
+            heads = history_override(layer, q, heads)
         if block.attn.causal_diagonal == "inclusive":
             weight = block.attn._activate((q * k_new).sum(-1, keepdim=True) * block.attn.scale)
             if block.attn.block_variant == "hstu_reference":
@@ -106,17 +112,19 @@ def read_embedded(model, cache, x, source=None, translated=None, *, trace=False,
         if trace:
             queries.append(q)
             corrections.append(delta)
+            layer_outputs.append(x)
     return ReadResult(model.final_norm(x), HSTUKVCache.from_layer_list(kvs, x.shape[1]),
-                      tuple(queries), tuple(corrections), tuple(history_heads))
+                      tuple(queries), tuple(corrections), tuple(history_heads), tuple(layer_outputs))
 
 
 def score(model, cache, candidates, query_delta, source=None, translated=None, *, trace=False, response_delta=None,
-          response_time_delta=None, response_query_delta=None):
+          response_time_delta=None, response_query_delta=None, history_override=None):
     x = model.embed_query_tokens(candidates, query_delta)
     temporal = response_time_delta is not None or (translated is not None and translated.temporal_coefficients is not None)
     phi = model.temporal_enc.features(query_delta) if temporal else None
     result = read_embedded(model, cache, x, source, translated, trace=trace,response_delta=response_delta,
-                           response_time_delta=response_time_delta,time_features=phi,response_query_delta=response_query_delta)
+                           response_time_delta=response_time_delta,time_features=phi,response_query_delta=response_query_delta,
+                           history_override=history_override)
     return model.cc_score_head(result.hidden).squeeze(-1), result
 
 

@@ -1,5 +1,42 @@
 # 六层 Design 探索
 
+第六次路线已完成。`diagnose_constant_affine.py`是唯一公共q表示对照：原64/128
+用户原面板，每层固定同一仿射下层上下文，常量均值与仿射只拟合fit64，held64评估。
+无新共享方法/AUC，能量零分母保留未定义；正式输出保留逐场景层统计，小canary
+另保留完整q/响应张量。`finalize_base_method.py`用已审核计数公式补逐发布K归属，
+核对总K不变并整理机制证据；`figures/src/design1.py`生成论文图表，均不调用人口模型。
+论文main.tex引用已更新的methods/evaluation章节，Design 1冻结；确认未读，不自动扩展。
+
+`fit_native_ablation.py`按冻结C的256×16、PCA/坐标/ridge/mu重新拟合摘要近似输入和
+无源状态两份消融。`native_service.py`是同步读时适配器，复用原writer、实际query
+reader和已冻结W/U，不改普通KV。`evaluate_native_base.py`用已有prefix/真实事件/
+反馈和rolling128原语，逐边重新建立精确Parent起点，执行Reuse/Exact/native/摘要/
+无源状态五路径；旧连续链执行器保留，不把单边结果称为连续迁移。
+`run_native_base.py`调度互斥UID分块、保留log/exit并合并原始反馈；基础人群冻结在
+`native_base_protocol_01/configuration.json`。`report_native_base.py`计算合并AUC、
+四边等权绝对改善、共享UID抽样区间及同人口/eager-kernel成本，不平均分块AUC。
+本轮详细范围与用户授权见[第四次专家补充](../../docs/design/expert_route_2026-09-07.md#第四次专家补充成熟用户单次迁移的基础真实质量评价)。
+
+`audit_native_residual.py`复用冻结native raw，展开状态均值偏移与聚合响应/ridge风险。
+`diagnose_native_coverage.py`只新增64×16与256×16，对照冻结64×64；复用原生状态驱动，
+保持原64生命周期场景，固定源PCA/query/native坐标与mean(N²)，B/C各自逐层产生q。
+用户清单一次冻结于`native_coverage_cohort_01/cohort.json`；`report_native_coverage.py`
+按UID等权报告预定比较、尾部、拟合/诊断分离与成本。`audit_native_response_scale.py`
+只读取冻结A/C，补同一实际q下的目标响应变化能量，无新增拟合或干预路径。
+本轮M5仍无稳定优于Reuse的证据，不启动6000；不继续扩人数。
+
+`diagnose_decoder_closure.py`复用冻结均值/系数PCA32、功能/响应PCA32/PCA128及实际方案15，
+执行7前缀＋6单层精确历史干预和FP64自由latent诊断，普通native谱系仅生成一次。
+实际query历史替换只经reader诊断hook；原始epsilon去除相同前缀重复，保留逐查询d与层变化。
+`report_decoder_closure.py`核对原冻结输出、读取既有oracle64，按场景后UID等权报告；
+`diagnose_auc_pairs.py`补充已有排序修复/破坏与UID均值偏移、用户内残差和margin的关联，
+仅解释既有开发请求，不产生新选择器。执行边界见[专家追加路线](../../docs/design/expert_route_2026-09-07.md)。
+`diagnose_free16.py`只在free64有效后，检查预先固定16查询的教师编码，不能当作廉价
+目标侧计算。`diagnose_native_input.py`复用同一状态驱动，只做一个输入匹配原型：
+相同容量与聚合响应目标，真实native响应对比producer均值响应近似，联合拟合W/U。
+`report_native_input.py`保留Reuse、冻结方案15、两输入臂与自由编码参照，核对同面板
+和逐行有限值，报告UID配对差异及成本边界；M5未过门槛，本轮不运行6000。
+
 `freeze_expanded_split.py`冻结按初始历史分层的6000开发/6000独立确认用户；只读人口与
 历史拟合UID元数据。原split不变，新split后续用于拟合/开发隔离。
 `select_release.py`在发布前独立校准用户上拟合各层修正强度，再自动选择稳定或source×time
@@ -97,6 +134,21 @@ history-head几何；`probe_inactive_response.py`保留屏蔽零响应head修正
 校准状态距离中位数；时间块仍为按维度归一的producer×Fourier线性项。三轮实际query、
 rank32、native写入、依赖消退及source维护不变，校准support和kernel刷新费用照计。
 `tests/test_design_kernel.py`对照显式自由截距方程及发布后时间分解；该方案6000人未改善主要短板。
+最新机制验证按`docs/design/expert_route_2026-09-07.md`执行：
+`diagnose_query_holdout.py`比较64配对查询与额外1024查询教师，在不同item/time组合上
+评估闭环与响应，并记录query几何、重拟合稳定性和value/key分解。
+`diagnose_summary_objective.py`实施均值/固定功能探针×系数/响应监督的匹配对照；
+共同源PCA32使容量一致，不能称为历史方案15原样复现。两个脚本均只诊断M1/M3/M4/M5，
+M2继续native谱系；64拟合与128已使用诊断UID分开，6000确认未读。
+专家实际聚合响应的正式对照必须带`--aggregate-response`，两种监督共同使用N²权重；
+未带此参数的默认模式仅复现历史每事件率对照。`--rich-diagnostic --aggregate-response`
+是一次条件性宽预算信息诊断（32固定M0探针、共同PCA128、两个响应监督组），不是默认
+方法或自动扩展步骤。每个运行使用新`--run-id`并给出`--estimate-seconds`。
+`report_mechanism.py`、`report_rich_source.py`读取已完成输出，保留UID配对、两种口径、
+源预算、均值/中位数/尾部和所有预设对比；本轮最终结果见专家路线末节。
+`diagnose_auc_pairs.py`只读既有方案9/15逐请求数据，精确分解同UID/跨UID的排序收益与损伤，
+并与原AUC核对，不运行模型或构造选择器。
+
 `diagnose_time_view.py`与`diagnose_query_view.py`只拟合逐场景教师view，分别检查广时间基
 及实际query仿射表示；不把它们当作共享方法或真实质量。`fit_passes.py`保留三轮与六轮
 共享拟合的收敛控制。`fit_query_view.py --run-id <new> --users 64 --targets 5`是方案15：
@@ -171,6 +223,11 @@ timing是同步实际Python/GPU路径的墙钟，包含该路径CPU发射开销�
 使用V5形状计时近似同架构各版本；初次摘要backfill另外实测并作全窗口人口外推；
 人口I/O、实际人口执行和持续服务开销尚未测量，不可直接作20%资格结论。
 `profile_calibration.py --run-id <new_id>`分解固定V1校准的响应生成、ridge/SVD和准备费用；
+`report_native_flops.py`只读冻结参数、既有4091 raw/计数和256校准时间戳，生成Reuse增量为0的
+算子账本、校准依赖、人口外推/阈值、敏感性、等价候选账本与Exact配对AUC。
+输出`results/design/analysis/native_flops_01/`，无新拟合或人口模型前向；仅4-token合成
+KV依赖裁剪、归一化折叠及已有weighted-AUC参考canary。理论FLOPs与原eager秒数分开。
+
 `--compile-prefixes`与`--compile-response`只作相同公式的编译诊断，默认完整校准仍用eager。
 `diagnose_clearance.py --run-id <new_id>`在已开放calibration中按历史计数选前四个长历史，
 比较同前缀Parent/Current初始化后6144个真实native写入的逐层K/V；不读取评价标签或确认。

@@ -11,13 +11,14 @@
 | Insight 2：响应修正表 | [paper/main.tex](../../paper/main.tex)，`tab:insight2-response` | [analysis_v2/frontier.csv](../results/yambda500m_medium_seed17/insight2_functional_boundary_v1/discovery_functional_boundary/analysis_v2/frontier.csv) |
 | Insight 2：持续性文字结果 | [paper/main.tex](../../paper/main.tex)，`sec:insight-two` | [持续性报告](../results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_temporal_persistence_v1/discovery/analysis/report.md) |
 | 重算成本表 | [paper/main.tex](../../paper/main.tex) | [计时报告](../results/release_cost_random_weight_v1/report.md)；测量入口为 scripts/benchmark_release_cost.py |
-| Design 架构图 | 直接定义于 [paper/main.tex](../../paper/main.tex) | 第 4 章五小节 |
+| Design 1机制图、流程图、理论规模图及质量表 | [src/design1.py](src/design1.py) | [基础定稿](../results/design/analysis/base_method_final_01/report.md)、[质量](../results/design/analysis/native_base_quality4091_01_report/report.md)、[FLOPs](../results/design/analysis/native_flops_01/report.md) |
 
 在仓库根目录运行（需要 Matplotlib、NumPy）：
 
 ```bash
 python figures/src/motivation1.py
 python figures/src/insight1.py
+python figures/src/design1.py
 ```
 
 Motivation 输出 `figures/pic/pdf/motivation1.pdf` 和 `figures/pic/jpg/motivation1.jpg`。
@@ -40,3 +41,11 @@ cp figures/pic/pdf/insight1_locality.pdf ../paper/pic/insight1_locality.pdf
 
 绘图脚本不会自动修改论文目录或编译论文。
 Git 保留绘图源码、封存的小型输入和论文 PDF；JPG/PNG 预览与历史诊断图片保留在本地。
+
+Design 1生成`design1_mechanism.pdf`、`design1_flow.pdf`、`design1_scale.pdf`及
+`figures/tables/design1_quality.tex`，对应PNG预览在figures/pic/jpg/。
+第六次专家路线已检查图示并同步三PDF到paper/pic、质量表到paper/tables；论文
+按用户后续要求，main.tex现直接包含完整方法、实验与质量表正文，并引用三个PDF。
+paper/tables保留生成表成品，但不再作为正文input；旧sections仅归档于draft/archive/。
+机制图仅表示128已使用诊断UID的公共query聚合响应留出残余，不是AUC；质量表仅
+4091成熟UID；规模图3万/10万/100万人口仅为固定校准及负载的计算外推。未编译论文。

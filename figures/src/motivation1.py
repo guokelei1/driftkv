@@ -3,8 +3,8 @@
 Read the completed Medium D14/E14 triangle and the matching adjacent
 three-path reports. No experiment is run and no source result is modified.
 
-The left column shows Current-minus-Parent ROC-AUC on the percentage scale
-(e.g., 0.02356 becomes +2.356%), from each release's adjacent three-path
+The left column shows Current-minus-Parent ROC-AUC in percentage points
+(e.g., 0.02356 becomes +2.356 pp), from each release's adjacent three-path
 comparison. These are absolute AUC differences, not relative AUC growth.
 All left cells have the same size and color; gain magnitude is not encoded
 by bar length, position, or shading. A heatmap cell divides its
@@ -27,8 +27,8 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 import matplotlib
 
@@ -38,7 +38,6 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.offsetbox import AnnotationBbox, HPacker, TextArea, VPacker
 from matplotlib.patches import Rectangle
-
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULT_ROOT = Path("results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14")
@@ -190,7 +189,7 @@ def build_figure(
     # Each gain has identical placement, type, cell size, and background.
     gain_axis.set_xlim(0.0, 1.0)
     gain_axis.set_xticks([])
-    gain_axis.set_xlabel("AUC increase (%)", fontsize=14.5, fontweight="bold", labelpad=5)
+    gain_axis.set_xlabel("AUC increase (pp)", fontsize=14.5, fontweight="bold", labelpad=5)
     gain_axis.set_ylabel(
         "Current model version", fontsize=14.5, fontweight="bold", labelpad=6
     )
@@ -209,7 +208,7 @@ def build_figure(
         gain_axis.text(
             0.5,
             row,
-            f"+{release_gains_pp[version]:.3f}%",
+            f"+{release_gains_pp[version]:.3f} pp",
             ha="center",
             va="center",
             color="#d62728",
@@ -293,9 +292,9 @@ def build_figure(
             for value, color in (
                 (f"−{example_ratio_pct:.0f}%", "black"),
                 (" × ", "black"),
-                (f"{example_improvement_pct:.3f}%", "#d62728"),
+                (f"{example_improvement_pct:.3f} pp", "#d62728"),
                 (" ≈ ", "black"),
-                (f"−{example_loss_pct:.3f}%", "black"),
+                (f"−{example_loss_pct:.3f} pp", "black"),
                 (".", "black"),
             )
         ],

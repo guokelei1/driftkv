@@ -8,6 +8,12 @@
 | --- | --- |
 | 论文现在如何定义方法 | [论文正文](../../paper/main.tex) |
 | 方法结构和实现边界 | [paper_design.md](paper_design.md) |
+| 最新专家路线：基础方法定稿与冻结 | [专家路线、完整结果与停止决定](design/expert_route_2026-09-07.md) |
+| Design 1设计依据、统一机制对照与逐发布预算 | [基础方法定稿报告](../results/design/analysis/base_method_final_01/report.md) |
+| 论文方法与基础实验的实际章节 | [完整英文正文](../../paper/main.tex)；[最新中文设计草稿](../../paper/draft/evokv_system_design_zh.md) |
+| 理论计算、3万/10万/100万外推与Exact配对质量 | [增量FLOPs独立报告](../results/design/analysis/native_flops_01/report.md) |
+| 最新真实质量与两个消融，供专家讨论 | [4091人基础真实质量报告](../results/design/analysis/native_base_quality4091_01_report/report.md) |
+| 前轮native校准覆盖与连续状态边界 | [Native三臂校准报告](../results/design/analysis/native_coverage384_report_01/report.md) |
 | 本阶段历史计划、执行边界与停止状态 | [design/plan.md](design/plan.md) |
 | 当前方案、探索经过与失败记录 | [design/iterations.md](design/iterations.md) |
 | 方案0–15的论文设计复盘、弱点与未来方向 | [研究总结](design/research_summary_2026-09-07.md) |
@@ -27,7 +33,13 @@
 用户已撤销笼统 target-KV fitting 禁令，明确连续优化为缓存跨多个版本的实际演化，
 并要求初期也检验低计算、实质恢复的方向。决定与 review 见 design/plan.md 和迭代记录；
 六层探索已覆盖方案0–15，最后四边适配的6000用户评价完成；按用户要求，在两份总结后
-收束本轮goal，不再自动继续实验。当前尚未通过质量与完整成本联合验证。
+收束上一轮goal。用户随后提供的专家路线已完成查询留出、匹配二乘二与一次丰富源
+预算诊断：表示证据强，共享方法仍未解决困难边，因此停止本次模型实验，没有进入
+新的6000人评价；不恢复旧横向变体搜索。结果见专家路线末节，仍未通过质量与完整成本联合验证。
+上述为早期探索历史。后续native C完成4091人成熟域真实质量与条件FLOPs核算，
+第六次专家路线已完成基础方法定稿、统一常量/仿射机制对照及逐发布费用整理，Design 1冻结。
+完整叙述现直接写入论文main.tex；用户提供的中文草稿保存于paper/draft/，
+原分节文件仅归档于draft/archive/，不再被正文引用；不自动开启第二设计。
 结果属于开发证据，未读取独立确认。实际冻结Medium为legacy ELU+1，读取严格复用其算子；
 不能将其方法结果描述为SiLU-native模型验证。
 
@@ -38,8 +50,11 @@
 
 ## 最新论文的结构
 
-Design 为 **Cross-Version Cache Adaptation**，包括 System Overview、Cache Summarization、
-Release-Time Translation、Read-Time Correction、State Maintenance Across Releases。
+Design 为 **EvoKV System Design**，按系统总览、缓存摘要、发布转换、评分与维护、
+理论计算开销组织，正文约1400词。方法章、基础评价和质量表均直接维护在paper/main.tex，
+配置、维度及求解目标集中在Implementation，PCA/回放及逐项算术放同文件附录；
+不再使用sections/。
+主文图表为常量/仿射公共query对照、方法流程、基础质量表及理论规模图。
 不要再将当前方法命名为 Sketch-to-Sketch，也不要把所有组件都冠以 Sketch。
 
 Motivation 使用六层 Medium 的五次更新与完整旧 producer 对比。
