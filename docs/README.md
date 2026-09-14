@@ -1,6 +1,6 @@
 # 文档地图
 
-更新日期：2026-09-07
+更新日期：2026-09-08
 
 ## 当前阅读顺序
 
@@ -8,6 +8,20 @@
 | --- | --- |
 | 论文现在如何定义方法 | [论文正文](../../paper/main.tex) |
 | 方法结构和实现边界 | [paper_design.md](paper_design.md) |
+| Design 3当前：状态独立、算子共享，减少完整路径分组造成的计算分裂 | [设计与历史](design3/README.md)；[跨路径可行性](../results/design3/cohort_01/report.md)；[历史绑定验证](../results/design3/binding_01/report.md) |
+| Design 2 缓存续用周期：专家建议、检测实验与可行性审查 | [独立设计目录](design2/README.md) |
+| Design 2当前Benchmark：困难状态、正常低干扰、真实轨迹和规模成本目标 | [Benchmark定义](design2/benchmark.md)；[基线审计](../results/design2/analysis/benchmark_01/report.md) |
+| Design 2论文框架与完整开发结果：读取证据、有限核验、持久更新 | [方法与Benchmark](design2/paper_framework.md)；[本轮结论](../results/design2/sparse_01/analysis/conclusion.md) |
+| Design 2扩大场景验证：3万目录扫描、4082新UID、复用目标观察 | [场景与执行](design2/scan_30k.md)；[扩大结论](../results/design2/scan_30k_01/analysis/conclusion.md) |
+| Design 2当前初稿：有界目标观察、响应时机消融与真实接管 | [机制实验](design2/bounded_experiment.md)；[主版本结论](../results/design2/bounded_01/analysis/conclusion.md) |
+| Design 2此前计算机制：预付动作费用，费用通过但保护不足 | [机制与Benchmark](design2/compute_mechanisms.md)；[计算实验](../results/design2/analysis/compute_01/report.md) |
+| Design 2此前2048UID闭环：费用接近目标，正常M4保护仍未通过 | [中规模结论](../results/design2/analysis/scale_followup_01/conclusion.md)；[当轮设置](design2/scale_followup.md) |
+| Design 2 第一轮中规模结论：原始续用分数不足，费用排序有条件信号 | [1024开发UID检测报告](../results/design2/analysis/detection_01/report.md) |
+| Design 2 条件复核：几何增量排序信号与全量检查费用 | [预算与费用复核报告](../results/design2/analysis/budget_audit_01/report.md) |
+| Design 2 一次固定的残余尺度校准：开发通过，保留漏检与费用边界 | [条件残余校准报告](../results/design2/analysis/scale_calibration_01/report.md) |
+| Design 2 固定32方向分级检查：判定保持通过，费用失败 | [分级检查报告](../results/design2/analysis/tiered32_01/report.md) |
+| Design 2 精确状态收缩：512/1024UID判定保持，新增准备＋检查净省72.06% | [225维状态二次型报告](../results/design2/analysis/conditional225_01/report.md) |
+| Design 2 原1024UID真实重建闭环与两个固定策略备选 | [真实闭环比较报告](../results/design2/analysis/lifecycle_variants_01/report.md) |
 | 最新专家路线：基础方法定稿与冻结 | [专家路线、完整结果与停止决定](design/expert_route_2026-09-07.md) |
 | Design 1设计依据、统一机制对照与逐发布预算 | [基础方法定稿报告](../results/design/analysis/base_method_final_01/report.md) |
 | 论文方法与基础实验的实际章节 | [完整英文正文](../../paper/main.tex)；[最新中文设计草稿](../../paper/draft/evokv_system_design_zh.md) |
@@ -39,7 +53,10 @@
 上述为早期探索历史。后续native C完成4091人成熟域真实质量与条件FLOPs核算，
 第六次专家路线已完成基础方法定稿、统一常量/仿射机制对照及逐发布费用整理，Design 1冻结。
 完整叙述现直接写入论文main.tex；用户提供的中文草稿保存于paper/draft/，
-原分节文件仅归档于draft/archive/，不再被正文引用；不自动开启第二设计。
+原分节文件仅归档于draft/archive/，不再被正文引用。
+2026-09-08 用户开启第二设计的整理与审查，独立保存在 design2/；Design 1 继续冻结，
+用户随后明确授权的第一轮中规模检测已完成，冻结C恢复H并评价512校准/1024开发UID；
+没有启动预算调度或真实重建，不能将历史实验授权自动用于第二设计。
 结果属于开发证据，未读取独立确认。实际冻结Medium为legacy ELU+1，读取严格复用其算子；
 不能将其方法结果描述为SiLU-native模型验证。
 

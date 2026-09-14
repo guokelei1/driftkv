@@ -11,6 +11,15 @@
 
 ## 当前流程
 
+Design 2当前初稿入口：`design2/run_bounded_candidate.py`（有界观察、触发采用目标输出、请求边界安装）；
+`run_bounded.py`提供共享状态机及保持旧响应的消融。`queue_bounded.py`、`timing_control.py`、
+`report_bounded.py`、`summarize_bounded.py`保留完整回放/配对时机/参考与资源证据，见[本轮结论](../results/design2/bounded_01/analysis/conclusion.md)。
+
+Design 2最新场景扩展入口：`design2/scan_population.py`做标签无关的3万目录/时间扫描，
+`queue_scan.py`执行冻结一次性/复用目标观察，`scan_reference.py`生成全真实请求参考，
+`report_scan.py`与`summarize_scan.py`生成完整分组/AUC/残余/费用。
+`run_margin_gate.py`、`stitch_margin.py`是固定排序门控开发对照；设置与范围见[scan_30k](../docs/design2/scan_30k.md)。
+
 | 用途 | 入口 |
 | --- | --- |
 | 六层 Medium 训练与 Full/Reuse 矩阵 | run_yambda500m_medium_full_reuse_matrix.py |
@@ -24,6 +33,7 @@
 | Insight 1 局部替换诊断 | [insight_one_locality/README.md](insight_one_locality/README.md) |
 | Insight 2 响应修正和持续性诊断 | [insight_two/README.md](insight_two/README.md) |
 | 六层 Design 四组件原型、校准与连续评价 | [design/README.md](design/README.md) |
+| Design 2 冻结检测、2048UID连续闭环、短压力Benchmark与FreshCurrent参考 | [design2/README.md](design2/README.md) |
 | 只修改或生成论文图片 | [../figures/README.md](../figures/README.md) |
 
 Medium 和 Large 的具体命令、GPU 设置、窗口、epoch、hash 和历史范围分别在
@@ -56,3 +66,10 @@ insight/ 现在只有六个共享函数模块，不再包含旧路线的实验�
 四层专属 rolling recipe、one-hop completion、旧 long-age reuse v1/v2/v3 及旧 Insight
 候选启动脚本已删除；不要将它们与 Medium 的现行 runner 混用。
 历史删除清单、恢复包与证据边界见 [结果索引](../results/README.md)。
+# Design 3执行原型
+
+当前入口为`design3/cohort_probe.py`（固定就绪工作包，A40约22秒）与`cohort_report.py`，核心为`src/hstu_kvcache/design3/cohort.py`。比较逐任务、完整路径分组、共同算子合并；冻结原三角检测，不运行教师或训练。结果`results/design3/cohort_01`。
+
+历史第二轮入口为`design3/binding_benchmark.py`、`replay.py --execution binding/graph_service --timed-execution`和`binding_report.py`。前者保留“只转换参数”“发布准备但每次准备state”“state变化/不变”对照；后者只汇总和核对`results/design3/binding_01`。实现集中在`src/hstu_kvcache/design3/binding.py`，初版脚本与失败记录保留。
+
+`design3/capture.py`复用有界Design 2回放捕获真实读取输入；`benchmark.py`测简洁eager、同等CUDA Graph、批量225求解和源/响应分块对照。`replay.py`在固定UID上执行reference或graph版本；`scheduling.py`测真实目标构建与四个不同UID读取的固定就绪工作包；`report.py`仅核对和汇总。当前结果见`results/design3/initial_01/report.md`。均为小型开发验证，不是完整在线服务基准；不需要重新拟合或训练。

@@ -1,0 +1,47 @@
+{
+  "status": "benchmark_v1_fixed_before_new_stratified_audit; existing aggregate results already known",
+  "scope": "development benchmark and executable baseline audit; no confirmation claim",
+  "cohort_source": "configs/design2/detection_01.json",
+  "calibration_role": "residual_calibration",
+  "development_role": "development",
+  "targets": [1, 3, 4, 5],
+  "cutover_days": [231, 245, 259, 273, 287],
+  "stop_day": 301,
+  "strata": {
+    "short": "1 <= retained_count <= 128",
+    "old_lineage": "target >= 3 and at least 25% of retained events produced at target-2 or earlier in the common native lineage",
+    "mixed": "at least 3 producer versions in the common native retained history",
+    "rare_activity": "prior14day write_count or time_since_last_event strictly outside target-specific calibration512 1st/99th percentiles",
+    "challenge": "union of short, old_lineage, mixed, rare_activity",
+    "routine": "complement of challenge; background workload, not a safety label"
+  },
+  "rarity_quantiles": [0.01, 0.99],
+  "short_max": 128,
+  "old_fraction_min": 0.25,
+  "mixed_producers_min": 3,
+  "auc_support": {"min_uids": 30, "min_positive": 20, "min_negative": 20},
+  "tail_thresholds": [0.1, 0.5, 1.0],
+  "bootstrap": {"uid_draws": 1000, "seed": 17},
+  "prospective_quality_targets": {
+    "challenge_uid_equal_severe_rate_relative_reduction": 0.30,
+    "challenge_uid_equal_excess_error_mass_relative_reduction": 0.30,
+    "routine_auc_noninferiority_margin": 0.001,
+    "routine_logloss_relative_increase_max": 0.005,
+    "routine_intervened_state_fraction_max": 0.10,
+    "routine_extra_service_flops_over_own_exact_max": 0.02,
+    "oracle_low_error_new_severe_rate_max": 0.001,
+    "minimum_primary_failure_uids_for_decision": 30,
+    "minimum_challenge_feedback_uids": 100
+  },
+  "cost_envelope": [
+    {"users": 30000, "total_incremental_ratio_max": 0.40},
+    {"users": 100000, "total_incremental_ratio_max": 0.20},
+    {"users": 1000000, "total_incremental_ratio_max": 0.15},
+    {"users": 10000000, "total_incremental_ratio_max": 0.15}
+  ],
+  "large_population_stretch_ratio": 0.10,
+  "denominator": "same natural workload, four-release cache-only dependency-closed Exact-All; include D1 and D2 all preparations and actual incremental service calls once",
+  "reference_split": "FreshCurrent at decision/diagnostic checkpoints for compatibility; release Exact-All plus independent native append for lifecycle quality. Never substitute the latter for FreshCurrent.",
+  "prospective_mechanism_workloads": ["unaltered natural M0-M5", "all natural challenge strata and routine control", "real retained suffix policies 32/128/1024 fixed from common M0 and maintained throughout each separate replay", "native lineage snapshots after actual writes 0/1/128/1024/6144 when available; missing exposure stays missing"],
+  "limits": "Proposed engineering acceptance goals, not a scientific guarantee and not retroactively preregistered for old results. No threshold/group/UID tuning for passing this benchmark. No future labels in cohort assignment or scheduling. Original512/1024 and all frozen detector parameters unchanged."
+}

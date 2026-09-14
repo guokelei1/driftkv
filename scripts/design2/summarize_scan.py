@@ -1,0 +1,78 @@
+"""Concise full-cohort conclusions from retained expanded evidence only."""
+import json
+from pathlib import Path
+import pandas as pd
+from design.data import ROOT
+from design2.report_sparse import load
+from design2.audit_benchmark import save
+
+p=ROOT/'results/design2/scan_30k_01';s=json.loads((p/'analysis/summary.json').read_text())
+labels={'frozen':'一次性观察','witness':'复用目标观察','margin_gate':'排序分差门控（后续开发）'}
+lines=['# 4082新用户扩展实验：场景覆盖、机制收益与任务质量', '',
+'完成3万UID目录盘点；确认/保留8488UID的详细历史与输出未读，时间扫描覆盖21512UID，剩余18276UID可用于新D2开发。按事先冻结的结构条件选出随机自然2048和活跃场景富集2034，所有用户、真实事件与M0—M5轨迹保留。没有按标签、AUC、检测分数或失败残余选人。', '',
+'**结论：样本不足确实限制了此前短历史评价，但不是AUC问题的全部原因。** 真实短历史反馈支持扩大到各版本上百UID后，AUC仍有正负变化。复用已构造目标轨迹将新队列59名主失败用户降到12名，是比原一次性观察更强的兼容性保护；没有获得稳定总体或特殊组AUC收益。保留这个尾部保护机制和完整材料，不宣布Fallback全部目标通过。', '',
+'## 三条机制完整比较', '',
+'|方法/队列|主失败UID D1→D2|主超额残余降低|四边AUC差pp [UID95%区间]|付费构造/安装|',
+'|---|---:|---:|---|---:|']
+for r in s['results']:
+    x=r['residuals']['all'][1];a=x['design1'];b=x['design2'];ci=next(v['interval'] for v in r['auc_intervals'] if v['target']=='equal_edge')
+    lines.append(f"|{labels[r['policy']]}/{r['cohort']}|{a['failed_uids']}→{b['failed_uids']}|{1-b['excess']/a['excess']:.2%}|{100*r['auc_difference']:+.4f} [{100*ci[0]:+.4f},{100*ci[1]:+.4f}]|{r['paid_builds']}/{r['installs']}|")
+lines+=['','主尺度为面板之外、全部真实请求的FreshCurrent绝对logit残余>0.5；辅助0.1/1.0完整见summary.json，未换成功尺度。每UID先聚合窗口，区间按UID成组重采样，不把请求当独立重复。所有这些都是单训练种子的开发结果。', '',
+'## 特殊用户的真实AUC', '',
+'下面使用活跃场景富集队列，组在各目标发布时由真实状态重新确定，因此存在重叠。AUC差单位为百分点；不能将组行相加或将有反馈用户数量当严重失败样本量。', '',
+'|场景/目标|反馈UID|正/负评分行|一次性观察AUC差 [95%区间]|复用观察AUC差|', '|---|---:|---:|---|---:|']
+a=next(r for r in s['results'] if r['policy']=='frozen' and r['cohort']=='enriched');b=next(r for r in s['results'] if r['policy']=='witness' and r['cohort']=='enriched')
+for q in a['quality']:
+    if q['stratum'] not in ['short','old_lineage','mixed','rare_activity']:continue
+    v=next(x for x in b['quality'] if (x['stratum'],x['target'])==(q['stratum'],q['target']));ci=q['auc_interval']
+    lines.append(f"|{q['stratum']}/M{q['target']}|{q['uids']}|{q['positive']}/{q['negative']}|{q['auc_difference']*100:+.4f} [{ci[0]*100:+.4f},{ci[1]*100:+.4f}]|{v['auc_difference']*100:+.4f}|")
+lines+=['','## 有效机制与停止决定', '',
+'1. **复用已有目标观察，有明确的尾部增量价值。** 同样558/1182次完整构造，安装由13/22增至19/33；自然/富集主超额残余降低89.84%/91.65%，配对区间为[70.03%,99.61%]/[76.14%,98.65%]。富集短历史9→1失败UID、旧谱系24→5、混合来源13→4、稀有活动7→2。对应的是一条共享状态生命周期机制，不是四个场景补丁。',
+'2. **收益延续到真实写入后。** 复用观察安装后且已有后续真实写入的自然105行/12UID，平均绝对残余0.02213→0.00660；富集642行/27UID为0.05736→0.00581。这是动作条件下的持久效果，非随机处理因果估计；整体效果仍由完整队列决定。',
+'3. **固定排序门控不晋升默认方案。** max(delta)−min(delta)>0.5移除统一偏移型安装，将自然M5 AUC损失从−0.2319pp缩至−0.0205pp；但主失败比一次性观察9/17回升至12/23，富集超额残余保护只剩28.50%。短历史AUC变为不干预下的0变化，也不能称短历史质量改善。没有继续改候选数或门槛寻找赢家。该对照在看过扩展AUC后提出，单列开发范围。',
+'4. **剩余问题是目标与动作之间的关系。** 全量publication Exact在各边有任务质量价值，但选择性消除大logit偏差不自动改善全局AUC。标量偏移门控也不足以同时守住保护和任务质量。下一步应研究如何利用同一次目标观察判断真实排序/损失上的干预价值，并在旧校准侧固定后验证；不再把几何阈值搜索或只扩样本当解决办法。', '',
+'## 完整成本', '',
+'|方法/队列|D1+D2服务TFLOPs|Exact闭包TFLOPs|3万/10万/百万比率|', '|---|---:|---:|---|']
+for r in s['results']:
+    lines.append(f"|{labels[r['policy']]}/{r['cohort']}|{r['costs']['design2']/1e12:.4f}|{r['costs']['exact']/1e12:.4f}|"+'/'.join(f"{x['ratio']:.2%}" for x in r['scales'])+'|')
+lines+=['','共享准备136.4270TFLOPs（含D1、原校准教师与检测准备）只收一次。人口点为同负载外推，不是执行了3万/10万/百万模型回放。自然队列复用观察新增0.9447TFLOPs native追加和0.0716TFLOPs读取；这才是比一次性观察昂贵的主要原因。活跃富集费用不代表自然人口：其复用观察服务下界约23.07%，不能靠扩大人口压到20%。', '',
+'准确检测因子、构造、全部被放弃的构造、观察读写与安装均收费；目标观察同时占额外KV，当前仅原型内存缓存，未声称免费存储或部署峰值。', '',
+'## 实验与证据', '',
+'- 8UID新队列canary、8UID已开放动作canary，以及排序分差canary均通过；构造、实际读、追加/淘汰和安装后读取均有对应检查。',
+'- 主队列四GPU共1682.31s，64个分块全部exit0；完整FreshCurrent参考350.17s、102054评分行/75510请求组，评价教师496.9587TFLOPs单列，不注入线上决策。',
+'- 排序门控完整重放所有原方案安装UID的34条生命周期，其他4048UID无新增分支，复用原轨迹；全4082UID评价。共同参考最大FP32差5.96e−7，各边AUC相同，见margin_gate/summary.json。',
+'- 论文main.tex方法、扩大Benchmark、尾部表、特殊AUC表及完整费用已更新；未编译TeX。图由figures/src/design2/expanded.py只读结果生成。',
+'- 全部分组AUC/logloss/正负支持/UID区间、主辅助残余、费用分项、真实写入后的结果见[summary.json](summary.json)和[report.md](report.md)。跨下一发布诊断见[later_release.json](later_release.json)：复用观察自然125行/9UID残余0.04221→0.02076，富集297行/13UID为0.05455→0.02817。三方案均无D1残余≤0.1的窗口新变为>0.5。旧2048证据和负结果未删除，确认集/theta3未读，无新训练。']
+(p/'analysis/conclusion.md').write_text('\n'.join(lines)+'\n')
+# Compact chronology of reference and failure examples, all retained.
+cases=[]
+for cohort in ['natural','enriched']:
+    win=pd.read_parquet(p/f'analysis/witness_{cohort}_windows.parquet');bad=win[win.err_design2>.5].copy();bad['cohort']=cohort;cases.append(bad)
+pd.concat(cases).to_parquet(p/'analysis/remaining_witness_failures.parquet',index=False)
+refs=[json.loads(x.read_text()) for x in (p/'references/cap1024').glob('m*.json')]
+save(p/'analysis/reference_cost.json',dict(rows=sum(x['rows'] for x in refs),groups=sum(x['checkpoints'] for x in refs),evaluation_teacher_FLOPs=sum(x['evaluation_teacher_FLOPs'] for x in refs),scope='Evaluation-only; method calibration teachers separately retained in shared preparation'))
+# Older runner source was loaded before the provenance-only footer addition.
+for name in ['canary_margin','margin_replay']:
+    q=p/name/'configuration.json';cfg=json.loads(q.read_text());cfg.update(scan_policy='margin_gate',margin_protocol=json.loads((ROOT/'configs/design2/scan_margin_gate_01.json').read_text()),provenance_note='Protocol attached after completion; numerical runner unchanged; initial run_scan source hash retained')
+    save(q,cfg)
+print(p/'analysis/conclusion.md')
+
+# Later releases are a selected persistence diagnostic, not an AUC success set.
+ids=json.loads((p/'uids.json').read_text());base=load(p/'frozen')[0].reset_index(names='row_index')
+ref=pd.concat([pd.read_parquet(p/f'references/cap1024/m{t}.parquet') for t in [1,3,4,5]])
+keys=['uid','target','request_id'];reference=base[['row_index']+keys].merge(ref,on='row_index',validate='one_to_one')
+from design2.report_scale_followup import boot
+from hstu_kvcache.evaluation.binary_metrics import binary_metrics
+later=[]
+for policy in ['frozen','witness','margin_gate']:
+    f,_,d=load(p/policy);initial=d[d.action=='rebuild'].groupby('uid').target.min().reset_index(name='first_renewal_target')
+    for cohort,uids in [('natural',ids['natural']),('enriched',ids['extension'])]:
+        rows=f[f.uid.isin(uids)].merge(initial,on='uid');rows=rows[rows.target>rows.first_renewal_target].merge(reference[keys+['fresh_current']],on=keys,validate='one_to_one')
+        metrics={str(t):{m:binary_metrics(g.label,g[m]) for m in ['design1','design2']} for t,g in rows.groupby('target')}
+        win=pd.read_parquet(p/f'analysis/{policy}_{cohort}_windows.parquet')
+        later.append(dict(policy=policy,cohort=cohort,rows=len(rows),uids=int(rows.uid.nunique()),
+            mean_abs={m:float((rows[m]-rows.fresh_current).abs().mean()) for m in ['design1','design2']},metrics=metrics,
+            auc_intervals=boot(rows,uids) if len(rows) else [],
+            newly_severe_from_low_error=int(((win.err_design1<=.1)&(win.err_design2>.5)).sum()),
+            scope='Requests at a strictly later evaluated model release than first installation; selected on actual actions, not causal treatment estimate'))
+save(p/'analysis/later_release.json',later)
