@@ -482,8 +482,7 @@ def fit_ridge_batched(current, scenes, translator, args):
     across the shared refits. Every pass still recomputes corrected queries.
     """
     if getattr(translator,"query_affine",False):
-        from design.fit_query_view import fit_query_layers
-        return fit_query_layers(current,scenes,translator,args)
+        raise ValueError("query-affine calibration was retired; only evaluation of saved weights is supported")
     states=[training_state(scene,current,translator) for scene in scenes]
     sources=[state.pack_source(translator.target) for state in states]
     features=torch.stack([translator.features(source) for source in sources])
@@ -864,6 +863,8 @@ def warm_compiled_reads(model, branch, candidates, delta):
 
 
 def main(args):
+    if getattr(args, "query_affine", False) and not args.evaluation_from:
+        raise ValueError("query-affine calibration was retired; use --evaluation-from for saved weights")
     args.no_op_targets = getattr(args,"no_op_targets",[]) or []
     out = ROOT / "results/design" / args.run_id
     out.mkdir(parents=True, exist_ok=False)
@@ -1238,7 +1239,7 @@ if __name__ == "__main__":
     parser.add_argument("--source-confidence",action="store_true")
     parser.add_argument("--second-moments",action="store_true")
     parser.add_argument("--source-kernel",action="store_true")
-    parser.add_argument("--query-affine",action="store_true")
+    parser.add_argument("--query-affine",action="store_true", help="retired calibration; saved weights require --evaluation-from")
     parser.add_argument("--no-op-targets",type=int,nargs="+",default=[],choices=(2,3,4,5),
                         help="Declared native No-op releases; keep their model and real cache lineage, skip Translator fitting/reads")
     parser.add_argument("--compile-reads",action="store_true")

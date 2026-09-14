@@ -14,8 +14,6 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "configs/contracts/yambda500m_small_hstu_native_rolling_recipe_matrix_v2.yaml"
-OUTPUT = ROOT / "data/manifests/yambda500m_small_hstu_native_rolling_matrix_fast_v2"
 DAY = 86_400
 
 
@@ -191,8 +189,8 @@ def build(contract_path: Path, output: Path, threads: int) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--contract", type=Path, default=CONTRACT)
-    parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--contract", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--threads", type=int, default=24)
     args = parser.parse_args()
     print(json.dumps(build(args.contract, args.output, args.threads), indent=2))

@@ -8,7 +8,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import numpy as np
 import torch
-import yaml
 
 from hstu_kvcache.data.yambda_history import load_yambda_histories
 from hstu_kvcache.models import HSTU, HSTUConfig
@@ -17,11 +16,6 @@ from hstu_kvcache.training import FoundationHistoryIndex
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml"
-CPU_RUNTIME = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_cpu_runtime_v2.yaml"
-REUSE_RUNTIME = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_reuse_4gpu_runtime_v3.yaml"
-FORCED_D7_REUSE = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d7_forced_reuse_diagnostic_v1.yaml"
-D14_V5 = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_v5_extension_v1.yaml"
-D14_V5_EXECUTION = ROOT / "configs/contracts/yambda500m_medium_hstu_native_d14_v5_execution_v1.yaml"
 
 
 def load_runner():
@@ -36,24 +30,6 @@ def load_runner():
 def load_foundation_evaluator():
     path = ROOT / "scripts/evaluate_yambda500m_foundation_raw.py"
     spec = importlib.util.spec_from_file_location("foundation_evaluator_medium_test", path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-def load_trainer():
-    path = ROOT / "scripts/train_yambda500m_foundation_fsdp.py"
-    spec = importlib.util.spec_from_file_location("medium_trainer_test", path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-def load_d14_v5_runner():
-    path = ROOT / "scripts/run_yambda500m_medium_d14_v5_extension.py"
-    spec = importlib.util.spec_from_file_location("medium_d14_v5_extension", path)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -75,99 +51,6 @@ def test_foundation_history_index_uses_identical_sorted_uid_groups() -> None:
     assert prefix[0].tolist() == [6, 5]
     assert prefix[1].tolist() == [3, 2]
     assert prefix[2].tolist() == [10, 20]
-
-
-def test_medium_runner_plan_has_checkpoint_first_32_cell_shape() -> None:
-    module = load_runner()
-    pipeline = module.Pipeline(CONTRACT, threads=1)
-    plan = pipeline.plan()
-    assert plan["formal_checkpoints"] == 15
-    assert plan["formal_full_only_cells"] == 32
-    assert plan["formal_reuse_cells_maximum"] == 32
-    assert plan["world_size"] == 2
-    assert plan["physical_gpus"] == [2, 3]
-    assert plan["global_train_batch_size"] == 32
-    assert plan["local_batch_sizes_by_rank"] == [16, 16]
-    assert plan["D14_cpu_runtime"]["total_physical_history_workers"] == 28
-    assert plan["tasks"].index("formal_all_32_full_only_cells") < plan["tasks"].index(
-        "formal_reuse_only_for_unlocked_accepted_lineage_edges"
-    )
-    assert plan["formal_acknowledgement"] == "RUN_MEDIUM_D7_D14"
-
-
-def test_d14_cpu_runtime_uses_disjoint_numa_local_physical_cores() -> None:
-    module = load_runner()
-    pipeline = module.Pipeline(CONTRACT, threads=1)
-    value = yaml.safe_load(CPU_RUNTIME.read_text(encoding="utf-8"))
-    runtime = value["runtime"]
-    rank0 = set(runtime["rank0_cpu_affinity"])
-    rank1 = set(runtime["rank1_cpu_affinity"])
-    assert len(rank0) == len(rank1) == 14
-    assert rank0.isdisjoint(rank1)
-    assert len(rank0 | rank1) == runtime["total_physical_history_workers"] == 28
-    assert pipeline.cpu_runtime_args("D7") == []
-    args = pipeline.cpu_runtime_args("D14")
-    assert args[args.index("--history-threads") + 1] == "14"
-    assert args[args.index("--cpu-affinity-by-rank") + 1] == (
-        "28,29,30,31,32,33,34,35,36,37,38,39,40,41;"
-        "42,43,44,45,46,47,48,49,50,51,52,53,54,55"
-    )
-
-
-def test_remaining_d14_reuse_runtime_uses_four_gpus_and_larger_batches() -> None:
-    module = load_runner()
-    pipeline = module.Pipeline(CONTRACT, threads=1)
-    value = yaml.safe_load(REUSE_RUNTIME.read_text(encoding="utf-8"))
-    runtime = value["runtime"]
-    assert value["scope"]["physical_gpus"] == [0, 1, 2, 3]
-    assert value["scope"]["world_size"] == pipeline.reuse_world == 4
-    assert runtime["cohort_size_per_rank"] == 32
-    assert runtime["query_chunk_size_per_rank"] == 256
-    cpu_sets = [set(runtime[f"rank{rank}_cpu_affinity"]) for rank in range(4)]
-    assert all(len(values) == 14 for values in cpu_sets)
-    assert len(set().union(*cpu_sets)) == 56
-    assert sum(len(left & right) for i, left in enumerate(cpu_sets) for right in cpu_sets[i + 1:]) == 0
-    assert pipeline.reuse_distributed_prefix[-1] == "--nproc_per_node=4"
-    assert pipeline.reuse_gpu_env["CUDA_VISIBLE_DEVICES"] == "0,1,2,3"
-
-
-def test_forced_d7_reuse_is_complete_four_gpu_diagnostic_only() -> None:
-    module = load_runner()
-    pipeline = module.Pipeline(CONTRACT, threads=1)
-    value = yaml.safe_load(FORCED_D7_REUSE.read_text(encoding="utf-8"))
-    assert value["scope"]["branch"] == "D7"
-    assert value["scope"]["horizons_days"] == [3, 7]
-    assert len(value["scope"]["edges"]) == 10
-    assert value["scope"]["expected_cells"] == 20
-    assert value["scope"]["formal_summary_mutation"] == "prohibited"
-    assert value["scope"]["formal_admission_override"] == "prohibited"
-    assert value["runtime"]["physical_gpus"] == [0, 1, 2, 3]
-    assert value["runtime"]["world_size"] == 4
-    assert value["runtime"]["cohort_size_per_rank"] == 32
-    assert value["runtime"]["query_chunk_size_per_rank"] == 256
-    assert pipeline.reuse_dir("D7", 1, 3, forced_diagnostic=True) == (
-        pipeline.output / "D7" / "forced_reuse_diagnostic_v1" / "E3" / "v0_to_v1"
-    )
-    assert pipeline.reuse_dir("D7", 1, 3) == (
-        pipeline.output / "D7" / "reuse" / "E3" / "v0_to_v1"
-    )
-
-
-def test_d14_v5_runner_uses_separate_extension_paths() -> None:
-    module = load_d14_v5_runner()
-    runner = module.Runner(D14_V5, D14_V5_EXECUTION, threads=1)
-    assert runner.window("E3") == (287, 290, False)
-    assert runner.window("E7") == (287, 294, False)
-    assert runner.window("E14_partial") == (287, 301, True)
-    assert runner.checkpoint_dir == (
-        ROOT / "results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/checkpoint"
-    )
-    assert "v5_extension_v1" in runner.full_dir("E3", canary=False).parts
-
-
-def test_global_batch_partition_is_16_16_for_two_ranks() -> None:
-    module = load_trainer()
-    assert [module.local_batch_size(32, 2, rank) for rank in range(2)] == [16, 16]
 
 
 def test_rejected_full_only_edge_keeps_descendant_reuse_locked(tmp_path: Path) -> None:
@@ -203,16 +86,6 @@ def test_rejected_full_only_edge_keeps_descendant_reuse_locked(tmp_path: Path) -
     assert first["reason"] == "full_only_quality_gate_failed"
     assert second["reuse_unlocked"] is False
     assert second["reason"] == "parent_not_in_accepted_diagnostic_lineage"
-
-
-def test_medium_parameter_count_matches_resource_contract() -> None:
-    value = yaml.safe_load(CONTRACT.read_text(encoding="utf-8"))
-    model = dict(value["model"])
-    known = model.pop("known_items_from_dataset_manifest")
-    oov = model.pop("oov_buckets")
-    with torch.device("meta"):
-        hstu = HSTU(HSTUConfig(num_items=known + oov, **model))
-    assert sum(parameter.numel() for parameter in hstu.parameters()) == value["resource_plan"]["model_parameters"]
 
 
 def test_bounded_history_loader_keeps_last_prefix_and_window_events(tmp_path: Path) -> None:

@@ -5,8 +5,8 @@ The runner has four explicit phases:
 
 * ``prepare`` builds and seals label-free request manifests on CPU;
 * ``resource-canary`` tests the frozen 10L/H320 point without reading labels;
-* ``formal`` runs the execution-sealed checkpoint, Full-only, admission, then
-  adjacent Reuse/PRO matrix in that order;
+* ``formal`` runs the execution-sealed checkpoint, Full-only evaluation and
+  admission; the formal queue stops there;
 * ``status`` reports resumable artifact counts without mutating the workspace.
 
 Model/data logic remains in the existing trainer and evaluators.  This module
@@ -31,13 +31,9 @@ from pathlib import Path
 
 import yaml
 
-from insight.pro_lazy_cost import architecture_pro_cost
-
-
 ROOT = Path(__file__).resolve().parents[1]
 BASE_CONTRACT = ROOT / "configs/contracts/yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1.yaml"
 EXECUTION_CONTRACT = ROOT / "configs/contracts/yambda500m_large_hstu_native_d7_d14_execution_v1.yaml"
-D14_E14_SCOPE_AMENDMENT = ROOT / "configs/contracts/yambda500m_large_reuse_scope_d14_e14_only_v1.yaml"
 REUSE_SCOPE_AMENDMENT = ROOT / "configs/contracts/yambda500m_large_full_only_stop_v1.yaml"
 FORMAL_ACK = "RUN_LARGE_D7_D14_10L_H320"
 
@@ -69,11 +65,10 @@ def utc_now() -> str:
 
 
 class LargePipeline:
-    def __init__(self, contract_path: Path, execution_path: Path, threads: int,
-                 reuse_scope_path: Path = REUSE_SCOPE_AMENDMENT) -> None:
+    def __init__(self, contract_path: Path, execution_path: Path, threads: int) -> None:
         self.contract_path = contract_path.resolve()
         self.execution_path = execution_path.resolve()
-        self.reuse_scope_path = reuse_scope_path.resolve()
+        self.reuse_scope_path = REUSE_SCOPE_AMENDMENT
         self.contract = yaml.safe_load(self.contract_path.read_text(encoding="utf-8"))
         self.contract_hash = sha256_file(self.contract_path)
         self.reuse_scope = yaml.safe_load(self.reuse_scope_path.read_text(encoding="utf-8"))
@@ -110,7 +105,6 @@ class LargePipeline:
         frozen = self.contract["frozen_inputs"]
         for key in (
             "unified_scale_contract", "dataset_manifest", "item_mapping", "population",
-            "small_PRO_quality_contract", "small_PRO_theoretical_compute",
         ):
             path = (ROOT / frozen[key]).resolve()
             if not path.exists() or sha256_file(path) != frozen[f"{key}_sha256"]:
@@ -122,14 +116,9 @@ class LargePipeline:
             raise RuntimeError("D14 must remain five updates with E7/E14")
         if branches["D14"]["v4_to_v5_E14_name"] != "E14_partial":
             raise RuntimeError("the incomplete fifth D14 E14 window must remain explicit")
-        pro = self.contract["large_PRO"]
-        cost = architecture_pro_cost(
-            layers=int(model["num_layers"]), hidden=int(model["hidden_size"]),
-            heads=int(model["num_heads"]), context=int(model["max_seq_len"]),
-            repair_evidence=int(pro["repair_width"]), carriers=int(pro["carriers"]),
-        )
-        if abs(float(cost["over_full_fraction"]) - float(pro["theoretical_compute_fraction_of_Full"])) > 1e-12:
-            raise RuntimeError("Large PRO theoretical compute no longer matches the frozen mapping")
+        # The sealed v1 contract records a retired Small proposal.  It is
+        # neither a Large training input nor part of the current Full-only
+        # workflow, so its deleted Small artifacts are not validated here.
 
     def _validate_execution(self) -> None:
         assert self.execution is not None
@@ -169,29 +158,15 @@ class LargePipeline:
             if not superseded.exists() or sha256_file(superseded) != parent["superseded_reuse_scope_sha256"]:
                 raise RuntimeError("Large Full-only stop/superseded Reuse scope hash mismatch")
         scope = self.reuse_scope["reuse_scope"]
-        if not bool(scope.get("formal_reuse_enabled", True)):
-            if scope["branch"] != "none" or scope["horizon_days"] is not None:
-                raise RuntimeError("disabled Large formal Reuse scope must not name a branch/horizon")
-            if list(scope["edges"]) or int(scope["expected_cells"]) != 0:
-                raise RuntimeError("disabled Large formal Reuse scope must contain zero cells")
-            if bool(scope["include_frozen_PRO_in_same_raw_pass"]):
-                raise RuntimeError("disabled Large formal Reuse scope cannot include PRO")
-            return
-        if scope["branch"] != "D14" or int(scope["horizon_days"]) != 14:
-            raise RuntimeError("Large formal Reuse is restricted to D14/E14")
-        if list(map(int, scope["edges"])) != [1, 2, 3, 4, 5] or int(scope["expected_cells"]) != 5:
-            raise RuntimeError("Large D14/E14 Reuse scope must retain all five adjacent edges")
-        if scope["edge5_name"] != "E14_partial" or not scope["include_frozen_PRO_in_same_raw_pass"]:
-            raise RuntimeError("Large scoped Reuse must preserve the partial-tail marker and frozen PRO path")
+        if bool(scope.get("formal_reuse_enabled", True)):
+            raise RuntimeError("Large formal Reuse is retired; the runner accepts only the Full-only stop scope")
+        if scope["branch"] != "none" or scope["horizon_days"] is not None:
+            raise RuntimeError("disabled Large formal Reuse scope must not name a branch/horizon")
+        if list(scope["edges"]) or int(scope["expected_cells"]) != 0:
+            raise RuntimeError("disabled Large formal Reuse scope must contain zero cells")
 
     def reuse_tasks(self) -> list[tuple[str, int, int]]:
-        scope = self.reuse_scope["reuse_scope"]
-        if not bool(scope.get("formal_reuse_enabled", True)):
-            return []
-        return [
-            (str(scope["branch"]), edge, int(scope["horizon_days"]))
-            for edge in map(int, scope["edges"])
-        ]
+        return []
 
     def event(self, event: str, **values: object) -> None:
         self.log_jsonl.parent.mkdir(parents=True, exist_ok=True)
@@ -424,33 +399,6 @@ class LargePipeline:
             command.append("--allow-canary-checkpoints")
         return command
 
-    def raw_reuse_command(self, branch: str, edge: int, horizon: int, output: Path,
-                          parent: Path, current: Path, cohort: int, query_chunk: int,
-                          max_users: int = 0, allow_canary: bool = False) -> list[str]:
-        duration = int(self.contract["scope"]["branches"][branch]["training_days"])
-        cutover = 217 + edge * duration
-        command = [
-            *self.distributed_prefix, "scripts/evaluate_yambda500m_hstu_native_onehop_reuse_raw.py",
-            "--stage", f"large_{branch}_{self.horizon_label(branch, edge, horizon)}_edge{edge}_reuse",
-            "--edge", f"v{edge-1}_to_v{edge}", "--cutover-day", str(cutover),
-            "--start-day", str(cutover), "--end-day", str(cutover + horizon),
-            "--manifest-dir", str(self.manifest), "--dataset-manifest", str(self.dataset),
-            "--parent", str(parent), "--current", str(current), "--output", str(output),
-            "--cohort-size", str(cohort), "--query-chunk-size", str(query_chunk),
-            "--include-parent-exact", *self.cpu_args,
-        ]
-        if branch == "D14":
-            pro = self.contract["large_PRO"]
-            command.extend([
-                "--include-pro-lazy", "--pro-repair-width", str(pro["repair_width"]),
-                "--pro-carriers", str(pro["carriers"]), "--pro-path", str(pro["path"]),
-            ])
-        if max_users:
-            command.extend(["--max-users", str(max_users)])
-        if allow_canary:
-            command.append("--allow-canary-checkpoints")
-        return command
-
     @staticmethod
     def safe_runtime(runtime: dict, *, minimum_util: float) -> bool:
         active = runtime.get("active_mean_gpu_utilization_percent")
@@ -558,54 +506,6 @@ class LargePipeline:
             if float(entry["runtime"]["elapsed_seconds"]) <= 1.05 * float(selected_full["runtime"]["elapsed_seconds"]):
                 selected_full = entry
 
-        reuse_candidates = []
-        query_chunk = int(canary["reuse_query_chunk_candidates_per_rank"][0])
-        for cohort in map(int, canary["reuse_cohort_candidates_per_rank"]):
-            directory = self.resource_root / f"reuse_c{cohort}_q{query_chunk}"
-            if (directory / "raw.seal.json").exists() and (directory / "raw.parquet").exists():
-                runtime = json.loads((self.logs / f"canary_reuse_c{cohort}_q{query_chunk}.runtime.json").read_text(encoding="utf-8"))
-            else:
-                runtime = self.run(
-                    f"canary_reuse_c{cohort}_q{query_chunk}",
-                    self.raw_reuse_command("D14", 1, 7, directory, v0, v1, cohort, query_chunk,
-                                           max_users=12, allow_canary=True),
-                    gpu=True, env=self.gpu_env,
-                )
-            seal = json.loads((directory / "raw.seal.json").read_text(encoding="utf-8"))
-            entry = {"cohort_size_per_rank": cohort, "query_chunk_size_per_rank": query_chunk, "runtime": runtime, "raw_sha256": seal["raw_sha256"]}
-            entry["safe"] = runtime["returncode"] == 0 and (runtime["peak_memory_used_mib"] or 0) < float(canary["formal_peak_reserved_mib_limit"])
-            reuse_candidates.append(entry)
-        safe_reuse = [entry for entry in reuse_candidates if entry["safe"]]
-        if not safe_reuse:
-            raise RuntimeError("no Reuse/PRO cohort passed the physical canary")
-        selected_reuse = safe_reuse[0]
-        for entry in safe_reuse[1:]:
-            if float(entry["runtime"]["elapsed_seconds"]) <= 1.05 * float(selected_reuse["runtime"]["elapsed_seconds"]):
-                selected_reuse = entry
-
-        # The 12-user sizing runs are long enough for memory and relative
-        # throughput, but too short for a stable one-second utilization sample.
-        # Confirm the selected configuration on a longer label-free compute
-        # segment without changing cohort or query-chunk parameters.
-        selected_cohort = int(selected_reuse["cohort_size_per_rank"])
-        utilization_output = self.resource_root / f"reuse_c{selected_cohort}_q{query_chunk}_utilization"
-        utilization_name = f"canary_reuse_c{selected_cohort}_q{query_chunk}_utilization"
-        if (utilization_output / "raw.seal.json").exists() and (utilization_output / "raw.parquet").exists():
-            reuse_utilization_runtime = json.loads((self.logs / f"{utilization_name}.runtime.json").read_text(encoding="utf-8"))
-        else:
-            reuse_utilization_runtime = self.run(
-                utilization_name,
-                self.raw_reuse_command(
-                    "D14", 1, 7, utilization_output, v0, v1,
-                    selected_cohort, query_chunk, max_users=48, allow_canary=True,
-                ), gpu=True, env=self.gpu_env,
-            )
-        reuse_compute_utilization_safe = self.safe_runtime(
-            reuse_utilization_runtime, minimum_util=minimum_util
-        )
-        if not reuse_compute_utilization_safe:
-            raise RuntimeError("selected Reuse/PRO runtime failed the extended GPU-utilization canary")
-
         state_output = self.resource_root / "state_io"
         if (state_output / "summary.json").exists():
             state_runtime = json.loads((self.logs / "canary_state_io.runtime.json").read_text(encoding="utf-8"))
@@ -625,7 +525,6 @@ class LargePipeline:
         passed = bool(
             v1_safe
             and state_summary["status"] == "large_state_io_canary_passed"
-            and reuse_compute_utilization_safe
         )
         payload = {
             "status": "large_resource_canary_passed" if passed else "large_resource_canary_failed",
@@ -640,14 +539,9 @@ class LargePipeline:
             "selected_v1_restore_and_training_safe": v1_safe,
             "full_candidates": full_candidates,
             "selected_full_batch_size_per_rank": int(selected_full["batch_size_per_rank"]),
-            "reuse_candidates": reuse_candidates,
-            "selected_reuse_cohort_size_per_rank": int(selected_reuse["cohort_size_per_rank"]),
-            "selected_reuse_query_chunk_size_per_rank": int(selected_reuse["query_chunk_size_per_rank"]),
-            "reuse_extended_compute_runtime": reuse_utilization_runtime,
             "state_io_summary": str((state_output / "summary.json").relative_to(ROOT)),
             "state_io_summary_sha256": sha256_file(state_output / "summary.json"),
             "state_io_runtime": state_runtime,
-            "pro_path": self.contract["large_PRO"]["path"],
         }
         atomic_json(summary_path, payload)
         self.write_state(payload["status"], resource_canary_summary=str(summary_path.relative_to(ROOT)))
@@ -716,9 +610,6 @@ class LargePipeline:
     def full_dir(self, branch: str, edge: int, horizon: int) -> Path:
         return self.output / branch / "full_only" / self.horizon_label(branch, edge, horizon) / f"v{edge-1}_to_v{edge}"
 
-    def reuse_dir(self, branch: str, edge: int, horizon: int) -> Path:
-        return self.output / branch / "reuse" / self.horizon_label(branch, edge, horizon) / f"v{edge-1}_to_v{edge}"
-
     def evaluate_full(self, branch: str, edge: int, horizon: int) -> None:
         assert self.execution is not None
         directory = self.full_dir(branch, edge, horizon)
@@ -780,47 +671,12 @@ class LargePipeline:
             "branch": branch, "edge": f"v{edge-1}_to_v{edge}", "primary_horizon_days": horizon,
             "full_only_report_sha256": sha256_file(report_path), "gates": gates,
             "all_metric_gates_pass": all(gates.values()),
-            "adjacent_reuse_PRO_diagnostic_unlocked_after_seal": True,
             "serving_lineage_promoted": False,
-            "interpretation": "model admission is reported independently; all-edge compatibility diagnostics do not alter serving lineage",
+            "interpretation": "model admission is reported independently and does not alter serving lineage",
         }
         atomic_json(path, payload)
         self.event("admission_sealed", branch=branch, edge=edge, all_metric_gates_pass=payload["all_metric_gates_pass"])
         return payload
-
-    def evaluate_reuse(self, branch: str, edge: int, horizon: int) -> None:
-        assert self.execution is not None
-        admission = self.seal_admission(branch, edge)
-        if not admission["adjacent_reuse_PRO_diagnostic_unlocked_after_seal"]:
-            raise RuntimeError("Reuse attempted before Full-only admission seal")
-        directory = self.reuse_dir(branch, edge, horizon)
-        raw, seal, report = directory / "raw.parquet", directory / "raw.seal.json", directory / "adjudication.json"
-        if report.exists():
-            if json.loads(report.read_text(encoding="utf-8"))["raw_sha256"] != sha256_file(raw):
-                raise RuntimeError(f"Reuse report/raw mismatch: {directory}")
-            return
-        if directory.exists() and not (raw.exists() and seal.exists()):
-            raise RuntimeError(f"partial Reuse directory requires audit: {directory}")
-        if not directory.exists():
-            runtime = self.execution["execution_amendment"]
-            self.run(
-                f"reuse_{branch}_{self.horizon_label(branch, edge, horizon)}_edge{edge}",
-                self.raw_reuse_command(
-                    branch, edge, horizon, directory,
-                    self.checkpoint(branch, edge - 1), self.checkpoint(branch, edge),
-                    int(runtime["reuse_cohort_size_per_rank"]), int(runtime["reuse_query_chunk_size_per_rank"]),
-                ), gpu=True, env=self.gpu_env,
-            )
-        seal_payload = json.loads(seal.read_text(encoding="utf-8"))
-        if sha256_file(raw) != seal_payload["raw_sha256"]:
-            raise RuntimeError(f"Reuse raw seal mismatch: {directory}")
-        self.run(
-            f"adjudicate_reuse_{branch}_{self.horizon_label(branch, edge, horizon)}_edge{edge}",
-            [sys.executable, "scripts/adjudicate_yambda500m_hstu_native_onehop_reuse.py",
-             "--raw", str(raw), "--seal", str(seal),
-             "--labels", str(self.manifest / "requests_quality.parquet"), "--output", str(report)],
-            env={**os.environ, "PYTHONPATH": "src", "PYTHONUNBUFFERED": "1"},
-        )
 
     def train_all(self) -> None:
         self.train_formal("D7", 0)
@@ -831,8 +687,8 @@ class LargePipeline:
         self.write_state("all_large_checkpoints_complete")
 
     def evaluate_all(self) -> None:
-        # Preserve the protocol boundary: every Full-only cell and every
-        # admission decision is sealed before the first Reuse/PRO label is read.
+        # Every Full-only cell and admission decision is sealed before the
+        # formally stopped queue is declared complete.
         for branch in ("D7", "D14"):
             values = self.contract["scope"]["branches"][branch]
             for edge in range(1, int(values["updates"]) + 1):
@@ -840,104 +696,33 @@ class LargePipeline:
                     self.evaluate_full(branch, edge, horizon)
                 self.seal_admission(branch, edge)
                 self.summarize(require_complete=False)
-        self.write_state("all_large_full_only_and_admission_complete")
-        reuse_tasks = self.reuse_tasks()
-        for branch, edge, horizon in reuse_tasks:
-            self.evaluate_reuse(branch, edge, horizon)
-            self.summarize(require_complete=False)
-        self.write_state(
-            "large_D14_E14_reuse_PRO_scope_complete"
-            if reuse_tasks else "large_full_only_complete_formal_reuse_not_run"
-        )
-
-    def summary_rows(self) -> list[dict]:
-        rows = []
-        for branch, edge, horizon in self.reuse_tasks():
-            admission_path = self.admission_path(branch, edge)
-            admission = json.loads(admission_path.read_text(encoding="utf-8")) if admission_path.exists() else None
-            report_path = self.reuse_dir(branch, edge, horizon) / "adjudication.json"
-            if not report_path.exists():
-                continue
-            report = json.loads(report_path.read_text(encoding="utf-8"))
-            summary = report["three_path_summary"]
-            old, new, reuse = summary["old_parent"], summary["new_current"], summary["adjacent_one_hop_reuse"]
-            old_auc = float(old["ROC_AUC"])
-            row = {
-                "branch": branch, "edge": f"v{edge-1}_to_v{edge}",
-                "horizon": self.horizon_label(branch, edge, horizon),
-                "horizon_days": horizon,
-                "complete_horizon": not (branch == "D14" and edge == 5 and horizon == 14),
-                "requests": summary["requests"],
-                "model_admission_pass": None if admission is None else admission["all_metric_gates_pass"],
-                "new_vs_old_AUC_relative_percent": 100.0 * (float(new["ROC_AUC"]) - old_auc) / old_auc,
-                "reuse_AUC_gain_retained_percent": summary["reuse_AUC_gain_retained_percent"],
-                "reuse_log_loss_gain_retained_percent": summary["reuse_log_loss_gain_retained_percent"],
-                "old": old, "new": new, "reuse": reuse,
-            }
-            if "PRO" in summary:
-                row["PRO"] = summary["PRO"]
-            rows.append(row)
-        return rows
+        self.write_state("large_full_only_complete_formal_reuse_not_run")
 
     def summarize(self, *, require_complete: bool) -> None:
-        rows = self.summary_rows()
-        expected = int(self.reuse_scope["reuse_scope"]["expected_cells"])
         full_expected = sum(
             int(values["updates"]) * len(values["evaluation_days"])
             for values in self.contract["scope"]["branches"].values()
         )
         full_completed = sum(1 for _ in self.output.glob("D*/full_only/E*/v*_to_v*/adjudication.json"))
-        reuse_enabled = bool(self.reuse_scope["reuse_scope"].get("formal_reuse_enabled", True))
-        complete = (
-            len(rows) == expected
-            if reuse_enabled else full_completed == full_expected and len(rows) == 0
-        )
+        complete = full_completed == full_expected
         if require_complete and not complete:
-            raise RuntimeError(
-                f"Large summary is incomplete: Full={full_completed}/{full_expected}, "
-                f"Reuse={len(rows)}/{expected}"
-            )
+            raise RuntimeError(f"Large summary is incomplete: Full={full_completed}/{full_expected}")
         payload = {
-            "status": (
-                "large_D14_E14_reuse_PRO_scope_complete" if complete else "large_D14_E14_reuse_PRO_scope_in_progress"
-            ) if reuse_enabled else (
-                "large_full_only_complete_formal_reuse_not_run"
-                if complete else "large_full_only_in_progress_formal_reuse_not_run"
-            ),
+            "status": "large_full_only_complete_formal_reuse_not_run" if complete else "large_full_only_in_progress_formal_reuse_not_run",
             "contract_sha256": self.contract_hash, "execution_contract_sha256": self.execution_hash,
             "reuse_scope_amendment": str(self.reuse_scope_path.relative_to(ROOT)),
             "reuse_scope_amendment_sha256": self.reuse_scope_hash,
-            "completed_cells": len(rows), "expected_cells": expected,
             "completed_full_only_cells": full_completed,
             "expected_full_only_cells": full_expected,
             "partial_horizon_policy": "D14 v4_to_v5 E14_partial is directional diagnostic only",
-            "rows": rows,
         }
         atomic_json((ROOT / self.contract["outputs"]["summary_json"]).resolve(), payload)
         lines = [
-            (
-                "# Yambda-500M Large D14/E14 Reuse + PRO qualification"
-                if reuse_enabled else "# Yambda-500M Large Full-only completion"
-            ), "",
-            f"Status: **{payload['status']}**. Full-only {full_completed}/{full_expected}; formal Reuse {len(rows)}/{expected}.", "",
-            (
-                "Formal Reuse is scoped to D14/E14 only; D7/E7 and D14/E7 Reuse are not run."
-                if reuse_enabled else "Formal Reuse and PRO were cancelled before their first quality cell; the formal queue ends after Full-only."
-            ), "",
-            "`E14_partial` is never interpreted as a complete 14-day qualification horizon.", "",
-            "| Branch | Edge | Horizon | Requests | New vs Old AUC | Reuse AUC gain retained | Reuse loss gain retained | PRO AUC gain retained | PRO loss gain retained |",
-            "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "# Yambda-500M Large Full-only completion", "",
+            f"Status: **{payload['status']}**. Full-only {full_completed}/{full_expected}.", "",
+            "Formal Reuse was cancelled before its first quality cell; the formal queue ends after Full-only.", "",
+            "`E14_partial` is never interpreted as a complete 14-day qualification horizon.",
         ]
-        for row in rows:
-            def pct(value):
-                return "N/A" if value is None else f"{float(value):+.2f}%"
-            pro = row.get("PRO", {})
-            lines.append(
-                f"| {row['branch']} | {row['edge'].replace('_to_', ' → ')} | {row['horizon']} | {row['requests']:,} | "
-                f"{pct(row['new_vs_old_AUC_relative_percent'])} | {pct(row['reuse_AUC_gain_retained_percent'])} | "
-                f"{pct(row['reuse_log_loss_gain_retained_percent'])} | {pct(pro.get('AUC_gain_retained_percent'))} | "
-                f"{pct(pro.get('log_loss_gain_retained_percent'))} |"
-            )
         atomic_text((ROOT / self.contract["outputs"]["summary_markdown"]).resolve(), "\n".join(lines) + "\n")
 
     def formal(self, acknowledgement: str | None) -> None:
@@ -951,15 +736,11 @@ class LargePipeline:
         self.train_all()
         self.evaluate_all()
         self.summarize(require_complete=True)
-        self.write_state(
-            "large_D14_E14_reuse_PRO_scope_complete"
-            if self.reuse_tasks() else "large_full_only_complete_formal_reuse_not_run"
-        )
+        self.write_state("large_full_only_complete_formal_reuse_not_run")
 
     def status(self) -> None:
         checkpoints = sum(1 for path in self.output.glob("**/checkpoint.seal.json") if "resource_canary" not in path.parts)
         full = sum(1 for _ in self.output.glob("D*/full_only/E*/v*_to_v*/adjudication.json"))
-        reuse = sum(1 for _ in self.output.glob("D*/reuse/E*/v*_to_v*/adjudication.json"))
         progress_paths = [
             path for path in self.output.glob("**/progress.json")
             if "resource_canary" not in path.parts
@@ -982,7 +763,7 @@ class LargePipeline:
             "execution_contract_present": self.execution is not None,
             "formal_checkpoints": {"complete": checkpoints, "expected": 16},
             "full_cells": {"complete": full, "expected": 20},
-            "reuse_cells": {"complete": reuse, "expected": len(self.reuse_tasks())},
+            "reuse_cells": {"complete": 0, "expected": 0, "status": "retired"},
             "current_training_progress": (
                 {
                     "path": latest_progress_display,
@@ -1000,14 +781,10 @@ def main() -> None:
     parser.add_argument("--mode", choices=("prepare", "resource-canary", "formal", "status"), required=True)
     parser.add_argument("--contract", type=Path, default=BASE_CONTRACT)
     parser.add_argument("--execution-contract", type=Path, default=EXECUTION_CONTRACT)
-    parser.add_argument("--reuse-scope-contract", type=Path, default=REUSE_SCOPE_AMENDMENT)
     parser.add_argument("--threads", type=int, default=56)
     parser.add_argument("--acknowledge-long-run")
     args = parser.parse_args()
-    pipeline = LargePipeline(
-        args.contract, args.execution_contract, args.threads,
-        reuse_scope_path=args.reuse_scope_contract,
-    )
+    pipeline = LargePipeline(args.contract, args.execution_contract, args.threads)
     if args.mode == "prepare":
         pipeline.prepare()
     elif args.mode == "resource-canary":

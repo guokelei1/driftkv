@@ -1,12 +1,5 @@
 # 模型与论文证据索引
 
-Design 2当前初稿主版本：[有界目标观察与持久接管](design2/bounded_01/analysis/conclusion.md)。
-三机制完整比较、正常组非劣、witness/Fresh、候选驻留与完整费用均已记录；不将保持旧触发响应的失败对照作为主方法。
-
-Design 2最新开发结果：[3万目录扫描后4082新UID结论](design2/scan_30k_01/analysis/conclusion.md)。
-包含随机自然/活跃场景富集两个独立队列、一次性/复用观察/固定排序门控、全请求FreshCurrent及完整成本。
-旧2048工作负载结果保留为机制对照，不把不同负载费用混加；新增数据仍不是确认集。
-
 当前目录保留论文原始证据、六层/十层模型及必要训练评估过程。
 废弃四层实验和无关探索原始数据已删除，不再把所有历史结果并列为活动入口。
 
@@ -24,7 +17,6 @@ Git 保存本目录的报告、紧凑 summary/adjudication、seals、训练元�
 | Insight 2 响应修正表 | yambda500m_medium_seed17/insight2_functional_boundary_v1/discovery_functional_boundary/analysis_v2/ |
 | Insight 2 持续性结果 | yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_temporal_persistence_v1/discovery/analysis/ |
 | 数据审计 | data_audit/yambda500m_scale_v1/ |
-| Design 2 冻结检测、2048UID闭环及Benchmark保护/费用评价 | [design2/](design2/README.md) |
 
 Medium 的 V0–V5 每个版本均训练一 epoch。Large canonical 序列的 V4/V5 为两 epoch；
 Large 的 post-hoc working-lineage 说明和原始失败记录保留，不能当作独立 qualification。
@@ -81,10 +73,3 @@ Small 仅存的 theoretical_compute.json 与旧 PRO 合同仍是 Large 合同的
 已知协议问题：Insight 2 functional-boundary 的 research_plan 在清理前已被追加修改，
 合同哈希与保留原文不匹配，具体哈希见 [冻结协议依赖](../research_discussions/README.md)。
 原合同、原文、raw 与 analysis_v2 均保留，未跳过校验；未来重跑前须解决该输入快照问题。
-# Design 3首轮执行证据
-
-当前为`design3/cohort_01/report.md`、`summary.json`与`analysis.json`：四冻结目标真实快照、1/4/8固定任务的跨路径算子共享验证。模式预先构造，同质/混合和三种执行对照全部保留；不代表自然到达、完整连续状态验证或人口吞吐。原始输入SHA、源SHA、计时、数值及冻结阈值核对均保留。
-
-历史第二轮为`design3/binding_01/report.md`与`summary.json`：依赖绑定、发布逆作用、状态复用的真实输入对照与72UID连续验证。主原始运行是`final72`及同GPU顺序计时的`timed_prior72`/`timed_binding72`；`device_controls.json`保留完整机制对照。整KV复制减少有限，密集检测算术增加，均保留在报告中。早期让独立评估分支共享驻留绑定的运行不作为最终命中率证据。
-
-`design3/initial_01/report.md`与`summary.json`记录32真实读取快照计时、72UID/2760行连续执行一致性、四个不同UID就绪读取与目标构建的合作式执行。`timing_controls.json`保留通用图和分块对照，`scheduling_distinct.json`为论文采用的不同UID工作包；此前重复读取探针单独保留。`graph72`动态形状池运行失败不作方法结果；主结果为`batched72`对`reference72`。原UID、配置、源hash、原始评分、观察与状态记录均保留；大输入和运行payload仅本地。

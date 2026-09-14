@@ -1,22 +1,20 @@
 # EvoKV 具体实验设计
 
-更新日期：2026-09-06
+更新日期：2026-09-14
 
-状态：**Medium KV-only discovery 已完成；Cross-Version Cache Adaptation 尚为 prospective；
-六层完整原型计划已按用户澄清完成 review，实现、Translator calibration 和方法实验均尚未运行。**
+状态：**当前 Design 已完成设计，尚未实现和验证。保留的原型、校准和结果属于历史探索。**
+
+后续计划重新训练所有模型并重做全部实验（含 Motivation/Insight）；新运行的模型、数据划分和协议尚待确定。下文冻结资产、配置和诊断定义是历史开发参考，不是新一轮已冻结的执行方案；旧 Insight 依赖本轮不修复。
 
 本文记录 [论文总体设计](paper_design.md)对应的实验方案草稿，不是已封存的运行合同。
 本阶段的开发顺序、当前决定与 review 结论以 [design/plan.md](design/plan.md) 为入口，
-探索经过集中记录在 [design/iterations.md](design/iterations.md)。先把四组件接成六层完整 v0，
-再联动迭代；本文的 S0–S5 是研究诊断维度，不是必须先后达标的阶段。
+探索结论集中记录在 [design/iterations.md](design/iterations.md)。四组件作为一个六层原型联动迭代；本文的 S0–S5 是研究诊断维度，不是必须先后达标的阶段。
 现有 V0–V5 backbone 保持冻结。单边时共享 Translator 为 edge-specific；连续路径每个目标版本
 共享一个支持实际 producer 的 Translator。用户已于 2026-09-06 撤销笼统 target-KV fitting 禁令，
-摘要/KV 衍生监督与小规模共享校准进入本阶段开发范围。下文保留单边公式及多版本衔接；
-旧单边合同只解释原实验，不作为新方法开发的禁令，也不因本轮澄清改写。
+摘要/KV 衍生监督与小规模共享校准进入本阶段开发范围。下文保留单边公式及多版本衔接。
 
 本文不修改任何 sealed motivation contract、checkpoint、data hash、release window、seed、workload、
-metric、raw result 或 adjudication。当前论文证据、Medium/Large 模型及其必要过程记录保持原路径；
-废弃 Small 和旧探索的原始结果已删除，旧结论与失败说明压缩归档，见
+metric、raw result 或 adjudication。当前论文证据、Medium/Large 模型及其必要过程记录见
 [结果索引](../results/README.md)。
 本文沿用先前草稿的状态语义、诊断名称和成本定义；实现与检查按当前研究问题分步展开，
 不把完整生命周期工程作为首个想法实验的前置条件。本文没有新建实验合同或启动运行。
@@ -249,7 +247,7 @@ teacher forcing 可作辅助，不得替代 closed-loop training/evaluation。
 用户已明确允许摘要拟合及 K/V-derived supervision，\(\mathcal L_{\mathrm{sketch}}\) 不再触发
 单独许可或新监督合同。小校准的输入、目标和预算随配置记录；若用评价用户目标状态拟合，
 明确列为对应诊断/对照并计入成本，不把这些结果同时报告为该用户上的未见泛化。
-v0 保留当前请求六层 reader 的梯度，持久事件/跨发布轨迹 detach；更改早期译者后重新生成
+原型保留当前请求六层 reader 的梯度，持久事件/跨发布轨迹 detach；更改早期译者后重新生成
 受影响的后续混合输入，避免训练、评价与真实方法的状态分布错配。
 optimizer step 后不复用旧 translated payload；最终固定译者后重新生成后续发布所需的实际轨迹。
 
@@ -350,7 +348,7 @@ lower-is-better 指标使用方向一致定义。主要报告 response recovery�
 rank agreement 和 user-equal companion。
 
 成熟目标：在预声明的一次性 release budget 0%–20% 内至少 80% quality recovery，90% 为 stretch goal。
-v0 先检验低计算、实质恢复的方向，不先锁死阈值；高成本低恢复只说明原型待改，不能宣布方法有效。
+原型先检验低计算、实质恢复的方向，不先锁死阈值；高成本低恢复只说明原型待改，不能宣布方法有效。
 全部冻结 edges/seeds 均报告，最终质量主指标、达标口径和小 gap 处理在确认前固定。
 
 ### S4 — Closed-loop append 与 eviction
@@ -409,7 +407,7 @@ C_{\mathrm{ordinary\ history\ read}}
 
 | Quantity | Reference estimate | Ledger |
 | --- | ---: | --- |
-| Current summary translation | Translator 未确定；旧 0.60% 不作为当前估计 | one-time release |
+| Current summary translation | 由冻结合同和实测账本确定 | one-time release |
 | two 32-slot payloads | 同精度为 6.25%；FP32 Source + 16-bit target/KV 为 9.375%，metadata、边界和缓冲另计 | storage |
 | two 32-slot reads / 1,024 history | 约 6.25% attention work | recurring request |
 
@@ -423,22 +421,16 @@ prospective contract 必须冻结 target population、eligibility 和 history-we
 同时计入 writer、paired read、全摘要 refresh，报告 latency、throughput、P99 和相对 Exact-All
 在固定服务时段的 break-even。
 
-## 6. 对照、失败与 fallback
+## 6. 对照与失败规则
 
 ### 6.1 Matched controls
 
-以下保留早期草稿中的对照候选供查阅，不是现有实现或待办清单；其中部分旧路线代码已清理。
-首版最小对照和后续按假设增加对照的方式见 [当前计划](design/plan.md)，不因此恢复退休路线。
+当前评价只使用能解释六层方法的对照，具体接口见[当前计划](design/plan.md)。
 
 - Current Exact、Reuse、No-op；
-- Exact-summary reference；
-- Translated-response-only add；
-- Parent→Current raw KV/sketch ridge 或 MLP mapper；
-- direct prediction 与 residual Translator；
-- fixed offset、PRO、generic Current-r8；
-- no response loss、no sketch loss、teacher-forced-only；
-- no count/time、global slots、chronological segments；
-- ordinary mixed-trajectory append 与 bounded replay/rebase。
+- 同容量摘要与无源状态消融；
+- 查询留出、native 输入、解码闭环和聚合机制控制；
+- 具有相同状态寿命的连续追加与淘汰路径。
 
 Translator 本身是 mapping。创新必须由 producer-time sketch、paired functional read 与 lifecycle 的
 完整收益承担；若直接 mapper 在相同监督、容量和成本下等价，论文不能只靠命名保留 Design claim。
@@ -458,27 +450,9 @@ compatibility gap 的 edge 仍是合法结果。
 
 ## 7. 实现状态与执行顺序
 
-### 7.1 已有
+已有冻结 V0–V5 HSTU checkpoints、Full/Reuse 与状态转换原语，以及历史摘要 writer、Translator、reader、状态执行器和成本诊断。这些可供后续复用，但当前 Design 尚未实现和验证。S0–S5 用于定位误差和支撑结论，不是串行交付清单。
 
-- frozen V0–V5 HSTU checkpoints；
-- ordinary K/V、Full/Reuse 和 state transition primitives；
-- stage/response instrumentation；
-- diagnostic response-difference injection；
-- Insight 1/2 的论文证据与诊断实现。旧 KV-only controls 多已退出活动代码目录，
-  不能再整体列为现成实现。
-
-### 7.2 未实现
-
-- summary writer、backfill 和 segment add/subtract；
-- exact-sketch S1 harness；
-- edge-specific Translator 和 calibration pipeline；
-- 用于实验的 paired reader；
-- closed-loop append/contamination control；
-- release executor 与 measured cost。
-
-serialization、并发事务与通用恢复留到实验确实需要时。本阶段按 design/plan.md 先连通六层
-完整 v0，追加、淘汰和再次发布从初版即进入顺序原型，成本随小样本同步估计；
-S0–S5 为定位误差和支撑结论的维度，不是逐模块完成后才能前进的开发顺序。
+serialization、并发事务与通用恢复留到实验确实需要时。后续实现需验证当前设计的追加、淘汰和再次发布，成本随小样本同步估计。
 小校准的 Current-derived supervision 已在本阶段范围内，无需为此另设审批。formal GPU population job
 和长训练需要 focused canary、资源估计和用户明确 launch。相关小样本检查已通过且路径未变时直接复用，
 不为文本或局部无关改动重跑；超过 30 分钟的作业使用 detached execution。

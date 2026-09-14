@@ -13,18 +13,14 @@
 - test_foundation_*：训练、manifest、指标和缓存谱系。
 - test_yambda_data、test_yambda_incremental_time_contract、test_yambda500m_streaming_windows：
   用户选择、OOV、反馈时间边界、增量时间与窗口；使用小型输入，不扫描本机完整数据。
-- test_medium_*、test_large_*：六层和十层现行队列、模型选择记录与运行边界。
+- test_medium_d14_direct_long_age_reuse、test_large_d14_canonical_chain：当前 Medium 动机链与 Large canonical 链。
 - test_append_only_kv、test_state_transition：追加、淘汰与状态依赖。
 - test_adaptation：固定归属的摘要增减、原算子的count权重和局部刷新等价性；真实六层梯度/追加canary在Design runner内。
-- test_design_quality：配对UID bootstrap的计数实现与显式重复用户一致，覆盖概率并列及单类别重采样；使用`PYTHONPATH=src:scripts`。
-- test_design_ridge：完整UID删除的岭回归残差，对照显式删除后重拟合；使用`PYTHONPATH=src:scripts`。
-- test_design_kernel：非线性source kernel的自由截距方程、未拟合输入预测和发布后时间分解。
-- test_design_query_view：query坐标折叠、count加权、标量/批量发布和逐层消退的张量参考。
+- test_summary_objective、test_functional_summary：当前摘要/响应诊断的公式和增量淘汰参考。
 - test_insight_one_locality：论文局部替换诊断。
 - test_insight_two_functional_boundary：候选划分、聚合指标、rank-0/low-rank、持续性统计。
-- test_reader_compatibility_correction、test_pro_lazy_reader 及其余 reader 测试：
-  当前 evaluator 所依赖的公共接口和保留对照。
-- test_release_cost_benchmark、test_download_scale_datasets：成本单位、随机模型和数据选择。
+- test_reader_compatibility_correction 及其余 reader 测试：当前 Insight 诊断所依赖的公共接口。
+- test_download_scale_datasets：当前 Yambda 数据选择边界。
 
 例如，修改 Insight 2 的聚合指标，只执行对应指标测试：
 

@@ -13,15 +13,6 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 
-def test_recflow_output_names() -> None:
-    assert MODULE.recflow_output_name({"name": "realshow.tar", "file_ext": "gz"}) == (
-        "realshow.tar.gz"
-    )
-    assert MODULE.recflow_output_name({"name": "2024-02-18", "file_ext": "feather"}) == (
-        "2024-02-18.feather"
-    )
-
-
 def test_yambda5b_core_matches_existing_three_event_scope(monkeypatch) -> None:
     rows = [
         {

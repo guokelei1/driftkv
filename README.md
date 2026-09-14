@@ -12,7 +12,8 @@ EvoKV 研究 Transformer recommender 在模型更新后如何继续使用持久�
 - [论文图表](figures/README.md)：论文实际使用的生成器、数据来源和显示口径。
 - [结果索引](results/README.md)：区分论文证据、保留模型与历史诊断。
 
-当前已有 Motivation 和两个 Insight 的诊断证据；版本转换与完整在线维护仍是待实现设计。
+当前 Design 已完成设计，尚未实现和验证。仓库保留的适配代码与结果属于历史探索，不代表当前 Design 已落地。
+后续计划重新训练所有模型，并重做训练、评测、Motivation/Insight 和 Design 实验；旧 Insight 依赖本轮不修复，新运行配置与启动另行确定。
 旧 PRO、KV-only replay 等方法不再作为当前 EvoKV 实现，但当前评估依赖的少量公共函数仍保留。
 
 ## 工作边界

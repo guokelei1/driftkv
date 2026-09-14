@@ -145,11 +145,10 @@ def main() -> None:
             raise RuntimeError("all Parent/Current candidates must share one item mapping dimension")
         dataset_value = args.dataset_manifest or parent_payload.get("dataset_manifest")
         if dataset_value is None:
-            dataset_path = Path("data/processed/yambda500m_unified_v1/scales/small/dataset.json").resolve()
-        else:
-            dataset_path = Path(dataset_value)
-            if not dataset_path.is_absolute():
-                dataset_path = (Path(__file__).resolve().parents[1] / dataset_path).resolve()
+            raise RuntimeError("candidate checkpoint must bind a dataset manifest or --dataset-manifest must be supplied")
+        dataset_path = Path(dataset_value)
+        if not dataset_path.is_absolute():
+            dataset_path = (Path(__file__).resolve().parents[1] / dataset_path).resolve()
         dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
         known_vocab_size = int(parent_payload.get("known_vocab_size", dataset["foundation_items"]))
         oov_buckets = model_vocab_sizes.pop() - known_vocab_size

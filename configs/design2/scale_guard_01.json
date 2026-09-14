@@ -1,8 +1,0 @@
-{
-  "status": "fixed_after_demand/risk normal-M4 negative result, before guard outputs",
-  "reason": "Risk-only demand checking still harms routine M4; test an independent, already-paid target observation before committing real state",
-  "rule": "Same risk proposal and frozen tau. Build Current KV, compare actual first-request group adapted logits against new KV logits; commit only if max absolute difference>tau. Otherwise retain old real state. No labels or future requests used.",
-  "cost": "Charge every attempted tiled rebuild, both extra query reads, correction/view preparation, and summary only when committed; no free teacher and no subtraction of failed attempts",
-  "scope": "one additional2048 natural candidate; original/extension separate; no threshold tuning; short stress guard not part of this initial candidate",
-  "limits": "This checks present-request mismatch, not future benefit or labels. It cannot promise AUC safety and cannot avoid paying the attempted rebuild cost."
-}

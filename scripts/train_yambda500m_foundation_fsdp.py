@@ -32,9 +32,6 @@ from hstu_kvcache.training import FoundationHistoryIndex, cache_producer_sha256,
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LAUNCH = ROOT / "configs/contracts/yambda500m_small_seed17_launch_v1.yaml"
-PARENT = ROOT / "configs/contracts/yambda500m_small_foundation_chain_v1.yaml"
-DATASET = ROOT / "data/processed/yambda500m_unified_v1/scales/small/dataset.json"
 
 
 def sha256_file(path: Path) -> str:
@@ -75,9 +72,7 @@ def validate_launch(version: str, launch_path: Path) -> dict:
             total_versions = scope["total_versions_including_v0_by_training_days"].values()
             allowed = {f"v{index}" for index in range(max(map(int, total_versions)))}
     elif "parent_contract_sha256" in launch:
-        if launch["parent_contract_sha256"] != sha256_file(PARENT):
-            raise RuntimeError("launch contract parent hash mismatch")
-        allowed = set(launch["scope"]["default_versions"] + launch["scope"]["optional_same_recipe_extension"] + ["r0"])
+        raise RuntimeError("retired legacy launch contract; use a current explicit release-chain contract")
     else:
         frozen = launch["frozen_inputs"]
         for key in ("foundation_contract", "original_launch_contract", "dataset_manifest", "item_mapping", "frozen_base", "v0_checkpoint", "v1_checkpoint"):
@@ -216,7 +211,7 @@ def load_rows(
 
 
 def load_histories(
-    uids: list[int], *, oov_buckets: int = 0, dataset_path: Path = DATASET,
+    uids: list[int], *, oov_buckets: int = 0, dataset_path: Path,
     known_vocab_size: int | None = None, start_timestamp: int | None = None,
     end_timestamp: int | None = None, max_history: int | None = None,
     threads: int = 4,
@@ -234,15 +229,13 @@ def load_histories(
 
 def contract_model_config(launch: dict, *, oov_buckets: int) -> tuple[HSTUConfig, Path, int]:
     frozen = launch.get("frozen_inputs", {})
-    dataset_path = (ROOT / frozen.get("dataset_manifest", DATASET)).resolve()
+    if "dataset_manifest" not in frozen:
+        raise RuntimeError("current launch contract must explicitly bind its dataset manifest")
+    dataset_path = (ROOT / frozen["dataset_manifest"]).resolve()
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
     known = int(dataset["foundation_items"])
     if "model" not in launch:
-        return HSTUConfig(
-            num_items=known + oov_buckets, num_behaviors=4, hidden_size=128,
-            num_layers=4, num_heads=4, max_seq_len=512, num_query_types=3,
-            query_type_id=2, num_query_actions=1,
-        ), dataset_path, known
+        raise RuntimeError("current launch contract must explicitly define its HSTU model")
     values = dict(launch["model"])
     expected_known = int(values.pop("known_items_from_dataset_manifest"))
     frozen_oov = int(values.pop("oov_buckets"))
@@ -283,7 +276,7 @@ def save_checkpoint(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
-    parser.add_argument("--launch-contract", type=Path, default=LAUNCH)
+    parser.add_argument("--launch-contract", type=Path, required=True)
     parser.add_argument("--execution-contract", type=Path)
     parser.add_argument("--manifest-dir", type=Path, required=True)
     parser.add_argument("--parent", type=Path)

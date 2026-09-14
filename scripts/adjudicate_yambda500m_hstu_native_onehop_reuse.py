@@ -30,9 +30,6 @@ def main() -> None:
         raise RuntimeError("raw artifact differs from its pre-label seal")
     raw = pq.read_table(args.raw)
     expected_paths = RELEASE_DEBT_PATHS if seal.get("contains_parent_exact_rolling") else PAIR_PATHS
-    pro_path = seal.get("pro_lazy_path") if seal.get("contains_pro_lazy") else None
-    if pro_path is not None:
-        expected_paths = (*expected_paths, str(pro_path))
     validate_pair_raw(raw, expected_paths=expected_paths)
     labels = pq.read_table(args.labels, columns=["request_id", "label"])
     label_map = dict(zip(labels["request_id"].to_pylist(), labels["label"].to_pylist(), strict=True))
@@ -63,38 +60,6 @@ def main() -> None:
             "mean_absolute_logit_shift": float(np.abs(reuse_logits - current_logits).mean()),
         },
     }
-    if pro_path is not None:
-        pro = sorted(
-            (row for row in rows if row["path"] == pro_path),
-            key=lambda row: row["request_id"],
-        )
-        if [row["request_id"] for row in pro] != [row["request_id"] for row in current]:
-            raise RuntimeError("PRO and Current rolling request pairs are not aligned")
-        pro_logits = np.asarray([row["hstu_logit"] for row in pro], dtype=np.float64)
-        pro_metrics = binary_metrics(targets, pro_logits)
-        report["absolute_metrics"][str(pro_path)] = pro_metrics
-        report["PRO"] = {
-            "path": str(pro_path),
-            "plan": seal.get("pro_lazy_plan"),
-            "PRO_minus_reuse_ROC_AUC_pp": (
-                pro_metrics["ROC_AUC"] - reuse_metrics["ROC_AUC"]
-            ) * 100,
-            "PRO_minus_reuse_log_loss": (
-                pro_metrics["log_loss"] - reuse_metrics["log_loss"]
-            ),
-            "current_minus_PRO_ROC_AUC_pp": (
-                current_metrics["ROC_AUC"] - pro_metrics["ROC_AUC"]
-            ) * 100,
-            "PRO_minus_current_log_loss": (
-                pro_metrics["log_loss"] - current_metrics["log_loss"]
-            ),
-            "mean_Bernoulli_JS_to_Current": float(
-                bernoulli_js(pro_logits, current_logits).mean()
-            ),
-            "mean_absolute_logit_gap_to_Current": float(
-                np.abs(pro_logits - current_logits).mean()
-            ),
-        }
     parent = sorted((row for row in rows if row["path"] == "parent_exact_rolling"), key=lambda row: row["request_id"])
     if parent:
         if [row["request_id"] for row in parent] != [row["request_id"] for row in current]:
@@ -143,27 +108,6 @@ def main() -> None:
                 / log_loss_gain
             ),
         }
-        if pro_path is not None:
-            pro_metrics = report["absolute_metrics"][str(pro_path)]
-            report["three_path_summary"]["PRO"] = {
-                "path": str(pro_path),
-                "ROC_AUC": pro_metrics["ROC_AUC"],
-                "log_loss": pro_metrics["log_loss"],
-                "AUC_gain_retained_percent": (
-                    None
-                    if current_gain_pp <= 0.0
-                    else 100.0
-                    * (pro_metrics["ROC_AUC"] - parent_metrics["ROC_AUC"])
-                    / (current_metrics["ROC_AUC"] - parent_metrics["ROC_AUC"])
-                ),
-                "log_loss_gain_retained_percent": (
-                    None
-                    if log_loss_gain <= 0.0
-                    else 100.0
-                    * (parent_metrics["log_loss"] - pro_metrics["log_loss"])
-                    / log_loss_gain
-                ),
-            }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"status": report["status"], "edge": report["edge"], "event_logloss_reuse_minus_recompute": report["reuse_minus_recompute"]["event_weighted_log_loss"]}, indent=2))

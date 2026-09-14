@@ -22,14 +22,9 @@ from hstu_kvcache.evaluation import (
     append_timestamp_group, materialize_state, observe_rolling,
     timestamp_groups,
 )
-from insight.parameter_maps import parameter_cast_maps
-from insight.pro_lazy_reader import PRO_PATH, pro_path as scaled_pro_path
-
-
 ROOT = Path(__file__).resolve().parents[1]
 PAIR_PATHS = ("current_exact_rolling", "one_hop_reuse_rolling")
 RELEASE_DEBT_PATHS = ("parent_exact_rolling", *PAIR_PATHS)
-PRO_LAZY_PATHS = (*RELEASE_DEBT_PATHS, PRO_PATH)
 
 
 def sha256_file(path: Path) -> str:
@@ -40,14 +35,8 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def pair_rows(
-    rows: list[dict], *, include_parent_exact: bool,
-    include_pro_lazy: bool,
-    pro_path_name: str = PRO_PATH,
-) -> list[dict]:
+def pair_rows(rows: list[dict], *, include_parent_exact: bool) -> list[dict]:
     paths = RELEASE_DEBT_PATHS if include_parent_exact else PAIR_PATHS
-    if include_pro_lazy:
-        paths = (*paths, pro_path_name)
     return [row for row in rows if row["path"] in paths]
 
 
@@ -66,8 +55,6 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
                            parent_name: str, current_name: str, cutover: int,
                            current_hash: str, parent_hash: str, manifest_hash: str,
                            include_parent_exact: bool,
-                           include_pro_lazy: bool = False,
-                           pro_path_name: str = PRO_PATH,
                            max_length: int = 512) -> list[dict]:
     timestamps, items, behaviors = history.rows[int(requests[0]["uid"])]
     events = [(int(t), int(i), int(b)) for t, i, b in zip(timestamps, items, behaviors, strict=True)]
@@ -117,10 +104,6 @@ def evaluate_fallback_user(*, requests: list[dict], history, parent, current, ed
                 output.append({**common, "path": "parent_exact_rolling", "hstu_logit": parent_score, "readout_normalized_l2": float((parent_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(parent_readout[None], current_readout[None]))})
             output.append({**common, "path": "current_exact_rolling", "hstu_logit": current_score, "readout_normalized_l2": 0.0, "readout_cosine": 1.0})
             output.append({**common, "path": "one_hop_reuse_rolling", "hstu_logit": reuse_score, "readout_normalized_l2": float((reuse_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(reuse_readout[None], current_readout[None]))})
-            if include_pro_lazy:
-                # The frozen PRO action requires a full-context cutover state.
-                # Underfull users are admitted as label-free No-op/Reuse.
-                output.append({**common, "path": pro_path_name, "hstu_logit": reuse_score, "readout_normalized_l2": float((reuse_readout-current_readout).norm()/(current_readout.norm()+1e-12)), "readout_cosine": float(torch.nn.functional.cosine_similarity(reuse_readout[None], current_readout[None]))})
         # Same-timestamp events append only after every query has been scored.
         while group_index < len(post_groups) and post_groups[group_index][0] == query_time:
             _, group = post_groups[group_index]
@@ -172,13 +155,6 @@ def main() -> None:
     parser.add_argument("--query-chunk-size", type=int, default=256)
     parser.add_argument("--max-users", type=int, default=0)
     parser.add_argument("--include-parent-exact", action="store_true")
-    parser.add_argument(
-        "--include-pro-lazy", action="store_true",
-        help="add a contract-frozen lightweight PRO layout; underfull histories use Reuse",
-    )
-    parser.add_argument("--pro-repair-width", type=int, default=128)
-    parser.add_argument("--pro-carriers", type=int, default=32)
-    parser.add_argument("--pro-path")
     parser.add_argument("--force-fallback", action="store_true", help="score every user through the existing scalar rolling fallback")
     parser.add_argument("--allow-canary-checkpoints", action="store_true")
     parser.add_argument("--history-threads", type=int, default=4)
@@ -187,12 +163,6 @@ def main() -> None:
     parser.add_argument("--torch-cpu-threads", type=int, default=2)
     parser.add_argument("--cpu-affinity-by-rank", help="semicolon-separated comma lists")
     args = parser.parse_args()
-    if args.include_pro_lazy:
-        if args.pro_repair_width < 1 or args.pro_carriers < 1:
-            raise ValueError("PRO repair width and carriers must be positive")
-        if args.pro_repair_width % args.pro_carriers:
-            raise ValueError("PRO carriers must divide the repair width")
-    pro_path_name = args.pro_path or scaled_pro_path(args.pro_carriers)
     if args.end_day <= args.start_day or args.start_day < args.cutover_day:
         raise ValueError("evaluation must be a nonempty post-cutover interval")
     parent_name, current_name = args.edge.split("_to_")
@@ -236,18 +206,14 @@ def main() -> None:
         max_length = int(current_payload["config"]["max_seq_len"])
         dataset_value = args.dataset_manifest or current_payload.get("dataset_manifest")
         if dataset_value is None:
-            dataset_path = (ROOT / "data/processed/yambda500m_unified_v1/scales/small/dataset.json").resolve()
-        else:
-            dataset_path = Path(dataset_value)
-            if not dataset_path.is_absolute():
-                dataset_path = (ROOT / dataset_path).resolve()
+            raise RuntimeError("candidate checkpoint must bind a dataset manifest or --dataset-manifest must be supplied")
+        dataset_path = Path(dataset_value)
+        if not dataset_path.is_absolute():
+            dataset_path = (ROOT / dataset_path).resolve()
         dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
         known_vocab_size = int(
             current_payload.get("known_vocab_size", dataset["foundation_items"])
         )
-        cast_maps = parameter_cast_maps(parent, current) if (
-            args.include_pro_lazy
-        ) else None
         oov_buckets = int(current_payload["config"]["num_items"]) - known_vocab_size
         if oov_buckets < 0:
             raise RuntimeError("checkpoint vocabulary is smaller than the frozen known vocabulary")
@@ -297,18 +263,12 @@ def main() -> None:
                 cutover=cutover, lineage_models=[(parent_name, parent)],
                 event_end_exclusive=args.end_day * DAY, include_request_local=False,
                 include_parent_exact=args.include_parent_exact,
-                pro_lazy_maps=cast_maps if args.include_pro_lazy else None,
-                pro_lazy_carriers=args.pro_carriers,
-                pro_lazy_repair_width=args.pro_repair_width,
-                pro_lazy_path=pro_path_name,
                 query_chunk_size=args.query_chunk_size,
                 max_length=max_length,
             )
             output.extend(pair_rows(
                 values,
                 include_parent_exact=args.include_parent_exact,
-                include_pro_lazy=args.include_pro_lazy,
-                pro_path_name=pro_path_name,
             ))
             complete += len(cohort)
             (args.output / f"progress_rank{rank}.json").write_text(json.dumps({"rank": rank, "completed_users": complete, "assigned_users": len(selected_uids), "phase": "batched_full_cache"}) + "\n")
@@ -318,8 +278,6 @@ def main() -> None:
                 parent_name=parent_name, current_name=current_name, cutover=cutover,
                 current_hash=current_hash, parent_hash=parent_hash, manifest_hash=manifest_hash,
                 include_parent_exact=args.include_parent_exact,
-                include_pro_lazy=args.include_pro_lazy,
-                pro_path_name=pro_path_name,
                 max_length=max_length,
             ))
             complete += 1
@@ -340,14 +298,12 @@ def main() -> None:
             wait_for_paths(shards, description="all raw shards")
             merged = pa.concat_tables([pq.read_table(args.output / f"raw_rank{value}.parquet") for value in range(world)])
             expected_paths = RELEASE_DEBT_PATHS if args.include_parent_exact else PAIR_PATHS
-            if args.include_pro_lazy:
-                expected_paths = (*expected_paths, pro_path_name)
             requests = validate_pair_raw(merged, expected_paths=expected_paths)
             raw = args.output / "raw.parquet"
             partial_raw = args.output / "raw.parquet.partial"
             pq.write_table(merged, partial_raw, compression="zstd")
             os.replace(partial_raw, raw)
-            seal = {'status': 'native_onehop_reuse_raw_sealed_before_label_join', 'raw_sha256': sha256_file(raw), 'rows': merged.num_rows, 'requests': requests, 'stage': args.stage, 'edge': args.edge, 'cutover_day': args.cutover_day, 'evaluation_day_range': [args.start_day, args.end_day], 'dataset_manifest': str(dataset_path), 'known_vocab_size': known_vocab_size, 'max_seq_len': max_length, 'execution_runtime': {'world_size': world, 'cohort_size_per_rank': args.cohort_size, 'query_chunk_size_per_rank': args.query_chunk_size, 'max_users_per_rank': args.max_users, 'peak_memory_by_rank': peak_memory_by_rank}, 'cpu_runtime': {'history_threads': args.history_threads, 'arrow_cpu_threads': args.arrow_cpu_threads, 'arrow_io_threads': args.arrow_io_threads, 'torch_cpu_threads': args.torch_cpu_threads, 'affinity_by_rank': args.cpu_affinity_by_rank}, 'contains_reuse': True, 'contains_parent_exact_rolling': args.include_parent_exact, 'contains_pro_lazy': args.include_pro_lazy, 'pro_lazy_path': pro_path_name if args.include_pro_lazy else None, 'pro_lazy_plan': {'repair_width': args.pro_repair_width, 'carriers': args.pro_carriers, 'represented_mass': args.pro_repair_width // args.pro_carriers, 'materialized_translated_prefix_positions': 0, 'underfull_rule': 'reuse'} if args.include_pro_lazy else None, 'recursive_reuse': False, 'architecture': 'hstu_native_cc'}
+            seal = {'status': 'native_onehop_reuse_raw_sealed_before_label_join', 'raw_sha256': sha256_file(raw), 'rows': merged.num_rows, 'requests': requests, 'stage': args.stage, 'edge': args.edge, 'cutover_day': args.cutover_day, 'evaluation_day_range': [args.start_day, args.end_day], 'dataset_manifest': str(dataset_path), 'known_vocab_size': known_vocab_size, 'max_seq_len': max_length, 'execution_runtime': {'world_size': world, 'cohort_size_per_rank': args.cohort_size, 'query_chunk_size_per_rank': args.query_chunk_size, 'max_users_per_rank': args.max_users, 'peak_memory_by_rank': peak_memory_by_rank}, 'cpu_runtime': {'history_threads': args.history_threads, 'arrow_cpu_threads': args.arrow_cpu_threads, 'arrow_io_threads': args.arrow_io_threads, 'torch_cpu_threads': args.torch_cpu_threads, 'affinity_by_rank': args.cpu_affinity_by_rank}, 'contains_reuse': True, 'contains_parent_exact_rolling': args.include_parent_exact, 'recursive_reuse': False, 'architecture': 'hstu_native_cc'}
             (args.output / "raw.seal.json").write_text(json.dumps(seal, indent=2) + "\n")
             (args.output / ".raw_complete").write_text("complete\n")
             for shard in shards:

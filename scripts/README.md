@@ -1,75 +1,19 @@
 # 脚本入口
 
-此目录只保留当前数据处理、六层/十层训练评估、论文 Motivation 和两个 Insight 的流程。
-从下表选择入口；不要按版本号猜测哪个脚本最新。正式运行仍需原合同、canary 和用户授权，
-本索引不授权训练或重新生成封存结果。
-
-日常开发先用已有数据和最小样本验证当前假设，复用工具，按实际路径补实现。
-只检查会影响数值、数据因果、评价和运行成本的部分；不为小改动运行完整测试，
-也不把通用异常处理、并发或恢复机制当作 idea 验证的前置条件。
-小探针的配置与结果记录在现有实验上下文中；长作业再落实相应合同、资源和 canary。
-
-## 当前流程
-
-Design 2当前初稿入口：`design2/run_bounded_candidate.py`（有界观察、触发采用目标输出、请求边界安装）；
-`run_bounded.py`提供共享状态机及保持旧响应的消融。`queue_bounded.py`、`timing_control.py`、
-`report_bounded.py`、`summarize_bounded.py`保留完整回放/配对时机/参考与资源证据，见[本轮结论](../results/design2/bounded_01/analysis/conclusion.md)。
-
-Design 2最新场景扩展入口：`design2/scan_population.py`做标签无关的3万目录/时间扫描，
-`queue_scan.py`执行冻结一次性/复用目标观察，`scan_reference.py`生成全真实请求参考，
-`report_scan.py`与`summarize_scan.py`生成完整分组/AUC/残余/费用。
-`run_margin_gate.py`、`stitch_margin.py`是固定排序门控开发对照；设置与范围见[scan_30k](../docs/design2/scan_30k.md)。
+此目录保留数据处理、六层/十层训练评估、Motivation、Insight 和历史六层适配探索的流程。当前 Design 已完成设计，尚未实现和验证；历史脚本不代表当前设计已可执行。正式运行仍需对应合同、canary 与用户授权。
 
 | 用途 | 入口 |
 | --- | --- |
-| 六层 Medium 训练与 Full/Reuse 矩阵 | run_yambda500m_medium_full_reuse_matrix.py |
-| Medium V5 扩展 | run_yambda500m_medium_d14_v5_extension.py |
-| Motivation 完整旧 producer 对比 | run_yambda500m_medium_d14_direct_long_age_reuse.py |
-| 十层 Large 基础训练和 Full-only 队列 | run_yambda500m_large_qualification.py |
-| Large V4 两 epoch 轨迹 | run_yambda500m_large_v3_v4_epoch_sweep.py |
-| Large V5 从 V4@2epoch 继续训练 | run_yambda500m_large_v4e2_to_v5_epoch_sweep.py |
-| Large 当前 V0–V5 模型路径检查 | validate_yambda500m_large_d14_canonical_chain.py |
-| 论文重算成本表 | benchmark_release_cost.py |
+| 六层 Medium 训练与 Full/Reuse 矩阵 | `run_yambda500m_medium_full_reuse_matrix.py` |
+| Medium V5 扩展 | `run_yambda500m_medium_d14_v5_extension.py` |
+| Motivation 完整旧 producer 对比 | `run_yambda500m_medium_d14_direct_long_age_reuse.py` |
+| 十层 Large 基础训练和 Full-only 队列 | `run_yambda500m_large_qualification.py` |
+| Large V4/V5 训练轨迹 | `run_yambda500m_large_v3_v4_epoch_sweep.py`；`run_yambda500m_large_v4e2_to_v5_epoch_sweep.py` |
 | Insight 1 局部替换诊断 | [insight_one_locality/README.md](insight_one_locality/README.md) |
 | Insight 2 响应修正和持续性诊断 | [insight_two/README.md](insight_two/README.md) |
-| 六层 Design 四组件原型、校准与连续评价 | [design/README.md](design/README.md) |
-| Design 2 冻结检测、2048UID连续闭环、短压力Benchmark与FreshCurrent参考 | [design2/README.md](design2/README.md) |
-| 只修改或生成论文图片 | [../figures/README.md](../figures/README.md) |
+| 六层适配原型、校准与连续评价 | [design/README.md](design/README.md) |
+| 论文图片 | [../figures/README.md](../figures/README.md) |
 
-Medium 和 Large 的具体命令、GPU 设置、窗口、epoch、hash 和历史范围分别在
-[Medium 训练记录](../docs/medium_scale_training_plan.md)和
-[Large 训练记录](../docs/large_scale_training_and_qualification_plan.md)中保留。
-Large 的 v4e2_vs_legacy_v5_full_only 是保留的历史对照，**不是当前 V5 训练入口**。
+数据入口为 `download_scale_datasets`、`prepare_yambda500m_scale_populations`、`plan_yambda500m_streaming_windows` 和 `build_yambda500m_unified_scales`。manifest、训练器与 evaluator 必须显式接收合同、输出路径和数据 manifest。
 
-## 公共数据与评估工具
-
-数据入口为 download_scale_datasets、prepare_yambda500m_scale_populations、
-plan_yambda500m_streaming_windows、build_yambda500m_unified_scales。
-manifest 由 build_yambda500m_foundation_manifests 和
-build_yambda500m_hstu_native_matrix_manifest 构造。训练复用
-train_yambda500m_foundation_fsdp。原来的 Small 默认合同仍是历史默认值；
-当前 Medium/Large 应由上表 runner 传入对应合同，不能裸跑默认参数。
-
-Full-only 使用 evaluate_yambda500m_release_candidates_raw 与
-adjudicate_yambda500m_release_candidates。Reuse 使用
-evaluate_yambda500m_hstu_native_onehop_reuse_raw 与
-adjudicate_yambda500m_hstu_native_onehop_reuse，共享 evaluate_yambda500m_foundation_raw。
-benchmark_yambda500m_history_cpu 和 canary_yambda500m_large_state_io 是支撑检查。
-
-insight/ 现在只有六个共享函数模块，不再包含旧路线的实验启动脚本。
-它们被当前 evaluator、Insight 2 或 Large 原资源 canary 引用，详见该目录 README。
-旧 refinement 和 evidence-measure 的构造器、命令行选项及专属测试已经移除；
-参数映射独立到 parameter_maps.py。保留 PRO 依赖不表示它是当前 EvoKV 方法。
-
-## 已退出的入口
-
-四层专属 rolling recipe、one-hop completion、旧 long-age reuse v1/v2/v3 及旧 Insight
-候选启动脚本已删除；不要将它们与 Medium 的现行 runner 混用。
-历史删除清单、恢复包与证据边界见 [结果索引](../results/README.md)。
-# Design 3执行原型
-
-当前入口为`design3/cohort_probe.py`（固定就绪工作包，A40约22秒）与`cohort_report.py`，核心为`src/hstu_kvcache/design3/cohort.py`。比较逐任务、完整路径分组、共同算子合并；冻结原三角检测，不运行教师或训练。结果`results/design3/cohort_01`。
-
-历史第二轮入口为`design3/binding_benchmark.py`、`replay.py --execution binding/graph_service --timed-execution`和`binding_report.py`。前者保留“只转换参数”“发布准备但每次准备state”“state变化/不变”对照；后者只汇总和核对`results/design3/binding_01`。实现集中在`src/hstu_kvcache/design3/binding.py`，初版脚本与失败记录保留。
-
-`design3/capture.py`复用有界Design 2回放捕获真实读取输入；`benchmark.py`测简洁eager、同等CUDA Graph、批量225求解和源/响应分块对照。`replay.py`在固定UID上执行reference或graph版本；`scheduling.py`测真实目标构建与四个不同UID读取的固定就绪工作包；`report.py`仅核对和汇总。当前结果见`results/design3/initial_01/report.md`。均为小型开发验证，不是完整在线服务基准；不需要重新拟合或训练。
+旧 Design 2/3 的实验入口已删除。历史删除范围与恢复限制见 [结果索引](../results/README.md)。

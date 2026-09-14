@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build causal Small foundation request and cutover snapshot manifests."""
+"""Build contract-driven causal foundation request and cutover snapshot manifests."""
 
 from __future__ import annotations
 
@@ -22,8 +22,6 @@ from hstu_kvcache.data.foundation_manifests import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "configs/contracts/yambda500m_small_foundation_chain_v1.yaml"
-DEFAULT_OUTPUT = ROOT / "data/manifests/yambda500m_small_foundation_v1"
 ARTIST_MAP = ROOT / "data/raw/yambda/artist_item_mapping.parquet"
 
 
@@ -133,7 +131,7 @@ class Writers:
         self.fidelity.close(); self.quality.close(); self.snapshot.close()
 
 
-def build(*, output: Path, max_users: int, threads: int, contract_path: Path = CONTRACT) -> dict:
+def build(*, output: Path, max_users: int, threads: int, contract_path: Path) -> dict:
     contract, dataset_path, item_mapping_path = validate_contract(contract_path)
     windows, snapshot_days, maximum_timestamp = contract_calendar(contract)
     dataset = json.loads(dataset_path.read_text())
@@ -286,8 +284,8 @@ def build(*, output: Path, max_users: int, threads: int, contract_path: Path = C
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--contract", type=Path, default=CONTRACT)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--contract", type=Path, required=True)
     parser.add_argument("--max-users", type=int, default=10_000)
     parser.add_argument("--threads", type=int, default=16)
     args = parser.parse_args()

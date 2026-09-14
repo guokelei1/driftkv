@@ -32,9 +32,12 @@ exhaustive edge-case handling and test coverage are not project goals.
 The current EvoKV design is Cross-Version Cache Adaptation: write-time
 summarization, release-time translation, read-time correction, and state
 maintenance across releases. The code provides the model foundation,
-Full/Reuse evaluation, paper diagnostics and complete development adaptation
-prototypes. The adaptation method is not yet validated; current negative results
-and active iterations are recorded in `docs/design/iterations.md`.
+Full/Reuse evaluation, paper diagnostics and historical adaptation prototypes.
+The current Design is complete as a design, but has not been implemented or
+validated. Historical prototypes and results do not establish its implementation
+or effectiveness. The user plans to retrain all models and rerun the experiments;
+old Insight dependencies are deferred. This plan is not a long-job launch.
+Development notes are recorded in `docs/design/iterations.md`.
 
 The paper studies Transformer recommender state compatibility across model
 releases; the concrete experimental models use HSTU. The motivation is that a new model

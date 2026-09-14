@@ -26,7 +26,6 @@ from hstu_kvcache.training import FoundationHistoryIndex
 
 DAY = 86_400
 ROOT = Path(__file__).resolve().parents[1]
-DATASET = ROOT / "data/processed/yambda500m_unified_v1/scales/small/dataset.json"
 
 
 def sha256_file(path: Path) -> str:
@@ -66,7 +65,7 @@ def balanced_users(rows: list[dict], world: int) -> dict[int, int]:
 
 
 def load_histories(
-    uids: list[int], *, oov_buckets: int = 0, dataset_path: Path = DATASET,
+    uids: list[int], *, oov_buckets: int = 0, dataset_path: Path,
     known_vocab_size: int | None = None, start_timestamp: int | None = None,
     end_timestamp: int | None = None, max_history: int | None = None,
     threads: int = 4,
@@ -289,10 +288,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                                event_end_exclusive: int | None = None,
                                include_request_local: bool = True,
                                include_parent_exact: bool = False,
-                               pro_lazy_maps=None,
-                               pro_lazy_carriers: int = 32,
-                               pro_lazy_repair_width: int = 128,
-                               pro_lazy_path: str | None = None,
                                query_chunk_size: int | None = None,
                                max_length: int = 512):
     """Vectorize independent user timelines whose cutover caches are all full."""
@@ -320,51 +315,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
         "current_exact_rolling": current_cache,
         "one_hop_reuse_rolling": clone_cache(parent_cache),
     }
-    active_pro_path = None
-    pro_corrections = None
-    if pro_lazy_maps is not None:
-        from insight.pro_lazy_reader import (
-            build_parent_conditioned_carriers,
-            generate_lazy_pro_sidecar,
-            pro_path as default_pro_path,
-        )
-
-        carrier_cache, layout = build_parent_conditioned_carriers(
-            parent_cache=parent_cache,
-            current=current,
-            item_ids=items,
-            behaviors=behaviors,
-            time_deltas=deltas,
-            repair_width=pro_lazy_repair_width,
-            carrier_count=pro_lazy_carriers,
-        )
-        expected_layout = (
-            max_length,
-            max_length - pro_lazy_repair_width,
-            pro_lazy_repair_width,
-            pro_lazy_carriers,
-            pro_lazy_repair_width // pro_lazy_carriers,
-        )
-        if (
-            layout.nominal_positions,
-            layout.old_positions,
-            layout.repair_evidence,
-            layout.carriers,
-            layout.represented_mass,
-        ) != expected_layout:
-            raise RuntimeError("full-cache lightweight PRO layout differs from the contract")
-        sidecar = generate_lazy_pro_sidecar(
-            current,
-            parent_cache,
-            carrier_cache,
-            pro_lazy_maps,
-            items[:, -1],
-            old_positions=layout.old_positions,
-        )
-        if sidecar.replay_max_abs_error > 2e-5:
-            raise RuntimeError("lightweight PRO cutover replay differs")
-        pro_corrections = tuple(value.detach() for value in sidecar.corrections)
-        active_pro_path = pro_lazy_path or default_pro_path(pro_lazy_carriers)
     if edge == "v0_to_r0":
         # Producer identity proves the reused and exact rolling states are bitwise
         # identical; retain one state and copy observations after canary validation.
@@ -513,41 +463,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                 stacked_cache(current_states), candidates.repeat(len(current_path_names), 1),
                 query_deltas.repeat(len(current_path_names))
             )
-        pro_scores = None
-        pro_readouts = None
-        if pro_corrections is not None:
-            from insight.reader_compatibility_correction import (
-                intervene_reader_correction,
-                scale_correction,
-            )
-
-            pro_score_parts, pro_readout_parts = [], []
-            chunk_size = query_chunk_size or len(query_entries)
-            for query_start in range(0, len(query_entries), chunk_size):
-                query_stop = min(query_start + chunk_size, len(query_entries))
-                chunk_owner = owner[query_start:query_stop]
-                owner_index = torch.tensor(chunk_owner, dtype=torch.long, device=device)
-                factor = torch.as_tensor(
-                    np.maximum(0, max_length - evictions[chunk_owner]) / max_length,
-                    dtype=torch.float32,
-                    device=device,
-                )
-                selected_corrections = tuple(
-                    value.index_select(0, owner_index) for value in pro_corrections
-                )
-                scaled = scale_correction(selected_corrections, factor)
-                scores, readouts = intervene_reader_correction(
-                    current,
-                    select_cache(caches["one_hop_reuse_rolling"], chunk_owner),
-                    candidates[query_start:query_stop],
-                    query_deltas[query_start:query_stop],
-                    stage="av_aggregation",
-                    corrections=scaled,
-                )
-                pro_score_parts.append(scores.cpu())
-                pro_readout_parts.append(readouts.cpu())
-            pro_scores = torch.cat(pro_score_parts)
-            pro_readouts = torch.cat(pro_readout_parts)
         if include_request_local:
             full_payload = []
             for index, query_time, _ in query_entries:
@@ -592,12 +507,6 @@ def evaluate_full_cache_cohort(*, uids, by_user, history, parent, current, paren
                 observations["one_hop_reuse_rolling"] = observations["current_exact_rolling"]
             if include_request_local and "recursive_reuse_rolling" not in current_path_names:
                 observations["recursive_reuse_rolling"] = observations["one_hop_reuse_rolling"]
-            if active_pro_path is not None:
-                assert pro_scores is not None and pro_readouts is not None
-                observations[active_pro_path] = (
-                    pro_scores[row_index, 0],
-                    pro_readouts[row_index, 0],
-                )
             reference = observations["current_exact_rolling"][1].float().cpu()
             for path, (score, readout) in observations.items():
                 readout = readout.float().cpu()
@@ -626,6 +535,7 @@ def main() -> None:
         help="Ordered v0..parent final checkpoints used to construct recursive reuse",
     )
     parser.add_argument("--manifest-dir", type=Path, required=True)
+    parser.add_argument("--dataset-manifest", type=Path, required=True)
     parser.add_argument("--parent", type=Path, required=True)
     parser.add_argument("--current", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -674,7 +584,7 @@ def main() -> None:
         by_user = {}
         for row in rows:
             by_user.setdefault(int(row["uid"]), []).append(row)
-        history = load_histories(selected_uids)
+        history = load_histories(selected_uids, dataset_path=args.dataset_manifest.resolve())
         loaded = {}
         def cached_model(path: Path):
             key = str(path.resolve())

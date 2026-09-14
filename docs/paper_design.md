@@ -1,17 +1,10 @@
 # EvoKV：Cross-Version Cache Adaptation
 
-更新日期：2026-09-07
+更新日期：2026-09-14
 
-当前论文正文位于 [paper/main.tex](../../paper/main.tex)。本文件只保留实现和实验需要的
-设计映射，不再复制一份完整论文稿。四组件开发原型与连续链诊断已实现；当前收束为
-native响应条件化修正，已获得成熟用户单次相邻迁移的基础质量正面证据，但native
-相对摘要/无源状态的优势尚未确认，当前实现时间也未低于Exact；理论增量FLOPs
-在固定校准和本基础trace外推下已有规模节省证据。第六次专家路线已将实际算法
-写入方法章节及基础评价，Design 1基础阶段冻结。按用户最新中文稿，两章现直接维护在
-[main.tex](../../paper/main.tex)，旧分节归档于paper/draft/archive/；
-[中文设计草稿](../../paper/draft/evokv_system_design_zh.md)仅用于讨论。
-旧translated K/V和写入消费修正的叙述已替换；
-不把开发证据写成全人口/连续系统已通过验证。
+当前论文正文位于 [paper/main.tex](../../paper/main.tex)。当前 Design 已完成设计，尚未实现和验证。仓库中的四组件原型、native 响应修正和六层开发结果属于历史探索，不能作为当前设计已落地或有效的依据。
+
+下文保留历史设计映射、实现选择和结果边界，供后续实现参考；其中“当前原型”、冻结 C、Design 1 冻结等描述仅指旧探索，不是新一轮实现状态。后续以论文正文实现当前设计，并重新训练模型、评测和验证。
 
 ## 问题与设计依据
 
@@ -62,7 +55,7 @@ Motivation and Insights的原顺序，因此首个Design章由LaTeX自动编号�
 不能同时称为这些用户上的未见泛化。用户已撤销笼统的 target-KV fitting 禁令，
 摘要重建和其他 K/V-derived 监督按完整流水线的质量、成本与可执行性选择。
 
-当前六层checkpoint是legacy ELU+1、无softmax/序列长度归一化的历史聚合；不宣称
+当前六层 checkpoint 使用 ELU+1、无 softmax/序列长度归一化的历史聚合；不宣称
 原生SiLU HSTU的普遍验证。对其他归一化attention，接口与分母修正仍须单独验证。
 
 ## 持续状态管理
@@ -84,11 +77,9 @@ Motivation and Insights的原顺序，因此首个Design章由LaTeX自动编号�
 必要的初次摘要构建和全人口转换。在线维护、读取、刷新、I/O 和存储另行计量，并在固定
 服务时段内比较总成本。当前新增native U为每query221184 MAC，约为两次普通历史
 矩阵乘法的96/N；这只是算术比例，不能作为短历史Exact阈值或端到端成本结论。
-旧 0.60% 翻译和约 7% 存储数字不再作为当前成本结论。
 
 已具备writer、共享translator、native修正reader与开发连续执行器，但不等于生产系统
-成本和稳定性已验证。当前按[专家第四次路线](design/expert_route_2026-09-07.md#第四次专家补充成熟用户单次迁移的基础真实质量评价)
-冻结C，对原development中n_theta0≥1024的全部4091人执行M1/M3/M4/M5独立Parent
+成本和稳定性已验证。当前机制边界见[六层机制证据](design/expert_route_2026-09-07.md)。冻结 C 对原 development 中 n_theta0≥1024 的全部 4091 人执行 M1/M3/M4/M5 独立 Parent
 初始化评价；主量为四边等权绝对AUC改善。该基础域不能替代连续迁移证据，也不因
 残留异常UID再缩小。连续链、短历史与尾部失败保留为后续设计边界；确认6000未读。
 
