@@ -29,6 +29,7 @@ from torch.distributed.fsdp import (
 from hstu_kvcache.data.yambda_history import load_yambda_histories
 from hstu_kvcache.models import HSTU, HSTUConfig
 from hstu_kvcache.training import FoundationHistoryIndex, cache_producer_sha256, collate_foundation_batch
+from hstu_kvcache.training.recovery import load_recovery, save_recovery
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -300,9 +301,14 @@ def main() -> None:
     parser.add_argument("--torch-cpu-threads", type=int, default=2)
     parser.add_argument("--cpu-affinity-by-rank", help="semicolon-separated comma lists")
     parser.add_argument("--progress-interval", type=int, default=500)
+    parser.add_argument("--recovery-interval-steps", type=int, default=0)
+    parser.add_argument("--recovery-first-step", type=int, default=500)
+    parser.add_argument("--resume-recovery", type=Path)
     args = parser.parse_args()
     launch_path = args.launch_contract.resolve()
     launch = validate_launch(args.version, launch_path)
+    if launch.get('authorization', {}).get('formal_training') is False and not args.canary_steps:
+        raise RuntimeError('This contract authorizes resource probes only, not formal training')
     frozen = launch.get("frozen_inputs", {})
     if "parent_v1_checkpoint" in frozen:
         expected_parent = (ROOT / frozen["parent_v1_checkpoint"]).resolve()
@@ -342,9 +348,9 @@ def main() -> None:
             batch_size = int(args.batch_size)
             global_batch_size = batch_size * world
         if rank == 0:
-            if args.output.exists():
+            if args.output.exists() and not args.resume_recovery:
                 raise FileExistsError(f"refusing to overwrite {args.output}")
-            args.output.mkdir(parents=True)
+            args.output.mkdir(parents=True, exist_ok=bool(args.resume_recovery))
         dist.barrier()
         if args.training_block:
             block = args.training_block
@@ -437,10 +443,25 @@ def main() -> None:
             steps_per_pass = None
             checkpoint_steps = {}
         steps = min(steps, args.canary_steps) if args.canary_steps else steps
+        recovery_binding = {
+            'launch_sha256': sha256_file(launch_path),
+            'execution_sha256': sha256_file(execution_path) if execution_path else None,
+            'requests_sha256': sha256_file(request_path),
+            'trainer_sha256': sha256_file(Path(__file__)),
+            'recovery_code_sha256': sha256_file(ROOT / 'src/hstu_kvcache/training/recovery.py'),
+            'config': asdict(cfg), 'version': args.version, 'parent_sha256': parent_hash,
+            'days': [args.train_start_day, args.train_end_day], 'block': block,
+            'seed': seed, 'passes': passes, 'total_steps': steps,
+            'global_batch': global_batch_size, 'world_size': world,
+        } if args.recovery_interval_steps or args.resume_recovery else None
+        start_step = load_recovery(model, optimizer, args.resume_recovery, recovery_binding) if args.resume_recovery else 0
+        if start_step >= steps:
+            raise RuntimeError('Recovery has no remaining training steps')
         losses = []
         step_seconds: list[float] = []
+        probe_batch_widths: list[int] = []
         torch.cuda.reset_peak_memory_stats(device)
-        for step in range(steps):
+        for step in range(start_step, steps):
             torch.cuda.synchronize(device)
             started = time.perf_counter()
             if staged_formal:
@@ -460,6 +481,8 @@ def main() -> None:
             batch = collate_foundation_batch(
                 batch_rows, histories, device=device, max_history=cfg.max_seq_len
             )
+            if args.canary_steps:
+                probe_batch_widths.append(int(batch.item_ids.shape[1]))
             hstu_logits = model(batch.item_ids, batch.behaviors, batch.time_deltas, batch.candidate_ids, batch.query_time_deltas, batch.lengths)[:, 0]
             per_request = F.binary_cross_entropy_with_logits(hstu_logits, batch.labels, reduction="none")
             # FSDP averages gradients across ranks. This scaling produces the
@@ -471,6 +494,10 @@ def main() -> None:
             step_seconds.append(time.perf_counter() - started)
             losses.append(float(loss.detach()))
             completed = step + 1
+            if args.recovery_interval_steps and completed < steps and (
+                completed == args.recovery_first_step or completed % args.recovery_interval_steps == 0
+            ):
+                save_recovery(model, optimizer, args.output / 'recovery', completed, recovery_binding)
             is_checkpoint_step = completed in checkpoint_steps or completed == steps
             if rank == 0 and (
                 completed % args.progress_interval == 0 or is_checkpoint_step
@@ -492,6 +519,8 @@ def main() -> None:
                     "checkpoint_epochs": list(checkpoint_epochs),
                     "latest_rank0_loss": losses[-1],
                     "mean_rank0_loss_so_far": float(np.mean(losses)),
+                    "resumed_from_step": start_step,
+                    "loss_and_timing_scope": "current_process_segment",
                     "median_rank0_step_seconds": median_step,
                     "estimated_remaining_seconds": (steps - completed) * median_step,
                     "peak_reserved_mib_rank0": float(torch.cuda.max_memory_reserved(device) / 2**20),
@@ -551,6 +580,8 @@ def main() -> None:
             "median_timed_step_seconds": float(statistics.median(step_seconds[warmup:])),
             "peak_allocated_mib": float(torch.cuda.max_memory_allocated(device) / 2**20),
             "peak_reserved_mib": float(torch.cuda.max_memory_reserved(device) / 2**20),
+            "canary_batch_width_min": min(probe_batch_widths) if probe_batch_widths else None,
+            "canary_batch_width_max": max(probe_batch_widths) if probe_batch_widths else None,
         }
         gathered: list[dict | None] = [None] * world
         dist.all_gather_object(gathered, rank_metrics)
@@ -564,6 +595,8 @@ def main() -> None:
                 "status": "distributed_canary_passed" if args.canary_steps else "formal_training_complete",
                 "contract_sha256": sha256_file(launch_path),
                 "version": args.version, "steps": steps, "mean_rank0_loss": float(np.mean(losses)),
+                "resumed_from_step": start_step,
+                "loss_and_timing_scope": "current_process_segment",
                 "final_checkpoint": str(final_checkpoint),
                 "checkpoint_epochs": list(checkpoint_epochs),
                 "checkpoints": (

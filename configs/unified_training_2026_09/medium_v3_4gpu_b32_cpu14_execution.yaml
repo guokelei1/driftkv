@@ -1,0 +1,38 @@
+contract: medium_v3_1epoch_4gpu_b32_cpu14_execution_20260915
+date_frozen: 2026-09-15
+frozen_parent:
+  contract: configs/contracts/yambda_medium_v3_1epoch_4gpu_b32_20260915.yaml
+  contract_sha256: 78925cd3cd2960515c3fb57e2a8da47075e52ced4a9c4927ceecdfcdf2f2bc7e
+execution_amendment:
+  world_size: 4
+  physical_gpus:
+  - 0
+  - 1
+  - 2
+  - 3
+  global_train_batch_size: 32
+  local_batch_sizes_by_rank:
+  - 8
+  - 8
+  - 8
+  - 8
+  fsdp_jobs_concurrent: 1
+  reason: user_requested_global_batch32_keep_four_GPUs_and_CPU14
+training_runtime:
+  history_threads: 14
+  arrow_cpu_threads: 14
+  arrow_io_threads: 4
+  torch_cpu_threads: 4
+  omp_num_threads: 4
+  cpu_affinity_by_rank: 0,1,2,3,4,5,6,7,8,9,10,11,12,13;14,15,16,17,18,19,20,21,22,23,24,25,26,27;28,29,30,31,32,33,34,35,36,37,38,39,40,41;42,43,44,45,46,47,48,49,50,51,52,53,54,55
+evaluation_runtime:
+  history_threads: 14
+  arrow_cpu_threads: 14
+  arrow_io_threads: 4
+  torch_cpu_threads: 4
+  batch_size_per_rank: 64
+  cpu_affinity_by_rank: 0,1,2,3,4,5,6,7,8,9,10,11,12,13;14,15,16,17,18,19,20,21,22,23,24,25,26,27;28,29,30,31,32,33,34,35,36,37,38,39,40,41;42,43,44,45,46,47,48,49,50,51,52,53,54,55
+output_amendment:
+  root: results/unified_training_2026_09/medium/seed17/v3_1epoch_4gpu_b32_cpu14
+  resource_estimate: results/unified_training_2026_09/medium/seed17/v3_1epoch_4gpu_b32_cpu14/resource_estimate.json
+  supersedes_base_output_path_only: true

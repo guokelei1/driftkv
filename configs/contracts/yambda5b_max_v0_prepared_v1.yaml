@@ -1,0 +1,74 @@
+contract: yambda5b_max_v0_prepared_v1
+status: prospective_release_chain_candidate_v1
+scope:
+  scale: Max
+  versions:
+  - v0
+  seed: 17
+  population_users: 200000
+  theta3_read_or_trained: false
+  purpose: Max_V0_foundation_one_epoch_user_authorized_launch
+  training_days_half_open:
+  - 0
+  - 217
+frozen_inputs:
+  dataset_manifest: data/processed/yambda5b_max_200k_v1/scales/max/dataset.json
+  dataset_manifest_sha256: 183f84998309ef93b646e83f47a79c279079bc0f2659c2ea19ec2f3d73fbf7b0
+  item_mapping: data/processed/yambda5b_max_200k_v1/scales/max/item_mapping.parquet
+  item_mapping_sha256: f63ec48c9b350f3e128574d9706ea7ffcb77eb9aab37d1f274125a8deb9e45b0
+  request_manifest: data/manifests/yambda5b_max_200k_hstu_native_v1/manifest.json
+  request_manifest_sha256: 9d471a32c17f7306bbeb77a790675fe6250613cb302263f51d7567ff433e992e
+  requests_quality: data/manifests/yambda5b_max_200k_hstu_native_v1/requests_quality.parquet
+  requests_quality_sha256: 9817aaade124a331ffd989a0d6b50e18d7e9d80aee91b2ff7726ffb031d84958
+  requests_fidelity: data/manifests/yambda5b_max_200k_hstu_native_v1/requests_fidelity.parquet
+  requests_fidelity_sha256: f19a07119816cff9ee1b24480b970badd4bbc56ced2f9921b7fffec0e9358912
+  resource_selection: results/unified_training_2026_09/max/preparation/resource_selection.json
+  resource_selection_sha256: ef859a7f7506e63a91a4de9c679eaf95c30452cc7b43b4ad382cf1d8cdfd2519
+  data_audit: results/unified_training_2026_09/max/preparation/data_audit.json
+  data_audit_sha256: 0f5168062dd11ebcacb4248d9baf156491a154ce198e8d084732a07aea6bf4ee
+  launch_preflight: results/unified_training_2026_09/max/preparation/v0_launch_preflight.json
+  launch_preflight_sha256: edb562074c2c0cadd207a53cbcf36b4fc2e01721761d7e3774b17d93df1e2627
+model:
+  num_behaviors: 4
+  hidden_size: 320
+  num_layers: 16
+  num_heads: 10
+  max_seq_len: 1024
+  num_query_types: 3
+  query_type_id: 2
+  num_query_actions: 1
+  query_action_id: 0
+  input_dropout: 0.1
+  oov_buckets: 256
+  known_items_from_dataset_manifest: 3530650
+  total_parameters: 1138203521
+training:
+  window: foundation
+  passes: 1
+  candidate_epoch_options:
+  - 1
+  foundation_learning_rate: 0.0002
+  update_learning_rate: 5.0e-05
+  weight_decay: 0.0001
+  user_equal_window_weighting: true
+  global_batch_size: 80
+  optimizer: fresh_AdamW
+  checkpoint_selection: final_one_epoch_only
+  recovery:
+    first_step: 500
+    interval_steps: 4000
+    keep_complete_generations: 2
+    format: same_layout_local_FSDP_parameters_AdamW_rng_progress
+    release_candidate: false
+  fsdp: FULL_SHARD
+  compute_dtype: bf16
+  reduction_and_optimizer_dtype: fp32
+authorization:
+  preparation: true
+  explicit_user_launch_received: true
+  formal_training: true
+  launch_authorized_at: '2026-09-15T23:33:02.676332+08:00'
+  user_instruction: 你可以再全面的check一遍。如果没问题，我觉得就可以准备去启动了
+  scope: V0 only; launch after passing full preflight; no automatic V1-V5
+outputs:
+  root: results/unified_training_2026_09/max/seed17/v0_1epoch_4gpu_b80_cpu14

@@ -35,8 +35,9 @@ class FoundationHistoryIndex:
         timestamps: np.ndarray,
         item_ids: np.ndarray,
         behaviors: np.ndarray,
+        *, presorted: bool = False,
     ) -> "FoundationHistoryIndex":
-        order = np.lexsort((item_ids, timestamps, uids))
+        order = slice(None) if presorted else np.lexsort((item_ids, timestamps, uids))
         uids, timestamps = np.asarray(uids)[order], np.asarray(timestamps)[order]
         item_ids, behaviors = np.asarray(item_ids)[order], np.asarray(behaviors)[order]
         if len(uids) == 0:

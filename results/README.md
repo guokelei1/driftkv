@@ -10,6 +10,7 @@ Git 保存本目录的报告、紧凑 summary/adjudication、seals、训练元�
 
 | 用途 | 路径 |
 | --- | --- |
+| 本轮 Yambda 三档统一训练（准备中） | [本轮结果索引](unified_training_2026_09/README.md) |
 | 六层 Medium 模型、Full/Reuse 与 Motivation | yambda500m_medium_seed17/full_reuse_matrix_v1/ |
 | 十层 Large 当前 V0–V5 指针及范围 | [canonical chain](yambda500m_large_seed17/canonical_D14_v0_v5_v1/README.md) |
 | 论文重算成本表 | [report](release_cost_random_weight_v1/report.md) |

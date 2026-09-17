@@ -15,6 +15,9 @@
   用户选择、OOV、反馈时间边界、增量时间与窗口；使用小型输入，不扫描本机完整数据。
 - test_medium_d14_direct_long_age_reuse、test_large_d14_canonical_chain：当前 Medium 动机链与 Large canonical 链。
 - test_append_only_kv、test_state_transition：追加、淘汰与状态依赖。
+- test_baseline_*：三个对比方案的 CPU 公式、入口 hidden、真实尾部重放及跨层映射；不运行数据集评价。
+- test_insight1_competitor*：三方案统一评分、概率缺口聚合、校准 UID 隔离及独立入口；使用 CPU 合成数据和临时 I/O，不读取真实评价用户。
+- test_competitor_*：本轮 Medium／Large 模型清单解析、规模词表与候选构造、显式 UID 隔离及 10 层方法端点；只用元数据或合成输入。
 - test_adaptation：固定归属的摘要增减、原算子的count权重和局部刷新等价性；真实六层梯度/追加canary在Design runner内。
 - test_summary_objective、test_functional_summary：当前摘要/响应诊断的公式和增量淘汰参考。
 - test_insight_one_locality：论文局部替换诊断。

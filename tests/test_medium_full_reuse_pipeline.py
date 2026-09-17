@@ -118,6 +118,28 @@ def test_bounded_history_loader_keeps_last_prefix_and_window_events(tmp_path: Pa
     assert behaviors.tolist() == [1, 2, 2, 3]
 
 
+def test_explicit_raw_history_order_keeps_oov_ties_and_bounded_prefix(tmp_path: Path) -> None:
+    pq.write_table(pa.table({
+        'uid': [1, 1, 1, 1, 1], 'timestamp': [10, 20, 20, 20, 30],
+        'raw_item_id': [101, 102, 900, 1000, 101], 'behavior': [1, 1, 2, 1, 1],
+        'is_organic': [1, 1, 0, 1, 1],
+    }), tmp_path / 'listens.parquet')
+    pq.write_table(pa.table({'raw_item_id': [101, 102, 1000], 'item_idx': [1, 2, 3]}),
+                   tmp_path / 'items.parquet')
+    manifest = tmp_path / 'dataset.json'
+    manifest.write_text(json.dumps({'shared_listens_glob': 'listens.parquet',
+        'item_mapping_path': 'items.parquet', 'oov_bucket_start': 4,
+        'history_tie_order': 'timestamp_raw_item_behavior'}))
+    options = dict(known_vocab_size=3, oov_buckets=2, end_timestamp=31, threads=1)
+    full = load_yambda_histories(manifest, [1], **options)
+    bounded = load_yambda_histories(manifest, [1], start_timestamp=25, max_pre_events=3, **options)
+    a = full.prefix(1, 25, max_history=3)
+    b = bounded.prefix(1, 25, max_history=3)
+    assert all(np.array_equal(x, y) for x, y in zip(a, b))
+    assert a[0][0] == 2 and a[0][1] in (4, 5) and a[0][2] == 3
+    assert a[2].tolist() == [20, 20, 20]
+
+
 def test_three_path_vectorized_evaluator_accepts_contract_context() -> None:
     module = load_foundation_evaluator()
     config = HSTUConfig(

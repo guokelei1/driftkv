@@ -24,6 +24,17 @@ def test_uid_selector_is_order_independent_and_nested() -> None:
     assert selected == expected
 
 
+def test_one_based_oov_extension_is_disjoint_from_known_and_padding() -> None:
+    known, buckets = 100, 32
+    raw = np.arange(5000)
+    mapped = np.zeros(5000, dtype=np.int64)
+    mapped[0] = known
+    values = apply_stable_oov_buckets(raw, mapped, known_vocab_size=known,
+                                     buckets=buckets, bucket_start=known + 1)
+    assert values[0] == known
+    assert set(values[1:]) == set(range(known + 1, known + buckets + 1))
+
+
 def test_stable_oov_buckets_preserve_known_ids_and_are_repeatable() -> None:
     raw = np.asarray(["known", "new-a", "new-b", "new-a"])
     mapped = np.asarray([12, 0, 0, 0])

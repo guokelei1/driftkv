@@ -7,7 +7,9 @@
 | 当前论文方法 | [论文正文](../../paper/main.tex) |
 | 方法结构与实现边界 | [paper_design.md](paper_design.md) |
 | 适配原型的计划与迭代记录 | [design/plan.md](design/plan.md)；[design/iterations.md](design/iterations.md) |
+| 三个对比方案的设计、CPU 原型及 Insight 1 接口 | [按层重算、尾部重算、直接 K/V 翻译](../src/hstu_kvcache/baselines/README.md) |
 | 实验架构、版本训练和评价 | [experimental_design.md](experimental_design.md) |
+| 本轮 Yambda 三档统一训练 | [计划与记录](unified_training_2026_09/README.md) |
 | 已有 Motivation 与 Insight 证据 | [motivation_observations.md](motivation_observations.md) |
 | Medium 训练与评估链 | [medium_scale_training_plan.md](medium_scale_training_plan.md) |
 | Large Full-only 资格训练 | [large_scale_training_and_qualification_plan.md](large_scale_training_and_qualification_plan.md) |

@@ -13,13 +13,15 @@ import hashlib
 import numpy as np
 
 
-def stable_oov_bucket(raw_item_id: object, *, known_vocab_size: int, buckets: int) -> int:
+def stable_oov_bucket(raw_item_id: object, *, known_vocab_size: int, buckets: int, bucket_start: int | None = None) -> int:
     """Return the embedding id for an unknown item in a stable hash bucket."""
     if buckets < 1:
         return 0
     digest = hashlib.blake2b(str(raw_item_id).encode("utf-8"), digest_size=8, person=b"evokv-oov-v1").digest()
     bucket = int.from_bytes(digest, "little") % buckets
-    return known_vocab_size + bucket
+    # Existing frozen datasets retain their original numbering. New one-based
+    # vocabularies explicitly start at K+1 to keep OOV separate from known ID K.
+    return (known_vocab_size if bucket_start is None else bucket_start) + bucket
 
 
 def apply_stable_oov_buckets(
@@ -28,6 +30,7 @@ def apply_stable_oov_buckets(
     *,
     known_vocab_size: int,
     buckets: int,
+    bucket_start: int | None = None,
 ) -> np.ndarray:
     """Keep mapped ids and replace mapping misses (encoded as zero) stably."""
     values = np.asarray(mapped_item_ids, dtype=np.int64).copy()
@@ -38,7 +41,7 @@ def apply_stable_oov_buckets(
         raise ValueError("raw and mapped item arrays must have the same shape")
     missing = values == 0
     values[missing] = [
-        stable_oov_bucket(value, known_vocab_size=known_vocab_size, buckets=buckets)
+        stable_oov_bucket(value, known_vocab_size=known_vocab_size, buckets=buckets, bucket_start=bucket_start)
         for value in raw[missing]
     ]
     return values

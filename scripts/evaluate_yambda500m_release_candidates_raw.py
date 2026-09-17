@@ -11,10 +11,12 @@ import argparse
 import hashlib
 import json
 import os
+import time
 from pathlib import Path
 
 import numpy as np
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 import torch
 import torch.distributed as dist
@@ -83,7 +85,8 @@ def main() -> None:
     parser.add_argument("--manifest-dir", type=Path, required=True)
     parser.add_argument("--dataset-manifest", type=Path)
     parser.add_argument("--parent", required=True, help="NAME=PATH")
-    parser.add_argument("--current", action="append", required=True, help="NAME=PATH")
+    parser.add_argument("--current", action="append", default=[], help="NAME=PATH; omit for a single-model baseline")
+    parser.add_argument("--users-path", type=Path, help="Frozen label-free UID sample parquet")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-users", type=int, default=0)
@@ -170,6 +173,9 @@ def main() -> None:
                 "request_id", "uid", "query_timestamp", "item_idx",
             ],
         ).sort_by([("uid", "ascending"), ("query_timestamp", "ascending"), ("request_id", "ascending")])
+        if args.users_path:
+            sampled_uids = pq.read_table(args.users_path, columns=['uid'])['uid']
+            request_table = request_table.filter(pc.is_in(request_table['uid'], value_set=sampled_uids))
         rows = request_table.to_pylist()
         assignment = balanced_users(rows, world)
         selected_uids = sorted(uid for uid, assigned in assignment.items() if assigned == rank)
@@ -211,6 +217,8 @@ def main() -> None:
 
         output: list[dict] = []
         torch.cuda.reset_peak_memory_stats(device)
+        torch.cuda.synchronize(device)
+        evaluation_started = time.perf_counter()
         for start in range(0, len(rows), args.batch_size):
             request_batch = rows[start:start + args.batch_size]
             batch = collate_foundation_batch(
@@ -249,6 +257,8 @@ def main() -> None:
         torch.cuda.synchronize(device)
         local_peak = {
             "rank": rank,
+            "evaluation_seconds": time.perf_counter() - evaluation_started,
+            "evaluated_requests": len(rows),
             "peak_allocated_mib": float(torch.cuda.max_memory_allocated(device) / 2**20),
             "peak_reserved_mib": float(torch.cuda.max_memory_reserved(device) / 2**20),
         }
@@ -286,6 +296,10 @@ def main() -> None:
                     "affinity_by_rank": args.cpu_affinity_by_rank,
                 },
                 "architecture": "hstu_native_cc",
+                "sample_users_path": str(args.users_path) if args.users_path else None,
+                "sample_users_sha256": sha256_file(args.users_path) if args.users_path else None,
+                "request_manifest_sha256": sha256_file(source),
+                "evaluator_sha256": sha256_file(Path(__file__)),
             }
             (args.output / "raw.seal.json").write_text(json.dumps(seal, indent=2) + "\n")
             print(json.dumps(seal, indent=2))

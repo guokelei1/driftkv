@@ -94,8 +94,10 @@ def load_yambda_histories(
     item_ids = apply_stable_oov_buckets(
         table["raw_item_id"].to_numpy(), table["item_idx"].to_numpy(),
         known_vocab_size=int(known_vocab_size), buckets=int(oov_buckets),
+        bucket_start=dataset.get("oov_bucket_start"),
     )
     return FoundationHistoryIndex.from_columns(
         table["uid"].to_numpy(), table["timestamp"].to_numpy(), np.asarray(item_ids),
         table["behavior"].to_numpy(),
+        presorted=dataset.get("history_tie_order") == "timestamp_raw_item_behavior",
     )
