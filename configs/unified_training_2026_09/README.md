@@ -19,6 +19,8 @@ Medium最终V0–V5已固定，见[模型链索引](../../results/unified_traini
 
 - [5B/20万用户数据处理](max_data_preparation.yaml)：人口资格、稳定选择、独立词表和显式OOV布局。
 - [选定batch80资源探针](max_probe_b80_execution.yaml)：四卡每卡20，仅12步canary。
-- [V0待启动配置](max_v0_prepared_execution.yaml)：1 epoch、四卡global80、CPU14；已记录用户检查通过后启动的授权，V0运行中。
+- [V0执行配置](max_v0_prepared_execution.yaml)：1 epoch、四卡global80、CPU14；V0已完成并封存。
 - V0恢复策略：第500步首存、以后每4000步保存，最近两份完整恢复点；包含AdamW及随机状态，同四卡配置以`run_max_v0.py --resume`续训。
 - [资源结果及预算](../../results/unified_training_2026_09/max/README.md)：数据审计通过，V0已启动。
+
+- [Max V1：连续2epochs、四卡global80、CPU14](max_v1_epochs12_4gpu_b80_cpu14_execution.yaml)：2026-09-19用户授权启动，分别保留epochs1/2，在同一完整E14上与固定V0比较。

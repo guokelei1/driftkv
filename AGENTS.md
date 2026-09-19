@@ -46,8 +46,58 @@ prevents that improvement from being fully realized. The repository documents
 this through one conceptual design, one concrete experimental design and one
 sealed motivation/observation record.
 
-A secondary RecFlow track remains prospective only; it is not part of the
-current motivation result and has no long-training authorization.
+A secondary RecFlow track has isolated data preparation and generative
+development probes. On 2026-09-18 the user authorized single-seed, complete-epoch
+A/B/C development with fixed three-day evaluation windows, parameter iteration,
+and progression to six-layer training once the development checks work; see
+`docs/recflow/plan.md`. This supersedes the earlier pending one-pass launch
+question. It is not part of the current Yambda motivation result.
+The subsequent instruction authorizes six-layer data expansion and RecFlow
+motivation diagnostics, but the latest steering first requests small daily-update
+tests: fit one complete day and evaluate the following day, with complete epochs.
+The initial daily probes kept the same seed and metric; retain both small and
+large relative gains honestly.
+The six-layer daily1/3-epoch probes have now completed: both settings improve on
+both tested future days and all parent/current random checks pass. One epoch per
+day is the minimum working development setting; this does not admit formal phi
+releases or establish long-term stability or RecFlow cache/motivation results.
+The subsequent bounded LR screen is complete: same A, full daily windows and
+one epoch, update LR1e-4 and3e-5 against retained1e-3. Report relative improvement
+percentages and every outcome; a preferred20–50% magnitude is descriptive, not
+a pass threshold. Initial-data expansion remains a separate authorized step.
+The user also explicitly permits exploring NDCG cutoffs and candidate protocols
+to obtain a useful, steadier development setting. Keep each protocol's own
+random/request denominator, distinguish candidate ranking from free generation,
+retain the original frozen outcomes, and fix the selected setting before an
+additional chronological confirmation window.
+All54 explored cells are retained. The selected setting is LR1e-4, daily1epoch,
+free-catalog NDCG@100, giving+15.64%/+27.00% on the two explored days; sparse
+hits prevent a stability claim. `window_6l_daily_confirmation_seed17.json`
+prospectively fixes this setting for D21fit→D22eval (development phaseD←C).
+D22 appeared in other development branches; it is not untouched final data.
+Retain any failed confirmation without changing its frozen primary metric.
+That full-catalog confirmation failed: D22+171.31%, both parent/current random
+checks fail and only2→4 requests hit Top100. The subsequent retained LR1e-3
+daily branch with primary uniform1000 NDCG@50 completed: three updates give
++5.88%/+21.10%/+25.91%, with all parent/current random checks passing. This is
+the provisional next-stage development setting, explicitly candidate ranking
+with the generative model, not stable free1M generation. Preserve all full
+failures; D22 reuse is exploratory. Do not keep retuning K/pools on later days.
+
+The latest user explicitly authorizes a larger-user six-layer run now: prepare
+and canary the pipeline, launch it in detached tmux, and hand off without waiting
+for completion. The sealed setting is
+`configs/recflow/window_6l_expanded_u4096_seed17.json`:4096 initial-history-eligible
+development users, fresh A on D1–18 for3 full epochs, then five daily1epoch
+updates D19–23 with paired next-day D20–24 evaluation. Keep seed17,context1024,
+LR1e-3,1M catalog and uniform1000 NDCG@50; sampled evaluation expands to6144
+requests/day. All quality failures remain and the descriptive training chain
+continues; numerical/data/lineage failures stop. This authorizes the long run
+after its focused canary; no further launch question is needed. It does not
+admit serving phi releases or authorize final-role/ten-layer/Yambda theta3 work.
+The user will return after the background job; do not keep this turn waiting
+through the expected13–15hour run. Avoid modifying its sealed execution sources
+while it is active; the launcher checks their hashes before each command.
 
 Authoritative entry points:
 
@@ -99,9 +149,23 @@ draft or use Sketch-to-Sketch as the current method name.
   estimate, passing canary and explicit user launch.
 - Theta3 remains untouched. Its data/release/admission/metric/failure contract
   must be sealed before training or reading any theta3 result.
-- RecFlow checkpoint names are `phi0..phi3` and must not be conflated with the
-  untouched Yambda theta3. RecFlow Medium training remains gated by D0/D1 audit,
-  a prospective contract, canary, resources and explicit launch.
+- The prospective RecFlow three-day chain is `phi0..phi5`; development probes
+  are not admitted releases. These names must not be conflated with the
+  untouched Yambda theta3. RecFlow uses seed17 only under the latest user scope;
+  preserve earlier multi-seed results without adding new seed replications.
+  The latest instruction authorizes complete-epoch development runs and
+  conditional six-layer progression after stable A/B (and optional C) checks.
+  Record prospective settings, resources and a focused canary before long jobs,
+  and use tmux; do not ask again for launch already covered by this instruction.
+  Six-layer development-data expansion is now authorized, after the requested
+  daily-window checks. Ten-layer and final-population qualification remain outside
+  this scope. Do not mistake the daily development branches for admitted releases.
+- RecFlow initial and updated models must each clearly outperform uniform
+  random video ranking under the same catalog/candidate pool, request panel,
+  cutoff and OOV denominator. Parent/current improvement alone is insufficient.
+  Report the matched random expectation and random-policy variation for every
+  explored metric configuration; do not select favorable cutoffs or pools to
+  hide failures. Beating other recommender architectures is not required.
 
 Diagnostic exact-KV splices are interventions, not executable actions. Only the
 frozen dependency-closed actions may enter scale frontiers; do not add actions or
@@ -115,6 +179,8 @@ predictor complexity on the scale development point.
   population maps and frozen workload/release data primitives.
 - `src/hstu_kvcache/adaptation/`: experimental summary, Translator, paired reader
   and in-memory multi-version state implementation.
+- `src/hstu_kvcache/recflow/` and `scripts/recflow/`: isolated RecFlow preparation,
+  structured generation and bounded development evaluation.
 - `configs/contracts/`: immutable development evidence and prospective scale contracts.
 - `scripts/`: current data, foundation, Full-only and motivation entry points;
   new adaptation experiment orchestration is concentrated in `scripts/design/`.
@@ -186,6 +252,11 @@ The user expanded the scale allowlist to GPU 0/1/2/3. A scale model uses at most
 one four-rank FSDP job at a time; seeds/releases are queued serially. Parallelize
 CPU mapping, joins and aggregation when safe. Every long scale job needs a
 focused canary first.
+For the authorized RecFlow development, the 2026-09-18 instruction additionally
+allows internal multi-GPU execution and independent experiments in parallel on
+GPU 0/1/2/3. Choose placement from measured throughput, preserve global batches
+and evaluation aggregation, and avoid collisions with active jobs. This does
+not expand the Yambda scale or seed scope.
 Estimate each experiment's runtime from a small probe or a stated calculation.
 Use detached tmux execution for jobs expected to exceed 30 minutes, retain the
 log/exit status, and resume analysis when they finish. Monitor shorter jobs

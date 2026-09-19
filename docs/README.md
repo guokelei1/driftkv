@@ -10,6 +10,7 @@
 | 三个对比方案的设计、CPU 原型及 Insight 1 接口 | [按层重算、尾部重算、直接 K/V 翻译](../src/hstu_kvcache/baselines/README.md) |
 | 实验架构、版本训练和评价 | [experimental_design.md](experimental_design.md) |
 | 本轮 Yambda 三档统一训练 | [计划与记录](unified_training_2026_09/README.md) |
+| RecFlow 数据与生成式基模开发 | [分阶段计划与记录](recflow/plan.md) |
 | 已有 Motivation 与 Insight 证据 | [motivation_observations.md](motivation_observations.md) |
 | Medium 训练与评估链 | [medium_scale_training_plan.md](medium_scale_training_plan.md) |
 | Large Full-only 资格训练 | [large_scale_training_and_qualification_plan.md](large_scale_training_and_qualification_plan.md) |

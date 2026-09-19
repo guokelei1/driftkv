@@ -1,0 +1,99 @@
+{
+  "configuration": {
+    "scope": "Numerical/resource canary only; no learning or admission evidence.",
+    "physical_gpus": "0,1,2,3",
+    "world_size": 4,
+    "global_batch_size": 128,
+    "local_batch_size": 32,
+    "training_seed": 17,
+    "layers": 6,
+    "hidden": 192,
+    "heads": 6,
+    "context": 1024,
+    "catalog_items": 1000000,
+    "cohort_users": 512,
+    "warmup_steps": 2,
+    "measured_steps": 12,
+    "skip_single_gpu_baseline": true,
+    "precision": "BF16 autocast; FP32 parameters/loss/AdamW states",
+    "data_preparation_seconds_14_batches": 0.10232105851173401,
+    "frozen_request_indices_sha256": "28a8e61bb799a5219400c33f78b17fbb2c4884808840ac9ecd73e0214351bb44",
+    "source_sha256": {
+      "scripts/recflow/distributed_probe.py": "b799a8afa6083d28fff1a9720531525ca5aa242ca2e9fb79ef9c52faa90d1d67",
+      "scripts/recflow/development_probe.py": "1b918945558f0ce3c7937b3fe177ade81266007e670e4165497a51f6f8c7af00",
+      "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512",
+      "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7"
+    }
+  },
+  "numerical": {
+    "passed": true,
+    "precision": "FP32",
+    "optimizer": "AdamW lr=.001 wd=1e-4 clip=1",
+    "cases": [
+      {
+        "global_count": 5,
+        "local_counts": [
+          1,
+          1,
+          1,
+          2
+        ],
+        "max_gradient_abs_error": 5.7220458984375e-06,
+        "max_parameter_abs_error": 1.4901161193847656e-08
+      },
+      {
+        "global_count": 7,
+        "local_counts": [
+          1,
+          2,
+          2,
+          2
+        ],
+        "max_gradient_abs_error": 5.364418029785156e-06,
+        "max_parameter_abs_error": 1.862645149230957e-08
+      }
+    ],
+    "weighting": "local_loss.sum() * world_size / globalN before DDP averaging"
+  },
+  "single_gpu_matched": null,
+  "ddp": {
+    "global_steps": 12,
+    "global_requests": 1536,
+    "seconds": 4.557485486380756,
+    "requests_per_second": 337.0279520560331,
+    "mean_training_loss": 15.265809213742614,
+    "target_sha256": "8c08085255d7d2da643c29d184089cf379fc4b2091e8e84ce0918c9061960d51",
+    "rank_memory": [
+      {
+        "rank": 0,
+        "peak_allocated_bytes": 11876948480,
+        "peak_reserved_bytes": 12169773056
+      },
+      {
+        "rank": 1,
+        "peak_allocated_bytes": 11876874240,
+        "peak_reserved_bytes": 12169773056
+      },
+      {
+        "rank": 2,
+        "peak_allocated_bytes": 11876874240,
+        "peak_reserved_bytes": 12169773056
+      },
+      {
+        "rank": 3,
+        "peak_allocated_bytes": 11876874240,
+        "peak_reserved_bytes": 12169773056
+      }
+    ],
+    "requests_per_second_including_proportional_preparation": 330.6646763055043
+  },
+  "parameters": 194461521,
+  "dense_embedding_gradient": {
+    "bytes": 768001536,
+    "isolated_all_reduce_seconds": 0.044190991669893265,
+    "repeated_measurements": 6,
+    "caveat": "Standalone synchronized cost; DDP may overlap communication with backward."
+  },
+  "speedup_vs_matched_single": null,
+  "limitations": "Frozen CPU batches; broadcast/device transfer and optimizer included, input preparation reported separately. Warmup2 + measured12 updates are resource-only. No model checkpoint or quality evaluation is saved."
+}

@@ -1,0 +1,88 @@
+{
+  "scope": "Prospective daily learning-rate sensitivity, same trained A3,512 users and full future panels; all results retained, no formal admission.",
+  "authorization": "Latest user asks further methods for smaller, more gradual daily update gains. Existing authorization includes complete-epoch parameter iteration and four GPUs.",
+  "status": "prospective_sealed_before_learning_rate_results",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 6,
+    "hidden": 192,
+    "heads": 6,
+    "batch_size": 128,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "epochs": 1,
+    "evaluation_epochs": [
+      1
+    ],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [
+      1000
+    ],
+    "log_every": 25,
+    "training_order": "shuffle"
+  },
+  "windows": {
+    "A": {
+      "fit": [
+        1,
+        18
+      ],
+      "evaluate": [
+        19,
+        21
+      ]
+    },
+    "B": {
+      "fit": [
+        19,
+        19
+      ],
+      "compare_parent_and_current": [
+        20,
+        20
+      ],
+      "eligible_requests_per_epoch": 6929
+    },
+    "C": {
+      "fit": [
+        20,
+        20
+      ],
+      "compare_parent_and_current": [
+        21,
+        21
+      ],
+      "eligible_requests_per_epoch": 5805
+    }
+  },
+  "initial_checkpoint": "results/recflow/development/window_6l_full_seed17/A/A_epoch3/checkpoint.pt",
+  "initial_checkpoint_sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+  "panels_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+  "experiment": "Same A3 fittedD1-18. B fits every6929 eligible D19 request once; compare with A on all10171 D20 positives. C restores this exact B and AdamW, fits every5805 eligible D20 request once; compare B/C on all8866 D21 positives. Two predeclared update learning rates1e-4 and3e-5; existing1e-3 one-epoch branch is the unchanged reference. Same four-rank DDP and epoch RNG. No early stopping or omitted requests.",
+  "evaluation_rule": "Unchanged FP32 free beam300 NDCG@50, same frozen1M catalog/full daily panels/all OOV misses. Retain all companions and their separate768-request sampled panels. Report relative improvement percentage100*(current-parent)/parent, absolute scores, hit requests/users, matched random and its5000-trial99th percentile. Preserve negative/zero/large gains.",
+  "working_gate": "Each parent/current must pass the existing2x random-expectation and>null99 checks; both future-day edges should improve. User's20-50% preferred magnitude is descriptive, not a qualification gate. Do not change metric/panel/denominator, omit an outcome, or search densely for a desired percentage.",
+  "interpretation": "Lower update LR controls actual parameter steps while preserving complete one-day training and inherited AdamW moments. Top-K metrics are discrete and need not vary monotonically with LR. This does not improve initial supervision coverage or establish convergence/long-term stability; broader initial-data training remains a distinct next hypothesis.",
+  "resource_estimate": {
+    "parameters": 194461521,
+    "training": "Four-rank DDP, global128. Existing measured daily B55steps~22s and C46steps~18s; four new full epochs total~80s pure training.",
+    "evaluation": "Reuse the already completed exact A/day20 evaluation after checkpoint, panel/order, decoder and raw aggregate checks. Six remaining full-day evaluations, four independent GPU workers each; previous actual350-385s/model/day plus startup.",
+    "total_wall_minutes": [
+      40,
+      50
+    ],
+    "execution": "Detached tmux; four serial phases on GPUs0/1/2/3, all per-phase logs and exit status retained. No expanded-data training."
+  },
+  "canary": "Actual A3 + four-rank263-request daily B at1e-4; verify saved optimizer LR1e-4, step4065→4068, finite loss and changed parameter. Existing unequal-tail/numerical and resident-evaluation canaries remain applicable. Runtime configurations record actual loaded optimizer LRs. Reuse of old parent evaluation is separately checked against wrong checkpoint/day/order.",
+  "reference_daily_run": "results/recflow/development/window_6l_daily_seed17",
+  "reused_A_day20_evaluation": "results/recflow/development/window_6l_daily_seed17/B_day19/parent_A_d20_20"
+}

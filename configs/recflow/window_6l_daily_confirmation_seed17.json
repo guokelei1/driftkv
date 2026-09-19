@@ -1,0 +1,56 @@
+{
+  "scope": "Prospective third daily update after exploratory LR/cutoff selection; development confirmation only, no formal admission.",
+  "authorization": "User authorizes continued complete-epoch parameter experiments on four GPUs and explicitly permits exploring NDCG settings for gentler daily updates.",
+  "status": "sealed_before_selected_C_or_D_day22_evaluation",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/daily_followup_panels_seed17/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 6,
+    "hidden": 192,
+    "heads": 6,
+    "batch_size": 128,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "epochs": 1,
+    "evaluation_epochs": [1],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [1000],
+    "log_every": 25,
+    "training_order": "shuffle"
+  },
+  "windows": {
+    "D": {
+      "fit": [21, 21],
+      "compare_parent_and_current": [22, 22],
+      "eligible_requests_per_epoch": 4312
+    }
+  },
+  "parent_checkpoint": "results/recflow/development/window_6l_daily_lr_seed17/lr1e4/C/C_epoch1/checkpoint.pt",
+  "parent_checkpoint_sha256": "f99af82c4eb030906c2bb79f25ec7e6c393b68ff6c476e26e1fed872b95ca152",
+  "panels_sha256": "26340065a26d23082a8a2ad0da61795dded825a5fa75b4c6f2c3da90d8038757",
+  "primary_scope": "full_catalog",
+  "primary_metric": "ndcg@100",
+  "selection": "Exploratory LR1e-4, one full daily epoch, free-catalog NDCG100 gives positive D20 and D21 gains15.64%/27.00% and both parent/current random checks pass. This retains free1M generation rather than changing to a sampled candidate task. Hit support is sparse; two positive edges are not proof of stability. All LR/cutoff/pool outcomes and the original NDCG50 reports remain retained.",
+  "experiment": "Continue exact C and AdamW step4166. Fit every4312 known-positive D21 request once, global128 over34 steps including88-request tail. Then compare exact C and D on all9039 positive D22 requests from the same512-user cohort; both scores are newly evaluated under the same frozen protocol. The768 diagnostic requests have separate denominators. Seed17 only.",
+  "working_rule": "At the preselected full_catalog NDCG100, parent and current each must be at least twice the matched uniform random expectation and above its5000-trial99th percentile, and current must exceed parent on D22. Report100*(current-parent)/parent. No20-50% cutoff, no changing metric/window after seeing this result, and retain any failure or large/negative gain.",
+  "companions": "Retain all original free and sampled uniform1000/popularity1000 NDCG/Recall20/50/100, own matched random and request/OOV denominators, absolute scores, and hit requests/users. Companions cannot rescue a failed selected primary confirmation.",
+  "data_boundary": "D22 has been used by other historical development branches. This is an additional chronological confirmation of a newly frozen configuration, not untouched final-role qualification. No admission/final-role results or Yambda theta3 are accessed.",
+  "resource_estimate": {
+    "devices": [0, 1, 2, 3],
+    "parameters": 194461521,
+    "training": "Four-rank DDP, global128,34 steps at measured~0.4s/step plus NLL/save/startup.",
+    "evaluation": "Two complete9039-request paired evaluations, four independent GPU workers, each~350-390s based on completed daily runs.",
+    "total_wall_minutes": [12, 16],
+    "execution": "Directly monitored short job; retain exact command, log, elapsed time and exit status. No other GPU job overlaps."
+  },
+  "canary": "Existing actual-A four-rank lower-LR continuation canary verifies real AdamW steps and LR1e-4; existing known-positive resident-evaluation and unequal-tail numerical canaries cover unchanged numerical paths. New focused CPU checks cover D predecessor/date mapping, unchanged C source hash, complete D21 known-index hash, D22 full/sample arrays, and NDCG100 primary selection. No equivalent GPU canary is repeated."
+}

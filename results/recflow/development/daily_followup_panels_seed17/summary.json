@@ -1,0 +1,184 @@
+{
+  "training_seed": 17,
+  "candidate_seed": 17,
+  "cohort_users": 512,
+  "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "cohort_rule": "Same fixed512 D1-18 development users with >=1024 real exposures, selected by initial stable UID hash. Later activity, OOV coverage and model outcomes never filter users.",
+  "catalog_items": 1000000,
+  "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+  "catalog_rule": "Same initial D1-18 catalog top1M by development exposure count descending, raw item ID ascending on ties; mapping sorted by raw ID. No catalog expansion or future-label selection.",
+  "epoch_definition": "Training arrays contain EVERY positive request in the window, with no150k cap. The current known-item objective traverses EVERY request containing a known positive exactly once; all-OOV fitting requests are excluded explicitly by train_phase and counted here. One sampled known positive per request is the existing objective; complete epoch does not mean every positive item is separately sampled.",
+  "zero_label_rule": "No-positive requests are absent from fitting/retrieval-score arrays but are counted and remain in real history. Unknown targets stay in evaluation denominators; all-OOV positive requests score zero.",
+  "data_manifest_sha256": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+  "sampled_panel_rule": "Sort every full day's positive requests by stable_hash(request_id,170256) XOR stable_hash(uid,256017), keep first min(768,available). This is a new fixed diagnostic subset, not the previous three-day 256-per-day subset. Candidate seed17 and its own denominator/random baseline apply.",
+  "scope": "CPU-only additional chronological DEVELOPMENT confirmation panels: C already fits through D20; a future D fits all eligible D21 requests for one complete epoch and C/D are compared on D22. No training or model results accessed by this script.",
+  "prior_exposure": "D22 was already examined in earlier three-day development experiments. This is not a newly untouched final holdout. Choose and freeze the development configuration before using this extra daily confirmation comparison.",
+  "configuration_selection": "No learning rate, NDCG cutoff, decoder or model configuration selected by data preparation.",
+  "context": 1024,
+  "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+  "data_file_sha256": {
+    "manifest.json": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+    "catalog.npz": "fa5387c1855af38a71da62d410747a1b0b586d02f28748c14d2b693362f3b571",
+    "population.npz": "ec32624632c1ace6c09a317ba348984fb87d9bc1eb1b15a5993e529f60f650e7",
+    "events.npy": "e5465deb7fd5c81eb92aea4c632832c4241035c1b875e7776d9a513154c3582c",
+    "requests.npy": "6929ec2df2bf3e4882608f2d05efe9b726c190c86df1227f785055ebed62bbc2",
+    "positives.npy": "8c42163fb63769ebe85bb032a7dacfe7dad4479e68f0a5e560a13b4427ba3f0a"
+  },
+  "training_cohort_users": 512,
+  "training_cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "evaluation_cohort_users": 512,
+  "evaluation_cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "request_selection": "Every positive request in complete D22; request mean retains all-OOV misses. No later-activity or coverage selection of UIDs.",
+  "evaluation_windows": [
+    [
+      22,
+      22
+    ]
+  ],
+  "primary": "Not selected by this data-only preparation; freeze the chosen development metric before the C/D comparison.",
+  "companions": "Retain existing full-catalog and sampled diagnostic metric fields and OOV denominators; candidate seed17.",
+  "arrays_file": "/home/gkl/work/evokv/results/recflow/development/daily_followup_panels_seed17/window_panels.npz",
+  "arrays_file_sha256": "26340065a26d23082a8a2ad0da61795dded825a5fa75b4c6f2c3da90d8038757",
+  "array_keys": [
+    "update_21_21",
+    "eval_22_22",
+    "sampled_22_22"
+  ],
+  "training": {
+    "update_21_21": {
+      "days": [
+        21,
+        21
+      ],
+      "all_logged_requests": 11547,
+      "zero_positive_requests_not_in_fitting_array": 2681,
+      "requests": 8866,
+      "users_with_requests": 426,
+      "positive_requests": 8866,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 4312,
+      "all_oov_positive_requests": 4554,
+      "positive_targets": 23170,
+      "known_positive_targets": 6236,
+      "oov_positive_targets": 16934,
+      "target_coverage": 0.2691411307725507,
+      "unique_known_positive_videos": 5825,
+      "unique_known_positive_raw_ids_sha256": "a7ef9401af185716d8590e805c6accbd7b605a26fbdc6fc0455e34ddf6279c00",
+      "minimum_prefix_events": 1081,
+      "requests_per_day": {
+        "21": 8866
+      },
+      "request_indices_sha256": "9f4cc7be004dec6dcf64dcb7d8d7206b45bb7ad2c59fe29252f7923914bff4f9",
+      "request_uids_sha256": "298891baaaac16cc858d9dfbdaa697daec93671fb2ccb6d33270da9aa41f5691",
+      "unique_uids_sha256": "82fcc240511b86e443f26f8c90dfb3fa9d0454ed7b7bfffe89be4cb6bb0bbbc3",
+      "positive_counts_sha256": "ed6971d4bd05001e66ef7ae77f1e21120fb9aa47d86f5ac1f54f910bf1be387b",
+      "known_positive_counts_sha256": "59173a176fc98be43e1a9936b1438be259abd620e96efe69d92d463a0922c7e6",
+      "known_training_indices_sha256": "1247fe7229b472adb659db53a53b467f63b7e9a7050427e8a986cb0ded843f64",
+      "global_batch128_steps_per_epoch": 34,
+      "global_batch128_final_batch_requests": 88
+    }
+  },
+  "evaluation": {
+    "22_22": {
+      "days": [
+        22,
+        22
+      ],
+      "all_logged_requests": 11651,
+      "zero_positive_requests_not_in_scoring_array": 2612,
+      "all_positive_requests": {
+        "requests": 9039,
+        "users_with_requests": 437,
+        "positive_requests": 9039,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 4014,
+        "all_oov_positive_requests": 5025,
+        "positive_targets": 23830,
+        "known_positive_targets": 5656,
+        "oov_positive_targets": 18174,
+        "target_coverage": 0.23734788082249267,
+        "unique_known_positive_videos": 5310,
+        "unique_known_positive_raw_ids_sha256": "2b1218e73ab46c49ebc86aa2a7fc20e596baae44258d09adf12049e7d071884e",
+        "minimum_prefix_events": 1088,
+        "requests_per_day": {
+          "22": 9039
+        },
+        "request_indices_sha256": "b7aa47235632b5eba0c2e1027bcf16abfc702566b6a1777edcd5958dccbf8b15",
+        "request_uids_sha256": "df7ab4b56e43e052525649da6ba20e507e188ce75fc31a1ebae1410b1423ff75",
+        "unique_uids_sha256": "86aa349e41d7760322ee3d45cd9ce69bf00ea57e529e657a34441e82889e9d2f",
+        "positive_counts_sha256": "463d6564c53f82b5719dd99a71d34bcae1b47067d7970330139331ba3810cfec",
+        "known_positive_counts_sha256": "4a3bcee1349188abf725fcb3a4ece7d265f525df6878e142b2bcf6bee1f97b3e"
+      },
+      "free_panel_key": "eval_22_22",
+      "free_panel": {
+        "requests": 9039,
+        "users_with_requests": 437,
+        "positive_requests": 9039,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 4014,
+        "all_oov_positive_requests": 5025,
+        "positive_targets": 23830,
+        "known_positive_targets": 5656,
+        "oov_positive_targets": 18174,
+        "target_coverage": 0.23734788082249267,
+        "unique_known_positive_videos": 5310,
+        "unique_known_positive_raw_ids_sha256": "2b1218e73ab46c49ebc86aa2a7fc20e596baae44258d09adf12049e7d071884e",
+        "minimum_prefix_events": 1088,
+        "requests_per_day": {
+          "22": 9039
+        },
+        "request_indices_sha256": "b7aa47235632b5eba0c2e1027bcf16abfc702566b6a1777edcd5958dccbf8b15",
+        "request_uids_sha256": "df7ab4b56e43e052525649da6ba20e507e188ce75fc31a1ebae1410b1423ff75",
+        "unique_uids_sha256": "86aa349e41d7760322ee3d45cd9ce69bf00ea57e529e657a34441e82889e9d2f",
+        "positive_counts_sha256": "463d6564c53f82b5719dd99a71d34bcae1b47067d7970330139331ba3810cfec",
+        "known_positive_counts_sha256": "4a3bcee1349188abf725fcb3a4ece7d265f525df6878e142b2bcf6bee1f97b3e"
+      },
+      "sampled_panel_key": "sampled_22_22",
+      "sampled_panel": {
+        "requests": 768,
+        "users_with_requests": 303,
+        "positive_requests": 768,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 317,
+        "all_oov_positive_requests": 451,
+        "positive_targets": 2045,
+        "known_positive_targets": 467,
+        "oov_positive_targets": 1578,
+        "target_coverage": 0.22836185819070903,
+        "unique_known_positive_videos": 464,
+        "unique_known_positive_raw_ids_sha256": "dc12adbdb5e4361442bbf95c4996f8e72b3765042105190271b00e7c6eb40337",
+        "minimum_prefix_events": 1145,
+        "requests_per_day": {
+          "22": 768
+        },
+        "request_indices_sha256": "c5584b5b60f0d91698e1fe8b66a91a0358e764a25ca09d97dc90becaea677a9a",
+        "request_uids_sha256": "9c9be9b65cbbc4757be7de7d93cad69a1f6c1be0dd041880180ddb13bb01b918",
+        "unique_uids_sha256": "8f5668d91015587e897b5d2a54557bfc29e19c667205eafcbd94bb4330c54bdc",
+        "positive_counts_sha256": "0fbc3f71d62d62fabaa33c1cf37d308a3a745c6c1bfc08c124afa38afe99c43d",
+        "known_positive_counts_sha256": "7c5ceebbb649fc8407afc61e0ae36ded5d639b86cf33774dc20838c185cc583d"
+      }
+    }
+  },
+  "source_panels": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+  "source_panels_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+  "source_manifest": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/summary.json",
+  "source_manifest_sha256": "30412b5fad90fd6603dcbf08cbdc9b8ec36e4e33ce57f193a36f2eb26a34da4e",
+  "checks": {
+    "development_only": true,
+    "same_training_evaluation_cohort": true,
+    "training_d21_npy_member_byte_identical_to_source_evaluation_d21": true,
+    "complete_positive_request_windows": true,
+    "sampled_is_subset_of_free": true,
+    "complete_timestamp_block_excluded": true,
+    "minimum_history_at_least1024": true,
+    "source_files_unchanged": true,
+    "model_results_not_accessed": true
+  },
+  "source_sha256": {
+    "scripts/recflow/daily_followup_panels.py": "4a0b4b68351d1d4e993c2258040f5a1c5337c330d1ebe96d3d002df61282b484",
+    "scripts/recflow/daily_window_panels.py": "687654edd0e0678521fb1280fe1efd26038d80f918b872830f0c388c8dc4b55e",
+    "scripts/recflow/window_panels.py": "5c60ecaae40fbeadac593bd35d932d49a052aa49b4368607f541d040b93d8f21",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7"
+  },
+  "elapsed_seconds": 4.4411462508141994
+}

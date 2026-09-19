@@ -1,0 +1,175 @@
+{
+  "scope": "Prospective CPU data-budget calculation on the fixed eligible DEVELOPMENT population only; no model evaluation, population training, epoch decision, launch contract or launch authorization.",
+  "cohort_users": 4569,
+  "cohort_sha256": "3055c41f1823cd4fb7ad819952d7554e466c5deb58bffb6db686e5d2a0d5ac5a",
+  "cohort_selection": "All fixed D1-18 development UIDs with >=1024 real-exposure history events; stable_hash(uid,salt=1818) order; no later-activity selection.",
+  "catalog_items": 1000000,
+  "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+  "catalog_selection": "Top1,000,000 initial D1-18 development_exposure_count descending; raw_item_id ascending breaks ties; sorted raw IDs determine item mapping.",
+  "positive_definition": "Distinct effective_view=1 videos per complete request. Known-positive requests contain >=1 target inside the fixed 1M catalog and determine training objective budget; all OOV targets remain in coverage denominator.",
+  "fixed_fitting_windows": [
+    [
+      1,
+      18
+    ],
+    [
+      19,
+      21
+    ],
+    [
+      22,
+      24
+    ],
+    [
+      25,
+      27
+    ],
+    [
+      28,
+      30
+    ],
+    [
+      31,
+      33
+    ]
+  ],
+  "first_date": "2024-01-13",
+  "prepared_source_sha256": "dcdabb81bcb62ab91123582baf53d19c19f4b533434e2ce4f8ca9edab488d276",
+  "cost_calculation": {
+    "reference_requests_per_second": {
+      "6L_H192_context1024_B32": 97.9,
+      "10L_H320_context1024_B8": 24.30084
+    },
+    "measurement_scope": "Previously measured small 1M-catalog context1024 resource probes supplied by root; these are not measured population throughputs.",
+    "formula": "one_pass_seconds = known_positive_requests / measured_probe_requests_per_second",
+    "limitations": "A one-pass objective budget counts each trainable request once; sampled minibatch SGD may choose a different budget. Rates omit or do not establish population I/O, checkpointing, evaluation, multi-seed cost, other job contention, and longer-duration throughput. No epoch count is selected."
+  },
+  "windows": [
+    {
+      "window": "D1-18",
+      "day_start": 1,
+      "day_end": 18,
+      "requests": 2167573,
+      "positive_requests": 1686223,
+      "known_positive_requests": 1539612,
+      "all_oov_positive_requests": 146611,
+      "positive_targets": 4480691,
+      "known_positive_targets": 3593897,
+      "target_coverage": 0.8020854372684927,
+      "one_pass_seconds": {
+        "6L_H192_context1024_B32": 15726.373850868233,
+        "10L_H320_context1024_B8": 63356.328423214996
+      },
+      "one_pass_hours": {
+        "6L_H192_context1024_B32": 4.3684371807967315,
+        "10L_H320_context1024_B8": 17.598980117559723
+      }
+    },
+    {
+      "window": "D19-21",
+      "day_start": 19,
+      "day_end": 21,
+      "requests": 303402,
+      "positive_requests": 236395,
+      "known_positive_requests": 138921,
+      "all_oov_positive_requests": 97474,
+      "positive_targets": 623298,
+      "known_positive_targets": 225980,
+      "target_coverage": 0.3625553106218855,
+      "one_pass_seconds": {
+        "6L_H192_context1024_B32": 1419.0091930541369,
+        "10L_H320_context1024_B8": 5716.715965374036
+      },
+      "one_pass_hours": {
+        "6L_H192_context1024_B32": 0.3941692202928158,
+        "10L_H320_context1024_B8": 1.5879766570483433
+      }
+    },
+    {
+      "window": "D22-24",
+      "day_start": 22,
+      "day_end": 24,
+      "requests": 285539,
+      "positive_requests": 220962,
+      "known_positive_requests": 96362,
+      "all_oov_positive_requests": 124600,
+      "positive_targets": 579332,
+      "known_positive_targets": 134264,
+      "target_coverage": 0.231756574813751,
+      "one_pass_seconds": {
+        "6L_H192_context1024_B32": 984.2900919305413,
+        "10L_H320_context1024_B8": 3965.377328520331
+      },
+      "one_pass_hours": {
+        "6L_H192_context1024_B32": 0.27341391442515034,
+        "10L_H320_context1024_B8": 1.1014937023667586
+      }
+    },
+    {
+      "window": "D25-27",
+      "day_start": 25,
+      "day_end": 27,
+      "requests": 271105,
+      "positive_requests": 211165,
+      "known_positive_requests": 84943,
+      "all_oov_positive_requests": 126222,
+      "positive_targets": 556586,
+      "known_positive_targets": 115196,
+      "target_coverage": 0.20696891405820483,
+      "one_pass_seconds": {
+        "6L_H192_context1024_B32": 867.6506639427987,
+        "10L_H320_context1024_B8": 3495.4758765540614
+      },
+      "one_pass_hours": {
+        "6L_H192_context1024_B32": 0.2410140733174441,
+        "10L_H320_context1024_B8": 0.970965521265017
+      }
+    },
+    {
+      "window": "D28-30",
+      "day_start": 28,
+      "day_end": 30,
+      "requests": 265709,
+      "positive_requests": 199668,
+      "known_positive_requests": 71589,
+      "all_oov_positive_requests": 128079,
+      "positive_targets": 508541,
+      "known_positive_targets": 93896,
+      "target_coverage": 0.18463801345417577,
+      "one_pass_seconds": {
+        "6L_H192_context1024_B32": 731.2461695607763,
+        "10L_H320_context1024_B8": 2945.9475474921855
+      },
+      "one_pass_hours": {
+        "6L_H192_context1024_B32": 0.20312393598910453,
+        "10L_H320_context1024_B8": 0.8183187631922738
+      }
+    },
+    {
+      "window": "D31-33",
+      "day_start": 31,
+      "day_end": 33,
+      "requests": 264396,
+      "positive_requests": 202265,
+      "known_positive_requests": 69389,
+      "all_oov_positive_requests": 132876,
+      "positive_targets": 520154,
+      "known_positive_targets": 89296,
+      "target_coverage": 0.17167223553024683,
+      "one_pass_seconds": {
+        "6L_H192_context1024_B32": 708.7742594484167,
+        "10L_H320_context1024_B8": 2855.415697564364
+      },
+      "one_pass_hours": {
+        "6L_H192_context1024_B32": 0.1968817387356713,
+        "10L_H320_context1024_B8": 0.7931710271012122
+      }
+    }
+  ],
+  "total_known_positive_requests": 2000816,
+  "one_pass_all_windows_hours": {
+    "6L_H192_context1024_B32": 5.677040063556917,
+    "10L_H320_context1024_B8": 22.870905788533324
+  },
+  "audit_seconds": 1.5004854295402765
+}

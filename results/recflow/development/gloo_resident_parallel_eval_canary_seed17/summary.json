@@ -1,0 +1,84 @@
+{
+  "scope": "Read-only eight-request integration canary, no fitting or admission.",
+  "passed": true,
+  "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_2l_seed17/A/A_epoch3/checkpoint.pt",
+  "checkpoint_phase": "A",
+  "checkpoint_epoch": 3,
+  "cuda_visible_devices": "2,3",
+  "waiting_backend": "gloo",
+  "training_backend": "nccl",
+  "training_optimizer_updates": 0,
+  "resident_training_processes": [
+    {
+      "rank": 0,
+      "device": "cuda:0",
+      "allocated_bytes": 1580788224,
+      "reserved_bytes": 1593835520,
+      "optimizer_step_values": [
+        4065
+      ]
+    },
+    {
+      "rank": 1,
+      "device": "cuda:1",
+      "allocated_bytes": 1580788224,
+      "reserved_bytes": 1593835520,
+      "optimizer_step_values": [
+        4065
+      ]
+    }
+  ],
+  "waiting_processes": [
+    {
+      "rank": 0,
+      "elapsed_seconds": 7.903102965094149
+    },
+    {
+      "rank": 1,
+      "elapsed_seconds": 7.903266668319702
+    }
+  ],
+  "full_requests": 8,
+  "sampled_requests": 3,
+  "parallel_evaluation": {
+    "sharding": "Strided full-panel positions; sampled diagnostics use each shard's intersection.",
+    "parallel_wall_seconds": 5.503877482376993,
+    "wall_time_scope": "Worker dispatch through completion, including process/data/model startup; excludes coordinator merge.",
+    "sum_worker_evaluation_seconds": 2.034755075350404,
+    "cost_note": "Request sharding reduces elapsed time; this is not a claim of reduced GPU-seconds.",
+    "peak_memory_scope": "Top-level peaks are the maximum per GPU, not the sum across GPUs.",
+    "workers": [
+      {
+        "rank": 0,
+        "device": "cuda:0",
+        "cuda_visible_devices": "2,3",
+        "device_name": "NVIDIA A40",
+        "total_seconds": 3.5062639648094773,
+        "evaluation_seconds": 1.1532803634181619,
+        "full_requests": 4,
+        "sampled_requests": 2,
+        "peak_allocated_bytes": 3051992064,
+        "peak_reserved_bytes": 8139046912
+      },
+      {
+        "rank": 1,
+        "device": "cuda:1",
+        "cuda_visible_devices": "2,3",
+        "device_name": "NVIDIA A40",
+        "total_seconds": 3.2423367127776146,
+        "evaluation_seconds": 0.8814747119322419,
+        "full_requests": 4,
+        "sampled_requests": 1,
+        "peak_allocated_bytes": 3079706112,
+        "peak_reserved_bytes": 4863295488
+      }
+    ]
+  },
+  "memory_note": "Worker peaks are separate from resident DDP/model/optimizer allocations and are not total physical GPU peaks.",
+  "source_sha256": {
+    "/home/gkl/work/evokv/scripts/recflow/window_chain.py": "1967486be1878ea05ce0ec4ab3f4323a08cae6b9fc4ef9b94df3feb42839aba0",
+    "/home/gkl/work/evokv/scripts/recflow/parallel_evaluate.py": "76b4611d7fe559f42f79b42120a83221d9a7b3f63c2850d610e67b5f2ddb9da4",
+    "/home/gkl/work/evokv/scripts/recflow/distributed_probe.py": "cc855357ad0d5b72ce0ad32b1de07865af518a32aeab45a1b1dd84c4b5717d89",
+    "/tmp/recflow_gloo_evaluation_canary.py": "2d49255447c36cec1de51e5c82267cd1afc9eb3fc2330c3f9015339b76f2c671"
+  }
+}

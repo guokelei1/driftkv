@@ -1,0 +1,59 @@
+{
+  "scope": "User-authorized single-seed complete-epoch A/B/C development before six-layer progression.",
+  "authorization": "The 2026-09-18 user instruction explicitly requests complete-window A/B tests, parameter iteration, optional C, and six-layer progression if these work. This replaces the earlier pending one-pass question. Use detached tmux for long runs and retain all outcomes.",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/seed17_complete_epoch_windows/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 2,
+    "hidden": 96,
+    "heads": 3,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1.0,
+    "epochs": 3,
+    "evaluation_epochs": [1, 3],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [1000],
+    "log_every": 100
+  },
+  "windows": {
+    "A": {"fit": [1, 18], "evaluate": [19, 21], "eligible_requests_per_epoch": 173395},
+    "B": {"fit": [19, 21], "compare_parent_and_current": [22, 24], "eligible_requests_per_epoch": 17046},
+    "C": {"fit": [22, 24], "compare_parent_and_current": [25, 27], "eligible_requests_per_epoch": 10854}
+  },
+  "training_rule": "No request cap or timed training endpoint. Every epoch visits every request with an in-catalog positive once, including the last partial minibatch; sample one known positive uniformly per request each epoch. All-OOV fitting requests are explicitly counted and excluded from this known-item loss only. A/B/C continue real parent model and optimizer state. Default candidate is three full epochs for each phase; epoch1 retrieval is a learning-curve companion, not an automatic switch to the best future-label endpoint.",
+  "training_sufficiency": "Retain complete-epoch mean loss and fixed training-only2048-request/target NLL before fitting and after every epoch. A fixed three-epoch budget is not proof of convergence; if it is still insufficient, record that fact and test a stated subsequent setting. Never rename a partial epoch as a completed model.",
+  "evaluation_rule": "Frozen3072-request free-generation panel,1024 per day; separate frozen768-request sampled-diagnostic subset,256 per day. Uniform/popularity1000 share subset and candidate seed17. Preserve OOV misses, per-day results, request means and user means. A/B or B/C share identical future panels. Only development users are scored.",
+  "working_gate": "Primary free-catalog beam300 FP32 NDCG@50. A must clearly beat matched random on D19-21; A and B must each beat random on D22-24 and B must improve over A there. Optional C repeats the same logic with B/C on D25-27. Report analytic random expectation and5000-trial random-policy variation. Keep the existing2x expectation and>null99 flags as declared working checks; companions do not replace the primary if it fails. Inspect all daily directions; do not select favorable days or cutoffs. Sampled diagnostics are not proof of free-generation quality.",
+  "parameter_iteration": "This first preset changes to full windows/epochs and fixes one seed as requested. Keep lr1e-3, original loss and ID-only history. Later parameter tests change a stated training setting and retain the same evaluation panels, windows and random comparison. No final/admission outcomes are read.",
+  "resource_estimate": {
+    "device": "One NVIDIA A40, GPU0; serial phases. CPU audits and read-only evaluation may be parallelized separately.",
+    "training_canary": "results/recflow/development/resource_2l_h96_c1024_k1m_seed17_b128/summary.json",
+    "measured_canary_requests_per_second": 353.5894102499476,
+    "measured_training_peak_allocated_bytes": 8979299328,
+    "measured_training_peak_reserved_bytes": 10806624256,
+    "completed_pipeline_canaries": [
+      "results/recflow/development/window_canary_2l_seed17_A/summary.json",
+      "results/recflow/development/window_canary_2l_seed17_B/summary.json"
+    ],
+    "canary_checks": "Both tiny phases completed263/263 eligible requests in3 batches including a7-request tail. A-to-B model and real optimizer restoration passed; fixed training-probe request/target hashes agree before/after fitting. Separate8-request free and4-request sampled panels passed the matched random analysis. These are execution checks, not quality qualification.",
+    "A_one_epoch_minutes_calculated": 8.17,
+    "B_one_epoch_minutes_calculated": 0.80,
+    "C_one_epoch_minutes_calculated": 0.51,
+    "evaluation_estimate": "Initial free-only8-request canary took0.518s. The new pipeline canaries took1.45-1.60s for8 free requests plus4 sampled requests (each scored under both samplers). Combining the measured free cost with768/3072 sampled coverage gives roughly6-7min per full window. Trained tree distribution and small-probe overhead remain uncertain.",
+    "A_three_epochs_with_two_evaluations_minutes_estimated": [35, 45],
+    "B_three_epochs_with_parent_and_two_current_evaluations_minutes_estimated": [18, 28],
+    "C_three_epochs_with_parent_and_two_current_evaluations_minutes_estimated": [17, 27],
+    "execution": "Detached tmux for expected>30min jobs; retain run.log and exit_status.txt. Source/settings/data hashes are saved by the runner. These are estimates, not measured complete-epoch execution."
+  },
+  "progression": "First inspect the complete small-backbone A/B result and, if useful, C stability. If the stable window checks pass, use the same protocol for the authorized six-layer model with a focused canary and measured resource estimate first. This is not formal phi admission, a Yambda result, or theta3 access."
+}

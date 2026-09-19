@@ -1,0 +1,425 @@
+{
+  "scope": "CPU training-capacity and cost calculation only. No training, GPU use, new training/evaluation panels, population launch, model scoring, or labels outside the specified fitting windows.",
+  "training_seed": 17,
+  "cohort_rule": "PreparedRecFlow.cohort(min_history=1024,limit=N): initial D1\u201318 development-role users with at least1024 real exposure events, stable_hash(uid,salt=1818) ascending. Cohort growth extends this original hash order, without future-activity or outcome selection.",
+  "catalog_rule": "Fixed initial top1M by development_exposure_count descending, raw_item_id ascending tie; ProbeData builds catalog independently of cohort_users. Actual catalogs were rebuilt for each size and verified identical.",
+  "read_scope": "Only selected DEVELOPMENT users and fitting windows D1\u201318, D19\u201321, D22\u201324 are used for target counts. No D25+ labels, admission/final roles, or model metrics are read.",
+  "data_manifest_sha256": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+  "checks": {
+    "old512_same_as_frozen_manifest": true,
+    "512_is_exact_prefix_of1024": true,
+    "512_is_exact_prefix_of2048": true,
+    "1024_is_exact_prefix_of2048": true,
+    "catalog_hash_identical_for_all_sizes": true,
+    "old512_request_and_known_training_hashes_match_frozen_audit": true,
+    "development_only": true
+  },
+  "resource_measurements": {
+    "2L_H96_heads3_dual_gpu": {
+      "source": "/home/gkl/work/evokv/results/recflow/development/ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json",
+      "source_sha256": "747ff41d6159d86fcabdea5152ee856499e57ef32e6ab710238fa03f750ed74c",
+      "measured_canary_requests_per_second": 788.0705019103224,
+      "rounded_planning_requests_per_second": 790,
+      "global_batch_size": 128,
+      "world_size": 2,
+      "context": 1024,
+      "measured_steps": 12
+    },
+    "6L_H192_heads6_dual_gpu": {
+      "source": "/home/gkl/work/evokv/results/recflow/development/ddp_6l_h192_heads6_c1024_k1m_seed17_gpu23/summary.json",
+      "source_sha256": "5d8a6540d1abf2a57e183354f7b2766f3721e8b2d4b352f87abd3f192a62fc70",
+      "measured_canary_requests_per_second": 199.53321998420134,
+      "rounded_planning_requests_per_second": 200,
+      "global_batch_size": 128,
+      "world_size": 2,
+      "context": 1024,
+      "measured_steps": 12
+    }
+  },
+  "calculation": "seconds=3*known_positive_requests/rounded_canary_requests_per_second. Each complete epoch visits every known-positive request once; all-OOV requests are counted but excluded from this known-item objective. These are two-GPU elapsed training estimates only, not measured larger-cohort runs; no eval, NLL probes, checkpoint I/O, input/startup variation or longer-job overhead included. Parameter/catalog size and context remain fixed.",
+  "interpretation": "Unique-positive counts measure available supervised item diversity; they are not a sufficiency or learnability certificate. Larger cohorts may provide more direct target coverage but this audit does not predict model gains or authorize expansion.",
+  "cohorts": {
+    "512": {
+      "cohort_users": 512,
+      "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+      "catalog_items": 1000000,
+      "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+      "training_windows": {
+        "A_D1_18": {
+          "days": [
+            1,
+            18
+          ],
+          "positive_requests": 189894,
+          "known_positive_requests": 173395,
+          "all_oov_positive_requests": 16499,
+          "positive_targets": 500506,
+          "known_positive_targets": 401443,
+          "oov_positive_targets": 99063,
+          "target_coverage": 0.8020743008075827,
+          "users_with_positive_requests": 512,
+          "request_indices_sha256": "89a6704f421b8bc7cdc3b84849d19a1c7bc9b7943bb4f14fc08579392e211cf1",
+          "known_request_indices_sha256": "c74726e882a75648be97951d12ae10652c51c8cd1cbd2569493dc8a2d8d7fd24",
+          "positive_counts_sha256": "922e03947bf345de922857e8f254571142dcf738fc83a73cbd246d108b642c92",
+          "known_positive_counts_sha256": "2e4370fb48d850f9bf412b0be8743bb135f1fa98ca0c0360e96ff832acb260d1",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 219.4873417721519,
+              "three_epoch_seconds": 658.4620253164557,
+              "three_epoch_minutes": 10.974367088607595
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 866.975,
+              "three_epoch_seconds": 2600.925,
+              "three_epoch_minutes": 43.34875
+            }
+          }
+        },
+        "B_D19_21": {
+          "days": [
+            19,
+            21
+          ],
+          "positive_requests": 29027,
+          "known_positive_requests": 17046,
+          "all_oov_positive_requests": 11981,
+          "positive_targets": 75936,
+          "known_positive_targets": 27605,
+          "oov_positive_targets": 48331,
+          "target_coverage": 0.36352981458069955,
+          "users_with_positive_requests": 486,
+          "request_indices_sha256": "d5010aaf16d9d4e089bb83afb632d93dec8559f0c74930aff1852822cc9a4fd7",
+          "known_request_indices_sha256": "8c376b4ed421d71af82f704283c8dd5ee9ef60d87b5c329fb812c51f033d0a4f",
+          "positive_counts_sha256": "854859c44605013bb3ef13ace695e1c7821496093505927b7b9d874488eb104d",
+          "known_positive_counts_sha256": "b696bd75250929e43e6b6864a97dc5750977af8789e3de507c27e820c2e1a892",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 21.577215189873417,
+              "three_epoch_seconds": 64.73164556962026,
+              "three_epoch_minutes": 1.078860759493671
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 85.23,
+              "three_epoch_seconds": 255.69,
+              "three_epoch_minutes": 4.2615
+            }
+          }
+        },
+        "C_D22_24": {
+          "days": [
+            22,
+            24
+          ],
+          "positive_requests": 25694,
+          "known_positive_requests": 10854,
+          "all_oov_positive_requests": 14840,
+          "positive_targets": 66902,
+          "known_positive_targets": 15008,
+          "oov_positive_targets": 51894,
+          "target_coverage": 0.22432812173029207,
+          "users_with_positive_requests": 475,
+          "request_indices_sha256": "a927752b07c84e8d04bf945abd26ac99651090d186c84fe8d6befbdbf97cabfb",
+          "known_request_indices_sha256": "74068bb04c5ed41f3de69e305bf76e8e2d760ea33a245671a4a0043652a2d20f",
+          "positive_counts_sha256": "41617aa5c1d4ae796103cef8c2aba4a69f83b0ebdac7d1055c0c30a411c3b2ec",
+          "known_positive_counts_sha256": "d585915ea2af293bb4b08a3389f30aec8891542a89d79950775ffda99aef44ff",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 13.739240506329114,
+              "three_epoch_seconds": 41.21772151898734,
+              "three_epoch_minutes": 0.6869620253164557
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 54.27,
+              "three_epoch_seconds": 162.81,
+              "three_epoch_minutes": 2.7135000000000002
+            }
+          }
+        }
+      },
+      "initial_unique_known_positive_videos": {
+        "days": [
+          1,
+          18
+        ],
+        "count": 257262,
+        "fraction_of_fixed_catalog": 0.257262,
+        "raw_ids_sha256": "be0ee9d1679ecb24089192d12b58545ebef6b09e4d825a82f6294222b5af3a80",
+        "definition": "Distinct fixed-catalog videos among all observed positive targets in the complete initial training pool, not just the one-positive-per-request targets sampled by optimizer steps."
+      },
+      "all_three_windows_training_only_minutes": {
+        "2L_H96_heads3_dual_gpu": 12.740189873417721,
+        "6L_H192_heads6_dual_gpu": 50.323750000000004
+      },
+      "first512_uid_order_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54"
+    },
+    "1024": {
+      "cohort_users": 1024,
+      "cohort_sha256": "d21a67c0bd2a34945490817c2e95acaaa98de3e8d05e3d19220e0ea9b94ee0e2",
+      "catalog_items": 1000000,
+      "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+      "training_windows": {
+        "A_D1_18": {
+          "days": [
+            1,
+            18
+          ],
+          "positive_requests": 374436,
+          "known_positive_requests": 342267,
+          "all_oov_positive_requests": 32169,
+          "positive_targets": 998228,
+          "known_positive_targets": 801876,
+          "oov_positive_targets": 196352,
+          "target_coverage": 0.8032994466194096,
+          "users_with_positive_requests": 1024,
+          "request_indices_sha256": "97ed9214ddff260a2b5071445733ffb406048e05b8ee3e5c7621bf7ec25953ae",
+          "known_request_indices_sha256": "39ba84e7ac7880952e1a43108be5d6cd268b86467dcf9c6f13dc3916a9003af4",
+          "positive_counts_sha256": "68b7070293d1daf94b4fc2532b8e253611130004e0ec64055ed86f4753e9e2af",
+          "known_positive_counts_sha256": "bc4a20e22d9c6b0f420e1ea21604bb8f8d25c3f5ebb64567930631c7d4b3bc17",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 433.2493670886076,
+              "three_epoch_seconds": 1299.7481012658227,
+              "three_epoch_minutes": 21.662468354430377
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 1711.335,
+              "three_epoch_seconds": 5134.005,
+              "three_epoch_minutes": 85.56675
+            }
+          }
+        },
+        "B_D19_21": {
+          "days": [
+            19,
+            21
+          ],
+          "positive_requests": 55163,
+          "known_positive_requests": 32599,
+          "all_oov_positive_requests": 22564,
+          "positive_targets": 146197,
+          "known_positive_targets": 53100,
+          "oov_positive_targets": 93097,
+          "target_coverage": 0.3632085473710131,
+          "users_with_positive_requests": 968,
+          "request_indices_sha256": "e53ad145df93c1604de3050f0ca00891715b8a82a150faaa8839249c6a4561ca",
+          "known_request_indices_sha256": "eaee244e813a76b2d125440ebf394d651ec5e0d949c1e788acbfbad544d7e9e9",
+          "positive_counts_sha256": "cacdf21750462b624d151cc040302aebd0d03bf631835fd12560ecdfabf85e80",
+          "known_positive_counts_sha256": "16ef90280560f0a61f518cd9bbb8cff47524ac246e4b3aa4552979386ffc5b82",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 41.26455696202532,
+              "three_epoch_seconds": 123.79367088607594,
+              "three_epoch_minutes": 2.0632278481012656
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 162.995,
+              "three_epoch_seconds": 488.985,
+              "three_epoch_minutes": 8.149750000000001
+            }
+          }
+        },
+        "C_D22_24": {
+          "days": [
+            22,
+            24
+          ],
+          "positive_requests": 49583,
+          "known_positive_requests": 21520,
+          "all_oov_positive_requests": 28063,
+          "positive_targets": 130899,
+          "known_positive_targets": 30160,
+          "oov_positive_targets": 100739,
+          "target_coverage": 0.23040664940144692,
+          "users_with_positive_requests": 945,
+          "request_indices_sha256": "73caef8fdce3eca5dfbba07308b6642d19e49c2da8fb3685105ef57af3963cf8",
+          "known_request_indices_sha256": "b8ddd98042a0519356078b7aeceef3db93dbbe97611b08dd209e66445db008e9",
+          "positive_counts_sha256": "ed0823a861e1597546d7cf7b37bfb13b6cc726ae45e473555cdd8ccb4c15cc3e",
+          "known_positive_counts_sha256": "d910c4b0a952e4f31a0e16c0a40dcc6e6b408699434051396ac436352dc78980",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 27.240506329113924,
+              "three_epoch_seconds": 81.72151898734177,
+              "three_epoch_minutes": 1.3620253164556961
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 107.6,
+              "three_epoch_seconds": 322.8,
+              "three_epoch_minutes": 5.38
+            }
+          }
+        }
+      },
+      "initial_unique_known_positive_videos": {
+        "days": [
+          1,
+          18
+        ],
+        "count": 407343,
+        "fraction_of_fixed_catalog": 0.407343,
+        "raw_ids_sha256": "5f710082079f566a1fb135b58bb64ec2afda04a1e662c9743a5897835df368dc",
+        "definition": "Distinct fixed-catalog videos among all observed positive targets in the complete initial training pool, not just the one-positive-per-request targets sampled by optimizer steps."
+      },
+      "all_three_windows_training_only_minutes": {
+        "2L_H96_heads3_dual_gpu": 25.08772151898734,
+        "6L_H192_heads6_dual_gpu": 99.0965
+      },
+      "first512_uid_order_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+      "first1024_uid_order_sha256": "d21a67c0bd2a34945490817c2e95acaaa98de3e8d05e3d19220e0ea9b94ee0e2"
+    },
+    "2048": {
+      "cohort_users": 2048,
+      "cohort_sha256": "a76f1343fcbe7b8ac7d8d536e9c3a2aae03e4427a519059722812c2e106bc5ef",
+      "catalog_items": 1000000,
+      "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+      "training_windows": {
+        "A_D1_18": {
+          "days": [
+            1,
+            18
+          ],
+          "positive_requests": 739106,
+          "known_positive_requests": 675594,
+          "all_oov_positive_requests": 63512,
+          "positive_targets": 1977489,
+          "known_positive_targets": 1585244,
+          "oov_positive_targets": 392245,
+          "target_coverage": 0.8016449143332782,
+          "users_with_positive_requests": 2048,
+          "request_indices_sha256": "15720cbd2b8b82a811a8834b2b6b694f106e70cfbeba3cb57989cafeafca9c79",
+          "known_request_indices_sha256": "a81bd72cfd55bb0ddc02a1ad930256a42ecf3c8e22b5401152f77a6a9b0d5995",
+          "positive_counts_sha256": "8432e8fd6e6ad620b7de61bf1d50b80b51f3ef566f3636c8c9ca49d54a119651",
+          "known_positive_counts_sha256": "8cfed49d1437c820d083171675fde22f5653a2a893a1a79f7c0d2866bd511a0b",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 855.1822784810126,
+              "three_epoch_seconds": 2565.546835443038,
+              "three_epoch_minutes": 42.75911392405064
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 3377.97,
+              "three_epoch_seconds": 10133.91,
+              "three_epoch_minutes": 168.89849999999998
+            }
+          }
+        },
+        "B_D19_21": {
+          "days": [
+            19,
+            21
+          ],
+          "positive_requests": 106686,
+          "known_positive_requests": 63483,
+          "all_oov_positive_requests": 43203,
+          "positive_targets": 283448,
+          "known_positive_targets": 104058,
+          "oov_positive_targets": 179390,
+          "target_coverage": 0.3671149558296407,
+          "users_with_positive_requests": 1920,
+          "request_indices_sha256": "59a61b9fe66902b35908bfd7b4c47fae77c40c5e67a62f54228e7f7cfb032e06",
+          "known_request_indices_sha256": "6bdaf6186db3d999f74ef3132e22555c2173f10b2ddd3ad1def57288049f06f5",
+          "positive_counts_sha256": "387fe6b673d52ff576a779cac4ba14bc29ba64f8d2d01a952d013b8e09ccf218",
+          "known_positive_counts_sha256": "63c3fb3d40aec69309b57ca68c3fcb562fd65e4f333fe151d137a9b76a6f80b7",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 80.35822784810127,
+              "three_epoch_seconds": 241.0746835443038,
+              "three_epoch_minutes": 4.017911392405064
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 317.415,
+              "three_epoch_seconds": 952.245,
+              "three_epoch_minutes": 15.87075
+            }
+          }
+        },
+        "C_D22_24": {
+          "days": [
+            22,
+            24
+          ],
+          "positive_requests": 97351,
+          "known_positive_requests": 43024,
+          "all_oov_positive_requests": 54327,
+          "positive_targets": 257027,
+          "known_positive_targets": 60193,
+          "oov_positive_targets": 196834,
+          "target_coverage": 0.23418940422601517,
+          "users_with_positive_requests": 1867,
+          "request_indices_sha256": "c8de4b483d314025ffd10cd8c7b774247d0aa2b9ce0a2c4c068615b1d2557ea0",
+          "known_request_indices_sha256": "d753afa21cf2f8573ede39b9dbd29e506d9af92dcd879699fb8f9bdcdc4035e3",
+          "positive_counts_sha256": "47116089c59b30d771808ffc9cc4bfb3bba76c7e64ef25e3331b09f79f9b635c",
+          "known_positive_counts_sha256": "98a6a6ca4b60a5d5ea08b56147022a06117524efc6ae25fa27fa5d53fc90b7a1",
+          "training_only_time_calculation": {
+            "2L_H96_heads3_dual_gpu": {
+              "assumed_requests_per_second": 790.0,
+              "epochs": 3,
+              "one_epoch_seconds": 54.460759493670885,
+              "three_epoch_seconds": 163.38227848101266,
+              "three_epoch_minutes": 2.7230379746835442
+            },
+            "6L_H192_heads6_dual_gpu": {
+              "assumed_requests_per_second": 200.0,
+              "epochs": 3,
+              "one_epoch_seconds": 215.12,
+              "three_epoch_seconds": 645.36,
+              "three_epoch_minutes": 10.756
+            }
+          }
+        }
+      },
+      "initial_unique_known_positive_videos": {
+        "days": [
+          1,
+          18
+        ],
+        "count": 586844,
+        "fraction_of_fixed_catalog": 0.586844,
+        "raw_ids_sha256": "3d3030bd6a66b2e458417e486adb85f0fcaa0c613b8575d229a73fe917e5e159",
+        "definition": "Distinct fixed-catalog videos among all observed positive targets in the complete initial training pool, not just the one-positive-per-request targets sampled by optimizer steps."
+      },
+      "all_three_windows_training_only_minutes": {
+        "2L_H96_heads3_dual_gpu": 49.50006329113925,
+        "6L_H192_heads6_dual_gpu": 195.52524999999997
+      },
+      "first512_uid_order_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+      "first1024_uid_order_sha256": "d21a67c0bd2a34945490817c2e95acaaa98de3e8d05e3d19220e0ea9b94ee0e2"
+    }
+  },
+  "source_sha256": {
+    "scripts/recflow/development_probe.py": "1b918945558f0ce3c7937b3fe177ade81266007e670e4165497a51f6f8c7af00",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7"
+  },
+  "elapsed_seconds": 10.285130300559103
+}

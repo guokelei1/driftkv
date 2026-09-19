@@ -4,6 +4,7 @@
 
 | 用途 | 入口 |
 | --- | --- |
+| RecFlow 独立数据准备与开发探针 | [recflow/README.md](recflow/README.md) |
 | 本轮六层 V1 → V2 两 epoch 训练与 Full-only | `unified_training/run_medium_v2_2epoch.py` |
 | 六层 Medium 训练与 Full/Reuse 矩阵 | `run_yambda500m_medium_full_reuse_matrix.py` |
 | Medium V5 扩展 | `run_yambda500m_medium_d14_v5_extension.py` |
@@ -31,3 +32,6 @@
 - `unified_training/evaluate_max_v0_sample.py prepare|canary|evaluate`：固定20,000/200,000用户的V0 E14抽样Full评价；复用现有打分和AUC实现，先封存原始分数再关联标签。单模型无需构造虚假的Parent/Current比较。
 
 设置、预算和当前准备状态见[Max记录](../results/unified_training_2026_09/max/README.md)。
+
+- `unified_training/prepare_max_v1.py`：固定V0接续训练与三模型Full评测的资源canary；生成运行所需通过记录和预算。
+- `unified_training/launch_max_v1_epochs12.sh`：调用现有版本链runner，在后台连续训练Max V1两轮，保留两个端点并完成同窗口Full评测。

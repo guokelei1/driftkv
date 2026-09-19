@@ -1,0 +1,125 @@
+{
+  "scope": "CPU reconstruction of recorded development training supervision; no fitting or model-quality evaluation.",
+  "run": "/home/gkl/work/evokv/results/recflow/development/pilot_6l_h192_c1024_k1m_seed17",
+  "training_seed": 17,
+  "settings": {
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "train_requests": 150000,
+    "eval_requests": 512,
+    "batch_size": 32
+  },
+  "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+  "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "reconstruction": "For each phase, retain requests with known positives, reproduce default_rng(seed [+1000 for current]).permutation(known_requests), and call the same rng.choice(known_positives) once per processed request. Both phases stop before the first reshuffle.",
+  "verification_limit": "Request counts match saved training summaries and full selected-request hashes match an independently retained count baseline. The original run did not retain a per-draw target hash; positive-draw identity is reconstructed from the recorded RNG algorithm and seed, not independently cross-checked against an original draw log.",
+  "interpretation": "Counts measure direct sampled positive supervision, not whether embedding rows received any gradient. Shared item embeddings also receive history-input and full-within-pair softmax gradients. Low direct positive coverage does not prove that more training will succeed.",
+  "phases": {
+    "parent": {
+      "days": [
+        1,
+        18
+      ],
+      "rng_seed": 17,
+      "selected_requests": 150000,
+      "known_target_requests": 136928,
+      "processed_requests": 58784,
+      "fraction_known_requests_used": 0.42930591259640105,
+      "unique_chosen_positive_videos": 53179,
+      "unique_possible_positive_videos": 216388,
+      "processed_request_day_counts": {
+        "1": 3047,
+        "2": 3218,
+        "3": 2817,
+        "4": 2967,
+        "5": 2972,
+        "6": 3099,
+        "7": 3283,
+        "8": 3431,
+        "9": 3486,
+        "10": 3322,
+        "11": 3236,
+        "12": 3328,
+        "13": 3370,
+        "14": 3672,
+        "15": 3785,
+        "16": 3675,
+        "17": 3174,
+        "18": 2902
+      },
+      "selected_request_indices_sha256": "fbfba9d4c7e4f7f803b79621034f52e02dca83e2df1b9d5be9080d92b6985b0a",
+      "processed_request_indices_sha256": "f42f2128400aae5acd1b2151512800e9d1ce16f61a51182c4419705de529d84a",
+      "drawn_mapped_positive_ids_sha256": "932f49d6fbd47486354286d63c7e40548419860d1e9c7bb58973a47bd798d4df",
+      "recorded_request_counts_match": true,
+      "independent_selection_hash_matches": true,
+      "measured_training_requests_per_second": 97.96231766973419,
+      "recorded_optimizer_steps": 1837
+    },
+    "current": {
+      "days": [
+        19,
+        21
+      ],
+      "rng_seed": 1017,
+      "selected_requests": 29027,
+      "known_target_requests": 17046,
+      "processed_requests": 16000,
+      "fraction_known_requests_used": 0.9386366302944973,
+      "unique_chosen_positive_videos": 13985,
+      "unique_possible_positive_videos": 22827,
+      "processed_request_day_counts": {
+        "19": 6500,
+        "20": 5447,
+        "21": 4053
+      },
+      "selected_request_indices_sha256": "d5010aaf16d9d4e089bb83afb632d93dec8559f0c74930aff1852822cc9a4fd7",
+      "processed_request_indices_sha256": "f92f66252e09ead6bad5ffaa73326d3f24743438547fc1b174f23b3629ee6454",
+      "drawn_mapped_positive_ids_sha256": "1c41075a0a9d48fac033b03474cb33a27fda909f82fbdb3361b2378181ce22f6",
+      "recorded_request_counts_match": true,
+      "independent_selection_hash_matches": true,
+      "measured_training_requests_per_second": 97.73661829027273,
+      "recorded_optimizer_steps": 500
+    }
+  },
+  "future_known_target_coverage": {
+    "19": {
+      "requests": 512,
+      "request_indices_sha256": "306a347ebb6f7b427df93228eefb157cdae0da998ec5936de83f892ad503b05f",
+      "known_positive_occurrences": 651,
+      "known_distinct_videos": 646,
+      "fraction_known_positive_occurrences_seen": {
+        "parent_chosen_positive": 0.1597542242703533,
+        "parent_possible_positive_pool": 0.45468509984639016
+      }
+    },
+    "22": {
+      "requests": 512,
+      "request_indices_sha256": "d59788f3ac071ffb7a2d125352dbd3e5c91d730eca2b7ce5b2332f9591842bb1",
+      "known_positive_occurrences": 331,
+      "known_distinct_videos": 329,
+      "fraction_known_positive_occurrences_seen": {
+        "parent_chosen_positive": 0.16012084592145015,
+        "parent_possible_positive_pool": 0.5045317220543807,
+        "current_chosen_positive": 0.12084592145015106,
+        "current_possible_positive_pool": 0.17522658610271905,
+        "parent_or_current_chosen_positive": 0.24773413897280966
+      }
+    }
+  },
+  "source_sha256": {
+    "scripts/recflow/supervision_coverage.py": "e14eec18d374655a68b1ac1a8a5ede3cd5af5c89f7b6999dab0f3fe27c92b4d9",
+    "scripts/recflow/development_probe.py": "8a17ae562f96ea83ef3968aa51e02c4e91f90347eb4ccb03ee04756522eaa5b7",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+    "results/recflow/development/pilot_6l_h192_c1024_k1m_seed17/summary.json": "4aff781053084d08e649bbb623091a84232d3850a7d0eb73364a826105cffbed",
+    "results/recflow/development/popularity_temporal_k1m/summary.json": "c7bb3a0c0d907733711d6ba8aea5dfce3071a0ea4172983c4724eac9d05dcf7e",
+    "data/processed/recflow_v1/manifest.json": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128"
+  },
+  "recorded_training_source_sha256": {
+    "scripts/recflow/development_probe.py": "555bdc166bc7707c10f6fe42739e6440f838f1a07fc65ab6f73c5d0f0d4926af",
+    "src/hstu_kvcache/recflow/model.py": "9f2d7c195d75b547910156b5d5034b37bdf5eb32edb16ab1cebe1da6b6699348",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+    "src/hstu_kvcache/recflow/metrics.py": "cab0aa5e6bca46900dd425824f0fa30f1dc4d178066183c47b101480c384ca6e"
+  },
+  "numpy_version": "2.4.3"
+}

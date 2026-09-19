@@ -1,0 +1,181 @@
+{
+  "scope": "Resource and serial/parallel merge canary on selected known-positive requests; not quality, random-superiority or admission evidence.",
+  "passed": true,
+  "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_gpu0123_canary/A/A_epoch1/checkpoint.pt",
+  "world_size": 4,
+  "cuda_visible_devices": "0,1,2,3",
+  "training_optimizer_updates": 0,
+  "waiting_backend": "gloo",
+  "training_backend": "nccl",
+  "resident_training_processes": [
+    {
+      "rank": 0,
+      "device": "cuda:0",
+      "allocated_bytes": 3136631296,
+      "reserved_bytes": 3147825152,
+      "optimizer_step_values": [
+        3
+      ]
+    },
+    {
+      "rank": 1,
+      "device": "cuda:1",
+      "allocated_bytes": 3136631296,
+      "reserved_bytes": 3147825152,
+      "optimizer_step_values": [
+        3
+      ]
+    },
+    {
+      "rank": 2,
+      "device": "cuda:2",
+      "allocated_bytes": 3136631296,
+      "reserved_bytes": 3147825152,
+      "optimizer_step_values": [
+        3
+      ]
+    },
+    {
+      "rank": 3,
+      "device": "cuda:3",
+      "allocated_bytes": 3136631296,
+      "reserved_bytes": 3147825152,
+      "optimizer_step_values": [
+        3
+      ]
+    }
+  ],
+  "waiting_processes": [
+    {
+      "rank": 0,
+      "elapsed_seconds": 14.817796860821545,
+      "optimizer_steps_before": [
+        3
+      ],
+      "optimizer_steps_after": [
+        3
+      ]
+    },
+    {
+      "rank": 1,
+      "elapsed_seconds": 14.817814953625202,
+      "optimizer_steps_before": [
+        3
+      ],
+      "optimizer_steps_after": [
+        3
+      ]
+    },
+    {
+      "rank": 2,
+      "elapsed_seconds": 14.817920503206551,
+      "optimizer_steps_before": [
+        3
+      ],
+      "optimizer_steps_after": [
+        3
+      ]
+    },
+    {
+      "rank": 3,
+      "elapsed_seconds": 14.817931958474219,
+      "optimizer_steps_before": [
+        3
+      ],
+      "optimizer_steps_after": [
+        3
+      ]
+    }
+  ],
+  "full_requests": 8,
+  "sampled_requests": 4,
+  "selected_indices": [
+    27015,
+    27016,
+    27020,
+    27025,
+    27026,
+    27032,
+    27033,
+    27035
+  ],
+  "known_positive_counts": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    1
+  ],
+  "arrays_rankings_and_aggregates_equal": true,
+  "serial_evaluation_seconds": 2.9857955500483513,
+  "serial_peak_allocated_includes_resident_bytes": 19042322432,
+  "serial_peak_reserved_includes_resident_bytes": 24968691712,
+  "parallel_evaluation": {
+    "sharding": "Strided full-panel positions; sampled diagnostics use each shard's intersection.",
+    "parallel_wall_seconds": 7.508559536188841,
+    "wall_time_scope": "Worker dispatch through completion, including process/data/model startup; excludes coordinator merge.",
+    "sum_worker_evaluation_seconds": 4.1923763519153,
+    "cost_note": "Request sharding reduces elapsed time; this is not a claim of reduced GPU-seconds.",
+    "peak_memory_scope": "Top-level peaks are the maximum per GPU, not the sum across GPUs.",
+    "workers": [
+      {
+        "rank": 0,
+        "device": "cuda:0",
+        "cuda_visible_devices": "0,1,2,3",
+        "device_name": "NVIDIA A40",
+        "total_seconds": 5.340725405141711,
+        "evaluation_seconds": 1.524646308273077,
+        "full_requests": 2,
+        "sampled_requests": 2,
+        "peak_allocated_bytes": 16708317184,
+        "peak_reserved_bytes": 22640852992
+      },
+      {
+        "rank": 1,
+        "device": "cuda:1",
+        "cuda_visible_devices": "0,1,2,3",
+        "device_name": "NVIDIA A40",
+        "total_seconds": 4.08380005788058,
+        "evaluation_seconds": 0.6012103958055377,
+        "full_requests": 2,
+        "sampled_requests": 0,
+        "peak_allocated_bytes": 10279200768,
+        "peak_reserved_bytes": 12381585408
+      },
+      {
+        "rank": 2,
+        "device": "cuda:2",
+        "cuda_visible_devices": "0,1,2,3",
+        "device_name": "NVIDIA A40",
+        "total_seconds": 5.024964923970401,
+        "evaluation_seconds": 1.4817518582567573,
+        "full_requests": 2,
+        "sampled_requests": 2,
+        "peak_allocated_bytes": 16625026048,
+        "peak_reserved_bytes": 22619881472
+      },
+      {
+        "rank": 3,
+        "device": "cuda:3",
+        "cuda_visible_devices": "0,1,2,3",
+        "device_name": "NVIDIA A40",
+        "total_seconds": 4.107563815079629,
+        "evaluation_seconds": 0.5847677895799279,
+        "full_requests": 2,
+        "sampled_requests": 0,
+        "peak_allocated_bytes": 10279200768,
+        "peak_reserved_bytes": 12381585408
+      }
+    ]
+  },
+  "memory_note": "Parallel worker peaks exclude resident training-rank model/AdamW/DDP allocations; they are not total physical GPU peaks. All ranks empty unused cache before evaluation, rank0 repeats after serial reference.",
+  "source_sha256": {
+    "/home/gkl/work/evokv/scripts/recflow/window_chain.py": "cf1bbfb414631204aae8446461eebd8654d25facaabb2dd66a101d0b4eff4a66",
+    "/home/gkl/work/evokv/scripts/recflow/parallel_evaluate.py": "f3165e1be0bc77d13e71c8315def53fea65bb7f742d9d3fc106c03eac3ec4d59",
+    "/home/gkl/work/evokv/scripts/recflow/distributed_probe.py": "b799a8afa6083d28fff1a9720531525ca5aa242ca2e9fb79ef9c52faa90d1d67",
+    "/tmp/recflow_6l_resident_evaluation_canary.py": "28e97a116f4b79237268980d88cf2a561a690c604f11adaf9b0bcfd0c85c7df5"
+  }
+}

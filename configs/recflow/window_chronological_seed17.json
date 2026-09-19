@@ -1,0 +1,117 @@
+{
+  "scope": "User-authorized seed17 development parameter iteration: complete epochs with chronological three-day training blocks.",
+  "authorization": "The 2026-09-18 user instruction explicitly requests complete-window A/B tests, parameter iteration, optional C, and six-layer progression if these work. This replaces the earlier pending one-pass question. Use detached tmux for long runs and retain all outcomes.",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/seed17_complete_epoch_windows/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 2,
+    "hidden": 96,
+    "heads": 3,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "epochs": 3,
+    "evaluation_epochs": [
+      1,
+      3
+    ],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [
+      1000
+    ],
+    "log_every": 100,
+    "training_order": "three_day_blocks"
+  },
+  "windows": {
+    "A": {
+      "fit": [
+        1,
+        18
+      ],
+      "evaluate": [
+        19,
+        21
+      ],
+      "eligible_requests_per_epoch": 173395
+    },
+    "B": {
+      "fit": [
+        19,
+        21
+      ],
+      "compare_parent_and_current": [
+        22,
+        24
+      ],
+      "eligible_requests_per_epoch": 17046
+    },
+    "C": {
+      "fit": [
+        22,
+        24
+      ],
+      "compare_parent_and_current": [
+        25,
+        27
+      ],
+      "eligible_requests_per_epoch": 10854
+    }
+  },
+  "training_rule": "No request cap or timed training endpoint. Every epoch visits every request with an in-catalog positive once, including the last partial minibatch; sample one known positive uniformly per request each epoch. All-OOV fitting requests are explicitly counted and excluded from this known-item loss only. A/B/C continue real parent model and optimizer state. Default candidate is three full epochs for each phase; epoch1 retrieval is a learning-curve companion, not an automatic switch to the best future-label endpoint.",
+  "training_sufficiency": "Retain complete-epoch mean loss and fixed training-only2048-request/target NLL before fitting and after every epoch. A fixed three-epoch budget is not proof of convergence; if it is still insufficient, record that fact and test a stated subsequent setting. Never rename a partial epoch as a completed model.",
+  "evaluation_rule": "Frozen3072-request free-generation panel,1024 per day; separate frozen768-request sampled-diagnostic subset,256 per day. Uniform/popularity1000 share subset and candidate seed17. Preserve OOV misses, per-day results, request means and user means. A/B or B/C share identical future panels. Only development users are scored.",
+  "working_gate": "Primary free-catalog beam300 FP32 NDCG@50. A must clearly beat matched random on D19-21; A and B must each beat random on D22-24 and B must improve over A there. Optional C repeats the same logic with B/C on D25-27. Report analytic random expectation and5000-trial random-policy variation. Keep the existing2x expectation and>null99 flags as declared working checks; companions do not replace the primary if it fails. Inspect all daily directions; do not select favorable days or cutoffs. Sampled diagnostics are not proof of free-generation quality.",
+  "parameter_iteration": "Change only training order relative to the completed shuffle baseline. Within each complete epoch, visit the fitting window's three-day blocks in chronological order and shuffle requests within each block using the same epoch RNG. Every known-positive request is still visited exactly once, including the final global tail. A has six chronological blocks; B/C each have one and therefore retain their existing shuffled order. This uses training timestamps only, not future labels or a selected future day. Retain the original shuffle A/B/C outcomes and the same fixed future panels/cutoffs/random criterion.",
+  "resource_estimate": {
+    "device": "Two NVLink-connected A40s; A training/evaluation on GPU0/1 can overlap the original shuffle C on GPU2/3. Later B/C may evaluate on all four after the other job ends.",
+    "training_canary": "results/recflow/development/ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json",
+    "complete_B_epoch_training_rate": 761.25,
+    "A_three_epochs_training_minutes_estimated": 11.5,
+    "A_total_minutes_estimated": [
+      17,
+      22
+    ],
+    "B_or_C_total_minutes_estimated": [
+      6,
+      10
+    ],
+    "evaluation_canary": "results/recflow/development/gloo_resident_parallel_eval_canary_seed17/summary.json",
+    "evaluation_cost_basis": "Original3072+768 serial panel approximately360s; two/four shards approximately180/90s plus startup. CPU Gloo waits avoid blocking evaluator GPU contexts.",
+    "execution": "Retain per-phase logs and exit status; monitor these individually under30min phases directly. Use detached tmux if an execution is expected to exceed30min."
+  },
+  "progression": "First inspect the complete small-backbone A/B result and, if useful, C stability. If the stable window checks pass, use the same protocol for the authorized six-layer model with a focused canary and measured resource estimate first. This is not formal phi admission, a Yambda result, or theta3 access.",
+  "execution_extension": {
+    "status": "prospective",
+    "training_world_size": 2,
+    "global_batch_size": 128,
+    "A_training_physical_gpus": [
+      0,
+      1
+    ],
+    "A_evaluation_physical_gpus": [
+      0,
+      1
+    ],
+    "later_training_physical_gpus": [
+      0,
+      1
+    ],
+    "later_evaluation_physical_gpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "source_preset": "configs/recflow/window_development_seed17_ddp.json",
+    "phase_scope": "One new A from the same seed17 initialization; each later phase continues its own exact predecessor and optimizer. No six-layer launch until the fixed-window learning checks work."
+  }
+}

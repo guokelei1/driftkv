@@ -1,0 +1,798 @@
+{
+  "scope": "CPU parameter drift only; not KV drift, cache compatibility or quality evidence.",
+  "training_seed": 17,
+  "reference": {
+    "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_full_seed17/A/A_epoch3/checkpoint.pt",
+    "sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+    "bytes": 2357678268,
+    "learning_rate": 0.001,
+    "model": {
+      "num_items": 1000001,
+      "num_behaviors": 4,
+      "num_prediction_items": 1000000,
+      "hidden_size": 192,
+      "num_layers": 6,
+      "num_heads": 6,
+      "head_dim": null,
+      "max_seq_len": 1027,
+      "temporal_num_freqs": 16,
+      "temporal_max_period": 86400.0,
+      "gating": "silu_gate",
+      "qk_scale": 1.0,
+      "attn_dropout": 0.0,
+      "activation": "silu",
+      "norm_eps": 1e-06,
+      "input_dropout": 0.0,
+      "tie_item_embeddings": true,
+      "block_variant": "hstu_reference",
+      "relative_position_bias": true,
+      "causal_diagonal": "inclusive",
+      "num_query_types": 1,
+      "num_query_actions": 1,
+      "query_type_id": 0,
+      "query_action_id": 0
+    },
+    "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+    "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54"
+  },
+  "formula": "relative_l2 = sqrt(sum((current-A3)^2) / sum(A3^2)); max_abs_delta = max(abs(current-A3)). Zero reference norm yields null relative_l2.",
+  "accumulation": "FP64 subtraction and squared sums in bounded chunks; group totals sum squared norms, not per-tensor relative norms.",
+  "grouping": {
+    "item_embedding": "backbone.item_emb.weight: entire frozen initial table, including PAD/OOV. Its tied leaf-output use is counted once.",
+    "other_backbone": "All other named parameters below backbone, including any unchanged/unused query and readout parameters.",
+    "generation_other": "Non-backbone parameters: REC token, category embeddings/heads and leaf bias; excludes the shared item table."
+  },
+  "parameter_layout": {
+    "rec_token": {
+      "group": "generation_other",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "leaf_bias": {
+      "group": "generation_other",
+      "shape": [
+        1000002
+      ],
+      "numel": 1000002
+    },
+    "backbone.item_emb.weight": {
+      "group": "item_embedding",
+      "shape": [
+        1000002,
+        192
+      ],
+      "numel": 192000384
+    },
+    "backbone.behavior_emb.embed.weight": {
+      "group": "other_backbone",
+      "shape": [
+        5,
+        192
+      ],
+      "numel": 960
+    },
+    "backbone.query_encoder.type_embedding.weight": {
+      "group": "other_backbone",
+      "shape": [
+        1,
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.query_encoder.action_embedding.weight": {
+      "group": "other_backbone",
+      "shape": [
+        1,
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.temporal_enc.proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        32
+      ],
+      "numel": 6144
+    },
+    "backbone.in_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.cc_score_head.weight": {
+      "group": "other_backbone",
+      "shape": [
+        1,
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.cc_score_head.bias": {
+      "group": "other_backbone",
+      "shape": [
+        1
+      ],
+      "numel": 1
+    },
+    "backbone.blocks.0.norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.0.norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.0.attn.q_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.0.attn.k_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.0.attn.v_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.0.attn.out_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.0.attn.position_bias.weight": {
+      "group": "other_backbone",
+      "shape": [
+        2053,
+        6
+      ],
+      "numel": 12318
+    },
+    "backbone.blocks.0.attn_output_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.0.attn_output_norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.0.gate_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.1.norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.1.norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.1.attn.q_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.1.attn.k_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.1.attn.v_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.1.attn.out_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.1.attn.position_bias.weight": {
+      "group": "other_backbone",
+      "shape": [
+        2053,
+        6
+      ],
+      "numel": 12318
+    },
+    "backbone.blocks.1.attn_output_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.1.attn_output_norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.1.gate_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.2.norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.2.norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.2.attn.q_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.2.attn.k_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.2.attn.v_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.2.attn.out_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.2.attn.position_bias.weight": {
+      "group": "other_backbone",
+      "shape": [
+        2053,
+        6
+      ],
+      "numel": 12318
+    },
+    "backbone.blocks.2.attn_output_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.2.attn_output_norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.2.gate_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.3.norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.3.norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.3.attn.q_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.3.attn.k_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.3.attn.v_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.3.attn.out_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.3.attn.position_bias.weight": {
+      "group": "other_backbone",
+      "shape": [
+        2053,
+        6
+      ],
+      "numel": 12318
+    },
+    "backbone.blocks.3.attn_output_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.3.attn_output_norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.3.gate_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.4.norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.4.norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.4.attn.q_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.4.attn.k_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.4.attn.v_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.4.attn.out_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.4.attn.position_bias.weight": {
+      "group": "other_backbone",
+      "shape": [
+        2053,
+        6
+      ],
+      "numel": 12318
+    },
+    "backbone.blocks.4.attn_output_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.4.attn_output_norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.4.gate_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.5.norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.5.norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.5.attn.q_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.5.attn.k_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.5.attn.v_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.5.attn.out_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.blocks.5.attn.position_bias.weight": {
+      "group": "other_backbone",
+      "shape": [
+        2053,
+        6
+      ],
+      "numel": 12318
+    },
+    "backbone.blocks.5.attn_output_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.5.attn_output_norm.bias": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "backbone.blocks.5.gate_proj.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192,
+        192
+      ],
+      "numel": 36864
+    },
+    "backbone.final_norm.weight": {
+      "group": "other_backbone",
+      "shape": [
+        192
+      ],
+      "numel": 192
+    },
+    "c1_embedding.weight": {
+      "group": "generation_other",
+      "shape": [
+        97,
+        192
+      ],
+      "numel": 18624
+    },
+    "c2_embedding.weight": {
+      "group": "generation_other",
+      "shape": [
+        505,
+        192
+      ],
+      "numel": 96960
+    },
+    "c1_head.weight": {
+      "group": "generation_other",
+      "shape": [
+        97,
+        192
+      ],
+      "numel": 18624
+    },
+    "c1_head.bias": {
+      "group": "generation_other",
+      "shape": [
+        97
+      ],
+      "numel": 97
+    },
+    "c2_head.weight": {
+      "group": "generation_other",
+      "shape": [
+        505,
+        192
+      ],
+      "numel": 96960
+    },
+    "c2_head.bias": {
+      "group": "generation_other",
+      "shape": [
+        505
+      ],
+      "numel": 505
+    }
+  },
+  "excluded_non_parameter_state_keys": [
+    "c2_child_mask",
+    "item_paths",
+    "leaf_order"
+  ],
+  "duplicate_parameter_aliases_counted_once": [],
+  "comparisons": [
+    {
+      "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/B_day19/B_epoch1/checkpoint.pt",
+      "sha256": "8e5bfcae72392b95627bb6cc91f69e5d5e9e9470ee7c325c3dd301bd4b807349",
+      "bytes": 2357678588,
+      "learning_rate": 0.001,
+      "training_days": [
+        19,
+        19
+      ],
+      "phase": "B",
+      "epoch": 1,
+      "source_checkpoint_sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+      "optimizer_state_steps_before": [
+        4065
+      ],
+      "groups": {
+        "item_embedding": {
+          "max_abs_delta": 0.17335865274071693,
+          "numel": 192000384,
+          "parameter_tensors": 1,
+          "reference_l2": 2829.1482911712937,
+          "delta_l2": 217.93692947747536,
+          "relative_l2": 0.07703269926061296
+        },
+        "other_backbone": {
+          "max_abs_delta": 0.0859709084033966,
+          "numel": 1229173,
+          "parameter_tensors": 68,
+          "reference_l2": 89.4546065595743,
+          "delta_l2": 7.253787956948302,
+          "relative_l2": 0.08108903762398731
+        },
+        "generation_other": {
+          "max_abs_delta": 0.18163585662841797,
+          "numel": 1231964,
+          "parameter_tensors": 8,
+          "reference_l2": 1369.908277511678,
+          "delta_l2": 50.45138757643422,
+          "relative_l2": 0.03682829602874937
+        },
+        "overall": {
+          "max_abs_delta": 0.18163585662841797,
+          "numel": 194461521,
+          "parameter_tensors": 77,
+          "reference_l2": 3144.635252118628,
+          "delta_l2": 223.81792863437465,
+          "relative_l2": 0.07117452762878693
+        }
+      }
+    },
+    {
+      "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_lr_seed17/lr1e4/B/B_epoch1/checkpoint.pt",
+      "sha256": "d22f346a09ffe61fd324f0b931d3c5b4664d0fd72dd48523663ec1a1a4ee9488",
+      "bytes": 2357678844,
+      "learning_rate": 0.0001,
+      "training_days": [
+        19,
+        19
+      ],
+      "phase": "B",
+      "epoch": 1,
+      "source_checkpoint_sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+      "optimizer_state_steps_before": [
+        4065
+      ],
+      "groups": {
+        "item_embedding": {
+          "max_abs_delta": 0.01940518617630005,
+          "numel": 192000384,
+          "parameter_tensors": 1,
+          "reference_l2": 2829.1482911712937,
+          "delta_l2": 15.316453842361062,
+          "relative_l2": 0.005413803825751355
+        },
+        "other_backbone": {
+          "max_abs_delta": 0.020430277567356825,
+          "numel": 1229173,
+          "parameter_tensors": 68,
+          "reference_l2": 89.4546065595743,
+          "delta_l2": 2.0588951834618876,
+          "relative_l2": 0.023016088971233924
+        },
+        "generation_other": {
+          "max_abs_delta": 0.012047529220581055,
+          "numel": 1231964,
+          "parameter_tensors": 8,
+          "reference_l2": 1369.908277511678,
+          "delta_l2": 3.221558908858088,
+          "relative_l2": 0.0023516602985345675
+        },
+        "overall": {
+          "max_abs_delta": 0.020430277567356825,
+          "numel": 194461521,
+          "parameter_tensors": 77,
+          "reference_l2": 3144.635252118628,
+          "delta_l2": 15.786426115017367,
+          "relative_l2": 0.005020113574183719
+        }
+      }
+    },
+    {
+      "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_lr_seed17/lr3e5/B/B_epoch1/checkpoint.pt",
+      "sha256": "b79aceddd332ab5befd8924dad875e69da8dbdd9986d2caca9d596a31bfab962",
+      "bytes": 2357678844,
+      "learning_rate": 3e-05,
+      "training_days": [
+        19,
+        19
+      ],
+      "phase": "B",
+      "epoch": 1,
+      "source_checkpoint_sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+      "optimizer_state_steps_before": [
+        4065
+      ],
+      "groups": {
+        "item_embedding": {
+          "max_abs_delta": 0.006325535476207733,
+          "numel": 192000384,
+          "parameter_tensors": 1,
+          "reference_l2": 2829.1482911712937,
+          "delta_l2": 3.010320876251685,
+          "relative_l2": 0.001064037853952641
+        },
+        "other_backbone": {
+          "max_abs_delta": 0.007464096415787935,
+          "numel": 1229173,
+          "parameter_tensors": 68,
+          "reference_l2": 89.4546065595743,
+          "delta_l2": 0.8606864793599,
+          "relative_l2": 0.009621488623805042
+        },
+        "generation_other": {
+          "max_abs_delta": 0.003469228744506836,
+          "numel": 1231964,
+          "parameter_tensors": 8,
+          "reference_l2": 1369.908277511678,
+          "delta_l2": 0.5296503261867987,
+          "relative_l2": 0.00038663196279743896
+        },
+        "overall": {
+          "max_abs_delta": 0.007464096415787935,
+          "numel": 194461521,
+          "parameter_tensors": 77,
+          "reference_l2": 3144.635252118628,
+          "delta_l2": 3.1754279179001106,
+          "relative_l2": 0.0010097921263716473
+        }
+      }
+    }
+  ],
+  "chunk_elements": 1000000,
+  "threads": 4,
+  "torch_version": "2.12.1+cu130",
+  "seconds": 13.110565827228129,
+  "source_sha256": {
+    "/home/gkl/work/evokv/scripts/recflow/update_parameter_drift.py": "3089d70cf21dc39eabc46dcadb30e6d22e8a103ac83422025f5d817704c4ef90"
+  }
+}

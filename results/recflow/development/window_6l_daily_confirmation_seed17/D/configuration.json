@@ -1,0 +1,108 @@
+{
+  "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+  "panels": "/home/gkl/work/evokv/results/recflow/development/daily_followup_panels_seed17/window_panels.npz",
+  "seed": 17,
+  "candidate_seed": 17,
+  "catalog_size": 1000000,
+  "cohort_users": 512,
+  "context": 1024,
+  "layers": 6,
+  "hidden": 192,
+  "heads": 6,
+  "batch_size": 128,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "clip_norm": 1,
+  "epochs": 1,
+  "evaluation_epochs": [
+    1
+  ],
+  "training_probe_requests": 2048,
+  "decoder": "beam",
+  "beam_width": 300,
+  "eval_precision": "fp32",
+  "sampled_distractors": [
+    1000
+  ],
+  "log_every": 25,
+  "training_order": "shuffle",
+  "device": "cuda:0",
+  "eval_devices": [
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "model": {
+    "num_items": 1000001,
+    "num_behaviors": 4,
+    "num_prediction_items": 1000000,
+    "hidden_size": 192,
+    "num_layers": 6,
+    "num_heads": 6,
+    "head_dim": null,
+    "max_seq_len": 1027,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "silu",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.0,
+    "tie_item_embeddings": true,
+    "block_variant": "hstu_reference",
+    "relative_position_bias": true,
+    "causal_diagonal": "inclusive",
+    "num_query_types": 1,
+    "num_query_actions": 1,
+    "query_type_id": 0,
+    "query_action_id": 0
+  },
+  "parameters": 194461521,
+  "phase": "D",
+  "requested_complete_epochs": 1,
+  "start_epoch": 0,
+  "training_window_days": [
+    21,
+    21
+  ],
+  "evaluation_window_days": [
+    22,
+    22
+  ],
+  "training_order_blocks": null,
+  "world_size": 4,
+  "global_batch_size": 128,
+  "cuda_visible_devices": "0,1,2,3",
+  "optimizer_state_steps_before": [
+    4166
+  ],
+  "optimizer_learning_rates": [
+    0.0001
+  ],
+  "parallel_evaluation_memory_note": "Evaluation worker peaks exclude the waiting training ranks' resident model, optimizer and DDP state; total physical GPU usage includes both.",
+  "canary": false,
+  "history_categories": false,
+  "catalog_items": 1000000,
+  "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+  "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "settings_path": "/home/gkl/work/evokv/configs/recflow/window_6l_daily_confirmation_seed17.json",
+  "settings_sha256": "2150e9bfb7e75e08b725f026740f57166b2eec55183f85b1c237e86a4e5698f5",
+  "window_manifest_sha256": "2f12722e59398cbf3872a858587db381228d81bbfedc70a63928d3b452ccdfab",
+  "panels_sha256": "26340065a26d23082a8a2ad0da61795dded825a5fa75b4c6f2c3da90d8038757",
+  "source_checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_lr_seed17/lr1e4/C/C_epoch1/checkpoint.pt",
+  "source_checkpoint_sha256": "f99af82c4eb030906c2bb79f25ec7e6c393b68ff6c476e26e1fed872b95ca152",
+  "source_sha256": {
+    "scripts/recflow/window_chain.py": "a9a11b097b791252da8a79e135449246fe1c3e0d2f8e025ef5562035bb200e90",
+    "scripts/recflow/development_probe.py": "1b918945558f0ce3c7937b3fe177ade81266007e670e4165497a51f6f8c7af00",
+    "scripts/recflow/random_baseline.py": "7c99df8e5f1b90c2a3bb6e9dabca707cadcf97ea49d8a6239978c11861bbcb4c",
+    "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+    "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c",
+    "scripts/recflow/distributed_probe.py": "b799a8afa6083d28fff1a9720531525ca5aa242ca2e9fb79ef9c52faa90d1d67",
+    "scripts/recflow/parallel_evaluate.py": "a9f8f20e147205828e78596db2e3390e5e8396badb998daff1d079e3e3eb4d82"
+  },
+  "torch_version": "2.12.1+cu130",
+  "scope": "Complete-epoch development, fixed seed17; no formal admission/final-user outcomes"
+}

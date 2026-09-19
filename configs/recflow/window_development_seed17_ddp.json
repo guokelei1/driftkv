@@ -1,0 +1,101 @@
+{
+  "scope": "User-authorized single-seed complete-epoch A/B/C development before six-layer progression.",
+  "authorization": "The 2026-09-18 user instruction explicitly requests complete-window A/B tests, parameter iteration, optional C, and six-layer progression if these work. This replaces the earlier pending one-pass question. Use detached tmux for long runs and retain all outcomes.",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/seed17_complete_epoch_windows/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 2,
+    "hidden": 96,
+    "heads": 3,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "epochs": 3,
+    "evaluation_epochs": [
+      1,
+      3
+    ],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [
+      1000
+    ],
+    "log_every": 100
+  },
+  "windows": {
+    "A": {
+      "fit": [
+        1,
+        18
+      ],
+      "evaluate": [
+        19,
+        21
+      ],
+      "eligible_requests_per_epoch": 173395
+    },
+    "B": {
+      "fit": [
+        19,
+        21
+      ],
+      "compare_parent_and_current": [
+        22,
+        24
+      ],
+      "eligible_requests_per_epoch": 17046
+    },
+    "C": {
+      "fit": [
+        22,
+        24
+      ],
+      "compare_parent_and_current": [
+        25,
+        27
+      ],
+      "eligible_requests_per_epoch": 10854
+    }
+  },
+  "training_rule": "No request cap or timed training endpoint. Every epoch visits every request with an in-catalog positive once, including the last partial minibatch; sample one known positive uniformly per request each epoch. All-OOV fitting requests are explicitly counted and excluded from this known-item loss only. A/B/C continue real parent model and optimizer state. Default candidate is three full epochs for each phase; epoch1 retrieval is a learning-curve companion, not an automatic switch to the best future-label endpoint.",
+  "training_sufficiency": "Retain complete-epoch mean loss and fixed training-only2048-request/target NLL before fitting and after every epoch. A fixed three-epoch budget is not proof of convergence; if it is still insufficient, record that fact and test a stated subsequent setting. Never rename a partial epoch as a completed model.",
+  "evaluation_rule": "Frozen3072-request free-generation panel,1024 per day; separate frozen768-request sampled-diagnostic subset,256 per day. Uniform/popularity1000 share subset and candidate seed17. Preserve OOV misses, per-day results, request means and user means. A/B or B/C share identical future panels. Only development users are scored.",
+  "working_gate": "Primary free-catalog beam300 FP32 NDCG@50. A must clearly beat matched random on D19-21; A and B must each beat random on D22-24 and B must improve over A there. Optional C repeats the same logic with B/C on D25-27. Report analytic random expectation and5000-trial random-policy variation. Keep the existing2x expectation and>null99 flags as declared working checks; companions do not replace the primary if it fails. Inspect all daily directions; do not select favorable days or cutoffs. Sampled diagnostics are not proof of free-generation quality.",
+  "parameter_iteration": "This first preset changes to full windows/epochs and fixes one seed as requested. Keep lr1e-3, original loss and ID-only history. Later parameter tests change a stated training setting and retain the same evaluation panels, windows and random comparison. No final/admission outcomes are read.",
+  "resource_estimate": {
+    "device": "Two NVLink-connected A40s for DDP. B can use physical GPUs2/3 for training and2/3/1 for evaluation while the completed A endpoint finishes its final evaluation on GPU0. C can use GPUs0/1 and all four evaluation GPUs after B finishes. No two jobs share a physical GPU.",
+    "training_canary": "results/recflow/development/ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json",
+    "measured_training_requests_per_second": 788.07,
+    "measured_requests_per_second_including_proportional_CPU_preparation": 754.31,
+    "matched_single_requests_per_second": 437.28,
+    "numerical_canary": "Two unequal FP32 global batches: gradients and clipped AdamW updates agree with the single-GPU reference; global batch128 and complete real tails are retained.",
+    "B_training_three_epochs_minutes_estimated": 1.2,
+    "C_training_three_epochs_minutes_estimated": 0.8,
+    "B_or_C_total_minutes_estimated": [
+      7,
+      12
+    ],
+    "evaluation_estimate": "The completed A epoch1 serial evaluation took approximately363s for3072 free requests plus768 sampled requests. Three/four request shards ideally reduce this to121/91s plus process/data startup and merge. The serial-vs-parallel canary passed: results/recflow/development/parallel_eval_canary_seed17/summary.json.",
+    "execution": "Retain logs and exit status. Estimated short B/C phases are monitored directly; detached tmux is used if the actual combined execution will exceed30min. Worker GPU allocation peaks exclude any resident waiting training model/optimizer."
+  },
+  "progression": "First inspect the complete small-backbone A/B result and, if useful, C stability. If the stable window checks pass, use the same protocol for the authorized six-layer model with a focused canary and measured resource estimate first. This is not formal phi admission, a Yambda result, or theta3 access.",
+  "execution_extension": {
+    "status": "prospective",
+    "purpose": "Keep the original seed17 window/optimizer/batch/metric preset. B may start after all three A training epochs and the fixed final checkpoint are complete, overlapping A's final evaluation on a disjoint GPU. This scheduling does not admit A or pass the working gate before its final metrics are analyzed.",
+    "training_world_size": 2,
+    "B_training_physical_gpus": [2, 3],
+    "B_evaluation_physical_gpus": [2, 3, 1],
+    "C_training_physical_gpus": [0, 1],
+    "C_evaluation_physical_gpus": [0, 1, 2, 3],
+    "global_batch_size": 128,
+    "source_preset": "configs/recflow/window_development_seed17.json"
+  }
+}

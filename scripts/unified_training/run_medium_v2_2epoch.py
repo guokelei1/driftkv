@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -37,8 +38,11 @@ def main():
                         help="Select the frozen runtime and its separate output directory.")
     parser.add_argument("--resume-evaluation", action="store_true",
                         help="Reuse the sealed checkpoint and existing sealed raw scores; never retrain.")
+    parser.add_argument("--resume-training", action="store_true",
+                        help="Resume from the latest complete same-layout recovery generation.")
     args = parser.parse_args()
     resume = args.resume_evaluation
+    assert not (resume and args.resume_training)
     EXECUTION = args.execution_config.resolve()
     execution = yaml.safe_load(EXECUTION.read_text())
     CONTRACT = ROOT / execution["frozen_parent"]["contract"]
@@ -64,21 +68,21 @@ def main():
             assert sha(ROOT / value) == contract["frozen_inputs"][key + "_sha256"], key
     for path, digest in canary["code_sha256"].items():
         assert sha(ROOT / path) == digest, path
-    if not resume:
+    if not resume and not args.resume_training:
         assert not (OUT / "checkpoint").exists(), "Refusing to overwrite a training run"
     topology = execution["execution_amendment"]
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "CUDA_VISIBLE_DEVICES": ",".join(map(str, topology["physical_gpus"])),
            "OMP_NUM_THREADS": str(execution["training_runtime"]["omp_num_threads"]), "PYTHONUNBUFFERED": "1"}
     distributed = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc_per_node={topology['world_size']}"]
-    events = json.loads((OUT / "runtime.json").read_text()) if resume else []
+    events = json.loads((OUT / "runtime.json").read_text()) if (OUT / 'runtime.json').exists() and (resume or args.resume_training) else []
 
     def run(name, command, extra_env=None):
         started = time.time()
         print(f"Starting {name}", flush=True)
         write(OUT / "progress.json", {"stage": name, "started_at_unix": started})
         log_path = OUT / "logs" / f"{name}.log"
-        if resume and log_path.exists():
-            log_path = OUT / "logs" / f"{name}.resume.log"
+        if (resume or args.resume_training) and log_path.exists():
+            log_path = OUT / "logs" / f"{name}.resume_{time.time_ns()}.log"
         with log_path.open("x") as log:
             result = subprocess.run(command, cwd=ROOT, env={**env, **(extra_env or {})},
                                     stdout=log, stderr=subprocess.STDOUT)
@@ -91,7 +95,6 @@ def main():
     endpoints = contract['training'].get('checkpoint_epochs', [])
     assert not endpoints or endpoints in ([epochs], [1, 2])
     multiple = len(endpoints) > 1
-    assert not (resume and multiple), 'Multi-endpoint runs do not support resume'
     candidates = ({f'{version}_e{e}': (e, OUT / 'checkpoint' / f'checkpoint_epoch_{e}.pt') for e in endpoints}
                   if multiple else {})
     checkpoint = OUT / "checkpoint" / (f"checkpoint_epoch_{epochs}.pt" if endpoints else "checkpoint_100.pt")
@@ -106,7 +109,16 @@ def main():
                       ("arrow-io-threads", "arrow_io_threads"), ("torch-cpu-threads", "torch_cpu_threads"),
                       ("cpu-affinity-by-rank", "cpu_affinity_by_rank")]:
         train.extend(["--" + flag, str(execution["training_runtime"][key])])
-    write(OUT / ("e14_resume_configuration.json" if resume else "configuration.json"), {
+    recovery = contract['training'].get('recovery')
+    if recovery:
+        train += ['--recovery-interval-steps', str(recovery['interval_steps']),
+                  '--recovery-first-step', str(recovery['first_step'])]
+    if args.resume_training:
+        generations = sorted((checkpoint.parent / 'recovery').glob('step_*/complete.json'))
+        assert generations, 'No complete recovery checkpoint'
+        train += ['--resume-recovery', str(generations[-1].parent)]
+    config_name = (f'resume_configuration_{time.time_ns()}.json' if resume or args.resume_training else 'configuration.json')
+    write(OUT / config_name, {
         "contract": str(CONTRACT.relative_to(ROOT)), "contract_sha256": sha(CONTRACT),
         "execution_contract": str(EXECUTION.relative_to(ROOT)), "execution_contract_sha256": sha(EXECUTION),
         "canary_sha256": sha(OUT / "canary.pass.json"),
@@ -117,15 +129,16 @@ def main():
     })
     if not resume:
         run("train", train)
-    else:
-        sealed = json.loads((checkpoint.parent / "checkpoint.seal.json").read_text())
-        assert sha(checkpoint) == sealed["checkpoint_sha256"]
-        assert sha(CONTRACT) == sealed["contract_sha256"]
     import torch
+    torch.set_num_threads(execution['training_runtime']['torch_cpu_threads'])
     if not candidates:
         candidates = {version: (epochs, checkpoint)}
     checkpoint_seals = {}
+    prior_seals = json.loads((checkpoint.parent / ('checkpoints.seal.json' if multiple else 'checkpoint.seal.json')).read_text()) if resume else None
     for name, (epoch, path) in candidates.items():
+        if resume:
+            prior = prior_seals[name] if multiple else prior_seals
+            assert sha(path) == prior['checkpoint_sha256'] and sha(CONTRACT) == prior['contract_sha256']
         payload = torch.load(path, map_location="cpu", weights_only=False)
         assert payload["parent_checkpoint_sha256"] == sha(PARENT)
         assert payload["training_day_range"] == [start, end] and payload["training_epochs_completed"] == epoch
@@ -140,6 +153,13 @@ def main():
     if not resume:
         write(checkpoint.parent / ("checkpoints.seal.json" if multiple else "checkpoint.seal.json"),
               checkpoint_seals if multiple else checkpoint_seals[version])
+        recovery_root = checkpoint.parent / 'recovery'
+        if recovery_root.exists():
+            write(OUT / 'recovery_retirement.json', {
+                'reason': 'all requested epoch endpoints validated and sealed',
+                'generations': [json.loads(p.read_text()) for p in sorted(recovery_root.glob('step_*/complete.json'))],
+            })
+            shutil.rmtree(recovery_root)
     runtime = execution["evaluation_runtime"]
     rows = []
     primary_report = None

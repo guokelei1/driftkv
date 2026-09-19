@@ -1,0 +1,797 @@
+{
+  "scope": "CPU-only fixed4096 DEVELOPMENT data expansion. No training, model outcomes, weights, formal admission or final-role outcomes accessed.",
+  "training_seed": 17,
+  "candidate_seed": 17,
+  "context": 1024,
+  "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+  "cohort_users": 4096,
+  "cohort_sha256": "5ef4a17d22300436f49c48b8aed17b8a86267b6f9ad1c6382d6c4d15aa16dd2a",
+  "training_cohort_users": 4096,
+  "training_cohort_sha256": "5ef4a17d22300436f49c48b8aed17b8a86267b6f9ad1c6382d6c4d15aa16dd2a",
+  "evaluation_cohort_users": 4096,
+  "evaluation_cohort_sha256": "5ef4a17d22300436f49c48b8aed17b8a86267b6f9ad1c6382d6c4d15aa16dd2a",
+  "cohort_rule": "Development-role users with >=1024 D1-18 realshow events, sorted by stable_hash(uid,1818), first4096. Existing512 is the exact prefix. No future activity, labels, target coverage or model outcomes select UIDs.",
+  "initial_population_day": 18,
+  "minimum_initial_cohort_exposures": 1024,
+  "catalog_items": 1000000,
+  "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+  "catalog_rule": "Same initial D1-18 catalog top1M by development exposure count descending, raw item ID ascending on ties; mapping sorted by raw ID. No catalog expansion or future-label selection.",
+  "epoch_definition": "Training arrays contain EVERY positive request in the window, with no150k cap. The current known-item objective traverses EVERY request containing a known positive exactly once; all-OOV fitting requests are excluded explicitly by train_phase and counted here. One sampled known positive per request is the existing objective; complete epoch does not mean every positive item is separately sampled.",
+  "zero_label_rule": "No-positive requests are absent from fitting/retrieval-score arrays but are counted and remain in real history. Unknown targets stay in evaluation denominators; all-OOV positive requests score zero.",
+  "initial_history_rule": "D1-18 training retains short and empty prefixes; initial user eligibility does not require every initial request to have1024 preceding events. All later update/evaluation requests have at least1024 prior events.",
+  "request_selection": "Every positive request in each complete D19..24 daily window for the frozen4096 UIDs; request means retain all-OOV misses. No later-activity or coverage selection of UIDs.",
+  "evaluation_windows": [
+    [
+      19,
+      19
+    ],
+    [
+      20,
+      20
+    ],
+    [
+      21,
+      21
+    ],
+    [
+      22,
+      22
+    ],
+    [
+      23,
+      23
+    ],
+    [
+      24,
+      24
+    ]
+  ],
+  "sampled_panel_rule": "For each complete day's positive-request panel, sort stable_hash(request_id,170256) XOR stable_hash(uid,256017) and retain6144. No known-positive filtering; sampled protocols use this subset's own request/OOV denominator and matched random.",
+  "sampled_requests_per_day": 6144,
+  "primary": "Not selected by data preparation; model/metric settings must be fixed separately before evaluation.",
+  "companions": "Preserve full-catalog and sampled protocol distinctions, all declared cutoffs, request/OOV denominators and matched random baselines.",
+  "arrays_file": "/home/gkl/work/evokv/results/recflow/development/expanded_daily_panels_u4096_seed17/window_panels.npz",
+  "arrays_file_sha256": "b45a730a999bb8001cf9f56d447dbe7b34f25ec30d36f1c79d15538652591c20",
+  "array_keys": [
+    "train_1_18",
+    "update_19_19",
+    "update_20_20",
+    "update_21_21",
+    "update_22_22",
+    "update_23_23",
+    "eval_19_19",
+    "sampled_19_19",
+    "eval_20_20",
+    "sampled_20_20",
+    "eval_21_21",
+    "sampled_21_21",
+    "eval_22_22",
+    "sampled_22_22",
+    "eval_23_23",
+    "sampled_23_23",
+    "eval_24_24",
+    "sampled_24_24"
+  ],
+  "training": {
+    "train_1_18": {
+      "days": [
+        1,
+        18
+      ],
+      "all_logged_requests": 1942431,
+      "zero_positive_requests_not_in_fitting_array": 429830,
+      "requests": 1512601,
+      "users_with_requests": 4096,
+      "positive_requests": 1512601,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 1380132,
+      "all_oov_positive_requests": 132469,
+      "positive_targets": 4024685,
+      "known_positive_targets": 3226269,
+      "oov_positive_targets": 798416,
+      "target_coverage": 0.8016202510258567,
+      "unique_known_positive_videos": 772931,
+      "unique_known_positive_raw_ids_sha256": "982a72912e0414342aeb8e5f7950f89dac147ce270285ab63ba16a542776a391",
+      "minimum_prefix_events": 0,
+      "requests_per_day": {
+        "1": 81427,
+        "2": 82329,
+        "3": 73504,
+        "4": 75247,
+        "5": 79255,
+        "6": 80254,
+        "7": 83864,
+        "8": 89863,
+        "9": 88980,
+        "10": 85665,
+        "11": 82776,
+        "12": 84949,
+        "13": 89931,
+        "14": 90694,
+        "15": 92171,
+        "16": 90958,
+        "17": 83866,
+        "18": 76868
+      },
+      "request_indices_sha256": "8819cf093d47a9ada504150f8217c7aef74be78f77a1c431b86b64660400562a",
+      "request_uids_sha256": "4739c816aef5057a74595b48036e4330c6b31ba541deabb31d73626468be459b",
+      "unique_uids_sha256": "79b6cfd3eedcf5e8b0331c493973cb80aecbba8834ca22890eb3d8c75fb635d0",
+      "positive_counts_sha256": "ceb9512f81fef75a838e68344454d9ccd1e5dada3c0e1bc118a5c2cd8977faaa",
+      "known_positive_counts_sha256": "26f8bf35b437d4374a2f645542ae16f8bcb23a982a544d1743a76abe84a5e451",
+      "known_training_indices_sha256": "8bfb3372d119981c3f8b649d1d4c12497055a6143ee7cc14f6355812ae491a90",
+      "global_batch128_steps_per_epoch": 10783,
+      "global_batch128_final_batch_requests": 36
+    },
+    "update_19_19": {
+      "days": [
+        19,
+        19
+      ],
+      "all_logged_requests": 95354,
+      "zero_positive_requests_not_in_fitting_array": 21034,
+      "requests": 74320,
+      "users_with_requests": 3534,
+      "positive_requests": 74320,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 50694,
+      "all_oov_positive_requests": 23626,
+      "positive_targets": 195038,
+      "known_positive_targets": 89781,
+      "oov_positive_targets": 105257,
+      "target_coverage": 0.4603256801238733,
+      "unique_known_positive_videos": 58401,
+      "unique_known_positive_raw_ids_sha256": "898aa625f522eb7b3948685fbb1c8e1461102d956c29b6db234353df1b1dc204",
+      "minimum_prefix_events": 1024,
+      "requests_per_day": {
+        "19": 74320
+      },
+      "request_indices_sha256": "67ce783ead2f999471dfb8e02a088d17fddb6a66e5cf51889e76b3174601111b",
+      "request_uids_sha256": "714313d1ff2ac7418a9d6612dbee46d6a8ddd51a8024dd0347e2026c818b1d95",
+      "unique_uids_sha256": "0c8ce5458f20f3e290d65dca737874e876560d36b94c09d4e843353c26077857",
+      "positive_counts_sha256": "ba638ffc96b7f4eaa943c423b75239c71d0945430e288d08ca2c01547e67b105",
+      "known_positive_counts_sha256": "44183e9726b36fda5ba99208e6d352ad62a2e53fc430232dc348c99b8a632d98",
+      "known_training_indices_sha256": "457d4d85ab6e22a51c50c953d632298729387bbc81e30eb76aff81f1834fe1bc",
+      "global_batch128_steps_per_epoch": 397,
+      "global_batch128_final_batch_requests": 6
+    },
+    "update_20_20": {
+      "days": [
+        20,
+        20
+      ],
+      "all_logged_requests": 89780,
+      "zero_positive_requests_not_in_fitting_array": 19172,
+      "requests": 70608,
+      "users_with_requests": 3492,
+      "positive_requests": 70608,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 40273,
+      "all_oov_positive_requests": 30335,
+      "positive_targets": 187152,
+      "known_positive_targets": 63134,
+      "oov_positive_targets": 124018,
+      "target_coverage": 0.3373407711378986,
+      "unique_known_positive_videos": 42618,
+      "unique_known_positive_raw_ids_sha256": "fadcb6654e2c0cd4f7feb9f21a469ecd2c7e09097e0e989b4b96788c564afed6",
+      "minimum_prefix_events": 1027,
+      "requests_per_day": {
+        "20": 70608
+      },
+      "request_indices_sha256": "c5b5bffd951a6b10582ab0bb8760cae1a76dd9d954e894726abe786527582c31",
+      "request_uids_sha256": "87013ba254872543570bfa20743aaba30484c2ccc82fc4b05091e5cbed7e2709",
+      "unique_uids_sha256": "eea5be232c083ecdcf6ab476264fa814990e5756a2de19543f38131727fca64c",
+      "positive_counts_sha256": "ab170e7f8e954f3d34442f4bcf7c4218116f0191c08f4cfb3315ffc9585f513a",
+      "known_positive_counts_sha256": "c32b11fb964f11699d19947a2ff9809c4341f91c2d35779e012e163fe4993a64",
+      "known_training_indices_sha256": "11c00962c735b6feae2b93bf5571228ef61ead38698d6b5714638896f84e8099",
+      "global_batch128_steps_per_epoch": 315,
+      "global_batch128_final_batch_requests": 81
+    },
+    "update_21_21": {
+      "days": [
+        21,
+        21
+      ],
+      "all_logged_requests": 86907,
+      "zero_positive_requests_not_in_fitting_array": 19499,
+      "requests": 67408,
+      "users_with_requests": 3392,
+      "positive_requests": 67408,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 33555,
+      "all_oov_positive_requests": 33853,
+      "positive_targets": 178090,
+      "known_positive_targets": 49532,
+      "oov_positive_targets": 128558,
+      "target_coverage": 0.27812903588073445,
+      "unique_known_positive_videos": 37701,
+      "unique_known_positive_raw_ids_sha256": "26575ddfe8f4d21614f1b4f5bc217da5b2767ae99211d90e6af59775866d32b2",
+      "minimum_prefix_events": 1053,
+      "requests_per_day": {
+        "21": 67408
+      },
+      "request_indices_sha256": "39ff75c90592b5aaa0ad941b54cbd9079fce4ad89b545ffdf8479d609d4d5e3c",
+      "request_uids_sha256": "e82697e2c574134294d1c11da9c395141e50b35edae5932a8bb48e809ccba471",
+      "unique_uids_sha256": "aac46a53f259d9ff55f37fc675c9b4143134d567a7f19171e0b2e885bba22b18",
+      "positive_counts_sha256": "ca6d411fd50175931f70ba55a20703014c877557efce29ba28f1ffa4a3c187d0",
+      "known_positive_counts_sha256": "f569d0aa315be6d2dedc6a240d45534dafb406ecd95a7cb66542796dd19733d3",
+      "known_training_indices_sha256": "d235ae3e4d16361ab775e05c3e4991cfd0143a40f9daf3747ec511d23c778409",
+      "global_batch128_steps_per_epoch": 263,
+      "global_batch128_final_batch_requests": 19
+    },
+    "update_22_22": {
+      "days": [
+        22,
+        22
+      ],
+      "all_logged_requests": 91227,
+      "zero_positive_requests_not_in_fitting_array": 20249,
+      "requests": 70978,
+      "users_with_requests": 3383,
+      "positive_requests": 70978,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 31630,
+      "all_oov_positive_requests": 39348,
+      "positive_targets": 185943,
+      "known_positive_targets": 44318,
+      "oov_positive_targets": 141625,
+      "target_coverage": 0.23834185745093928,
+      "unique_known_positive_videos": 34490,
+      "unique_known_positive_raw_ids_sha256": "a5dc45c55f9df547b1362924c682e1b724770e7651df066480fcd49652ea7f37",
+      "minimum_prefix_events": 1047,
+      "requests_per_day": {
+        "22": 70978
+      },
+      "request_indices_sha256": "0db95f1a5499e43d4c4ebf0a32e0e059857376febe7986853c7b5f505322b4d3",
+      "request_uids_sha256": "75e023fc30c5e2a13dfb82a52a715f0607181591c77bf8ad878c3694579cc82f",
+      "unique_uids_sha256": "2cb29488a0da40f133a27fd0fb79e1df221365f4bff8f457d76b80118c00e6b9",
+      "positive_counts_sha256": "085800a1e6c2f4072f81fb053e5c38138cf17593c5c846a3435ef100e4369e72",
+      "known_positive_counts_sha256": "9236562772fe623b1089939431b07de8e1cb318d451a07bf5e7a3b12a88521c0",
+      "known_training_indices_sha256": "559c0c3c8d6fb971f1a87d4f0aec7c3beb54cf4257047e971821b6e0b5045147",
+      "global_batch128_steps_per_epoch": 248,
+      "global_batch128_final_batch_requests": 14
+    },
+    "update_23_23": {
+      "days": [
+        23,
+        23
+      ],
+      "all_logged_requests": 87778,
+      "zero_positive_requests_not_in_fitting_array": 19808,
+      "requests": 67970,
+      "users_with_requests": 3401,
+      "positive_requests": 67970,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 29454,
+      "all_oov_positive_requests": 38516,
+      "positive_targets": 178775,
+      "known_positive_targets": 40909,
+      "oov_positive_targets": 137866,
+      "target_coverage": 0.2288295343308628,
+      "unique_known_positive_videos": 32390,
+      "unique_known_positive_raw_ids_sha256": "060aa4dcd88204511de47042a09e6e02ef42d61d37763f936d2fa3929758d0bb",
+      "minimum_prefix_events": 1028,
+      "requests_per_day": {
+        "23": 67970
+      },
+      "request_indices_sha256": "32ad502f4079ab37dceb3a16af6758decf93859c24a34b15b4412f91ef1e8c8b",
+      "request_uids_sha256": "283039f3515df630d574fc46f306613038ea2baeaedfffee85e0dd7c824f8e5e",
+      "unique_uids_sha256": "2bc65babf2a6012875b388447903a10beaea858fc41fd584a596081c409e97b4",
+      "positive_counts_sha256": "84774a95f296f7b309efe481eb5df779fab617b47f9351a1cf1d5a3a6a59358b",
+      "known_positive_counts_sha256": "0a9b656b97cf682d58af9b4f00e096f912993cffde75e17dc09881161ada0389",
+      "known_training_indices_sha256": "2f12f9595b393db329aaa039885c13a683e7016c8fba32dbba1d725800540a39",
+      "global_batch128_steps_per_epoch": 231,
+      "global_batch128_final_batch_requests": 14
+    }
+  },
+  "evaluation": {
+    "19_19": {
+      "days": [
+        19,
+        19
+      ],
+      "all_logged_requests": 95354,
+      "zero_positive_requests_not_in_scoring_array": 21034,
+      "all_positive_requests": {
+        "requests": 74320,
+        "users_with_requests": 3534,
+        "positive_requests": 74320,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 50694,
+        "all_oov_positive_requests": 23626,
+        "positive_targets": 195038,
+        "known_positive_targets": 89781,
+        "oov_positive_targets": 105257,
+        "target_coverage": 0.4603256801238733,
+        "unique_known_positive_videos": 58401,
+        "unique_known_positive_raw_ids_sha256": "898aa625f522eb7b3948685fbb1c8e1461102d956c29b6db234353df1b1dc204",
+        "minimum_prefix_events": 1024,
+        "requests_per_day": {
+          "19": 74320
+        },
+        "request_indices_sha256": "67ce783ead2f999471dfb8e02a088d17fddb6a66e5cf51889e76b3174601111b",
+        "request_uids_sha256": "714313d1ff2ac7418a9d6612dbee46d6a8ddd51a8024dd0347e2026c818b1d95",
+        "unique_uids_sha256": "0c8ce5458f20f3e290d65dca737874e876560d36b94c09d4e843353c26077857",
+        "positive_counts_sha256": "ba638ffc96b7f4eaa943c423b75239c71d0945430e288d08ca2c01547e67b105",
+        "known_positive_counts_sha256": "44183e9726b36fda5ba99208e6d352ad62a2e53fc430232dc348c99b8a632d98"
+      },
+      "free_panel_key": "eval_19_19",
+      "free_panel": {
+        "requests": 74320,
+        "users_with_requests": 3534,
+        "positive_requests": 74320,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 50694,
+        "all_oov_positive_requests": 23626,
+        "positive_targets": 195038,
+        "known_positive_targets": 89781,
+        "oov_positive_targets": 105257,
+        "target_coverage": 0.4603256801238733,
+        "unique_known_positive_videos": 58401,
+        "unique_known_positive_raw_ids_sha256": "898aa625f522eb7b3948685fbb1c8e1461102d956c29b6db234353df1b1dc204",
+        "minimum_prefix_events": 1024,
+        "requests_per_day": {
+          "19": 74320
+        },
+        "request_indices_sha256": "67ce783ead2f999471dfb8e02a088d17fddb6a66e5cf51889e76b3174601111b",
+        "request_uids_sha256": "714313d1ff2ac7418a9d6612dbee46d6a8ddd51a8024dd0347e2026c818b1d95",
+        "unique_uids_sha256": "0c8ce5458f20f3e290d65dca737874e876560d36b94c09d4e843353c26077857",
+        "positive_counts_sha256": "ba638ffc96b7f4eaa943c423b75239c71d0945430e288d08ca2c01547e67b105",
+        "known_positive_counts_sha256": "44183e9726b36fda5ba99208e6d352ad62a2e53fc430232dc348c99b8a632d98"
+      },
+      "sampled_panel_key": "sampled_19_19",
+      "sampled_panel": {
+        "requests": 6144,
+        "users_with_requests": 2353,
+        "positive_requests": 6144,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 4139,
+        "all_oov_positive_requests": 2005,
+        "positive_targets": 16208,
+        "known_positive_targets": 7269,
+        "oov_positive_targets": 8939,
+        "target_coverage": 0.4484822309970385,
+        "unique_known_positive_videos": 6620,
+        "unique_known_positive_raw_ids_sha256": "9a5b0d4cbae0039ca675337bbdbfcc4bfc5ebb3d90813a15d422d38f29df32bb",
+        "minimum_prefix_events": 1024,
+        "requests_per_day": {
+          "19": 6144
+        },
+        "request_indices_sha256": "747a369121b919ba412080d2cb503cd8db2d90b86b73256cc6bd3de29fc9259d",
+        "request_uids_sha256": "f4e6e38134df8b9698d20a17dcd4799101d7920dc0559896fdca77aa524bd7a3",
+        "unique_uids_sha256": "261366f6418bf794ca499f3f81c7e29f8ce60002ac8178eb2553949b7508ad2c",
+        "positive_counts_sha256": "c6f82b985424a7d6c562a0d48c15d860bf26e064ad165241a7ab531eb76449f6",
+        "known_positive_counts_sha256": "e59ef216d1a322c57588c1dd63a0b854617b7732e7e4b54e19bae61e887d210c"
+      }
+    },
+    "20_20": {
+      "days": [
+        20,
+        20
+      ],
+      "all_logged_requests": 89780,
+      "zero_positive_requests_not_in_scoring_array": 19172,
+      "all_positive_requests": {
+        "requests": 70608,
+        "users_with_requests": 3492,
+        "positive_requests": 70608,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 40273,
+        "all_oov_positive_requests": 30335,
+        "positive_targets": 187152,
+        "known_positive_targets": 63134,
+        "oov_positive_targets": 124018,
+        "target_coverage": 0.3373407711378986,
+        "unique_known_positive_videos": 42618,
+        "unique_known_positive_raw_ids_sha256": "fadcb6654e2c0cd4f7feb9f21a469ecd2c7e09097e0e989b4b96788c564afed6",
+        "minimum_prefix_events": 1027,
+        "requests_per_day": {
+          "20": 70608
+        },
+        "request_indices_sha256": "c5b5bffd951a6b10582ab0bb8760cae1a76dd9d954e894726abe786527582c31",
+        "request_uids_sha256": "87013ba254872543570bfa20743aaba30484c2ccc82fc4b05091e5cbed7e2709",
+        "unique_uids_sha256": "eea5be232c083ecdcf6ab476264fa814990e5756a2de19543f38131727fca64c",
+        "positive_counts_sha256": "ab170e7f8e954f3d34442f4bcf7c4218116f0191c08f4cfb3315ffc9585f513a",
+        "known_positive_counts_sha256": "c32b11fb964f11699d19947a2ff9809c4341f91c2d35779e012e163fe4993a64"
+      },
+      "free_panel_key": "eval_20_20",
+      "free_panel": {
+        "requests": 70608,
+        "users_with_requests": 3492,
+        "positive_requests": 70608,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 40273,
+        "all_oov_positive_requests": 30335,
+        "positive_targets": 187152,
+        "known_positive_targets": 63134,
+        "oov_positive_targets": 124018,
+        "target_coverage": 0.3373407711378986,
+        "unique_known_positive_videos": 42618,
+        "unique_known_positive_raw_ids_sha256": "fadcb6654e2c0cd4f7feb9f21a469ecd2c7e09097e0e989b4b96788c564afed6",
+        "minimum_prefix_events": 1027,
+        "requests_per_day": {
+          "20": 70608
+        },
+        "request_indices_sha256": "c5b5bffd951a6b10582ab0bb8760cae1a76dd9d954e894726abe786527582c31",
+        "request_uids_sha256": "87013ba254872543570bfa20743aaba30484c2ccc82fc4b05091e5cbed7e2709",
+        "unique_uids_sha256": "eea5be232c083ecdcf6ab476264fa814990e5756a2de19543f38131727fca64c",
+        "positive_counts_sha256": "ab170e7f8e954f3d34442f4bcf7c4218116f0191c08f4cfb3315ffc9585f513a",
+        "known_positive_counts_sha256": "c32b11fb964f11699d19947a2ff9809c4341f91c2d35779e012e163fe4993a64"
+      },
+      "sampled_panel_key": "sampled_20_20",
+      "sampled_panel": {
+        "requests": 6144,
+        "users_with_requests": 2343,
+        "positive_requests": 6144,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 3492,
+        "all_oov_positive_requests": 2652,
+        "positive_targets": 16290,
+        "known_positive_targets": 5409,
+        "oov_positive_targets": 10881,
+        "target_coverage": 0.3320441988950276,
+        "unique_known_positive_videos": 4905,
+        "unique_known_positive_raw_ids_sha256": "fc5bd4f60024e1807ea1efde25db4c087ce9b33292228cef9590032b214186ae",
+        "minimum_prefix_events": 1041,
+        "requests_per_day": {
+          "20": 6144
+        },
+        "request_indices_sha256": "aa805640d7fbeaf7e05ef4a6b9c380acb5d59d773a6b66659f1a17f5478d1500",
+        "request_uids_sha256": "69ad045c88175d23897406965a725a5143ec45676875189a4d680b39a3bce539",
+        "unique_uids_sha256": "59efe87491d90a79f5d8f425c56212f047e493adec153d2e154162fb037371a1",
+        "positive_counts_sha256": "0a00ee80ab971dc33ee5bb287f9fde46bb8dc80424feb3b599cfebe8368b47c7",
+        "known_positive_counts_sha256": "2ea49792e8680c86c8688813db42fea806a09e59eb0e0acd32293cbb15dbd0c8"
+      }
+    },
+    "21_21": {
+      "days": [
+        21,
+        21
+      ],
+      "all_logged_requests": 86907,
+      "zero_positive_requests_not_in_scoring_array": 19499,
+      "all_positive_requests": {
+        "requests": 67408,
+        "users_with_requests": 3392,
+        "positive_requests": 67408,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 33555,
+        "all_oov_positive_requests": 33853,
+        "positive_targets": 178090,
+        "known_positive_targets": 49532,
+        "oov_positive_targets": 128558,
+        "target_coverage": 0.27812903588073445,
+        "unique_known_positive_videos": 37701,
+        "unique_known_positive_raw_ids_sha256": "26575ddfe8f4d21614f1b4f5bc217da5b2767ae99211d90e6af59775866d32b2",
+        "minimum_prefix_events": 1053,
+        "requests_per_day": {
+          "21": 67408
+        },
+        "request_indices_sha256": "39ff75c90592b5aaa0ad941b54cbd9079fce4ad89b545ffdf8479d609d4d5e3c",
+        "request_uids_sha256": "e82697e2c574134294d1c11da9c395141e50b35edae5932a8bb48e809ccba471",
+        "unique_uids_sha256": "aac46a53f259d9ff55f37fc675c9b4143134d567a7f19171e0b2e885bba22b18",
+        "positive_counts_sha256": "ca6d411fd50175931f70ba55a20703014c877557efce29ba28f1ffa4a3c187d0",
+        "known_positive_counts_sha256": "f569d0aa315be6d2dedc6a240d45534dafb406ecd95a7cb66542796dd19733d3"
+      },
+      "free_panel_key": "eval_21_21",
+      "free_panel": {
+        "requests": 67408,
+        "users_with_requests": 3392,
+        "positive_requests": 67408,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 33555,
+        "all_oov_positive_requests": 33853,
+        "positive_targets": 178090,
+        "known_positive_targets": 49532,
+        "oov_positive_targets": 128558,
+        "target_coverage": 0.27812903588073445,
+        "unique_known_positive_videos": 37701,
+        "unique_known_positive_raw_ids_sha256": "26575ddfe8f4d21614f1b4f5bc217da5b2767ae99211d90e6af59775866d32b2",
+        "minimum_prefix_events": 1053,
+        "requests_per_day": {
+          "21": 67408
+        },
+        "request_indices_sha256": "39ff75c90592b5aaa0ad941b54cbd9079fce4ad89b545ffdf8479d609d4d5e3c",
+        "request_uids_sha256": "e82697e2c574134294d1c11da9c395141e50b35edae5932a8bb48e809ccba471",
+        "unique_uids_sha256": "aac46a53f259d9ff55f37fc675c9b4143134d567a7f19171e0b2e885bba22b18",
+        "positive_counts_sha256": "ca6d411fd50175931f70ba55a20703014c877557efce29ba28f1ffa4a3c187d0",
+        "known_positive_counts_sha256": "f569d0aa315be6d2dedc6a240d45534dafb406ecd95a7cb66542796dd19733d3"
+      },
+      "sampled_panel_key": "sampled_21_21",
+      "sampled_panel": {
+        "requests": 6144,
+        "users_with_requests": 2282,
+        "positive_requests": 6144,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 3016,
+        "all_oov_positive_requests": 3128,
+        "positive_targets": 16248,
+        "known_positive_targets": 4491,
+        "oov_positive_targets": 11757,
+        "target_coverage": 0.27640324963072377,
+        "unique_known_positive_videos": 4242,
+        "unique_known_positive_raw_ids_sha256": "3fcfe9ecada9676289bdf069a205d0c8e825e62967d512581884635d6ae3554c",
+        "minimum_prefix_events": 1063,
+        "requests_per_day": {
+          "21": 6144
+        },
+        "request_indices_sha256": "663591a7bcfc0b0ec89f4c5020b30e00ead602e3f01758ab5eb853d3c34ccac2",
+        "request_uids_sha256": "7f542ce2daaa4840e499e7d31881a21f62da79034a688c3699c66e929c04edf7",
+        "unique_uids_sha256": "27a3c8bbf06114d23e1ffa139f549b1189140058c4983598ab28a13576d8738e",
+        "positive_counts_sha256": "67e95ffb6cd7e8dea48aec5d0ff661da72050637b585ddd91bf9c3ad062cc4fd",
+        "known_positive_counts_sha256": "6a902c2fa53f1a339fda394ae235b10b0744eb28e15b550d2c30d440d9c66f89"
+      }
+    },
+    "22_22": {
+      "days": [
+        22,
+        22
+      ],
+      "all_logged_requests": 91227,
+      "zero_positive_requests_not_in_scoring_array": 20249,
+      "all_positive_requests": {
+        "requests": 70978,
+        "users_with_requests": 3383,
+        "positive_requests": 70978,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 31630,
+        "all_oov_positive_requests": 39348,
+        "positive_targets": 185943,
+        "known_positive_targets": 44318,
+        "oov_positive_targets": 141625,
+        "target_coverage": 0.23834185745093928,
+        "unique_known_positive_videos": 34490,
+        "unique_known_positive_raw_ids_sha256": "a5dc45c55f9df547b1362924c682e1b724770e7651df066480fcd49652ea7f37",
+        "minimum_prefix_events": 1047,
+        "requests_per_day": {
+          "22": 70978
+        },
+        "request_indices_sha256": "0db95f1a5499e43d4c4ebf0a32e0e059857376febe7986853c7b5f505322b4d3",
+        "request_uids_sha256": "75e023fc30c5e2a13dfb82a52a715f0607181591c77bf8ad878c3694579cc82f",
+        "unique_uids_sha256": "2cb29488a0da40f133a27fd0fb79e1df221365f4bff8f457d76b80118c00e6b9",
+        "positive_counts_sha256": "085800a1e6c2f4072f81fb053e5c38138cf17593c5c846a3435ef100e4369e72",
+        "known_positive_counts_sha256": "9236562772fe623b1089939431b07de8e1cb318d451a07bf5e7a3b12a88521c0"
+      },
+      "free_panel_key": "eval_22_22",
+      "free_panel": {
+        "requests": 70978,
+        "users_with_requests": 3383,
+        "positive_requests": 70978,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 31630,
+        "all_oov_positive_requests": 39348,
+        "positive_targets": 185943,
+        "known_positive_targets": 44318,
+        "oov_positive_targets": 141625,
+        "target_coverage": 0.23834185745093928,
+        "unique_known_positive_videos": 34490,
+        "unique_known_positive_raw_ids_sha256": "a5dc45c55f9df547b1362924c682e1b724770e7651df066480fcd49652ea7f37",
+        "minimum_prefix_events": 1047,
+        "requests_per_day": {
+          "22": 70978
+        },
+        "request_indices_sha256": "0db95f1a5499e43d4c4ebf0a32e0e059857376febe7986853c7b5f505322b4d3",
+        "request_uids_sha256": "75e023fc30c5e2a13dfb82a52a715f0607181591c77bf8ad878c3694579cc82f",
+        "unique_uids_sha256": "2cb29488a0da40f133a27fd0fb79e1df221365f4bff8f457d76b80118c00e6b9",
+        "positive_counts_sha256": "085800a1e6c2f4072f81fb053e5c38138cf17593c5c846a3435ef100e4369e72",
+        "known_positive_counts_sha256": "9236562772fe623b1089939431b07de8e1cb318d451a07bf5e7a3b12a88521c0"
+      },
+      "sampled_panel_key": "sampled_22_22",
+      "sampled_panel": {
+        "requests": 6144,
+        "users_with_requests": 2280,
+        "positive_requests": 6144,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 2732,
+        "all_oov_positive_requests": 3412,
+        "positive_targets": 16122,
+        "known_positive_targets": 3850,
+        "oov_positive_targets": 12272,
+        "target_coverage": 0.23880411859570772,
+        "unique_known_positive_videos": 3717,
+        "unique_known_positive_raw_ids_sha256": "d6a4172f521bf85929f5b2e5eac98a8195365ec9ef9f3f4098b5820b726b18b8",
+        "minimum_prefix_events": 1059,
+        "requests_per_day": {
+          "22": 6144
+        },
+        "request_indices_sha256": "5744c8e75ea6a3c771794eb050397f9b8cca1955a3098155aebe87f35614c2a8",
+        "request_uids_sha256": "cbf9b6fbe950163831edaf1a26c0a1a1a21c6657adecdc0eedfcc6f819a82c63",
+        "unique_uids_sha256": "a111c4383a6ace4ae40974f42a1e38f07f92f7cfd2fbf650600379cf4690d3cc",
+        "positive_counts_sha256": "9ecf7fb227838869e2d4c9e7b9d4e9e1796d752af7c93b5559f8f894958e5178",
+        "known_positive_counts_sha256": "3ff86db11c154dc31e2ca4500f69bc34dc5847a4730c48bbd0fee88493295bb5"
+      }
+    },
+    "23_23": {
+      "days": [
+        23,
+        23
+      ],
+      "all_logged_requests": 87778,
+      "zero_positive_requests_not_in_scoring_array": 19808,
+      "all_positive_requests": {
+        "requests": 67970,
+        "users_with_requests": 3401,
+        "positive_requests": 67970,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 29454,
+        "all_oov_positive_requests": 38516,
+        "positive_targets": 178775,
+        "known_positive_targets": 40909,
+        "oov_positive_targets": 137866,
+        "target_coverage": 0.2288295343308628,
+        "unique_known_positive_videos": 32390,
+        "unique_known_positive_raw_ids_sha256": "060aa4dcd88204511de47042a09e6e02ef42d61d37763f936d2fa3929758d0bb",
+        "minimum_prefix_events": 1028,
+        "requests_per_day": {
+          "23": 67970
+        },
+        "request_indices_sha256": "32ad502f4079ab37dceb3a16af6758decf93859c24a34b15b4412f91ef1e8c8b",
+        "request_uids_sha256": "283039f3515df630d574fc46f306613038ea2baeaedfffee85e0dd7c824f8e5e",
+        "unique_uids_sha256": "2bc65babf2a6012875b388447903a10beaea858fc41fd584a596081c409e97b4",
+        "positive_counts_sha256": "84774a95f296f7b309efe481eb5df779fab617b47f9351a1cf1d5a3a6a59358b",
+        "known_positive_counts_sha256": "0a9b656b97cf682d58af9b4f00e096f912993cffde75e17dc09881161ada0389"
+      },
+      "free_panel_key": "eval_23_23",
+      "free_panel": {
+        "requests": 67970,
+        "users_with_requests": 3401,
+        "positive_requests": 67970,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 29454,
+        "all_oov_positive_requests": 38516,
+        "positive_targets": 178775,
+        "known_positive_targets": 40909,
+        "oov_positive_targets": 137866,
+        "target_coverage": 0.2288295343308628,
+        "unique_known_positive_videos": 32390,
+        "unique_known_positive_raw_ids_sha256": "060aa4dcd88204511de47042a09e6e02ef42d61d37763f936d2fa3929758d0bb",
+        "minimum_prefix_events": 1028,
+        "requests_per_day": {
+          "23": 67970
+        },
+        "request_indices_sha256": "32ad502f4079ab37dceb3a16af6758decf93859c24a34b15b4412f91ef1e8c8b",
+        "request_uids_sha256": "283039f3515df630d574fc46f306613038ea2baeaedfffee85e0dd7c824f8e5e",
+        "unique_uids_sha256": "2bc65babf2a6012875b388447903a10beaea858fc41fd584a596081c409e97b4",
+        "positive_counts_sha256": "84774a95f296f7b309efe481eb5df779fab617b47f9351a1cf1d5a3a6a59358b",
+        "known_positive_counts_sha256": "0a9b656b97cf682d58af9b4f00e096f912993cffde75e17dc09881161ada0389"
+      },
+      "sampled_panel_key": "sampled_23_23",
+      "sampled_panel": {
+        "requests": 6144,
+        "users_with_requests": 2253,
+        "positive_requests": 6144,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 2615,
+        "all_oov_positive_requests": 3529,
+        "positive_targets": 16132,
+        "known_positive_targets": 3624,
+        "oov_positive_targets": 12508,
+        "target_coverage": 0.2246466650136375,
+        "unique_known_positive_videos": 3490,
+        "unique_known_positive_raw_ids_sha256": "4276737ede42edd24d4a72c2cb2254e2506134761ab81d6334e13f82d3f40070",
+        "minimum_prefix_events": 1040,
+        "requests_per_day": {
+          "23": 6144
+        },
+        "request_indices_sha256": "1544f81cf09d85588468f418d73ccff4cb1d5c327d74478e90cd530dc9753026",
+        "request_uids_sha256": "86bd5632a066c249e8afdbbe7b7d15622940971be659171bff4894b08ee06aa1",
+        "unique_uids_sha256": "cf3253d110b19f4bf77905cd57138094e76554629069c8a24449bf9a8902460d",
+        "positive_counts_sha256": "a0f80d062001e41cf7be649d0ea0d07c9dadac346aa15bc754fc57ab72c098f5",
+        "known_positive_counts_sha256": "7ea44edf8fc83786eef87d1a17466e6b184c3e7364fbe8001a2cd689205e1440"
+      }
+    },
+    "24_24": {
+      "days": [
+        24,
+        24
+      ],
+      "all_logged_requests": 76981,
+      "zero_positive_requests_not_in_scoring_array": 17931,
+      "all_positive_requests": {
+        "requests": 59050,
+        "users_with_requests": 3329,
+        "positive_requests": 59050,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 25134,
+        "all_oov_positive_requests": 33916,
+        "positive_targets": 154192,
+        "known_positive_targets": 34946,
+        "oov_positive_targets": 119246,
+        "target_coverage": 0.22663951437169244,
+        "unique_known_positive_videos": 28756,
+        "unique_known_positive_raw_ids_sha256": "e56e0e9b762ef45358f79c3df6ee5ba63cfc1275d25717d166075f38f4bf7c94",
+        "minimum_prefix_events": 1058,
+        "requests_per_day": {
+          "24": 59050
+        },
+        "request_indices_sha256": "d42a9a5e596065ea5c223452ef5d00c47e483654509efb004be151f81cd1db6a",
+        "request_uids_sha256": "d3bed9d318ef678b513986ab93014bacced8a54d619055dd00e16ca6a4c753e8",
+        "unique_uids_sha256": "8f6c8588884ec7d2a95192978d214cde63a001b237af0069573b7bd614856cec",
+        "positive_counts_sha256": "235925c8a116d5be9cb4f568c9c39d9c0d5d73ff0bb066e0e6adfb235eddefab",
+        "known_positive_counts_sha256": "a4c5583fd0516b322dfca190ea75a702fa8fa35b6d5a290f08220a286ea2c978"
+      },
+      "free_panel_key": "eval_24_24",
+      "free_panel": {
+        "requests": 59050,
+        "users_with_requests": 3329,
+        "positive_requests": 59050,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 25134,
+        "all_oov_positive_requests": 33916,
+        "positive_targets": 154192,
+        "known_positive_targets": 34946,
+        "oov_positive_targets": 119246,
+        "target_coverage": 0.22663951437169244,
+        "unique_known_positive_videos": 28756,
+        "unique_known_positive_raw_ids_sha256": "e56e0e9b762ef45358f79c3df6ee5ba63cfc1275d25717d166075f38f4bf7c94",
+        "minimum_prefix_events": 1058,
+        "requests_per_day": {
+          "24": 59050
+        },
+        "request_indices_sha256": "d42a9a5e596065ea5c223452ef5d00c47e483654509efb004be151f81cd1db6a",
+        "request_uids_sha256": "d3bed9d318ef678b513986ab93014bacced8a54d619055dd00e16ca6a4c753e8",
+        "unique_uids_sha256": "8f6c8588884ec7d2a95192978d214cde63a001b237af0069573b7bd614856cec",
+        "positive_counts_sha256": "235925c8a116d5be9cb4f568c9c39d9c0d5d73ff0bb066e0e6adfb235eddefab",
+        "known_positive_counts_sha256": "a4c5583fd0516b322dfca190ea75a702fa8fa35b6d5a290f08220a286ea2c978"
+      },
+      "sampled_panel_key": "sampled_24_24",
+      "sampled_panel": {
+        "requests": 6144,
+        "users_with_requests": 2277,
+        "positive_requests": 6144,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 2554,
+        "all_oov_positive_requests": 3590,
+        "positive_targets": 15962,
+        "known_positive_targets": 3501,
+        "oov_positive_targets": 12461,
+        "target_coverage": 0.2193334168650545,
+        "unique_known_positive_videos": 3404,
+        "unique_known_positive_raw_ids_sha256": "d384aa9de10b91c422a6008068a85071237c8f3b555181869139b271e46ffb65",
+        "minimum_prefix_events": 1063,
+        "requests_per_day": {
+          "24": 6144
+        },
+        "request_indices_sha256": "de4872f021587a6e9e4535eb18aee7f002f99186be6fa09fdd3f19f1424bcde4",
+        "request_uids_sha256": "1d3e87909947c5351defa962b498022a7c69fb09734f4fedf7d418ab1e71994b",
+        "unique_uids_sha256": "120f5fc68ed6a1a482a44dc02b914c3a3949adac39719ffce35147f5f6c0ed84",
+        "positive_counts_sha256": "a6bc6b49bfcebadd76a6051d348b52a87e56a7f8cb3a3fce4c1041abf1d31815",
+        "known_positive_counts_sha256": "ace6be8ed5291bb1719e84fa135706ed597fcdc31ba21ebb432d937c0c19c722"
+      }
+    }
+  },
+  "data_manifest_sha256": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+  "data_file_sha256": {
+    "manifest.json": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+    "catalog.npz": "fa5387c1855af38a71da62d410747a1b0b586d02f28748c14d2b693362f3b571",
+    "population.npz": "ec32624632c1ace6c09a317ba348984fb87d9bc1eb1b15a5993e529f60f650e7",
+    "events.npy": "e5465deb7fd5c81eb92aea4c632832c4241035c1b875e7776d9a513154c3582c",
+    "requests.npy": "6929ec2df2bf3e4882608f2d05efe9b726c190c86df1227f785055ebed62bbc2",
+    "positives.npy": "8c42163fb63769ebe85bb032a7dacfe7dad4479e68f0a5e560a13b4427ba3f0a"
+  },
+  "source_panels": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+  "source_panels_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+  "source_manifest": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/summary.json",
+  "source_manifest_sha256": "30412b5fad90fd6603dcbf08cbdc9b8ec36e4e33ce57f193a36f2eb26a34da4e",
+  "checks": {
+    "development_only": true,
+    "initial_only_cohort_eligibility": true,
+    "fixed512_exact_prefix_of_fixed4096": true,
+    "same_frozen1m_catalog": true,
+    "original512_initial_requests_preserved": true,
+    "same_training_evaluation_cohort": true,
+    "complete_positive_request_windows": true,
+    "sampled_is_subset_of_free": true,
+    "sampled_requests_per_day": 6144,
+    "complete_timestamp_block_excluded": true,
+    "update_evaluation_minimum_history_at_least1024": true,
+    "initial_short_histories_retained": true,
+    "source_files_unchanged": true,
+    "model_results_not_accessed": true
+  },
+  "source_sha256": {
+    "scripts/recflow/expanded_daily_panels.py": "29ff45c6f5be2fdc21e366cf7b76b73107c5bd2b3fad3c9282229505d3b11062",
+    "scripts/recflow/window_panels.py": "5c60ecaae40fbeadac593bd35d932d49a052aa49b4368607f541d040b93d8f21",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7"
+  },
+  "elapsed_seconds": 13.873150415718555
+}

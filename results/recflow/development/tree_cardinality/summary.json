@@ -1,0 +1,91 @@
+{
+  "scope": "CPU-only development diagnostic of a frozen initial catalog and saved D19 development rankings; no model change, training, or final-user evaluation.",
+  "conclusion": "Uniform probability over category branches has a severe initial small-group bias. The trained checkpoint's exact rankings are not dominated by tiny groups, so this does not explain the whole quality deficit. No cardinality-prior variant was implemented.",
+  "catalog_semantics": "Start from D1-D18 catalog; choose 200k or 1M videos by development-user initial exposure count, ties by raw item ID; store selected IDs in ascending order. Video categories are frozen at earliest initial-window observation. Pair=(c1,c2); category-2 alone is not a unique parent-child path.",
+  "protocol": {
+    "cohort_users": 512,
+    "initial_history_minimum": 1024,
+    "population_cutoff": "D18",
+    "training_request_panel": "Same deterministic 50,000 D1-D18 positive-request sample for both catalog sizes. Requests with no in-catalog positive are excluded from these training NLL summaries. Average known-positive NLL within each request, then average requests.",
+    "saved_exact_rankings": "16 fixed D19 requests from the FP32 all-pairs panel; 1,600 ranked video occurrences.",
+    "observed_positive_comparison": "652 in-catalog positive occurrences among the original 1,024 D19 development requests. The paired 16-request panel has only 12 known positives.",
+    "zero_residual_definition": "All learned logits equal zero. Let A be number of c1 categories, B(c1) the number of valid c2 children, n(c1,c2) the leaf count. Baseline p(i)=1/[A*B(c1)*n(c1,c2)].",
+    "hypothetical_cardinality_base_measure": "Add log(sum_c2 n(c1,c2)) to c1 logits and log(n(c1,c2)) to conditional c2 logits. With zero residual leaf logits this telescopes to p(i)=1/N. This is a label-free initialization/base-measure proposal only, not measured trained-model quality."
+  },
+  "catalog_200k": {
+    "items": 200000,
+    "c1_count": 92,
+    "pairs": 6118,
+    "singleton_pairs": 1759,
+    "pair_size_quantiles": {
+      "min": 1,
+      "p25": 1,
+      "p50": 4,
+      "p75": 14,
+      "p90": 55,
+      "p99": 539.98,
+      "max": 5570
+    },
+    "fraction_catalog_items_singleton": 0.008795,
+    "fraction_catalog_items_group_at_most_10": 0.063915,
+    "zero_residual_probability_mass_singleton": 0.5228087623181535,
+    "zero_residual_probability_mass_group_at_most_10": 0.8574461368886286,
+    "zero_residual_top100_group_sizes": {
+      "1": 92,
+      "2": 4,
+      "4": 4
+    },
+    "request_equal_zero_branch_nll": 15.151618787827474,
+    "known_target_training_requests": 35213,
+    "uniform_item_nll": 12.206072645530174
+  },
+  "catalog_1m": {
+    "items": 1000000,
+    "c1_count": 97,
+    "pairs": 9186,
+    "request_equal_zero_branch_nll": 16.953943018307683,
+    "known_target_training_requests": 45677,
+    "uniform_item_nll": 13.815510557964274,
+    "interpretation": "The approximately 17 versus 13.8 initial NLL difference is explained by the zero-residual base measure for this request panel; actual randomly initialized logits need not equal these values."
+  },
+  "trained_exact_top100": {
+    "ranked_occurrences": 1600,
+    "unique_videos": 177,
+    "median_leaf_size": 369,
+    "mean_leaf_size": 556.424375,
+    "fraction_singleton": 0.029375,
+    "fraction_group_at_most_10": 0.08875,
+    "fraction_top100_probability_mass_group_at_most_10": 0.08935002458533355,
+    "top10_fraction_singleton": 0.10625,
+    "top1_fraction_group_at_most_10": 0
+  },
+  "trained_beam100_top100": {
+    "median_leaf_size": 603,
+    "mean_leaf_size": 897.686875,
+    "fraction_group_at_most_10": 0,
+    "interpretation": "Beam pruning favors high-mass branches and hides smaller branches; this is separate from learned-model quality."
+  },
+  "observed_known_positives_D19_1024": {
+    "occurrences": 652,
+    "unique_videos": 631,
+    "median_leaf_size": 356,
+    "mean_leaf_size": 762.1871165644171,
+    "fraction_singleton": 0.013803680981595092,
+    "fraction_group_at_most_10": 0.06748466257668712
+  },
+  "hashes": {
+    "checkpoint_sha256": "9b4a2e4f03b0f2b7e96870b8b365cadcc15d480f7bd0b7c1a603442de9220492",
+    "catalog_200k_ordered_raw_ids_sha256": "59b51d83d3599933c6ab4d16a3a591129051a16e9cd6b9b7ea8563bf1c048da9",
+    "catalog_1m_ordered_raw_ids_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+    "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+    "source_files_sha256": {
+      "results/recflow/development/decode_bound_fp32_grid_c128_k200k_seed17/configuration.json": "ea42a2e8cf5a72287fb6cc8b142650993e27cf0fe92aab3cc04e1b9d55d58a19",
+      "results/recflow/development/decode_bound_fp32_grid_c128_k200k_seed17/rankings.json": "db42afaaafc487435ae69db8557838c24ba36b90e84d2444dcfe3ab7c4e63cdb",
+      "results/recflow/development/grid_6l_h192_c128_k200k_seed17/parent_day19_rankings.json": "b999d4104e518ff0f8b3f41e9be23a643a0e3b1ca716a72216dcdf2fbcae1ab9",
+      "data/processed/recflow_v1/catalog.npz": "fa5387c1855af38a71da62d410747a1b0b586d02f28748c14d2b693362f3b571",
+      "data/processed/recflow_v1/manifest.json": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+      "scripts/recflow/development_probe.py": "52abc06b245c9a17ce3d827ff0689885212fc41b52a823338984724d364e4f7a",
+      "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7"
+    }
+  }
+}

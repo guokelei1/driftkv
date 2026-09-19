@@ -1,0 +1,330 @@
+{
+  "training_seed": 17,
+  "candidate_seed": 17,
+  "cohort_users": 512,
+  "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "cohort_rule": "Same fixed512 D1-18 development users with >=1024 real exposures, selected by initial stable UID hash. Later activity, OOV coverage and model outcomes never filter users.",
+  "catalog_items": 1000000,
+  "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+  "catalog_rule": "Same initial D1-18 catalog top1M by development exposure count descending, raw item ID ascending on ties; mapping sorted by raw ID. No catalog expansion or future-label selection.",
+  "epoch_definition": "Training arrays contain EVERY positive request in the window, with no150k cap. The current known-item objective traverses EVERY request containing a known positive exactly once; all-OOV fitting requests are excluded explicitly by train_phase and counted here. One sampled known positive per request is the existing objective; complete epoch does not mean every positive item is separately sampled.",
+  "zero_label_rule": "No-positive requests are absent from fitting/retrieval-score arrays but are counted and remain in real history. Unknown targets stay in evaluation denominators; all-OOV positive requests score zero.",
+  "data_manifest_sha256": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+  "scope": "One-day-update DEVELOPMENT panels on the existing 512-user cohort. No formal admission or final-role outcomes.",
+  "training_cohort_users": 512,
+  "training_cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "evaluation_cohort_users": 512,
+  "evaluation_cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+  "request_selection": "All positive requests in each complete one-day evaluation window; request mean including all-OOV misses.",
+  "evaluation_windows": [
+    [
+      20,
+      20
+    ],
+    [
+      21,
+      21
+    ]
+  ],
+  "primary": "Free beam300 FP32 NDCG@50; A/B on D20 after B fits D19, then B/C on D21 after C fits D20. Same catalog, positive requests and OOV denominator for each model and matched random.",
+  "companions": "NDCG@20/@100 and Recall@20/@50/@100; per-user means and known-target conditional metrics; uniform/popularity1000 diagnostics on each separate 768-request subset.",
+  "sampled_panel_rule": "Sort every full day's positive requests by stable_hash(request_id,170256) XOR stable_hash(uid,256017), keep first min(768,available). This is a new fixed diagnostic subset, not the previous three-day 256-per-day subset. Candidate seed17 and its own denominator/random baseline apply.",
+  "arrays_file": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+  "arrays_file_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+  "array_keys": [
+    "train_1_18",
+    "update_19_19",
+    "update_20_20",
+    "eval_20_20",
+    "sampled_20_20",
+    "eval_21_21",
+    "sampled_21_21"
+  ],
+  "training": {
+    "train_1_18": {
+      "days": [
+        1,
+        18
+      ],
+      "all_logged_requests": 243629,
+      "zero_positive_requests_not_in_fitting_array": 53735,
+      "requests": 189894,
+      "users_with_requests": 512,
+      "positive_requests": 189894,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 173395,
+      "all_oov_positive_requests": 16499,
+      "positive_targets": 500506,
+      "known_positive_targets": 401443,
+      "oov_positive_targets": 99063,
+      "target_coverage": 0.8020743008075827,
+      "minimum_prefix_events": 0,
+      "requests_per_day": {
+        "1": 10183,
+        "2": 10474,
+        "3": 9253,
+        "4": 9770,
+        "5": 9558,
+        "6": 9936,
+        "7": 10665,
+        "8": 10967,
+        "9": 11116,
+        "10": 10462,
+        "11": 10341,
+        "12": 10498,
+        "13": 11067,
+        "14": 11924,
+        "15": 11869,
+        "16": 11677,
+        "17": 10443,
+        "18": 9691
+      },
+      "request_indices_sha256": "89a6704f421b8bc7cdc3b84849d19a1c7bc9b7943bb4f14fc08579392e211cf1",
+      "request_uids_sha256": "60dfcbc1187efbd15b0de17c5891fd5bedfe9382fc3772e5f6373d2a3016f585",
+      "positive_counts_sha256": "922e03947bf345de922857e8f254571142dcf738fc83a73cbd246d108b642c92",
+      "known_positive_counts_sha256": "2e4370fb48d850f9bf412b0be8743bb135f1fa98ca0c0360e96ff832acb260d1",
+      "known_training_indices_sha256": "c74726e882a75648be97951d12ae10652c51c8cd1cbd2569493dc8a2d8d7fd24"
+    },
+    "update_19_19": {
+      "days": [
+        19,
+        19
+      ],
+      "all_logged_requests": 13023,
+      "zero_positive_requests_not_in_fitting_array": 3033,
+      "requests": 9990,
+      "users_with_requests": 456,
+      "positive_requests": 9990,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 6929,
+      "all_oov_positive_requests": 3061,
+      "positive_targets": 26292,
+      "known_positive_targets": 12381,
+      "oov_positive_targets": 13911,
+      "target_coverage": 0.4709036969420356,
+      "unique_known_positive_videos": 10925,
+      "unique_known_positive_raw_ids_sha256": "3a592b5bceea5263c8646e295612675a8bb5777f1524380323fff3b85054b45f",
+      "minimum_prefix_events": 1031,
+      "requests_per_day": {
+        "19": 9990
+      },
+      "request_indices_sha256": "edbb2f33b92ae587a95edabaf3d12b3c4db45f454eb4de8fb184a23828cb20e6",
+      "request_uids_sha256": "44723ac180fef62ef9c56c646bb1c3525a73494be99c0d76e017109212bb74bc",
+      "unique_uids_sha256": "9330e45e4f2b556655a3557b6b6f8571c600ab8ef355ae61cc4b50a32cf27153",
+      "positive_counts_sha256": "56c61b0f1c283556ee1692859472bc3629ccf1b3bae8b387f6f77a160cb06d08",
+      "known_positive_counts_sha256": "85981efd8d35322b72c01d38fe20b9ed1b57cced0cd4a5defa2e10c0c859b090",
+      "known_training_indices_sha256": "47fe9a989bd95b8b74f6df984d2355231a399f8ad1867ae6feef9d47f2ad972b",
+      "global_batch128_steps_per_epoch": 55,
+      "global_batch128_final_batch_requests": 17
+    },
+    "update_20_20": {
+      "days": [
+        20,
+        20
+      ],
+      "all_logged_requests": 12962,
+      "zero_positive_requests_not_in_fitting_array": 2791,
+      "requests": 10171,
+      "users_with_requests": 448,
+      "positive_requests": 10171,
+      "zero_positive_requests": 0,
+      "known_positive_requests": 5805,
+      "all_oov_positive_requests": 4366,
+      "positive_targets": 26474,
+      "known_positive_targets": 8988,
+      "oov_positive_targets": 17486,
+      "target_coverage": 0.33950290851401377,
+      "unique_known_positive_videos": 7878,
+      "unique_known_positive_raw_ids_sha256": "837463745d02d2dc0d79163c3847d552dc1c5f6c2e162f51a8b3cd57d08d276c",
+      "minimum_prefix_events": 1054,
+      "requests_per_day": {
+        "20": 10171
+      },
+      "request_indices_sha256": "5fda26889c808233fb9f3cd4991a6cad4c51ef4420923da2c996e3240424880b",
+      "request_uids_sha256": "e92ab0ef617725dcd711c71e23a71a414258faa23122b923398094b8e20840bf",
+      "unique_uids_sha256": "c3e4c64fce8d127e6696c4231c4a08a2ffb31ce804e7be392f506a431b617f36",
+      "positive_counts_sha256": "467d7abc9db3dee0f0a1e1ca97e1c49a85cdc88a9ebc0d019c91cf207a912f06",
+      "known_positive_counts_sha256": "735d887996cc046912beed7302e9600d602c0cd502654fa4c578b27154caee1f",
+      "known_training_indices_sha256": "8eabcab500c94cee815013d486181401dd365e2f76a20378470c78d6277f409d",
+      "global_batch128_steps_per_epoch": 46,
+      "global_batch128_final_batch_requests": 45
+    }
+  },
+  "evaluation": {
+    "20_20": {
+      "days": [
+        20,
+        20
+      ],
+      "all_logged_requests": 12962,
+      "all_positive_requests": {
+        "requests": 10171,
+        "users_with_requests": 448,
+        "positive_requests": 10171,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 5805,
+        "all_oov_positive_requests": 4366,
+        "positive_targets": 26474,
+        "known_positive_targets": 8988,
+        "oov_positive_targets": 17486,
+        "target_coverage": 0.33950290851401377,
+        "unique_known_positive_videos": 7878,
+        "unique_known_positive_raw_ids_sha256": "837463745d02d2dc0d79163c3847d552dc1c5f6c2e162f51a8b3cd57d08d276c",
+        "minimum_prefix_events": 1054,
+        "requests_per_day": {
+          "20": 10171
+        },
+        "request_indices_sha256": "5fda26889c808233fb9f3cd4991a6cad4c51ef4420923da2c996e3240424880b",
+        "request_uids_sha256": "e92ab0ef617725dcd711c71e23a71a414258faa23122b923398094b8e20840bf",
+        "unique_uids_sha256": "c3e4c64fce8d127e6696c4231c4a08a2ffb31ce804e7be392f506a431b617f36",
+        "positive_counts_sha256": "467d7abc9db3dee0f0a1e1ca97e1c49a85cdc88a9ebc0d019c91cf207a912f06",
+        "known_positive_counts_sha256": "735d887996cc046912beed7302e9600d602c0cd502654fa4c578b27154caee1f"
+      },
+      "free_panel_key": "eval_20_20",
+      "free_panel": {
+        "requests": 10171,
+        "users_with_requests": 448,
+        "positive_requests": 10171,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 5805,
+        "all_oov_positive_requests": 4366,
+        "positive_targets": 26474,
+        "known_positive_targets": 8988,
+        "oov_positive_targets": 17486,
+        "target_coverage": 0.33950290851401377,
+        "unique_known_positive_videos": 7878,
+        "unique_known_positive_raw_ids_sha256": "837463745d02d2dc0d79163c3847d552dc1c5f6c2e162f51a8b3cd57d08d276c",
+        "minimum_prefix_events": 1054,
+        "requests_per_day": {
+          "20": 10171
+        },
+        "request_indices_sha256": "5fda26889c808233fb9f3cd4991a6cad4c51ef4420923da2c996e3240424880b",
+        "request_uids_sha256": "e92ab0ef617725dcd711c71e23a71a414258faa23122b923398094b8e20840bf",
+        "unique_uids_sha256": "c3e4c64fce8d127e6696c4231c4a08a2ffb31ce804e7be392f506a431b617f36",
+        "positive_counts_sha256": "467d7abc9db3dee0f0a1e1ca97e1c49a85cdc88a9ebc0d019c91cf207a912f06",
+        "known_positive_counts_sha256": "735d887996cc046912beed7302e9600d602c0cd502654fa4c578b27154caee1f"
+      },
+      "sampled_panel_key": "sampled_20_20",
+      "sampled_panel": {
+        "requests": 768,
+        "users_with_requests": 296,
+        "positive_requests": 768,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 444,
+        "all_oov_positive_requests": 324,
+        "positive_targets": 2035,
+        "known_positive_targets": 674,
+        "oov_positive_targets": 1361,
+        "target_coverage": 0.3312039312039312,
+        "unique_known_positive_videos": 661,
+        "unique_known_positive_raw_ids_sha256": "b46982254d1e6cc9cb34ed082b3f5933ac8764ce6258d6e522fc674ca9d6f1e9",
+        "minimum_prefix_events": 1105,
+        "requests_per_day": {
+          "20": 768
+        },
+        "request_indices_sha256": "f270207806ce7a2b17a3c58fdbae1b1586c24446ec37f532ed17c677f124ba8f",
+        "request_uids_sha256": "8a8711dc03bf44e796b2a6d30086cf634f15204fc2be0fcce35a1e0fa87ddb78",
+        "unique_uids_sha256": "5a1d94a7c81e88d3fcff4af1043f25b0b4f89ff4bc437edd333e44de0dc659c5",
+        "positive_counts_sha256": "7a829630bdcc3495885b9d2c86babadc671e8f71c63dd0ce16993a510c2ca0d8",
+        "known_positive_counts_sha256": "54380775ae2ea438c6c9b153674998560fb9ef1c48035f40e7a54d3bda0c4cf3"
+      }
+    },
+    "21_21": {
+      "days": [
+        21,
+        21
+      ],
+      "all_logged_requests": 11547,
+      "all_positive_requests": {
+        "requests": 8866,
+        "users_with_requests": 426,
+        "positive_requests": 8866,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 4312,
+        "all_oov_positive_requests": 4554,
+        "positive_targets": 23170,
+        "known_positive_targets": 6236,
+        "oov_positive_targets": 16934,
+        "target_coverage": 0.2691411307725507,
+        "unique_known_positive_videos": 5825,
+        "unique_known_positive_raw_ids_sha256": "a7ef9401af185716d8590e805c6accbd7b605a26fbdc6fc0455e34ddf6279c00",
+        "minimum_prefix_events": 1081,
+        "requests_per_day": {
+          "21": 8866
+        },
+        "request_indices_sha256": "9f4cc7be004dec6dcf64dcb7d8d7206b45bb7ad2c59fe29252f7923914bff4f9",
+        "request_uids_sha256": "298891baaaac16cc858d9dfbdaa697daec93671fb2ccb6d33270da9aa41f5691",
+        "unique_uids_sha256": "82fcc240511b86e443f26f8c90dfb3fa9d0454ed7b7bfffe89be4cb6bb0bbbc3",
+        "positive_counts_sha256": "ed6971d4bd05001e66ef7ae77f1e21120fb9aa47d86f5ac1f54f910bf1be387b",
+        "known_positive_counts_sha256": "59173a176fc98be43e1a9936b1438be259abd620e96efe69d92d463a0922c7e6"
+      },
+      "free_panel_key": "eval_21_21",
+      "free_panel": {
+        "requests": 8866,
+        "users_with_requests": 426,
+        "positive_requests": 8866,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 4312,
+        "all_oov_positive_requests": 4554,
+        "positive_targets": 23170,
+        "known_positive_targets": 6236,
+        "oov_positive_targets": 16934,
+        "target_coverage": 0.2691411307725507,
+        "unique_known_positive_videos": 5825,
+        "unique_known_positive_raw_ids_sha256": "a7ef9401af185716d8590e805c6accbd7b605a26fbdc6fc0455e34ddf6279c00",
+        "minimum_prefix_events": 1081,
+        "requests_per_day": {
+          "21": 8866
+        },
+        "request_indices_sha256": "9f4cc7be004dec6dcf64dcb7d8d7206b45bb7ad2c59fe29252f7923914bff4f9",
+        "request_uids_sha256": "298891baaaac16cc858d9dfbdaa697daec93671fb2ccb6d33270da9aa41f5691",
+        "unique_uids_sha256": "82fcc240511b86e443f26f8c90dfb3fa9d0454ed7b7bfffe89be4cb6bb0bbbc3",
+        "positive_counts_sha256": "ed6971d4bd05001e66ef7ae77f1e21120fb9aa47d86f5ac1f54f910bf1be387b",
+        "known_positive_counts_sha256": "59173a176fc98be43e1a9936b1438be259abd620e96efe69d92d463a0922c7e6"
+      },
+      "sampled_panel_key": "sampled_21_21",
+      "sampled_panel": {
+        "requests": 768,
+        "users_with_requests": 286,
+        "positive_requests": 768,
+        "zero_positive_requests": 0,
+        "known_positive_requests": 375,
+        "all_oov_positive_requests": 393,
+        "positive_targets": 1970,
+        "known_positive_targets": 531,
+        "oov_positive_targets": 1439,
+        "target_coverage": 0.26954314720812184,
+        "unique_known_positive_videos": 527,
+        "unique_known_positive_raw_ids_sha256": "088801787bc7774fb2f520115b8b9f983d5924daa99139afd0e9cda33098918b",
+        "minimum_prefix_events": 1108,
+        "requests_per_day": {
+          "21": 768
+        },
+        "request_indices_sha256": "8b0d9c11405319d6340aebea5e526ec565ea074ff6e936bbfaf768a919ab78b5",
+        "request_uids_sha256": "a0e139fff75c1fa57b0d80b4e8ad1ab48895575b1e3e1702b6cb2f046c3d2963",
+        "unique_uids_sha256": "5d5911ea8d961bdb32d0ffb0c8a918783086f1a4fdbff2dde95cac83d399f58b",
+        "positive_counts_sha256": "7ce9319903d95ac3909fd580e5b873098dd503ea1900af003745879f826bf022",
+        "known_positive_counts_sha256": "219dc6d452da04a66947c6c26a076e2a48e9fa06caafd7cdc92037b7c7a4dcf8"
+      }
+    }
+  },
+  "source_panels": "/home/gkl/work/evokv/results/recflow/development/full_window_training_seed17/window_panels.npz",
+  "source_panels_sha256": "b942b1deaf736c76fba24ce8c15c135b2f396b3cc4a878eb37419de4c91cad49",
+  "source_manifest": "/home/gkl/work/evokv/results/recflow/development/full_window_training_seed17/summary.json",
+  "source_manifest_sha256": "fb109f6f15dd4e7aeb17e3054dafa67864b8cf54d19383bde841db28ebc497b8",
+  "checks": {
+    "development_only": true,
+    "same_training_evaluation_cohort": true,
+    "initial_training_npy_member_byte_identical_to_source": true,
+    "complete_positive_request_windows": true,
+    "sampled_is_subset_of_free": true,
+    "complete_timestamp_block_excluded": true,
+    "source_file_unchanged": true
+  },
+  "source_sha256": {
+    "scripts/recflow/daily_window_panels.py": "687654edd0e0678521fb1280fe1efd26038d80f918b872830f0c388c8dc4b55e",
+    "scripts/recflow/window_panels.py": "5c60ecaae40fbeadac593bd35d932d49a052aa49b4368607f541d040b93d8f21",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7"
+  },
+  "elapsed_seconds": 3.7684832625091076
+}

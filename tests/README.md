@@ -24,6 +24,9 @@
 - test_insight_two_functional_boundary：候选划分、聚合指标、rank-0/low-rank、持续性统计。
 - test_reader_compatibility_correction 及其余 reader 测试：当前 Insight 诊断所依赖的公共接口。
 - test_download_scale_datasets：当前 Yambda 数据选择边界。
+- test_recflow_data、test_recflow_model、test_recflow_metrics、test_recflow_evaluation：
+  独立 RecFlow 开发轨道的请求因果边界、滑窗时间输入、生成概率、检索指标，
+  以及完整面板/采样子面板各自的聚合与随机基线；使用小型合成数据。
 
 例如，修改 Insight 2 的聚合指标，只执行对应指标测试：
 

@@ -1,0 +1,1206 @@
+{
+  "scope": "All predeclared seed17 daily development endpoints; no winner selection or admission.",
+  "training_seed": 17,
+  "repeat_units": 1,
+  "primary_metric": "full_catalog ndcg@50",
+  "common_A3": {
+    "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_full_seed17/A/A_epoch3/checkpoint.pt",
+    "sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052"
+  },
+  "training": {
+    "B_day19": {
+      "configuration": {
+        "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+        "panels": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+        "seed": 17,
+        "candidate_seed": 17,
+        "catalog_size": 1000000,
+        "cohort_users": 512,
+        "context": 1024,
+        "layers": 6,
+        "hidden": 192,
+        "heads": 6,
+        "batch_size": 128,
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "clip_norm": 1,
+        "epochs": 3,
+        "evaluation_epochs": [
+          1,
+          3
+        ],
+        "training_probe_requests": 2048,
+        "decoder": "beam",
+        "beam_width": 300,
+        "eval_precision": "fp32",
+        "sampled_distractors": [
+          1000
+        ],
+        "log_every": 25,
+        "training_order": "shuffle",
+        "device": "cuda:0",
+        "eval_devices": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "model": {
+          "num_items": 1000001,
+          "num_behaviors": 4,
+          "num_prediction_items": 1000000,
+          "hidden_size": 192,
+          "num_layers": 6,
+          "num_heads": 6,
+          "head_dim": null,
+          "max_seq_len": 1027,
+          "temporal_num_freqs": 16,
+          "temporal_max_period": 86400.0,
+          "gating": "silu_gate",
+          "qk_scale": 1.0,
+          "attn_dropout": 0.0,
+          "activation": "silu",
+          "norm_eps": 1e-06,
+          "input_dropout": 0.0,
+          "tie_item_embeddings": true,
+          "block_variant": "hstu_reference",
+          "relative_position_bias": true,
+          "causal_diagonal": "inclusive",
+          "num_query_types": 1,
+          "num_query_actions": 1,
+          "query_type_id": 0,
+          "query_action_id": 0
+        },
+        "parameters": 194461521,
+        "phase": "B",
+        "requested_complete_epochs": 3,
+        "start_epoch": 0,
+        "training_window_days": [
+          19,
+          19
+        ],
+        "evaluation_window_days": [
+          20,
+          20
+        ],
+        "training_order_blocks": null,
+        "world_size": 4,
+        "global_batch_size": 128,
+        "cuda_visible_devices": "0,1,2,3",
+        "optimizer_state_steps_before": [
+          4065
+        ],
+        "parallel_evaluation_memory_note": "Evaluation worker peaks exclude the waiting training ranks' resident model, optimizer and DDP state; total physical GPU usage includes both.",
+        "canary": false,
+        "history_categories": false,
+        "catalog_items": 1000000,
+        "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+        "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+        "settings_path": "/home/gkl/work/evokv/configs/recflow/window_6l_daily_seed17.json",
+        "settings_sha256": "b4be1a74e31abb27bc447c526552d15f40745d847cbbeba1064fbe24b307727b",
+        "window_manifest_sha256": "30412b5fad90fd6603dcbf08cbdc9b8ec36e4e33ce57f193a36f2eb26a34da4e",
+        "panels_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+        "source_checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_full_seed17/A/A_epoch3/checkpoint.pt",
+        "source_checkpoint_sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+        "source_sha256": {
+          "scripts/recflow/window_chain.py": "1fabba16c2b64d675a166cbad9f3420493cd5eb98fc42738398f529592f91432",
+          "scripts/recflow/development_probe.py": "1b918945558f0ce3c7937b3fe177ade81266007e670e4165497a51f6f8c7af00",
+          "scripts/recflow/random_baseline.py": "7c99df8e5f1b90c2a3bb6e9dabca707cadcf97ea49d8a6239978c11861bbcb4c",
+          "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512",
+          "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+          "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c",
+          "scripts/recflow/distributed_probe.py": "b799a8afa6083d28fff1a9720531525ca5aa242ca2e9fb79ef9c52faa90d1d67",
+          "scripts/recflow/parallel_evaluate.py": "6b24d7764f8ff5c5f43e9ba4de98d7534a7304442ba359d8b122ab075ba333e3"
+        },
+        "torch_version": "2.12.1+cu130",
+        "scope": "Complete-epoch development, fixed seed17; no formal admission/final-user outcomes"
+      },
+      "epochs": [
+        {
+          "training": {
+            "phase": "B",
+            "epoch": 1,
+            "complete": true,
+            "rng_seed": 100018,
+            "training_order": "shuffle",
+            "eligible_requests": 6929,
+            "processed_requests": 6929,
+            "optimizer_steps": 55,
+            "request_mean_loss": 13.490105393335819,
+            "seconds": 21.775599509477615,
+            "requests_per_second": 318.2001945335292,
+            "order_sha256": "49adc2466b2ae4204702e902ea05546d66d211f2f54284cf5324a8ee1e3c445f",
+            "sampled_targets_sha256": "fecb23e19e5d42bd7c8f36c5eea22f8a70c4c0f027402c5b5a637b445fb4611f",
+            "peak_allocated_bytes": 11881118208,
+            "peak_reserved_bytes": 12834570240,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11881118208,
+                "peak_reserved_bytes": 12832473088
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11881111040,
+                "peak_reserved_bytes": 12834570240
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12834570240
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12834570240
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 12.797526359558105,
+            "rng_seed": 170017,
+            "indices_sha256": "ad74e1ecac5565a0c7b2dd590965d6d601cab69c13487a299d7c902ba2c93e46",
+            "sampled_targets_sha256": "6895967958cc59c36bb44f25a84ef617557295f0183256c4b3970ae32b93aae6",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        },
+        {
+          "training": {
+            "phase": "B",
+            "epoch": 2,
+            "complete": true,
+            "rng_seed": 100019,
+            "training_order": "shuffle",
+            "eligible_requests": 6929,
+            "processed_requests": 6929,
+            "optimizer_steps": 55,
+            "request_mean_loss": 11.99331861623422,
+            "seconds": 20.94174546841532,
+            "requests_per_second": 330.87022332739315,
+            "order_sha256": "6aa4edaa993dae1ecae2ca861ed59f8997432b1671bf472539dcf1befcf8083c",
+            "sampled_targets_sha256": "970157be7ec4b91be6b0cdcd828e29e9632342342f05c828ae6ebd2582e5a0ab",
+            "peak_allocated_bytes": 11878497792,
+            "peak_reserved_bytes": 12842958848,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11878497792,
+                "peak_reserved_bytes": 12566134784
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11877699584,
+                "peak_reserved_bytes": 12842958848
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11876644864,
+                "peak_reserved_bytes": 12840861696
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11876644864,
+                "peak_reserved_bytes": 12842958848
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 10.434184551239014,
+            "rng_seed": 170017,
+            "indices_sha256": "ad74e1ecac5565a0c7b2dd590965d6d601cab69c13487a299d7c902ba2c93e46",
+            "sampled_targets_sha256": "6895967958cc59c36bb44f25a84ef617557295f0183256c4b3970ae32b93aae6",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        },
+        {
+          "training": {
+            "phase": "B",
+            "epoch": 3,
+            "complete": true,
+            "rng_seed": 100020,
+            "training_order": "shuffle",
+            "eligible_requests": 6929,
+            "processed_requests": 6929,
+            "optimizer_steps": 55,
+            "request_mean_loss": 10.428603367744234,
+            "seconds": 20.977617380209267,
+            "requests_per_second": 330.30443231064777,
+            "order_sha256": "a6e9b15e226efa41d15b2243eb1bde542350fd2638c8cf6673e5deef01d16aa3",
+            "sampled_targets_sha256": "e84cd4b8ad69f160f724c74c4b769e19b03093628099a5dbf16461cb9781e4df",
+            "peak_allocated_bytes": 11880616960,
+            "peak_reserved_bytes": 13163823104,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11880616960,
+                "peak_reserved_bytes": 13163823104
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11877699584,
+                "peak_reserved_bytes": 12840861696
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11876644864,
+                "peak_reserved_bytes": 12842958848
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11876644864,
+                "peak_reserved_bytes": 12842958848
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 9.566817939281464,
+            "rng_seed": 170017,
+            "indices_sha256": "ad74e1ecac5565a0c7b2dd590965d6d601cab69c13487a299d7c902ba2c93e46",
+            "sampled_targets_sha256": "6895967958cc59c36bb44f25a84ef617557295f0183256c4b3970ae32b93aae6",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        }
+      ],
+      "optimizer_steps_before": 4065,
+      "expected_optimizer_steps_after": 4230,
+      "pre_training_nll": {
+        "requests": 2048,
+        "mean_nll": 13.994767010211945,
+        "rng_seed": 170017,
+        "indices_sha256": "ad74e1ecac5565a0c7b2dd590965d6d601cab69c13487a299d7c902ba2c93e46",
+        "sampled_targets_sha256": "6895967958cc59c36bb44f25a84ef617557295f0183256c4b3970ae32b93aae6",
+        "precision": "BF16 autocast, FP32 loss"
+      }
+    },
+    "C_day20_1epoch": {
+      "configuration": {
+        "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+        "panels": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+        "seed": 17,
+        "candidate_seed": 17,
+        "catalog_size": 1000000,
+        "cohort_users": 512,
+        "context": 1024,
+        "layers": 6,
+        "hidden": 192,
+        "heads": 6,
+        "batch_size": 128,
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "clip_norm": 1,
+        "epochs": 3,
+        "evaluation_epochs": [
+          3
+        ],
+        "training_probe_requests": 2048,
+        "decoder": "beam",
+        "beam_width": 300,
+        "eval_precision": "fp32",
+        "sampled_distractors": [
+          1000
+        ],
+        "log_every": 25,
+        "training_order": "shuffle",
+        "device": "cuda:0",
+        "eval_devices": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "model": {
+          "num_items": 1000001,
+          "num_behaviors": 4,
+          "num_prediction_items": 1000000,
+          "hidden_size": 192,
+          "num_layers": 6,
+          "num_heads": 6,
+          "head_dim": null,
+          "max_seq_len": 1027,
+          "temporal_num_freqs": 16,
+          "temporal_max_period": 86400.0,
+          "gating": "silu_gate",
+          "qk_scale": 1.0,
+          "attn_dropout": 0.0,
+          "activation": "silu",
+          "norm_eps": 1e-06,
+          "input_dropout": 0.0,
+          "tie_item_embeddings": true,
+          "block_variant": "hstu_reference",
+          "relative_position_bias": true,
+          "causal_diagonal": "inclusive",
+          "num_query_types": 1,
+          "num_query_actions": 1,
+          "query_type_id": 0,
+          "query_action_id": 0
+        },
+        "parameters": 194461521,
+        "phase": "C",
+        "requested_complete_epochs": 1,
+        "start_epoch": 0,
+        "training_window_days": [
+          20,
+          20
+        ],
+        "evaluation_window_days": [
+          21,
+          21
+        ],
+        "training_order_blocks": null,
+        "world_size": 4,
+        "global_batch_size": 128,
+        "cuda_visible_devices": "0,1,2,3",
+        "optimizer_state_steps_before": [
+          4120
+        ],
+        "parallel_evaluation_memory_note": "Evaluation worker peaks exclude the waiting training ranks' resident model, optimizer and DDP state; total physical GPU usage includes both.",
+        "canary": false,
+        "history_categories": false,
+        "catalog_items": 1000000,
+        "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+        "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+        "settings_path": "/home/gkl/work/evokv/configs/recflow/window_6l_daily_continuation_seed17.json",
+        "settings_sha256": "3a498adf0e5658e2a01ff26986c6943e3a0708755b14e908cffb4a51d96d8ed4",
+        "window_manifest_sha256": "30412b5fad90fd6603dcbf08cbdc9b8ec36e4e33ce57f193a36f2eb26a34da4e",
+        "panels_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+        "source_checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/B_day19/B_epoch1/checkpoint.pt",
+        "source_checkpoint_sha256": "8e5bfcae72392b95627bb6cc91f69e5d5e9e9470ee7c325c3dd301bd4b807349",
+        "source_sha256": {
+          "scripts/recflow/window_chain.py": "1fabba16c2b64d675a166cbad9f3420493cd5eb98fc42738398f529592f91432",
+          "scripts/recflow/development_probe.py": "1b918945558f0ce3c7937b3fe177ade81266007e670e4165497a51f6f8c7af00",
+          "scripts/recflow/random_baseline.py": "7c99df8e5f1b90c2a3bb6e9dabca707cadcf97ea49d8a6239978c11861bbcb4c",
+          "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512",
+          "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+          "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c",
+          "scripts/recflow/distributed_probe.py": "b799a8afa6083d28fff1a9720531525ca5aa242ca2e9fb79ef9c52faa90d1d67",
+          "scripts/recflow/parallel_evaluate.py": "6b24d7764f8ff5c5f43e9ba4de98d7534a7304442ba359d8b122ab075ba333e3"
+        },
+        "torch_version": "2.12.1+cu130",
+        "scope": "Complete-epoch development, fixed seed17; no formal admission/final-user outcomes"
+      },
+      "epochs": [
+        {
+          "training": {
+            "phase": "C",
+            "epoch": 1,
+            "complete": true,
+            "rng_seed": 200018,
+            "training_order": "shuffle",
+            "eligible_requests": 5805,
+            "processed_requests": 5805,
+            "optimizer_steps": 46,
+            "request_mean_loss": 13.345521338493223,
+            "seconds": 18.376761481165886,
+            "requests_per_second": 315.8880853924927,
+            "order_sha256": "aaec3824b7c381543841f158656019b2f343aeb1db423a72f128fe2cbc56d541",
+            "sampled_targets_sha256": "3d2ca15c392a9d29d92687a9266dd530632971aec667b89a944fad7a9da17da3",
+            "peak_allocated_bytes": 11881111040,
+            "peak_reserved_bytes": 12834570240,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12834570240
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12832473088
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12834570240
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11881111040,
+                "peak_reserved_bytes": 12834570240
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 12.239305973052979,
+            "rng_seed": 270017,
+            "indices_sha256": "f7be19c3b3dfba9230b0af509ff06a0acf4d7dd193c881f413636948f7c81701",
+            "sampled_targets_sha256": "07419835e30593f347191b1d0c843bb0dfc180ef07225fb64e25258109bd6cfa",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        }
+      ],
+      "optimizer_steps_before": 4120,
+      "expected_optimizer_steps_after": 4166,
+      "pre_training_nll": {
+        "requests": 2048,
+        "mean_nll": 13.45344865322113,
+        "rng_seed": 270017,
+        "indices_sha256": "f7be19c3b3dfba9230b0af509ff06a0acf4d7dd193c881f413636948f7c81701",
+        "sampled_targets_sha256": "07419835e30593f347191b1d0c843bb0dfc180ef07225fb64e25258109bd6cfa",
+        "precision": "BF16 autocast, FP32 loss"
+      }
+    },
+    "C_day20_3epoch": {
+      "configuration": {
+        "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+        "panels": "/home/gkl/work/evokv/results/recflow/development/daily_window_panels_seed17/window_panels.npz",
+        "seed": 17,
+        "candidate_seed": 17,
+        "catalog_size": 1000000,
+        "cohort_users": 512,
+        "context": 1024,
+        "layers": 6,
+        "hidden": 192,
+        "heads": 6,
+        "batch_size": 128,
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "clip_norm": 1,
+        "epochs": 3,
+        "evaluation_epochs": [
+          3
+        ],
+        "training_probe_requests": 2048,
+        "decoder": "beam",
+        "beam_width": 300,
+        "eval_precision": "fp32",
+        "sampled_distractors": [
+          1000
+        ],
+        "log_every": 25,
+        "training_order": "shuffle",
+        "device": "cuda:0",
+        "eval_devices": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "model": {
+          "num_items": 1000001,
+          "num_behaviors": 4,
+          "num_prediction_items": 1000000,
+          "hidden_size": 192,
+          "num_layers": 6,
+          "num_heads": 6,
+          "head_dim": null,
+          "max_seq_len": 1027,
+          "temporal_num_freqs": 16,
+          "temporal_max_period": 86400.0,
+          "gating": "silu_gate",
+          "qk_scale": 1.0,
+          "attn_dropout": 0.0,
+          "activation": "silu",
+          "norm_eps": 1e-06,
+          "input_dropout": 0.0,
+          "tie_item_embeddings": true,
+          "block_variant": "hstu_reference",
+          "relative_position_bias": true,
+          "causal_diagonal": "inclusive",
+          "num_query_types": 1,
+          "num_query_actions": 1,
+          "query_type_id": 0,
+          "query_action_id": 0
+        },
+        "parameters": 194461521,
+        "phase": "C",
+        "requested_complete_epochs": 3,
+        "start_epoch": 0,
+        "training_window_days": [
+          20,
+          20
+        ],
+        "evaluation_window_days": [
+          21,
+          21
+        ],
+        "training_order_blocks": null,
+        "world_size": 4,
+        "global_batch_size": 128,
+        "cuda_visible_devices": "0,1,2,3",
+        "optimizer_state_steps_before": [
+          4230
+        ],
+        "parallel_evaluation_memory_note": "Evaluation worker peaks exclude the waiting training ranks' resident model, optimizer and DDP state; total physical GPU usage includes both.",
+        "canary": false,
+        "history_categories": false,
+        "catalog_items": 1000000,
+        "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+        "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+        "settings_path": "/home/gkl/work/evokv/configs/recflow/window_6l_daily_continuation_seed17.json",
+        "settings_sha256": "3a498adf0e5658e2a01ff26986c6943e3a0708755b14e908cffb4a51d96d8ed4",
+        "window_manifest_sha256": "30412b5fad90fd6603dcbf08cbdc9b8ec36e4e33ce57f193a36f2eb26a34da4e",
+        "panels_sha256": "003815f4024010581b4be206cd3aa41b476feefaf3babd180b758f5cacb7c577",
+        "source_checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/B_day19/B_epoch3/checkpoint.pt",
+        "source_checkpoint_sha256": "e765e53932f2e96502ca66ac7118d4ada8b1ce5116b0c138f85d2e6bff717a2a",
+        "source_sha256": {
+          "scripts/recflow/window_chain.py": "1fabba16c2b64d675a166cbad9f3420493cd5eb98fc42738398f529592f91432",
+          "scripts/recflow/development_probe.py": "1b918945558f0ce3c7937b3fe177ade81266007e670e4165497a51f6f8c7af00",
+          "scripts/recflow/random_baseline.py": "7c99df8e5f1b90c2a3bb6e9dabca707cadcf97ea49d8a6239978c11861bbcb4c",
+          "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512",
+          "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+          "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c",
+          "scripts/recflow/distributed_probe.py": "b799a8afa6083d28fff1a9720531525ca5aa242ca2e9fb79ef9c52faa90d1d67",
+          "scripts/recflow/parallel_evaluate.py": "6b24d7764f8ff5c5f43e9ba4de98d7534a7304442ba359d8b122ab075ba333e3"
+        },
+        "torch_version": "2.12.1+cu130",
+        "scope": "Complete-epoch development, fixed seed17; no formal admission/final-user outcomes"
+      },
+      "epochs": [
+        {
+          "training": {
+            "phase": "C",
+            "epoch": 1,
+            "complete": true,
+            "rng_seed": 200018,
+            "training_order": "shuffle",
+            "eligible_requests": 5805,
+            "processed_requests": 5805,
+            "optimizer_steps": 46,
+            "request_mean_loss": 13.405160827784576,
+            "seconds": 18.397182368673384,
+            "requests_per_second": 315.5374493588062,
+            "order_sha256": "aaec3824b7c381543841f158656019b2f343aeb1db423a72f128fe2cbc56d541",
+            "sampled_targets_sha256": "3d2ca15c392a9d29d92687a9266dd530632971aec667b89a944fad7a9da17da3",
+            "peak_allocated_bytes": 11881111040,
+            "peak_reserved_bytes": 12834570240,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12834570240
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12832473088
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11881074176,
+                "peak_reserved_bytes": 12834570240
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11881111040,
+                "peak_reserved_bytes": 12834570240
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 11.698050677776337,
+            "rng_seed": 270017,
+            "indices_sha256": "f7be19c3b3dfba9230b0af509ff06a0acf4d7dd193c881f413636948f7c81701",
+            "sampled_targets_sha256": "07419835e30593f347191b1d0c843bb0dfc180ef07225fb64e25258109bd6cfa",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        },
+        {
+          "training": {
+            "phase": "C",
+            "epoch": 2,
+            "complete": true,
+            "rng_seed": 200019,
+            "training_order": "shuffle",
+            "eligible_requests": 5805,
+            "processed_requests": 5805,
+            "optimizer_steps": 46,
+            "request_mean_loss": 11.100263582725756,
+            "seconds": 17.492405583150685,
+            "requests_per_second": 331.85830115850877,
+            "order_sha256": "b6d3685ed38fe57c711d6386e09994e57deae36a008654b63111b5ce594845ed",
+            "sampled_targets_sha256": "8d88a2b021544138063135b13039d62b06c7e6fbe7dd9e28d4280e950eb1c4c4",
+            "peak_allocated_bytes": 11877186048,
+            "peak_reserved_bytes": 13289652224,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11877186048,
+                "peak_reserved_bytes": 13289652224
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11876644864,
+                "peak_reserved_bytes": 12842958848
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11876115456,
+                "peak_reserved_bytes": 12847153152
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11877023232,
+                "peak_reserved_bytes": 12847153152
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 9.633315086364746,
+            "rng_seed": 270017,
+            "indices_sha256": "f7be19c3b3dfba9230b0af509ff06a0acf4d7dd193c881f413636948f7c81701",
+            "sampled_targets_sha256": "07419835e30593f347191b1d0c843bb0dfc180ef07225fb64e25258109bd6cfa",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        },
+        {
+          "training": {
+            "phase": "C",
+            "epoch": 3,
+            "complete": true,
+            "rng_seed": 200020,
+            "training_order": "shuffle",
+            "eligible_requests": 5805,
+            "processed_requests": 5805,
+            "optimizer_steps": 46,
+            "request_mean_loss": 9.73599329122072,
+            "seconds": 17.50231441948563,
+            "requests_per_second": 331.67042145792976,
+            "order_sha256": "98c54f18516fd337e5c494094d5914e532f0b7838a55e99a2215698f69d424f2",
+            "sampled_targets_sha256": "d93124b1dc5d7edda2870281b84665175ed4d1a51a000ad5b55153893d3c1aa4",
+            "peak_allocated_bytes": 11877186048,
+            "peak_reserved_bytes": 12849250304,
+            "rank_memory": [
+              {
+                "rank": 0,
+                "peak_allocated_bytes": 11877186048,
+                "peak_reserved_bytes": 12478054400
+              },
+              {
+                "rank": 1,
+                "peak_allocated_bytes": 11876644864,
+                "peak_reserved_bytes": 12842958848
+              },
+              {
+                "rank": 2,
+                "peak_allocated_bytes": 11876115456,
+                "peak_reserved_bytes": 12847153152
+              },
+              {
+                "rank": 3,
+                "peak_allocated_bytes": 11877023232,
+                "peak_reserved_bytes": 12849250304
+              }
+            ],
+            "world_size": 4,
+            "global_batch_size": 128
+          },
+          "fixed_training_nll": {
+            "requests": 2048,
+            "mean_nll": 8.861398458480835,
+            "rng_seed": 270017,
+            "indices_sha256": "f7be19c3b3dfba9230b0af509ff06a0acf4d7dd193c881f413636948f7c81701",
+            "sampled_targets_sha256": "07419835e30593f347191b1d0c843bb0dfc180ef07225fb64e25258109bd6cfa",
+            "precision": "BF16 autocast, FP32 loss"
+          }
+        }
+      ],
+      "optimizer_steps_before": 4230,
+      "expected_optimizer_steps_after": 4368,
+      "pre_training_nll": {
+        "requests": 2048,
+        "mean_nll": 14.135794579982758,
+        "rng_seed": 270017,
+        "indices_sha256": "f7be19c3b3dfba9230b0af509ff06a0acf4d7dd193c881f413636948f7c81701",
+        "sampled_targets_sha256": "07419835e30593f347191b1d0c843bb0dfc180ef07225fb64e25258109bd6cfa",
+        "precision": "BF16 autocast, FP32 loss"
+      }
+    }
+  },
+  "comparisons": {
+    "AB_1epoch": {
+      "primary": {
+        "parent": {
+          "trained": 6.3568331470846e-05,
+          "analytic_expectation": 5.6289350028806866e-06,
+          "null_mean": 5.724510778082945e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 3.2772916461835936e-05,
+          "null_p99": 4.613889745578177e-05,
+          "monte_carlo_mean_standard_error": 1.4393223480994325e-07,
+          "monte_carlo_mean_minus_analytic": 9.557577520225822e-08,
+          "trained_over_expected": 11.293136523749876,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current": {
+          "trained": 0.00033063145933495957,
+          "analytic_expectation": 5.6289350028806866e-06,
+          "null_mean": 5.724510778082945e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 3.2772916461835936e-05,
+          "null_p99": 4.613889745578177e-05,
+          "monte_carlo_mean_standard_error": 1.4393223480994325e-07,
+          "monte_carlo_mean_minus_analytic": 9.557577520225822e-08,
+          "trained_over_expected": 58.737835694630384,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current_minus_parent": 0.00026706312786411356,
+        "current_gt_parent": true,
+        "sensitivity_working_flags_met": true,
+        "per_day": {
+          "20": {
+            "parent": 6.3568331470846e-05,
+            "current": 0.00033063145933495957,
+            "current_minus_parent": 0.00026706312786411356
+          }
+        }
+      },
+      "absolute_gain": 0.00026706312786411356,
+      "current_over_parent": 5.201197698363301,
+      "relative_gain_percent": 420.1197698363301,
+      "descriptive_edge_work": true,
+      "hits": {
+        "parent": {
+          "20": {
+            "requests": 1,
+            "users": 1,
+            "per_day": {
+              "20": {
+                "requests": 1,
+                "users": 1
+              }
+            }
+          },
+          "50": {
+            "requests": 4,
+            "users": 4,
+            "per_day": {
+              "20": {
+                "requests": 4,
+                "users": 4
+              }
+            }
+          },
+          "100": {
+            "requests": 12,
+            "users": 11,
+            "per_day": {
+              "20": {
+                "requests": 12,
+                "users": 11
+              }
+            }
+          }
+        },
+        "current": {
+          "20": {
+            "requests": 5,
+            "users": 5,
+            "per_day": {
+              "20": {
+                "requests": 5,
+                "users": 5
+              }
+            }
+          },
+          "50": {
+            "requests": 11,
+            "users": 11,
+            "per_day": {
+              "20": {
+                "requests": 11,
+                "users": 11
+              }
+            }
+          },
+          "100": {
+            "requests": 19,
+            "users": 18,
+            "per_day": {
+              "20": {
+                "requests": 19,
+                "users": 18
+              }
+            }
+          }
+        }
+      },
+      "companions_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/AB_1epoch/summary.json",
+      "matched_random_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/AB_1epoch/random/summary.json"
+    },
+    "AB_3epoch": {
+      "primary": {
+        "parent": {
+          "trained": 6.3568331470846e-05,
+          "analytic_expectation": 5.6289350028806866e-06,
+          "null_mean": 5.724510778082945e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 3.2772916461835936e-05,
+          "null_p99": 4.613889745578177e-05,
+          "monte_carlo_mean_standard_error": 1.4393223480994325e-07,
+          "monte_carlo_mean_minus_analytic": 9.557577520225822e-08,
+          "trained_over_expected": 11.293136523749876,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current": {
+          "trained": 0.000794570828278644,
+          "analytic_expectation": 5.6289350028806866e-06,
+          "null_mean": 5.724510778082945e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 3.2772916461835936e-05,
+          "null_p99": 4.613889745578177e-05,
+          "monte_carlo_mean_standard_error": 1.4393223480994325e-07,
+          "monte_carlo_mean_minus_analytic": 9.557577520225822e-08,
+          "trained_over_expected": 141.15828800155114,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current_minus_parent": 0.000731002496807798,
+        "current_gt_parent": true,
+        "sensitivity_working_flags_met": true,
+        "per_day": {
+          "20": {
+            "parent": 6.3568331470846e-05,
+            "current": 0.000794570828278644,
+            "current_minus_parent": 0.000731002496807798
+          }
+        }
+      },
+      "absolute_gain": 0.000731002496807798,
+      "current_over_parent": 12.499475916605642,
+      "relative_gain_percent": 1149.947591660564,
+      "descriptive_edge_work": true,
+      "hits": {
+        "parent": {
+          "20": {
+            "requests": 1,
+            "users": 1,
+            "per_day": {
+              "20": {
+                "requests": 1,
+                "users": 1
+              }
+            }
+          },
+          "50": {
+            "requests": 4,
+            "users": 4,
+            "per_day": {
+              "20": {
+                "requests": 4,
+                "users": 4
+              }
+            }
+          },
+          "100": {
+            "requests": 12,
+            "users": 11,
+            "per_day": {
+              "20": {
+                "requests": 12,
+                "users": 11
+              }
+            }
+          }
+        },
+        "current": {
+          "20": {
+            "requests": 28,
+            "users": 28,
+            "per_day": {
+              "20": {
+                "requests": 28,
+                "users": 28
+              }
+            }
+          },
+          "50": {
+            "requests": 41,
+            "users": 41,
+            "per_day": {
+              "20": {
+                "requests": 41,
+                "users": 41
+              }
+            }
+          },
+          "100": {
+            "requests": 61,
+            "users": 58,
+            "per_day": {
+              "20": {
+                "requests": 61,
+                "users": 58
+              }
+            }
+          }
+        }
+      },
+      "companions_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/AB_3epoch/summary.json",
+      "matched_random_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/AB_3epoch/random/summary.json"
+    },
+    "BC_1epoch": {
+      "primary": {
+        "parent": {
+          "trained": 0.00012860797765588288,
+          "analytic_expectation": 4.423712939605819e-06,
+          "null_mean": 4.472614214311317e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 2.9784358512586383e-05,
+          "null_p99": 4.3633296552508645e-05,
+          "monte_carlo_mean_standard_error": 1.4067490149620208e-07,
+          "monte_carlo_mean_minus_analytic": 4.89012747054978e-08,
+          "trained_over_expected": 29.072405784843415,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current": {
+          "trained": 0.0009117615394502377,
+          "analytic_expectation": 4.423712939605819e-06,
+          "null_mean": 4.472614214311317e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 2.9784358512586383e-05,
+          "null_p99": 4.3633296552508645e-05,
+          "monte_carlo_mean_standard_error": 1.4067490149620208e-07,
+          "monte_carlo_mean_minus_analytic": 4.89012747054978e-08,
+          "trained_over_expected": 206.10775425484127,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current_minus_parent": 0.0007831535617943548,
+        "current_gt_parent": true,
+        "sensitivity_working_flags_met": true,
+        "per_day": {
+          "21": {
+            "parent": 0.00012860797765588288,
+            "current": 0.0009117615394502377,
+            "current_minus_parent": 0.0007831535617943548
+          }
+        }
+      },
+      "absolute_gain": 0.0007831535617943548,
+      "current_over_parent": 7.089463313775475,
+      "relative_gain_percent": 608.9463313775475,
+      "descriptive_edge_work": true,
+      "hits": {
+        "parent": {
+          "20": {
+            "requests": 5,
+            "users": 5,
+            "per_day": {
+              "21": {
+                "requests": 5,
+                "users": 5
+              }
+            }
+          },
+          "50": {
+            "requests": 8,
+            "users": 7,
+            "per_day": {
+              "21": {
+                "requests": 8,
+                "users": 7
+              }
+            }
+          },
+          "100": {
+            "requests": 10,
+            "users": 9,
+            "per_day": {
+              "21": {
+                "requests": 10,
+                "users": 9
+              }
+            }
+          }
+        },
+        "current": {
+          "20": {
+            "requests": 27,
+            "users": 22,
+            "per_day": {
+              "21": {
+                "requests": 27,
+                "users": 22
+              }
+            }
+          },
+          "50": {
+            "requests": 50,
+            "users": 40,
+            "per_day": {
+              "21": {
+                "requests": 50,
+                "users": 40
+              }
+            }
+          },
+          "100": {
+            "requests": 58,
+            "users": 43,
+            "per_day": {
+              "21": {
+                "requests": 58,
+                "users": 43
+              }
+            }
+          }
+        }
+      },
+      "companions_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/BC_1epoch/summary.json",
+      "matched_random_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/BC_1epoch/random/summary.json"
+    },
+    "BC_3epoch": {
+      "primary": {
+        "parent": {
+          "trained": 0.00027151884981053493,
+          "analytic_expectation": 4.423712939605819e-06,
+          "null_mean": 4.472614214311317e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 2.9784358512586383e-05,
+          "null_p99": 4.3633296552508645e-05,
+          "monte_carlo_mean_standard_error": 1.4067490149620208e-07,
+          "monte_carlo_mean_minus_analytic": 4.89012747054978e-08,
+          "trained_over_expected": 61.37804453349746,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current": {
+          "trained": 0.0008594384343950588,
+          "analytic_expectation": 4.423712939605819e-06,
+          "null_mean": 4.472614214311317e-06,
+          "null_p2.5": 0.0,
+          "null_p97.5": 2.9784358512586383e-05,
+          "null_p99": 4.3633296552508645e-05,
+          "monte_carlo_mean_standard_error": 1.4067490149620208e-07,
+          "monte_carlo_mean_minus_analytic": 4.89012747054978e-08,
+          "trained_over_expected": 194.27988346631736,
+          "trained_exceeds_null_p99": true,
+          "trained_at_least_2x_expected": true,
+          "both_conditions": true
+        },
+        "current_minus_parent": 0.0005879195845845239,
+        "current_gt_parent": true,
+        "sensitivity_working_flags_met": true,
+        "per_day": {
+          "21": {
+            "parent": 0.00027151884981053493,
+            "current": 0.0008594384343950588,
+            "current_minus_parent": 0.0005879195845845239
+          }
+        }
+      },
+      "absolute_gain": 0.0005879195845845239,
+      "current_over_parent": 3.1652993337102466,
+      "relative_gain_percent": 216.52993337102467,
+      "descriptive_edge_work": true,
+      "hits": {
+        "parent": {
+          "20": {
+            "requests": 9,
+            "users": 9,
+            "per_day": {
+              "21": {
+                "requests": 9,
+                "users": 9
+              }
+            }
+          },
+          "50": {
+            "requests": 13,
+            "users": 13,
+            "per_day": {
+              "21": {
+                "requests": 13,
+                "users": 13
+              }
+            }
+          },
+          "100": {
+            "requests": 23,
+            "users": 23,
+            "per_day": {
+              "21": {
+                "requests": 23,
+                "users": 23
+              }
+            }
+          }
+        },
+        "current": {
+          "20": {
+            "requests": 29,
+            "users": 28,
+            "per_day": {
+              "21": {
+                "requests": 29,
+                "users": 28
+              }
+            }
+          },
+          "50": {
+            "requests": 48,
+            "users": 40,
+            "per_day": {
+              "21": {
+                "requests": 48,
+                "users": 40
+              }
+            }
+          },
+          "100": {
+            "requests": 70,
+            "users": 55,
+            "per_day": {
+              "21": {
+                "requests": 70,
+                "users": 55
+              }
+            }
+          }
+        }
+      },
+      "companions_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/BC_3epoch/summary.json",
+      "matched_random_file": "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/BC_3epoch/random/summary.json"
+    }
+  },
+  "branch_work": {
+    "1epoch": true,
+    "3epoch": true
+  },
+  "all_tested_settings_work": true,
+  "any_tested_setting_work": true,
+  "admissible": false,
+  "lineage_verification": "Training/evaluation recorded checkpoint paths and SHA agree; AdamW start steps plus complete epoch steps checked. No weight file loaded; final optimizer steps are inferred, not re-read.",
+  "interpretation": "D20 compares one shared D19 training trajectory at epochs1/3; D21 compares cumulative dose policies. Different inherited states prevent isolating only the second update's epoch count. All companion metrics remain linked; random trials are not seed repeats or uncertainty for the gain. This is not a same-window daily-versus-three-day schedule comparison.",
+  "input_sha256": {
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/B_day19/summary.json": "019932de823d619b525362461165913eccbb09d895d199b87cc7bd1e73bae671",
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/C_day20_1epoch/summary.json": "cce39d0576e147d486484d3ade80da81e8946c08b36a0e0ef995ee07ad469cc4",
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/C_day20_3epoch/summary.json": "2fd0f68b2b57ae7d6b41beeb0c675eededd8921657e9814a53a4cf969f1d4a0e",
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/AB_1epoch/summary.json": "faedc32cf38e246c946efd9671058a3b1e857582c684ceccfade604f0a043a05",
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/AB_3epoch/summary.json": "6af95becb48a9d0ba40c8517e725fc788b3630322d00cf660c825d822357956a",
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/BC_1epoch/summary.json": "cc231c521b6680fe997265863b51e9d2043ce7e5f1836ea2858f58a5a7f96f3b",
+    "/home/gkl/work/evokv/results/recflow/development/window_6l_daily_seed17/BC_3epoch/summary.json": "441838928bb09ebcf9fb02423e01bd3229a0d274edd2ab07ad6451d0fe757813"
+  },
+  "source_sha256": {
+    "/home/gkl/work/evokv/scripts/recflow/daily_comparison.py": "889f7dd3bf71035d9d70d2ffe892d2e52f205ee8fb9a5edd3079e4127182c021"
+  }
+}

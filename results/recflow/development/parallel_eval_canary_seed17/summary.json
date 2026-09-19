@@ -1,0 +1,77 @@
+{
+  "scope": "Execution equivalence only: fixed first8 frozen D19\u201321 requests, including5 fixed sampled diagnostics; not a quality or throughput qualification.",
+  "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_2l_seed17/A/A_epoch1/checkpoint.pt",
+  "checkpoint_sha256": "6aeac496044f754fb95a19b4192f1bd81d684aa7cde776b310f30f0a6c350bdd",
+  "phase": "A_epoch1_d19_21",
+  "serial_device": "cuda:1",
+  "parallel_devices": [
+    "cuda:1",
+    "cuda:2"
+  ],
+  "eval_precision": "fp32",
+  "beam_width": 300,
+  "full_request_panel": {
+    "requests": 8,
+    "indices_sha256": "52ffd349c8444269edcc2acd9a82ce2344371c37233f58432442ff6b286e9214"
+  },
+  "sampled_request_panel": {
+    "requests": 5,
+    "indices_sha256": "1db6af8a71db47ccd7905f2f1e6a349e931f29ecad6b45a3684b592a8c58f5f1",
+    "selection": "Supplied fixed subset of the full panel"
+  },
+  "checks": {
+    "full_catalog": true,
+    "initial_popularity": true,
+    "sampled_candidate_diagnostics": true,
+    "random_expected": true,
+    "per_day": true,
+    "full_request_panel": true,
+    "sampled_request_panel": true,
+    "request_metrics_all_arrays_identical": true,
+    "sampled_request_metrics_all_arrays_identical": true,
+    "raw_rankings_identical": true
+  },
+  "serial_seconds": 2.1496680034324527,
+  "serial_peak_allocated_bytes": 3009255936,
+  "serial_peak_reserved_bytes": 8046772224,
+  "parallel_evaluation": {
+    "sharding": "Strided full-panel positions; sampled diagnostics use each shard's intersection.",
+    "parallel_wall_seconds": 6.003864999860525,
+    "wall_time_scope": "Worker dispatch through completion, including process/data/model startup; excludes coordinator merge.",
+    "sum_worker_evaluation_seconds": 2.533764977939427,
+    "cost_note": "Request sharding reduces elapsed time; this is not a claim of reduced GPU-seconds.",
+    "peak_memory_scope": "Top-level peaks are the maximum per GPU, not the sum across GPUs.",
+    "workers": [
+      {
+        "rank": 0,
+        "device": "cuda:1",
+        "cuda_visible_devices": null,
+        "device_name": "NVIDIA A40",
+        "total_seconds": 3.4779930850490928,
+        "evaluation_seconds": 1.144094710238278,
+        "full_requests": 4,
+        "sampled_requests": 2,
+        "peak_allocated_bytes": 3010651648,
+        "peak_reserved_bytes": 4808769536
+      },
+      {
+        "rank": 1,
+        "device": "cuda:2",
+        "cuda_visible_devices": null,
+        "device_name": "NVIDIA A40",
+        "total_seconds": 3.701016377657652,
+        "evaluation_seconds": 1.389670267701149,
+        "full_requests": 4,
+        "sampled_requests": 3,
+        "peak_allocated_bytes": 3007282688,
+        "peak_reserved_bytes": 8038383616
+      }
+    ]
+  },
+  "cpu_regression": "tests/test_recflow_evaluation.py::test_parallel_merge_preserves_global_users_oov_and_sampled_subset; whole file2 tests passed; includes cross-shard UID weighting, OOV/zero positives and empty sampled shard.",
+  "source_sha256": {
+    "scripts/recflow/parallel_evaluate.py": "07899a889465b6a2021f1964b236c431b7651558c3b948fa081ad1f774b95b84",
+    "tests/test_recflow_evaluation.py": "89143c46942082ccf6511a3ee2821dbe9f47f825ff34f3458a0bc2d849e7fbbe"
+  },
+  "interpretation": "All ranking IDs and metric arrays are exactly identical to the serial reference. Tiny canary startup dominates wall time; this is not a measured full-panel speedup or lower GPU-cost claim."
+}

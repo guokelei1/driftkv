@@ -1,0 +1,59 @@
+{
+  "scope": "Prospective sampled-candidate daily development probe after exploratory protocol selection; a different ranking task from free generation, no formal admission.",
+  "authorization": "User authorizes continued complete-epoch parameter experiments on four GPUs and explicitly permits exploring candidate protocols and NDCG settings for gentler daily updates.",
+  "status": "sealed_before_this_sampled_primary_D21_update_and_day22_evaluation",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/daily_followup_panels_seed17/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 6,
+    "hidden": 192,
+    "heads": 6,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "epochs": 1,
+    "evaluation_epochs": [1],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [1000],
+    "log_every": 25,
+    "training_order": "shuffle"
+  },
+  "windows": {
+    "D": {
+      "fit": [21, 21],
+      "compare_parent_and_current": [22, 22],
+      "eligible_requests_per_epoch": 4312
+    }
+  },
+  "parent_checkpoint": "results/recflow/development/window_6l_daily_seed17/C_day20_1epoch/C_epoch1/checkpoint.pt",
+  "parent_checkpoint_sha256": "16afb6706492d82aac5c9329b3b187d783b613950abe32b7a5e5d40db725ce7e",
+  "panels_sha256": "26340065a26d23082a8a2ad0da61795dded825a5fa75b4c6f2c3da90d8038757",
+  "primary_scope": "uniform_1000",
+  "primary_metric": "ndcg@50",
+  "selection": "The retained exploratory metric grid gives LR1e-3 daily one-epoch uniform_1000 NDCG50 gains of 5.884927% on D20 and 21.100316% on D21, with both parent/current random checks passing. Hit requests are 126 to 132 on D20 and 102 to 107 on D21, each among 768 requests. This motivates a bounded additional candidate-ranking probe; it does not establish stable gains. All LR, cutoff and pool outcomes remain retained.",
+  "selection_evidence": "results/recflow/development/window_6l_daily_lr_seed17/metric_grid/summary.json",
+  "experiment": "Continue the exact old LR1e-3 one-epoch C and its AdamW state at step4166. Fit every4312 known-positive D21 request once, global128 over34 steps including88-request tail, reaching expected step4200. Compare exact C and D on the same frozen D22 panel from the same512-user cohort. Keep all9039 positive requests for free-catalog companion evaluation and the existing separate768-request sampled panel for the primary. No new data or model architecture; seed17 only.",
+  "candidate_task": "For each of the fixed768 requests, rank all known positive videos plus1000 uniformly sampled distractors from the frozen1M catalog, without replacement and excluding those positives. Candidate seed17 and request identity determine the same pool for parent/current. Score candidates with the existing normalized three-step joint model probability; do not use the free-generation beam shortlist. Actual pool size is1000 plus the request's known-positive count. Main NDCG keeps all positive targets, including OOV, in its ideal-gain denominator. This is sampled candidate ranking with known-positive injection, not full-catalog free retrieval.",
+  "working_rule": "At the preselected uniform_1000 NDCG50, parent and current each must be at least twice the matched uniform random video-ranking expectation and above its5000-trial99th percentile, and current must exceed parent on D22. The random policy uses the same actual candidate pool,768 requests, cutoff and OOV denominator. Report100*(current-parent)/parent, absolute scores and hit requests/users. No target-percentage gate; retain any failure or large/negative gain without changing this metric or pool after evaluation.",
+  "companions": "Retain full-catalog free-generation and sampled uniform1000/popularity1000 NDCG/Recall20/50/100 with their own matched random comparisons and request/OOV denominators. The9039 full and768 sampled request means remain separate. All earlier free-generation outcomes and the failed LR1e-4 full-catalog NDCG100 D22 confirmation remain unchanged; sampled success cannot rescue or replace that failure.",
+  "prior_failure": "The preceding LR1e-4 full-catalog NDCG100 D22 confirmation gained about171.31% but both parent and current failed the selected random checks, with only2 and4 hit requests. Its complete evidence remains under results/recflow/development/window_6l_daily_confirmation_seed17. This new prospective setting is explicitly selected after that development result.",
+  "data_boundary": "D22 has already been reused by development branches and by the preceding failed confirmation. This additional chronological development probe is not an independent untouched final test, not a formal release admission, and not evidence that free generation works. The two earlier edges are exploratory selection evidence. No final-role data or Yambda theta3 is accessed.",
+  "resource_estimate": {
+    "devices": [0, 1, 2, 3],
+    "parameters": 194461521,
+    "training": "Four-rank DDP, global128,34 steps at measured~0.4s/step plus NLL/save/startup.",
+    "evaluation": "Retain both complete9039-request free evaluations and their768-request candidate diagnostics, using four independent GPU workers; each paired endpoint evaluation is approximately350-390s.",
+    "total_wall_minutes": [12, 16],
+    "execution": "Directly monitored short job; retain exact command, log, elapsed time and exit status. No other GPU job overlaps."
+  },
+  "canary": "Existing LR1e-3 daily continuation from actual A verifies inherited AdamW and unchanged optimizer numerics. Existing resident-model parallel evaluation and unequal-tail numerical canaries cover the unchanged training and scoring paths. Before launch, verify the recorded exact C source SHA, D21/D22 date mapping and complete panels, and the minimal sampled-primary selector against retained uniform_1000 metrics and its own matched random denominator. No equivalent new GPU canary is required."
+}
