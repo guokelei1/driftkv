@@ -24,6 +24,7 @@ from development_probe import (
     evaluate,
     save_json,
 )
+from hstu_kvcache.models.backend_info import attention_backend_info
 
 WINDOWS = {
     "A": ("train_1_18", "19_21", None),
@@ -370,6 +371,7 @@ def main():
         source_checkpoint=str(cli.checkpoint) if cli.checkpoint else None,
         source_checkpoint_sha256=checkpoint_hash,
         source_sha256={str(path.relative_to(ROOT)): digest(path) for path in sources},
+        attention_execution=attention_backend_info(),
         torch_version=str(torch.__version__),
         scope="Tiny canary, not A/B/C qualification" if cli.canary else "Complete-epoch development, fixed seed17; no formal admission/final-user outcomes")
     if rank == 0:

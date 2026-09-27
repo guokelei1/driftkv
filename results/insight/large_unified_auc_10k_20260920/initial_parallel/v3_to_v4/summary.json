@@ -1,0 +1,100 @@
+{
+  "status": "completed",
+  "edge": "v3_to_v4",
+  "artifact_sha256": "1eea653a333f47ad438add197d3d11547d79c103b92033fd91f6481ffba5fed4",
+  "resource": {
+    "seconds": 283.1618352755904,
+    "peak_allocated_gib": 39.66400337219238
+  },
+  "model_pair": {
+    "scale": "large",
+    "seed": 17,
+    "edge_index": 3,
+    "edge": "v3_to_v4",
+    "cutover_day": 273,
+    "cutover": 23587200,
+    "chain_manifest": "/home/gkl/work/evokv/results/unified_training_2026_09/large/seed17/checkpoints/chain.v0_v5.manifest.json",
+    "chain_manifest_sha256": "a74e9baa4d9bb35242dd2a78c96c3d28a1ac4b0ab42435bfa68e210d7d25df1d",
+    "chain_status": "user_selected_large_D14_v0_v5_working_chain",
+    "interpretation": "V0-V3 historical reuse; V4 and V5 retrained this round; V5 epoch1 explicitly provisionally selected by user despite loss-bootstrap gate failure; not independent qualification or serving promotion",
+    "population_users": 79681,
+    "config": {
+      "num_items": 2225065,
+      "num_behaviors": 4,
+      "num_prediction_items": 2225065,
+      "hidden_size": 320,
+      "num_layers": 10,
+      "num_heads": 10,
+      "head_dim": null,
+      "max_seq_len": 1024,
+      "temporal_num_freqs": 16,
+      "temporal_max_period": 86400.0,
+      "gating": "silu_gate",
+      "qk_scale": 1.0,
+      "attn_dropout": 0.0,
+      "activation": "elu_plus1",
+      "norm_eps": 1e-06,
+      "input_dropout": 0.1,
+      "tie_item_embeddings": true,
+      "block_variant": "legacy",
+      "relative_position_bias": false,
+      "causal_diagonal": "inclusive",
+      "num_query_types": 3,
+      "num_query_actions": 1,
+      "query_type_id": 2,
+      "query_action_id": 0
+    },
+    "parent": {
+      "version": "v3",
+      "checkpoint_sha256": "2cd79ab157391358220b93197851041c4358747d210f3a22ac13f25501eabeee",
+      "seal_sha256": "5b3e3e0c8e295a6e58599eb6d90ffa99273aad7dccfa2e2282d88f3428b74e39",
+      "parent_checkpoint_sha256": "7f1b9a31ca80578200a76aa77d7b8e0e641ffaa085eefe8f9ee3af193e5986be",
+      "epochs": 1.0,
+      "checkpoint": "/home/gkl/work/evokv/results/unified_training_2026_09/large/seed17/checkpoints/v3/checkpoint_100.pt",
+      "seal": "/home/gkl/work/evokv/results/unified_training_2026_09/large/seed17/checkpoints/v3/checkpoint.seal.json",
+      "selection": "user_selected_large_D14_v0_v5_working_chain"
+    },
+    "current": {
+      "version": "v4",
+      "checkpoint_sha256": "8df05079a7b8c42a3e71d7b173e2d2dfe6ba24852abf31a18556b1ab55b912a5",
+      "seal_sha256": "824d6ab431d030b8c62d46e6def6e8689dd2086f71fb11484f2123813ad29bd0",
+      "parent_checkpoint_sha256": "2cd79ab157391358220b93197851041c4358747d210f3a22ac13f25501eabeee",
+      "epochs": 2,
+      "checkpoint": "/home/gkl/work/evokv/results/unified_training_2026_09/large/seed17/checkpoints/v4/checkpoint_100.pt",
+      "seal": "/home/gkl/work/evokv/results/unified_training_2026_09/large/seed17/checkpoints/v4/checkpoint.seal.json",
+      "selection": "user_selected_passed_V4"
+    },
+    "dataset": {
+      "manifest": "/home/gkl/work/evokv/data/processed/yambda500m_unified_v1/scales/large/dataset.json",
+      "manifest_sha256": "f93c1a3ac5e59d94d557a873bbfca02312fe342dcfa20239105240fe70ccca6e",
+      "item_mapping": "/home/gkl/work/evokv/data/processed/yambda500m_unified_v1/scales/large/item_mapping.parquet",
+      "item_mapping_sha256": "8f54dd2a660c9812cd68faf94ea5bd3723fe7b277d07dd1f71ba78201de98382",
+      "users": "/home/gkl/work/evokv/data/processed/yambda500m_unified_v1/scales/large/users.parquet",
+      "known_items": 2224809,
+      "oov_buckets": 256,
+      "contract": "/home/gkl/work/evokv/configs/contracts/yambda_large_v4_2epoch_4gpu_b64_20260915.yaml",
+      "contract_sha256": "eec43112a527f65206796a0a78439e278ce99b697a98c1d9f166398e165e947e"
+    },
+    "admission": {
+      "path": "/home/gkl/work/evokv/results/unified_training_2026_09/large/seed17/v4_2epoch_4gpu_b64_cpu14/admission.seal.json",
+      "sha256": "e04802726ba2842a883c693ab55ed71f62ab11d2db1b97348b52c07d165c9030",
+      "kind": "current_run_full_only",
+      "scope": "complete",
+      "original_metric_gates_pass": true,
+      "reuse_eligible": true,
+      "gates": {
+        "current_auc_greater_than_parent": true,
+        "current_log_loss_less_than_parent": true,
+        "current_brier_not_greater_than_parent": true,
+        "paired_user_log_loss_bootstrap_lower_positive": true
+      },
+      "selection": "user_selected_passed_V4",
+      "report_sha256": "395779313bd5c895faa18a1c7714dc52e6d6d03603fc5d075139815aaaf6baf6",
+      "serving_lineage_promoted": false
+    },
+    "weights_hash_verified": true,
+    "item_mapping_hash_verified": true
+  },
+  "physical_gpu": 3,
+  "elapsed_seconds": 299.9493344742805
+}

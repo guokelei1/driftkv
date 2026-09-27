@@ -1,0 +1,129 @@
+{
+  "status": "initial_pre_canary_estimate",
+  "configuration": "configs/insight/unified_auc_10k_20260920.json",
+  "estimated_total_minutes": [
+    15,
+    30
+  ],
+  "gpu": {
+    "device": "cuda:0",
+    "count": 1,
+    "memory_budget_gib": 32,
+    "memory_basis": "full256-user four-source-layer translation may peak near20GiB from FP32 cache pairs and FP64 OLS views/design/centering;32GiB budget on45GiB A40"
+  },
+  "cohort_users": 10000,
+  "release_edges": 4,
+  "history_length": 1024,
+  "known_requests": [
+    54826,
+    53874,
+    52309,
+    51764
+  ],
+  "calibration_users_max": 256,
+  "pilot_users": 16,
+  "pilot_eligible_users": 121,
+  "pilot_original_excluded_users": 128,
+  "pilot_edges": [0],
+  "method_settings": {
+    "anchors": [
+      "reuse",
+      "current_exact",
+      "parent_full"
+    ],
+    "droidspeak": {
+      "num_layers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "profile_calibration_users": 32,
+      "profile_candidate_indices": [
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60
+      ],
+      "profile_intervals": 21,
+      "selection": "for each num_layers choose one contiguous layer interval by minimum Current Exact logit MSE over first32 calibration users and fixed16 candidates; ties lexicographic",
+      "teacher_access": "first32 calibration users only",
+      "evaluation_selection": false
+    },
+    "tail_replay": {
+      "suffix_lengths": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "selection": "all fixed suffix lengths retained"
+    },
+    "kv_translate": {
+      "teacher_users": 256,
+      "source_layer_counts": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "source_layer_selection": "in-sample calibration-only single-source-layer same-head OLS; rank by mean R2 over heads and K/V, then fit final maps from all heads of each selected source layer",
+      "cross_head_map_ridge": 0.01,
+      "teacher_access": "the unchanged256 fitting users",
+      "evaluation_selection": false
+    },
+    "ours": {
+      "teacher_user_budgets": [
+        32,
+        64,
+        128,
+        256
+      ],
+      "uid_subset": "calibration_uids[:budget], unchanged original ordering",
+      "branches": [
+        "shared_bias",
+        "shared_bias_response"
+      ],
+      "shared_bias": "delta_r = N*b; shared per-event offset scaled by retained history length",
+      "shared_bias_response": "delta_r = N*b + T*r; shared affine correction using actual native user-history response",
+      "fit_target": "(Current teacher response - native response)/N",
+      "features": "constant for shared_bias; constant and native r/N for shared_bias_response",
+      "normalization": "all fitted normalization and coefficients learned only on that budget subset",
+      "ridge": 0.01,
+      "intercept": "penalized, including intercept",
+      "N": 1024,
+      "candidates_per_user": 16,
+      "teacher_access": "Current rebuilt state and teacher reads only for the selected budget users",
+      "interpretation": "both branches use history length; the second additionally uses history content in native response r; no query, summary, UID feature, or per-evaluation-user teacher"
+    }
+  },
+  "measurement_plan": "Time the fixed pilot with peak allocation and per-method throughput, then update runtime estimate before the full run; no evaluation-based method or budget selection",
+  "launch": "Use detached tmux if measured runtime exceeds30minutes",
+  "compute_accounting": {
+    "x": "incremental compatibility arithmetic relative to common native reading",
+    "y": "AUC gap recovery",
+    "denominator": "one Current Exact cache rebuild for each of the10000 release snapshots; never rebuild per request",
+    "numerator": "K + sum of actual extra reading arithmetic over all scored E14 requests",
+    "teacher_cost": "charge Current teacher cache construction only; Parent cache is already present and common",
+    "fitting_and_profiling": "include shared calibration, fitting and interval/head profiling in K",
+    "reading": "charge correction or extra candidate processing for the actual per-user request counts",
+    "snapshot_work": "charge translation/replay once per user snapshot as applicable",
+    "non_claim": "arithmetic accounting is not an end-to-end runtime ratio"
+  }
+}

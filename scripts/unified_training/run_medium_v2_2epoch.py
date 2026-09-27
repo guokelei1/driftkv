@@ -55,6 +55,11 @@ def main():
     PARENT = ROOT / contract['frozen_inputs'][f'parent_{parent_version}_checkpoint']
     start, end = contract['scope']['training_days_half_open']
     epochs = contract['training']['passes']
+    initial_epochs = int(contract['training'].get('initial_window_epochs', 0))
+    endpoint_epoch = initial_epochs + epochs
+    evaluation_parent_version = contract['evaluation'].get('parent_version', parent_version)
+    evaluation_parent = ROOT / contract['frozen_inputs'][f'parent_{evaluation_parent_version}_checkpoint']
+    single_candidate_name = contract['evaluation'].get('candidate_name', version)
     evaluation_scope = yaml.safe_load(EVALUATION_SCOPE.read_text())
     assert evaluation_scope['evaluation_horizon_days'] == [14]
     assert contract['evaluation']['windows_days_half_open'] == {'E14': [end, end + 14]}
@@ -73,6 +78,8 @@ def main():
     topology = execution["execution_amendment"]
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "CUDA_VISIBLE_DEVICES": ",".join(map(str, topology["physical_gpus"])),
            "OMP_NUM_THREADS": str(execution["training_runtime"]["omp_num_threads"]), "PYTHONUNBUFFERED": "1"}
+    if "attention_backend" in execution:
+        env["EVOKV_ATTENTION_BACKEND"] = execution["attention_backend"]
     distributed = [sys.executable, "-m", "torch.distributed.run", "--standalone", f"--nproc_per_node={topology['world_size']}"]
     events = json.loads((OUT / "runtime.json").read_text()) if (OUT / 'runtime.json').exists() and (resume or args.resume_training) else []
 
@@ -95,9 +102,9 @@ def main():
     endpoints = contract['training'].get('checkpoint_epochs', [])
     assert not endpoints or endpoints in ([epochs], [1, 2])
     multiple = len(endpoints) > 1
-    candidates = ({f'{version}_e{e}': (e, OUT / 'checkpoint' / f'checkpoint_epoch_{e}.pt') for e in endpoints}
+    candidates = ({f'{version}_e{initial_epochs + e}': (initial_epochs + e, OUT / 'checkpoint' / f'checkpoint_epoch_{initial_epochs + e}.pt') for e in endpoints}
                   if multiple else {})
-    checkpoint = OUT / "checkpoint" / (f"checkpoint_epoch_{epochs}.pt" if endpoints else "checkpoint_100.pt")
+    checkpoint = OUT / "checkpoint" / (f"checkpoint_epoch_{endpoint_epoch}.pt" if endpoints else "checkpoint_100.pt")
     train = [*distributed, "scripts/train_yambda500m_foundation_fsdp.py",
              "--version", version, "--branch", "D14", "--launch-contract", str(CONTRACT),
              "--execution-contract", str(EXECUTION), "--manifest-dir", str(MANIFEST),
@@ -132,7 +139,7 @@ def main():
     import torch
     torch.set_num_threads(execution['training_runtime']['torch_cpu_threads'])
     if not candidates:
-        candidates = {version: (epochs, checkpoint)}
+        candidates = {single_candidate_name: (endpoint_epoch, checkpoint)}
     checkpoint_seals = {}
     prior_seals = json.loads((checkpoint.parent / ('checkpoints.seal.json' if multiple else 'checkpoint.seal.json')).read_text()) if resume else None
     for name, (epoch, path) in candidates.items():
@@ -149,27 +156,44 @@ def main():
             "checkpoint": str(path.relative_to(ROOT)), "checkpoint_sha256": sha(path),
             "parent_checkpoint_sha256": sha(PARENT), "contract_sha256": sha(CONTRACT),
             "training_day_range": [start, end], "epochs": epoch,
+            "initial_window_epochs": initial_epochs,
+            "optimizer_reset_at_start": contract['training'].get('optimizer_reset_at_start', False),
         }
     if not resume:
         write(checkpoint.parent / ("checkpoints.seal.json" if multiple else "checkpoint.seal.json"),
-              checkpoint_seals if multiple else checkpoint_seals[version])
+              checkpoint_seals if multiple else checkpoint_seals[single_candidate_name])
         recovery_root = checkpoint.parent / 'recovery'
+        retain_final = bool(contract['training'].get('recovery', {}).get('retain_after_completion'))
+        if retain_final:
+            assert recovery_root.is_dir(), 'Final optimizer/RNG recovery was requested but not saved'
         if recovery_root.exists():
+            generations = sorted(recovery_root.glob('step_*/complete.json'))
+            retained = generations[-1] if retain_final else None
+            if retained is not None:
+                train_result = json.loads((checkpoint.parent / 'train_result.json').read_text())
+                assert json.loads(retained.read_text())['completed_steps'] == train_result['steps']
             write(OUT / 'recovery_retirement.json', {
-                'reason': 'all requested epoch endpoints validated and sealed',
-                'generations': [json.loads(p.read_text()) for p in sorted(recovery_root.glob('step_*/complete.json'))],
+                'reason': ('final optimizer/RNG retained for future continuation; intermediate recovery retired'
+                           if retain_final else 'all requested epoch endpoints validated and sealed'),
+                'generations': [json.loads(p.read_text()) for p in generations if p != retained],
+                'retained_final_recovery': str(retained.parent.relative_to(ROOT)) if retained else None,
             })
-            shutil.rmtree(recovery_root)
+            if retain_final:
+                for manifest in generations:
+                    if manifest != retained:
+                        shutil.rmtree(manifest.parent)
+            else:
+                shutil.rmtree(recovery_root)
     runtime = execution["evaluation_runtime"]
     rows = []
     primary_report = None
     for horizon in evaluation_scope["evaluation_horizon_days"]:
         output = OUT / "full_only" / f"E{horizon}"
         command = [*distributed, "scripts/evaluate_yambda500m_release_candidates_raw.py",
-                   "--stage", f"{scale.lower()}_D14_E{horizon}_{parent_version}_to_{version}_full_only",
+                   "--stage", f"{scale.lower()}_D14_E{horizon}_{evaluation_parent_version}_to_{version}_full_only",
                    "--block", "matrix_horizon", "--training-block", "matrix_horizon",
                    "--manifest-dir", str(MANIFEST), "--dataset-manifest", contract["frozen_inputs"]["dataset_manifest"],
-                   "--parent", f"{parent_version}={PARENT}",
+                   "--parent", f"{evaluation_parent_version}={evaluation_parent}",
                    "--start-day", str(end), "--end-day", str(end + horizon),
                    "--training-start-day", str(start), "--training-end-day", str(end),
                    "--batch-size", "64", "--output", str(output)]
@@ -213,12 +237,38 @@ def main():
                 "relative_auc_gain_percent": gain,
                 "relative_log_loss_reduction_percent": 100 * (1-current["log_loss"]/parent["log_loss"]),
                 "adjudication_sha256": sha(output / "adjudication.json")})
-    admission = ({"candidates": admissions, "automatic_endpoint_selection": False} if multiple else admissions[version])
+    previous_comparisons = []
+    previous_key = contract['evaluation'].get('previous_endpoint_summary_key')
+    if previous_key:
+        previous_path = ROOT / contract['frozen_inputs'][previous_key]
+        previous = json.loads(previous_path.read_text())
+        assert previous['status'] == 'complete' and previous['evaluation_completeness'] == 'complete'
+        for row in rows:
+            prior_rows = [r for r in previous['rows'] if r['horizon'] == row['horizon']]
+            assert len(prior_rows) == 1
+            prior = prior_rows[0]
+            assert all(prior[key] == row[key] for key in ['day_range', 'requests', 'users'])
+            previous_comparisons.append({
+                'candidate': row['candidate'], 'horizon': row['horizon'],
+                'previous_summary': str(previous_path.relative_to(ROOT)),
+                'previous_summary_sha256': sha(previous_path),
+                'previous_endpoint_epochs': prior['epochs'], 'current_endpoint_epochs': row['epochs'],
+                'previous_metrics': prior['current'], 'current_metrics': row['current'],
+                'previous_reference_parent_metrics': prior['parent'],
+                'recomputed_reference_parent_metrics': row['parent'],
+                'auc_delta_pp': 100 * (row['current']['ROC_AUC'] - prior['current']['ROC_AUC']),
+                'relative_auc_gain_percent': 100 * (row['current']['ROC_AUC'] / prior['current']['ROC_AUC'] - 1),
+                'scope': 'Descriptive comparison on the same already-observed development E14 panel; no additional epoch1-vs-epoch2 bootstrap or automatic selection',
+            })
+    admission = ({"candidates": admissions, "automatic_endpoint_selection": False} if multiple else admissions[single_candidate_name])
     write(OUT / "admission.seal.json", admission)
     write(OUT / "summary.json", {"status": "complete", "rows": rows, "admission": admission,
         "evaluation_completeness": contract['evaluation'].get('completeness', 'complete'),
+        "initial_window_epochs": initial_epochs,
+        "optimizer_reset_at_start": contract['training'].get('optimizer_reset_at_start', False),
+        "previous_endpoint_comparisons": previous_comparisons,
         "interpretation": contract["scope"]["interpretation"]})
-    table = [f"# {scale} {parent_version} → {version}：E14结果", "",
+    table = [f"# {scale} {evaluation_parent_version} → {version}：E14结果", "",
         f"训练窗口 [{start},{end})，评价窗口 [{end},{end+14})。",
         "评价完整性：" + contract['evaluation'].get('completeness', 'complete'), "",
         "| 端点 | Parent AUC | Current AUC | 相对提升 | 原四项准入 | >1%目标 |",
@@ -228,6 +278,14 @@ def main():
         table.append(f"| {row['candidate']} | {row['parent']['ROC_AUC']:.6f} | {row['current']['ROC_AUC']:.6f} | "
             f"{row['relative_auc_gain_percent']:+.3f}% | {verdict['original_metric_gates_pass']} | "
             f"{verdict['research_target_relative_auc_gain_gt_1pct']} |")
+    if previous_comparisons:
+        table.extend(['', '本轮从V2 epoch1权重增加一轮，AdamW与RNG重置；不等于不中断的两轮训练。',
+                      'E14在追加端点前已观测，因此该比较属于开发观察。原epoch1结果独立保留。', '',
+                      '| 端点比较 | 原AUC | 新AUC | 相对提升 |', '| --- | ---: | ---: | ---: |'])
+        for pair in previous_comparisons:
+            table.append(f"| V2 epoch{pair['previous_endpoint_epochs']} → epoch{pair['current_endpoint_epochs']} | "
+                         f"{pair['previous_metrics']['ROC_AUC']:.6f} | {pair['current_metrics']['ROC_AUC']:.6f} | "
+                         f"{pair['relative_auc_gain_percent']:+.3f}% |")
     table.extend(["", "完整指标见summary.json。所有约定端点均报告，不自动选择或推广模型。"])
     (OUT / "README.md").write_text("\n".join(table) + "\n")
     write(OUT / "progress.json", {"stage": "complete", "completed_at_unix": time.time()})

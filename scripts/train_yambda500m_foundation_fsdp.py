@@ -28,6 +28,7 @@ from torch.distributed.fsdp import (
 
 from hstu_kvcache.data.yambda_history import load_yambda_histories
 from hstu_kvcache.models import HSTU, HSTUConfig
+from hstu_kvcache.models.backend_info import attention_backend_info
 from hstu_kvcache.training import FoundationHistoryIndex, cache_producer_sha256, collate_foundation_batch
 from hstu_kvcache.training.recovery import load_recovery, save_recovery
 
@@ -111,7 +112,7 @@ def local_batch_size(global_batch_size: int, world: int, rank: int) -> int:
 def parse_checkpoint_epochs(
     raw: str | None, recipe: dict, passes: int,
 ) -> tuple[float, ...]:
-    """Return contract-bound cumulative epoch endpoints for one continuous run."""
+    """Return contract-bound epoch endpoints local to this trainer invocation."""
     frozen = tuple(float(value) for value in recipe.get("checkpoint_epochs", []))
     if raw is None:
         requested = frozen
@@ -135,7 +136,7 @@ def parse_checkpoint_epochs(
 def checkpoint_step_schedule(
     steps_per_pass: int, checkpoint_epochs: tuple[float, ...],
 ) -> dict[int, float]:
-    """Map synchronized optimizer-step endpoints to their cumulative epochs."""
+    """Map local synchronized optimizer-step endpoints to their local epochs."""
     if steps_per_pass < 1:
         raise ValueError("steps_per_pass must be positive")
     schedule: dict[int, float] = {}
@@ -150,6 +151,21 @@ def checkpoint_step_schedule(
 def epoch_checkpoint_name(epoch: float) -> str:
     label = f"{epoch:.6f}".rstrip("0").rstrip(".").replace(".", "p")
     return f"checkpoint_epoch_{label}.pt"
+
+
+def window_epoch_metadata(recipe: dict, passes: int, local_completed: float) -> dict:
+    """Separate this invocation's epochs from retained same-window training."""
+    initial = float(recipe.get("initial_window_epochs", 0.0))
+    if not math.isfinite(initial) or initial < 0:
+        raise RuntimeError("initial_window_epochs must be finite and non-negative")
+    return {
+        "initial_window_epochs": initial,
+        "optimizer_reset_at_start": bool(recipe.get("optimizer_reset_at_start", False)),
+        "local_training_epochs_completed": local_completed,
+        "local_training_epoch_target": float(passes),
+        "training_epochs_completed": initial + local_completed,
+        "training_epoch_target": initial + passes,
+    }
 
 
 class FoundationForward(nn.Module):
@@ -291,7 +307,7 @@ def main() -> None:
     parser.add_argument("--passes", type=int)
     parser.add_argument(
         "--checkpoint-epochs",
-        help="comma-separated cumulative endpoints; must exactly match the launch contract",
+        help="comma-separated invocation-local endpoints; must exactly match the launch contract",
     )
     parser.add_argument("--training-block")
     parser.add_argument("--branch", choices=("shared", "D7", "D14"), default="shared")
@@ -310,12 +326,13 @@ def main() -> None:
     if launch.get('authorization', {}).get('formal_training') is False and not args.canary_steps:
         raise RuntimeError('This contract authorizes resource probes only, not formal training')
     frozen = launch.get("frozen_inputs", {})
-    if "parent_v1_checkpoint" in frozen:
-        expected_parent = (ROOT / frozen["parent_v1_checkpoint"]).resolve()
+    parent_key = f"parent_{launch.get('scope', {}).get('expected_parent_version', 'v1')}_checkpoint"
+    if parent_key in frozen:
+        expected_parent = (ROOT / frozen[parent_key]).resolve()
         if args.parent is None or args.parent.resolve() != expected_parent:
-            raise RuntimeError("v2 candidate must use the contract-frozen accepted v1 parent")
-        if sha256_file(expected_parent) != frozen["parent_v1_checkpoint_sha256"]:
-            raise RuntimeError("v2 contract parent checkpoint hash mismatch")
+            raise RuntimeError("training must use the contract-frozen initialization checkpoint")
+        if sha256_file(expected_parent) != frozen[parent_key + "_sha256"]:
+            raise RuntimeError("contract initialization checkpoint hash mismatch")
     if (args.version == "v0") != (args.parent is None):
         raise SystemExit("v0 has no parent; every release requires its direct parent checkpoint")
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -373,6 +390,12 @@ def main() -> None:
         if passes < 1:
             raise RuntimeError("training passes must be positive")
         checkpoint_epochs = parse_checkpoint_epochs(args.checkpoint_epochs, recipe, passes)
+        initial_window_epochs = window_epoch_metadata(recipe, passes, 0.0)["initial_window_epochs"]
+        cumulative_checkpoint_epochs = tuple(initial_window_epochs + epoch for epoch in checkpoint_epochs)
+        retain_final_recovery = (
+            bool(recipe.get("recovery", {}).get("retain_after_completion", False))
+            and not args.canary_steps
+        )
         if args.canary_steps:
             rows = rows[: max(batch_size, batch_size * args.canary_steps)]
         if args.oov_buckets < 0:
@@ -405,8 +428,15 @@ def main() -> None:
                     raise RuntimeError(f"{args.version} requires direct parent {expected_parent}")
             if int(parent["config"]["num_items"]) != cfg.num_items:
                 raise RuntimeError("parent and candidate must use the same OOV mapping dimension")
+            if initial_window_epochs:
+                if parent.get("training_epochs_completed") != initial_window_epochs:
+                    raise RuntimeError("initial_window_epochs differs from the retained checkpoint")
+                if parent.get("version") != args.version or parent.get("training_day_range") != [args.train_start_day, args.train_end_day]:
+                    raise RuntimeError("cumulative epochs require the same version and training window")
             raw.load_state_dict(parent["model"]); parent_hash = sha256_file(args.parent)
             parent_producer_sha = parent["cache_producer_sha256"]
+        elif initial_window_epochs:
+            raise RuntimeError("initial_window_epochs requires a retained parent checkpoint")
         if args.version == "r0":
             for name, parameter in raw.named_parameters():
                 parameter.requires_grad_(name.startswith(("query_encoder.", "cc_score_head.")))
@@ -453,7 +483,7 @@ def main() -> None:
             'days': [args.train_start_day, args.train_end_day], 'block': block,
             'seed': seed, 'passes': passes, 'total_steps': steps,
             'global_batch': global_batch_size, 'world_size': world,
-        } if args.recovery_interval_steps or args.resume_recovery else None
+        } if args.recovery_interval_steps or args.resume_recovery or retain_final_recovery else None
         start_step = load_recovery(model, optimizer, args.resume_recovery, recovery_binding) if args.resume_recovery else 0
         if start_step >= steps:
             raise RuntimeError('Recovery has no remaining training steps')
@@ -494,8 +524,10 @@ def main() -> None:
             step_seconds.append(time.perf_counter() - started)
             losses.append(float(loss.detach()))
             completed = step + 1
-            if args.recovery_interval_steps and completed < steps and (
-                completed == args.recovery_first_step or completed % args.recovery_interval_steps == 0
+            if (retain_final_recovery and completed == steps) or (
+                args.recovery_interval_steps and completed < steps and (
+                    completed == args.recovery_first_step or completed % args.recovery_interval_steps == 0
+                )
             ):
                 save_recovery(model, optimizer, args.output / 'recovery', completed, recovery_binding)
             is_checkpoint_step = completed in checkpoint_steps or completed == steps
@@ -516,7 +548,12 @@ def main() -> None:
                     "global_batch_size": global_batch_size,
                     "completed_global_requests_including_padding": completed * global_batch_size,
                     "effective_training_examples": total_requests * passes,
-                    "checkpoint_epochs": list(checkpoint_epochs),
+                    "checkpoint_epochs": list(cumulative_checkpoint_epochs),
+                    "local_checkpoint_epochs": list(checkpoint_epochs),
+                    **window_epoch_metadata(
+                        recipe, passes,
+                        0.0 if args.canary_steps else completed / steps_per_pass if steps_per_pass else passes * completed / steps,
+                    ),
                     "latest_rank0_loss": losses[-1],
                     "mean_rank0_loss_so_far": float(np.mean(losses)),
                     "resumed_from_step": start_step,
@@ -529,11 +566,13 @@ def main() -> None:
                 atomic_json(args.output / "progress.json", progress)
                 print(json.dumps(progress), flush=True)
             if is_checkpoint_step:
-                completed_epoch = (
+                local_completed_epoch = (
                     0.0 if args.canary_steps else
                     checkpoint_steps[completed] if completed in checkpoint_steps else
                     float(passes)
                 )
+                epoch_metadata = window_epoch_metadata(recipe, passes, local_completed_epoch)
+                completed_epoch = epoch_metadata["training_epochs_completed"]
                 checkpoint_name = (
                     epoch_checkpoint_name(completed_epoch)
                     if staged_formal else "checkpoint_100.pt"
@@ -550,6 +589,7 @@ def main() -> None:
                     "branch": args.branch, "window": block, "seed": seed,
                     "training_day_range": [args.train_start_day, args.train_end_day],
                     "config": asdict(cfg), "parent_checkpoint_sha256": parent_hash,
+                    "attention_execution": attention_backend_info(),
                     "request_manifest_sha256": sha256_file(request_path),
                     "world_size": world, "batch_size_per_rank": batch_size,
                     "local_batch_sizes_by_rank": [local_batch_size(global_batch_size, world, value) for value in range(world)],
@@ -558,12 +598,13 @@ def main() -> None:
                     "execution_contract_sha256": sha256_file(execution_path) if execution_path else None,
                     "total_requests": total_requests, "total_users": total_users,
                     "passes": passes, "effective_training_examples": total_requests * passes,
-                    "training_epochs_completed": completed_epoch,
-                    "training_epoch_target": float(passes),
-                    "staged_checkpoint_epochs": list(checkpoint_epochs),
+                    **epoch_metadata,
+                    "staged_checkpoint_epochs": list(cumulative_checkpoint_epochs),
+                    "local_checkpoint_epochs": list(checkpoint_epochs),
                     "completed_steps": completed,
                     "steps_per_pass": steps_per_pass,
-                    "effective_training_examples_completed": int(round(total_requests * completed_epoch)),
+                    "effective_training_examples_completed": int(round(total_requests * local_completed_epoch)),
+                    "cumulative_window_training_examples_completed": int(round(total_requests * completed_epoch)),
                     "oov_buckets": args.oov_buckets,
                     "known_vocab_size": known_vocab_size,
                     "dataset_manifest": str(dataset_path.relative_to(ROOT)),
@@ -588,7 +629,7 @@ def main() -> None:
         if rank == 0:
             synchronized_step_seconds = max(float(value["median_timed_step_seconds"]) for value in gathered if value is not None)
             final_checkpoint = (
-                args.output / epoch_checkpoint_name(checkpoint_epochs[-1])
+                args.output / epoch_checkpoint_name(cumulative_checkpoint_epochs[-1])
                 if staged_formal else args.output / "checkpoint_100.pt"
             )
             result = {
@@ -598,11 +639,14 @@ def main() -> None:
                 "resumed_from_step": start_step,
                 "loss_and_timing_scope": "current_process_segment",
                 "final_checkpoint": str(final_checkpoint),
-                "checkpoint_epochs": list(checkpoint_epochs),
+                "checkpoint_epochs": list(cumulative_checkpoint_epochs),
+                "local_checkpoint_epochs": list(checkpoint_epochs),
+                **window_epoch_metadata(recipe, passes, 0.0 if args.canary_steps else float(passes)),
+                "final_recovery": str(args.output / "recovery" / f"step_{steps:09d}") if retain_final_recovery else None,
                 "checkpoints": (
                     {
                         str(epoch): str(args.output / epoch_checkpoint_name(epoch))
-                        for epoch in checkpoint_epochs
+                        for epoch in cumulative_checkpoint_epochs
                     }
                     if staged_formal else {"final": str(final_checkpoint)}
                 ),
@@ -611,6 +655,7 @@ def main() -> None:
                 "median_synchronized_step_seconds": synchronized_step_seconds,
                 "global_requests_per_second": global_batch_size / synchronized_step_seconds,
                 "rank_metrics": gathered,
+                "attention_execution": attention_backend_info(),
                 "execution_contract_sha256": sha256_file(execution_path) if execution_path else None,
                 "theta3_read_or_trained": bool(launch.get("scope", {}).get("theta3_read_or_trained", False)),
             }
@@ -621,6 +666,7 @@ def main() -> None:
                 "execution_contract_sha256": sha256_file(execution_path) if execution_path else None,
                 "version": args.version, "branch": args.branch,
                 "completed_steps": steps, "total_steps": steps, "progress_fraction": 1.0,
+                **window_epoch_metadata(recipe, passes, 0.0 if args.canary_steps else float(passes)),
                 "median_synchronized_step_seconds": synchronized_step_seconds,
                 "global_requests_per_second": global_batch_size / synchronized_step_seconds,
                 "updated_at_unix_seconds": time.time(),

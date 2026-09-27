@@ -3,6 +3,7 @@
 from .core import (
     LayerRecomputeState,
     append,
+    append_band,
     capture_state,
     enumerate_intervals,
     profile_intervals,
@@ -13,6 +14,7 @@ from .core import (
 __all__ = [
     "LayerRecomputeState",
     "append",
+    "append_band",
     "capture_state",
     "enumerate_intervals",
     "profile_intervals",

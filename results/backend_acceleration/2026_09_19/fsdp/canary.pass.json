@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "scope": "Synthetic six-layer two-rank FSDP BF16 forward/backward and one AdamW update; no data or quality claim",
+  "cuda_visible_devices": "2,3",
+  "device_name": "NVIDIA A40",
+  "world_size": 2,
+  "local_batch_size": 2,
+  "length": 128,
+  "hidden_size": 192,
+  "heads": 6,
+  "layers": 6,
+  "precision": "FSDP BF16 parameters including relative bias; FP32 reductions",
+  "output": {
+    "relative_l2": 0.0,
+    "max_abs": 0.0,
+    "elements": 98304
+  },
+  "loss": {
+    "relative_l2": 0.0,
+    "max_abs": 0.0,
+    "elements": 2
+  },
+  "gradients": {
+    "relative_l2": 0.0007132626970292331,
+    "max_abs": 3.814697265625e-06,
+    "elements": 1235509
+  },
+  "position_bias_gradients": {
+    "relative_l2": 0.002872362160808624,
+    "max_abs": 9.5367431640625e-07,
+    "elements": 73908
+  },
+  "parameters_after_update": {
+    "relative_l2": 0.00023653865779298705,
+    "max_abs": 0.0019198358058929443,
+    "elements": 1235509
+  },
+  "thresholds": {
+    "output_relative_l2": 0.01,
+    "loss_relative_l2": 0.002,
+    "gradient_relative_l2": 0.02,
+    "parameter_relative_l2": 0.001
+  },
+  "compared_module_backends": [
+    "torch",
+    "triton"
+  ],
+  "initialization_seed": 17,
+  "synthetic_input_seed": "1017 + local_rank",
+  "optimizer": "AdamW lr=0.001, default remaining options",
+  "attention_execution": {
+    "policy": "auto",
+    "policy_scope": "Requested backend; per-call dispatch may retain PyTorch.",
+    "torch_version": "2.12.1+cu130",
+    "triton_version": "3.7.1",
+    "cuda_version": "13.0",
+    "source_sha256": {
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+      "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895"
+    }
+  },
+  "script_sha256": "bad155f59121fb2377fe62293ff1f0e2f553f8295c62fff607cfe06a856ff344",
+  "worker_command": "/home/gkl/miniconda3/bin/python scripts/check_hstu_backend_fsdp.py --output results/backend_acceleration/2026_09_19/fsdp/canary.pass.json",
+  "launcher_command": "/home/gkl/miniconda3/bin/python /home/gkl/miniconda3/bin/torchrun --standalone --nproc-per-node=2 scripts/check_hstu_backend_fsdp.py --output results/backend_acceleration/2026_09_19/fsdp/canary.pass.json"
+}

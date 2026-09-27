@@ -1,0 +1,81 @@
+{
+  "status": "release_candidate_full_only_raw_sealed_before_label_join",
+  "raw_sha256": "c781cfc6a6bde3ab9085bf0498a38fb7e1fd62ee080e68c08eac777408dd0ba3",
+  "rows": 3627,
+  "stage": "max_v3_resource_canary",
+  "evaluation_block": "matrix_horizon",
+  "evaluation_day_range": [
+    259,
+    273
+  ],
+  "training_block": "matrix_horizon",
+  "parent": "v2",
+  "currents": [
+    "probe_e1",
+    "probe_e2"
+  ],
+  "contains_reuse": false,
+  "oov_buckets": 256,
+  "known_vocab_size": 3530650,
+  "max_seq_len": 1024,
+  "dataset_manifest": "/home/gkl/work/evokv/data/processed/yambda5b_max_200k_v1/scales/max/dataset.json",
+  "execution_runtime": {
+    "attention_execution": {
+      "policy": "auto",
+      "policy_scope": "Requested backend; per-call dispatch may retain PyTorch.",
+      "torch_version": "2.12.1+cu130",
+      "triton_version": "3.7.1",
+      "cuda_version": "13.0",
+      "source_sha256": {
+        "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+        "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+        "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895"
+      }
+    },
+    "world_size": 4,
+    "batch_size_per_rank": 64,
+    "max_users_per_rank": 32,
+    "peak_memory_by_rank": [
+      {
+        "rank": 0,
+        "evaluation_seconds": 5.874230712652206,
+        "evaluated_requests": 353,
+        "peak_allocated_mib": 25841.8369140625,
+        "peak_reserved_mib": 32398.0
+      },
+      {
+        "rank": 1,
+        "evaluation_seconds": 3.733184733428061,
+        "evaluated_requests": 202,
+        "peak_allocated_mib": 25841.8369140625,
+        "peak_reserved_mib": 33118.0
+      },
+      {
+        "rank": 2,
+        "evaluation_seconds": 5.7440022844821215,
+        "evaluated_requests": 357,
+        "peak_allocated_mib": 25841.8369140625,
+        "peak_reserved_mib": 33958.0
+      },
+      {
+        "rank": 3,
+        "evaluation_seconds": 5.116769643500447,
+        "evaluated_requests": 297,
+        "peak_allocated_mib": 25841.8369140625,
+        "peak_reserved_mib": 31278.0
+      }
+    ]
+  },
+  "cpu_runtime": {
+    "history_threads": 14,
+    "arrow_cpu_threads": 14,
+    "arrow_io_threads": 4,
+    "torch_cpu_threads": 4,
+    "affinity_by_rank": "0,1,2,3,4,5,6,7,8,9,10,11,12,13;14,15,16,17,18,19,20,21,22,23,24,25,26,27;28,29,30,31,32,33,34,35,36,37,38,39,40,41;42,43,44,45,46,47,48,49,50,51,52,53,54,55"
+  },
+  "architecture": "hstu_native_cc",
+  "sample_users_path": null,
+  "sample_users_sha256": null,
+  "request_manifest_sha256": "f19a07119816cff9ee1b24480b970badd4bbc56ced2f9921b7fffec0e9358912",
+  "evaluator_sha256": "5f6b0221b7ad8852eb31945c007234d1ebc7705e38244157360dede39649b050"
+}

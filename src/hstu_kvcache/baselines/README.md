@@ -1,4 +1,15 @@
-# 三个缓存兼容性对比方案
+# 缓存重算对比方案
+
+2026-09-26 当前四种 motivation baseline：按层、尾部、早期层偏差引导、当前 query
+引导重算。实现分别在 `layer_recompute/`、`tail_recompute/`、`deviation_recompute/`、
+`query_recompute/`；共享稀疏重放在 `sparse_recompute.py`。它们是方法思想的 HSTU
+适配，不宣称逐项复刻原系统。各方法测试在 `tests/selective_recompute/` 的对应子目录。
+
+当前全部15条边的独立脚本、筛选用户口径和启动状态见
+[四种重算实验](../../../scripts/selective_recompute_2026_09/README.md)。本轮使用
+请求级临时修复，四种方法都从相同滚动 Reuse 状态出发。正式评测须等用户说 OK。
+
+## 历史三方案接口说明
 
 日期：2026-09-16。状态：**基本原语及单边评价接口已通过 CPU 检查；正式质量与性能尚未评价。**
 
@@ -61,7 +72,7 @@ CPU 拟合与 `--device` 指定的模型、缓存和评分执行分开。
 recent／old-only／novel-bank 策略；`--max-users`、`--eval-offset` 和 batch 大小不改变
 共同面板 bank。默认 LR 区间根据模型层数生成首层、最后两层与全部层，十层时为
 `0:0,8:9,0:9`。输入格式与未执行的 Medium／Large 命令示例见
-[脚本说明](../../../scripts/design/README.md#当前-motivation-2-对比入口)。
+[脚本说明](../../../scripts/design/README.md#独立-motivation-2-功能指标接口)。
 
 本探针的恢复率是 `1 - mean(abs(p_method-p_exact)) / mean(abs(p_reuse-p_exact))`，
 不是逐用户比值的均值。所有配置行均保留，近零分母标记未定义，不在评价面板上选 winner。

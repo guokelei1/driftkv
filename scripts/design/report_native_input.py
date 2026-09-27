@@ -63,7 +63,7 @@ def main(cli):
     result = dict(rows=rows, matched_input_contrasts=contrasts, state_strata=strata, retained_uid988060=outlier,
         prototype_costs=costs, prototype_run=json.loads((prototype / "summary.json").read_text()),
         free16_run=json.loads((free16 / "summary.json").read_text()),
-        scope="single matched input prototype; unchanged 64 fitting and reused128 diagnostic UIDs; no M2 target, M5 E14_partial, no confirmation or population run")
+        scope="single matched input prototype; unchanged 64 fitting and reused128 diagnostic UIDs; no M2 target, M5 E14 [287,301), no confirmation or population run")
     (out / "summary.json").write_text(json.dumps(result, indent=2)+"\n")
     text = ["# 本次native读取信息：唯一匹配原型", "", "同面板logit MSE；场景平均后UID等权，非AUC恢复率。", "",
         "| 目标 | Reuse | 冻结方案15 | 摘要近似输入 | native输入 | native / Reuse | native优于Reuse的UID比例 |",
@@ -87,7 +87,7 @@ def main(cli):
     text += ["", "## 边界与成本", "", "两个输入臂同参数、同ridge0.01、同聚合响应目标，固定mean PCA32；只改实际native响应与producer均值响应近似。W与U联合拟合，非36标量后置补丁。",
         "", "native臂不增加持久摘要或完整KV扫描；U增加221184个共享系数、每请求221184次乘加。对窗口1024，约为两次历史矩阵乘法的9.375%；历史仅16时则为其6倍。这不是端到端延迟或总服务成本结论。",
         "", "源PCA宽度不变；新增响应输入导致相对旧参照参数增加，只有native对摘要输入的匹配差异支持信息归因。两臂都保留count²权重、全部UID和确定性消退mask，无静默head gate。",
-        "", "M2不拟合/诊断；M5 E14_partial。所有区间是已使用开发UID、单backbone seed17的描述性证据。未启动6000评价，确认未读；没有继续横向原型搜索。"]
+        "", "M2不拟合/诊断；M5采用既定E14 [287,301)窗口。所有区间是已使用开发UID、单backbone seed17的描述性证据。未启动6000评价，确认未读；没有继续横向原型搜索。"]
     (out / "report.md").write_text("\n".join(text)+"\n")
     print("\n".join(text), flush=True)
 

@@ -88,7 +88,7 @@ def main(cli):
             ledger_seconds=dict(ledgers),no_feedback_ledger_seconds=dict(empty_ledgers),elapsed_seconds=time.perf_counter()-start,
             worker_seconds=worker_seconds,peak_allocated_mib=peak,selected_users=len(uids),confirmation_read=False,
             source_sha256=source_hashes,weights_sha256=weights_hashes,raw_sha256=hashlib.sha256((out / "quality_raw.parquet").read_bytes()).hexdigest(),
-            scope="post-development mature-user base domain; independent adjacent migrations; one seed; M5 E14_partial"))
+            scope="post-development mature-user base domain; independent adjacent migrations; one seed; M5 E14 [287,301)"))
         (out / "coordinator.exit").write_text("0\n")
         print(json.dumps(dict(status="development_complete",requests=len(frame),equal_edge_auc_improvement=main_effect,elapsed_seconds=time.perf_counter()-start)),flush=True)
     except Exception as exc:

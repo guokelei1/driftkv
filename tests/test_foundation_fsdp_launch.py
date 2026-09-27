@@ -49,3 +49,37 @@ def test_staged_epoch_schedule_rejects_uncontracted_or_incomplete_endpoints() ->
         module.parse_checkpoint_epochs("0.5,1.0,2.0", recipe, 2)
     with pytest.raises(RuntimeError):
         module.parse_checkpoint_epochs("0.5,1.0,1.5,2.0", recipe, 3)
+
+
+def test_weight_only_continuation_reports_cumulative_epochs_but_schedules_local_steps() -> None:
+    module = _load_script()
+    recipe = {
+        "initial_window_epochs": 1,
+        "optimizer_reset_at_start": True,
+        "checkpoint_epochs": [1],
+    }
+    local_epochs = module.parse_checkpoint_epochs(None, recipe, 1)
+    schedule = module.checkpoint_step_schedule(3597, local_epochs)
+    assert schedule == {3597: 1.0}
+    metadata = module.window_epoch_metadata(recipe, 1, schedule[3597])
+    assert metadata == {
+        "initial_window_epochs": 1.0,
+        "optimizer_reset_at_start": True,
+        "local_training_epochs_completed": 1.0,
+        "local_training_epoch_target": 1.0,
+        "training_epochs_completed": 2.0,
+        "training_epoch_target": 2.0,
+    }
+    assert module.epoch_checkpoint_name(metadata["training_epochs_completed"]) == "checkpoint_epoch_2.pt"
+    unchanged = module.window_epoch_metadata({}, 2, 1.5)
+    assert unchanged["training_epochs_completed"] == 1.5
+    assert unchanged["training_epoch_target"] == 2.0
+
+
+def test_cumulative_window_epochs_reject_invalid_initial_exposure() -> None:
+    import pytest
+
+    module = _load_script()
+    for initial in (-1, float("nan"), float("inf")):
+        with pytest.raises(RuntimeError, match="initial_window_epochs"):
+            module.window_epoch_metadata({"initial_window_epochs": initial}, 1, 1.0)

@@ -59,7 +59,7 @@ the requested Design diagnostic chain, retaining that partial-tail boundary.
             admissions[str(target)] = dict(path=str(path.relative_to(ROOT)),
                 sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                 full_only_adjudication_sha256=digest,gates=gates,
-                scope="Design diagnostic sequence only; E14_partial; not serving admission",
+                scope="Design diagnostic sequence only; E14 [287,301); not serving admission",
                 serving_lineage_promoted=False,partial_tail_diagnostic=True)
     return admissions
 

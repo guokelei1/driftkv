@@ -174,7 +174,7 @@ def main(cli):
     def interval(target,left,right):
         return next(x["interval"] for x in ci["differences"] if x["target"]==target and x["left"]==left and x["right"]==right)
     lines=["# Native响应条件化：成熟用户单次迁移真实质量", "", "完整native设计、冻结C权重；只重新拟合256×16摘要近似输入及无源状态两份必要消融。人群是原development6000中n_theta0≥1024的全部4091人（2026＋2065），不按方法误差筛选、不要求每UID有正负两类反馈。六层/H192/6heads/context1024/seed17，实际legacy ELU+1读取，不是原生SiLU HSTU普遍验证。", "",
-        "M1/M3/M4/M5分别以M0/M2/M3/M4精确Parent缓存为同一起点。Reuse和三个修正分支共用普通native写入；Current Exact在发布点重算后独立native回放。同一真实14日服务窗口、因果历史、追加与淘汰。M5保留E14_partial。**这是四次独立相邻迁移，不是连续迁移或免费清除版本债。**", "",
+        "M1/M3/M4/M5分别以M0/M2/M3/M4精确Parent缓存为同一起点。Reuse和三个修正分支共用普通native写入；Current Exact在发布点重算后独立native回放。同一真实14日服务窗口、因果历史、追加与淘汰。M5采用既定E14 [287,301)窗口。**这是四次独立相邻迁移，不是连续迁移或免费清除版本债。**", "",
         "## 1. 主结果：真实反馈AUC", "", "每边合并所有合法反馈后计算AUC，不平均分块AUC，也不混合不同版本分数。主汇总量为四边等权绝对AUC改善，以下差值均用百分点（pp）。", "",
         "| M | 反馈数/反馈UID/无反馈UID | Reuse AUC | Exact AUC | native AUC | 摘要近似 AUC | 无源状态 AUC |", "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
     for target in (1,3,4,5):

@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-20",
+  "status": "superseded_development_estimate_two_failed_pilot_attempts",
+  "active_result": "results/insight/unified_auc_10k_20260920",
+  "completed_auc_evaluation": false,
+  "pilot_attempts": [
+    {"log": "pilot_attempt_01.log", "source": "/tmp/evokv_auc_read_pilot.log", "failure": "missing src in PYTHONPATH; ModuleNotFoundError: hstu_kvcache"},
+    {"log": "pilot_attempt_02.log", "source": "/tmp/evokv_auc_read_pilot_02.log", "history_load_seconds": 50.1, "elapsed_seconds": 56.39408147521317, "completed_stage": "v1_to_v2 shared_bias and shared_bias_response fitting", "failure": "Arrow uint64 item_idx reached GPU embedding; embedding indices require int64 or int32", "summary": "pilot/summary.json"}
+  ],
+  "correction": "candidate panel is now explicitly int64; no completed5872-user AUC result exists",
+  "authorization_scope": "User requested a real-feedback recommendation-quality Insight comparison on the existing six-layer models; no backbone training.",
+  "device": "one NVIDIA A40, GPU0",
+  "calibration_users": 256,
+  "pilot_selected_users": 128,
+  "evaluation_selected_users": 5872,
+  "evaluation_known_requests_by_edge": [24887, 26029],
+  "evaluation_known_feedback_users_by_edge": [2629, 2707],
+  "evaluation_uid_timestamp_groups_by_edge": [19024, 19685],
+  "pilot_known_requests_by_edge": [495, 599],
+  "pilot_known_feedback_users_by_edge": [66, 72],
+  "peak_gpu_budget_gib": 12,
+  "initial_full_estimate_seconds": 1140,
+  "initial_full_estimate_minutes": "15-19; less than20, subject to measured pilot throughput",
+  "basis": {
+    "request_metadata_reads_seconds": [0.23, 0.02],
+    "prior_history_load": "The retained2560-user diagnostic loaded bounded histories in268.62s. Expanding to5872 users and through day273 suggests roughly8-11 minutes for preparation by a conservative population-size calculation; this is not a measured linear scaling law.",
+    "prior_prefix_throughput": "Retained2560-user source+teacher cache construction took about19.5s per edge. Applied to50916 request-local paired prefills, this gives about388s; reusing each of38709 identical UID/timestamp prefixes could reduce this to about295s.",
+    "remaining_work": "Shared calibration, loading checkpoints, scoring six control/new/historical paths and raw/metric output add to the prefix estimate. Pilot measurement determines the actual batch plan and replaces this initial estimate before full evaluation."
+  },
+  "cache_plan": "Stream request or UID/timestamp batches, score all paths from the same paired prefixes, and release caches after each batch; retain only CPU raw scores. Do not allocate the5872-user population caches on GPU.",
+  "numerics": "FP32 model/read path, FP64 ridge, TF32 disabled; CPU solver one thread, model/history threads initially4",
+  "check_before_full": "128-user pilot on real-feedback requests, strict-prefix and endpoint numerical checks, frozen new calibration parameters and old-rule hashes, measured elapsed time and peak memory",
+  "execution": "The original estimate preceded execution. Two pilot attempts failed and were retained; no full5872-user run completed. The four-edge unified10000-user experiment supersedes this protocol.",
+  "interpretation": "Research evaluation cost estimate, not serving latency or end-to-end method speedup."
+}

@@ -52,7 +52,7 @@ def main(args):
         backbone_seed_repeats=1, cost_target_population=30000, v5_partial_tail=True,
         quality_only=True, write_mode="reuse",
         limitations=["development sample, not final confirmation", "synchronous ready views",
-                     "one training seed", "M5 E14_partial diagnostic", "population IO/cost qualification still separate"])
+                     "one training seed", "M5 E14 [287,301) diagnostic", "population IO/cost qualification still separate"])
     assert args.estimate_seconds <= 1800 or args.detached
     write_json(out / "configuration.json", config)
     start = time.perf_counter()

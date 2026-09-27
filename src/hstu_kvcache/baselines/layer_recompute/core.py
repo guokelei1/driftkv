@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import torch
 
 from hstu_kvcache.models import HSTU, HSTUKVCache
-from hstu_kvcache.models.state_transition import retain_latest_cache
+from hstu_kvcache.models.state_transition import append_with_rolling_band, retain_latest_cache
 
 Interval = tuple[int, int] | None
 
@@ -26,11 +26,13 @@ class LayerRecomputeState:
 @contextmanager
 def _evaluation(model: HSTU):
     was_training = model.training
-    model.eval()
+    if was_training:
+        model.eval()
     try:
         yield
     finally:
-        model.train(was_training)
+        if was_training:
+            model.train()
 
 
 @contextmanager
@@ -115,6 +117,35 @@ def append(model: HSTU, state: LayerRecomputeState, item_ids, behaviors, time_de
         _, cache = model.forward_with_cache(state.cache, item_ids, behaviors, time_deltas)
     boundaries = {
         layer: torch.cat((state.boundary_inputs[layer], added[layer]), dim=1)
+        for layer in range(1, len(model.blocks))
+    }
+    return LayerRecomputeState(cache, boundaries)
+
+
+@torch.no_grad()
+def append_band(model: HSTU, state: LayerRecomputeState, item_ids, behaviors, time_deltas,
+                max_length: int) -> LayerRecomputeState:
+    """Batch observed events up to the next query, preserving scalar eviction.
+
+    Each appended row uses a sliding causal attention window, so later rows
+    cannot read already-evicted entries. The underlying primitive requires the
+    frozen models' no-position-bias setting. Capture the actual input of each
+    new row at every layer, then evict exactly the same prefix from boundaries
+    and K/V. A band must not cross an intervening scored request.
+    """
+    if max_length < 1 or state.cache.seq_len > max_length:
+        raise ValueError("invalid retained history bound")
+    if (item_ids.ndim != 2 or item_ids.shape != behaviors.shape
+            or item_ids.shape != time_deltas.shape
+            or item_ids.shape[0] != state.cache.k.shape[1]):
+        raise ValueError("appended event tensors must align with the cache batch")
+    if item_ids.shape[1] == 0:
+        return state
+    with _evaluation(model), _capture_boundaries(model) as added:
+        cache = append_with_rolling_band(model, state.cache, item_ids, behaviors,
+                                         time_deltas, max_length)
+    boundaries = {
+        layer: torch.cat((state.boundary_inputs[layer], added[layer]), dim=1)[:, -cache.seq_len:]
         for layer in range(1, len(model.blocks))
     }
     return LayerRecomputeState(cache, boundaries)

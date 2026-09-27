@@ -1,0 +1,52 @@
+{
+  "purpose": "Reuse only on the 15 selected adjacent Yambda edges; compare with existing Full scores",
+  "seed": 17,
+  "history_length": 1024,
+  "evaluation_days": 14,
+  "gpus": [0, 1, 2, 3],
+  "report_interval_seconds": 7200,
+  "scales": {
+    "medium": {
+      "request_manifest_dir": "data/manifests/yambda500m_medium_hstu_native_d7_d14_v1",
+      "dataset_manifest": "data/processed/yambda500m_unified_v1/scales/medium/dataset.json",
+      "cohort_size_per_gpu": 128,
+      "query_chunk_size": 64,
+      "full_raw": [
+        "results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/full_only/E14/v0_to_v1/raw.parquet",
+        "results/unified_training_2026_09/medium/seed17/v2_2epoch_4gpu_b32_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/medium/seed17/v3_1epoch_4gpu_b32_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/medium/seed17/v4_1epoch_4gpu_b32_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/medium/seed17/v5_1epoch_4gpu_b32_cpu14/full_only/E14/raw.parquet"
+      ],
+      "full_current_names": ["v1", "v2", "v3", "v4", "v5"]
+    },
+    "large": {
+      "request_manifest_dir": "data/manifests/yambda500m_large_hstu_native_d7_d14_v1",
+      "dataset_manifest": "data/processed/yambda500m_unified_v1/scales/large/dataset.json",
+      "cohort_size_per_gpu": 64,
+      "query_chunk_size": 64,
+      "full_raw": [
+        "results/yambda500m_large_seed17/qualification_v1/D14/full_only/E14/v0_to_v1/raw.parquet",
+        "results/yambda500m_large_seed17/qualification_v1/D14/full_only/E14/v1_to_v2/raw.parquet",
+        "results/yambda500m_large_seed17/qualification_v1/D14/full_only/E14/v2_to_v3/raw.parquet",
+        "results/unified_training_2026_09/large/seed17/v4_2epoch_4gpu_b64_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/large/seed17/v5_epochs12_4gpu_b64_cpu14/full_only/E14/raw.parquet"
+      ],
+      "full_current_names": ["v1", "v2", "v3", "v4", "v5_e1"]
+    },
+    "max": {
+      "request_manifest_dir": "data/manifests/yambda5b_max_200k_hstu_native_v1",
+      "dataset_manifest": "data/processed/yambda5b_max_200k_v1/scales/max/dataset.json",
+      "cohort_size_per_gpu": 16,
+      "query_chunk_size": 64,
+      "full_raw": [
+        "results/unified_training_2026_09/max/seed17/v1_epochs12_4gpu_b80_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/max/seed17/v2_1epoch_4gpu_b80_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/max/seed17/v3_epochs12_4gpu_b80_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/max/seed17/v4_epochs12_4gpu_b80_cpu14/full_only/E14/raw.parquet",
+        "results/unified_training_2026_09/max/seed17/v5_epochs12_4gpu_b80_cpu14/full_only/E14/raw.parquet"
+      ],
+      "full_current_names": ["v1_e1", "v2", "v3_e2", "v4_e2", "v5_e2"]
+    }
+  }
+}

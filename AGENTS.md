@@ -35,8 +35,10 @@ maintenance across releases. The code provides the model foundation,
 Full/Reuse evaluation, paper diagnostics and historical adaptation prototypes.
 The current Design is complete as a design, but has not been implemented or
 validated. Historical prototypes and results do not establish its implementation
-or effectiveness. The user plans to retrain all models and rerun the experiments;
-old Insight dependencies are deferred. This plan is not a long-job launch.
+or effectiveness. Unified model training has progressed to Max V5 as of
+2026-09-22; see `docs/unified_training_2026_09/README.md` for status. The current
+Design still requires implementation and validation; missing old Insight
+dependencies are deferred. These status notes do not authorize new long jobs.
 Development notes are recorded in `docs/design/iterations.md`.
 
 The paper studies Transformer recommender state compatibility across model
@@ -46,65 +48,28 @@ prevents that improvement from being fully realized. The repository documents
 this through one conceptual design, one concrete experimental design and one
 sealed motivation/observation record.
 
-A secondary RecFlow track has isolated data preparation and generative
-development probes. On 2026-09-18 the user authorized single-seed, complete-epoch
-A/B/C development with fixed three-day evaluation windows, parameter iteration,
-and progression to six-layer training once the development checks work; see
-`docs/recflow/plan.md`. This supersedes the earlier pending one-pass launch
-question. It is not part of the current Yambda motivation result.
-The subsequent instruction authorizes six-layer data expansion and RecFlow
-motivation diagnostics, but the latest steering first requests small daily-update
-tests: fit one complete day and evaluate the following day, with complete epochs.
-The initial daily probes kept the same seed and metric; retain both small and
-large relative gains honestly.
-The six-layer daily1/3-epoch probes have now completed: both settings improve on
-both tested future days and all parent/current random checks pass. One epoch per
-day is the minimum working development setting; this does not admit formal phi
-releases or establish long-term stability or RecFlow cache/motivation results.
-The subsequent bounded LR screen is complete: same A, full daily windows and
-one epoch, update LR1e-4 and3e-5 against retained1e-3. Report relative improvement
-percentages and every outcome; a preferred20–50% magnitude is descriptive, not
-a pass threshold. Initial-data expansion remains a separate authorized step.
-The user also explicitly permits exploring NDCG cutoffs and candidate protocols
-to obtain a useful, steadier development setting. Keep each protocol's own
-random/request denominator, distinguish candidate ranking from free generation,
-retain the original frozen outcomes, and fix the selected setting before an
-additional chronological confirmation window.
-All54 explored cells are retained. The selected setting is LR1e-4, daily1epoch,
-free-catalog NDCG@100, giving+15.64%/+27.00% on the two explored days; sparse
-hits prevent a stability claim. `window_6l_daily_confirmation_seed17.json`
-prospectively fixes this setting for D21fit→D22eval (development phaseD←C).
-D22 appeared in other development branches; it is not untouched final data.
-Retain any failed confirmation without changing its frozen primary metric.
-That full-catalog confirmation failed: D22+171.31%, both parent/current random
-checks fail and only2→4 requests hit Top100. The subsequent retained LR1e-3
-daily branch with primary uniform1000 NDCG@50 completed: three updates give
-+5.88%/+21.10%/+25.91%, with all parent/current random checks passing. This is
-the provisional next-stage development setting, explicitly candidate ranking
-with the generative model, not stable free1M generation. Preserve all full
-failures; D22 reuse is exploratory. Do not keep retuning K/pools on later days.
-
-The latest user explicitly authorizes a larger-user six-layer run now: prepare
-and canary the pipeline, launch it in detached tmux, and hand off without waiting
-for completion. The sealed setting is
-`configs/recflow/window_6l_expanded_u4096_seed17.json`:4096 initial-history-eligible
-development users, fresh A on D1–18 for3 full epochs, then five daily1epoch
-updates D19–23 with paired next-day D20–24 evaluation. Keep seed17,context1024,
-LR1e-3,1M catalog and uniform1000 NDCG@50; sampled evaluation expands to6144
-requests/day. All quality failures remain and the descriptive training chain
-continues; numerical/data/lineage failures stop. This authorizes the long run
-after its focused canary; no further launch question is needed. It does not
-admit serving phi releases or authorize final-role/ten-layer/Yambda theta3 work.
-The user will return after the background job; do not keep this turn waiting
-through the expected13–15hour run. Avoid modifying its sealed execution sources
-while it is active; the launcher checks their hashes before each command.
+RecFlow is an isolated generative development track. The authorized seed17,
+complete-epoch 2L/6L probes and 4096-user A–F expansion are complete; do not
+relaunch them. Current settings, decision history and remaining cache questions
+live in `docs/recflow/plan.md`; all outcomes, including failed free-catalog
+confirmation and reused-day exploration, live in `results/recflow/README.md`.
+Keep the frozen initial 1M catalog and uniform1000 NDCG@50 setting; this is
+candidate ranking, not stable free generation. Do not retune cutoffs or pools
+on later days. The expanded chain is not formal phi admission or evidence of
+cache compatibility. Existing authorization covers the recorded six-layer
+development/expansion and motivation diagnostics, not ten-layer/final-role
+training, new seeds or Yambda theta3. Do not ask again for an already authorized
+launch, and do not treat a completed launch as an instruction to rerun it.
+All outcomes and random checks remain; preferred gain magnitudes are descriptive,
+not thresholds. Numerical/data/lineage failures stop descriptive training chains.
+Protect sealed execution sources while any dependent job is active.
 
 Authoritative entry points:
 
 - `docs/README.md`: document map and maintenance rules;
-- `docs/paper_design.md`: stable conceptual paper design and comparison boundary;
+- `docs/paper_design.md`: pointer to the paper design and implementation boundary;
 - `docs/experimental_design.md`: concrete architecture, data, version training,
-  evaluation and phase plan;
+  evaluation definitions and evidence boundaries;
 - `docs/design/plan.md` and `docs/design/iterations.md`: current six-layer
   adaptation plan, implementation choices and exploration record;
 - `docs/motivation_observations.md`: current observed motivation and results.
@@ -119,12 +84,15 @@ draft or use Sketch-to-Sketch as the current method name.
 
 - Current motivation contracts, hashes, raw seals and adjudications must be
   preserved. Retired-branch documents and historical control code were removed
-  during the 2026-08-25 cleanup; the remaining result scope is recorded in
-  `results/checkpoint_cleanup_2026-08-24.md` and must not be silently recreated.
+  during the 2026-08-25 cleanup. The formerly referenced
+  `results/checkpoint_cleanup_2026-08-24.md` is absent as of 2026-09-22;
+  current retention and missing-archive limits are recorded in `results/README.md`.
+  Do not silently recreate retired evidence or missing historical records.
 - The first 2026-09-05 cleanup removed obsolete entry points. The user's
   subsequent authorization also removed retired Small weights and obsolete
-  raw results; see `results/README.md` for the scope, archived deletion manifest,
-  retained dependencies and recovery limits. Preserve six-layer Medium and
+  raw results; see `results/README.md` for the scope, historical archive metadata,
+  retained dependencies and recovery limits (the two 2026-09-05 archives are
+  currently missing locally). Preserve six-layer Medium and
   ten-layer Large assets, current paper raw evidence, and their dependencies.
   Historical contracts and archived conclusions are not an active to-do list.
 - The Yambda-50M 8L/H256/context1024 F-only seed17 architecture pilot is
@@ -157,9 +125,10 @@ draft or use Sketch-to-Sketch as the current method name.
   conditional six-layer progression after stable A/B (and optional C) checks.
   Record prospective settings, resources and a focused canary before long jobs,
   and use tmux; do not ask again for launch already covered by this instruction.
-  Six-layer development-data expansion is now authorized, after the requested
-  daily-window checks. Ten-layer and final-population qualification remain outside
-  this scope. Do not mistake the daily development branches for admitted releases.
+  The daily-window checks and authorized six-layer development-data expansion
+  are complete; current settings and remaining questions are in the RecFlow plan.
+  Ten-layer and final-population qualification remain outside this scope.
+  Do not mistake the daily development branches for admitted releases.
 - RecFlow initial and updated models must each clearly outperform uniform
   random video ranking under the same catalog/candidate pool, request panel,
   cutoff and OOV denominator. Parent/current improvement alone is insufficient.

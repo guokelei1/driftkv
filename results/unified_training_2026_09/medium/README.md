@@ -29,7 +29,7 @@
 ## 训练与文件约定
 
 - V2–V5：4卡，每卡8/global32，CPU history14/Arrow14/IO4/Torch4、独立绑核；fresh AdamW、LR=5e-5、weight decay=1e-4、用户等权BCE。V2为2 epochs，其余为1 epoch。
-- 主指标为 pooled request ROC-AUC，真实like/dislike反馈，仅Full-only E14；保留原始分数、封存、adjudication、最终训练日志和配置。
+- 主指标为 pooled request ROC-AUC，真实like/dislike反馈，仅Full-only E14；原始分数、封存、adjudication和配置保留，最终训练日志按统一清理记录归档。
 - V2–V5实体checkpoint已移入统一目录；原运行目录的`checkpoint`为相对符号链接，原合同和payload内路径仍有效。原seal内容不变。
 - 本轮被替代的任务、失败记录和探针payload按用户要求删除，无本地备份；最终运行的轻量canary通过证明和预算随配置保留，其引用的探针payload已清理。
 - 本链为单seed开发选择结果，不构成独立最终评价或已验证的缓存适配结果；尚未执行Reuse。固定模型链不修改历史服务推广标记。

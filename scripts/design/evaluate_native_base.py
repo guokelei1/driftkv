@@ -125,7 +125,7 @@ def main(cli):
                *sorted((ROOT / "results/design/mechanism_aggregate_factorial192_01").glob("source_projection_mean_m*.pt"))]
     cfg = dict(vars(cli),development_uids=uids,targets=protocol["targets"],parents=protocol["parents"],paths=PATHS,
         protocol_sha256=hashlib.sha256(PROTOCOL.read_bytes()).hexdigest(),confirmation_read=False,backbone_seed=17,
-        scope="independent adjacent Parent initialization; mature development users; M5 E14_partial; all paths eager",
+        scope="independent adjacent Parent initialization; mature development users; M5 E14 [287,301); all paths eager",
         admissions=diagnostic_admissions(5),
         source_sha256={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files},
         weights_sha256={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in weights})

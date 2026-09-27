@@ -10,6 +10,8 @@
 
 按改动选择入口：
 
+- test_attention_backends：CUDA Triton 与 PyTorch 的算式／梯度、旧缓存和 mask 对照；
+  无 CUDA/Triton 时跳过 GPU 项。六层和已有权重的短测量见 `scripts/benchmark_hstu_backends.py`。
 - test_foundation_*：训练、manifest、指标和缓存谱系。
 - test_yambda_data、test_yambda_incremental_time_contract、test_yambda500m_streaming_windows：
   用户选择、OOV、反馈时间边界、增量时间与窗口；使用小型输入，不扫描本机完整数据。
@@ -38,3 +40,9 @@ PYTHONPATH=src pytest -q tests/test_insight_two_functional_boundary.py -k score_
 文档、绘图、路径整理按需做文本、链接或出图检查。实验的小样本检查可以同时承担 canary，
 无需再套一层等价验证。仅在共享改动影响广泛、无法用局部检查覆盖实际风险，
 或用户明确要求时运行完整测试。检查通过后继续研究任务，不惯性扩大测试范围。
+
+四种局部重算的定向检查在 `tests/selective_recompute/`：层、尾部、偏差、query
+各有独立目录，共享 evaluator／cohort／cost／aggregation 检查对应因果时间流、
+用户筛选、实际算子计算量和同请求聚合。运行 `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+python -m pytest -q tests/selective_recompute`。真实模型短检查使用
+`scripts/selective_recompute_2026_09/run.py --probe`，不等同正式评测启动。

@@ -1,0 +1,23 @@
+{
+  "status": "revised_after_passing_ten_layer_canaries_before_main_launch",
+  "gpu_ids": [0, 1, 2, 3],
+  "preparation_cpu_threads": 48,
+  "worker_cpu_threads": 4,
+  "main_batch_size": 64,
+  "canary_seconds": 135.5622970694676,
+  "canary_single_four_gpu_maximum_logit_difference": 0.0,
+  "translation_reference_maximum_parameter_difference": 0.0,
+  "expanded_check_seconds": 98.75000605266541,
+  "expanded_256_reference_maximum_parameter_and_logit_difference": 0.0,
+  "expanded_512_two_arm_extraction_seconds": 30.493535039015114,
+  "in_gpu_256_teacher_reference_peak_gib": 24.103201866149902,
+  "expanded_worker_peak_gib": 8.556295394897461,
+  "main_paired_teacher_cpu_gib": 348.828125,
+  "estimated_main_minutes": [60, 120],
+  "basis": "Five edges. The512-user check uses30.49s for both10-layer arms; main expanded budgets total14824 users per edge. Add paired cache construction, original256-user baselines/translation and10000-snapshot evaluation. Small-budget synchronization overhead makes linear scaling conservative.",
+  "execution": "Detached tmux evokv_large_auc_10k: four independent edge baseline calibrations in parallel, fifth queued; then four-GPU expanded calibration/evaluation per edge; finally raw-AUC verification and rendering. The separate ridge pilot has completed.",
+  "scheduler_canary_seconds": 82.16454621590674,
+  "scheduler_canary_rule_and_translation_parameter_difference": 0.0,
+  "authorization": "Latest user explicitly requested complete five-method10L/five-edge measurements with four GPUs and permits bounded parameter observations.",
+  "timing_role": "Resource planning only; plot x-axis remains theoretical FLOPs."
+}

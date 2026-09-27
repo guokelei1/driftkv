@@ -31,6 +31,7 @@ from hstu_kvcache.recflow.metrics import (  # noqa: E402
     random_expected_metrics,
     request_metrics,
 )
+from hstu_kvcache.models.backend_info import attention_backend_info  # noqa: E402
 
 
 def digest(path):
@@ -196,6 +197,7 @@ def _worker(job_path):
     save_json(out / "worker.json", dict(rank=job["rank"], device=job["device"],
         cuda_visible_devices=os.environ.get("CUDA_VISIBLE_DEVICES"),
         device_name=torch.cuda.get_device_name(job["device"]),
+        attention_execution=attention_backend_info(),
         total_seconds=time.monotonic() - begin))
 
 
@@ -243,6 +245,7 @@ def parallel_evaluate(checkpoint, panels, window, output, phase, devices, limit=
         evaluation_request_selection=manifest.get("request_selection"),
         evaluation_devices=devices, evaluation_canary_limit=limit,
         evaluation_cuda_visible_devices=os.environ.get("CUDA_VISIBLE_DEVICES"),
+        evaluation_attention_execution=attention_backend_info(),
         evaluation_source_sha256={str(path.resolve().relative_to(ROOT)): digest(path) for path in sources})
     save_json(out / "configuration.json", configuration)
     workers, processes, logs = [], [], []

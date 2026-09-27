@@ -195,7 +195,7 @@ class V5EpochSweep(EpochSweep):
         atomic_json(ROOT / self.contract["outputs"]["summary_json"], payload)
         lines = [
             "# Large V4@2.0 → V5 epoch sweep", "",
-            "Status: **E14_partial Full-only complete**. Both V5 endpoints are direct children of V4@2.0.", "",
+            "Status: **E14 [287,301) Full-only complete**. Both V5 endpoints are direct children of V4@2.0.", "",
             "| V5 epoch | AUC vs V4@2 | Loss reduction | Brier reduction | Strict gate |",
             "| ---: | ---: | ---: | ---: | --- |",
         ]

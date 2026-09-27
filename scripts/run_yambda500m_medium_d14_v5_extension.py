@@ -426,7 +426,7 @@ class Runner:
         atomic_json(self.output / "summary.json", payload)
         lines = [
             "# Medium D14 v4 → v5 extension", "",
-            f"Status: **{payload['status']}**. E3/E7 are complete windows; E14_partial contains incomplete source day300 and is diagnostic only.", "",
+            f"Status: **{payload['status']}**. E3/E7 and the preselected E14 [287,301) window are reported separately; historical files retain their original path names.", "",
             "| Window | Requests | New vs Old AUC | Reuse retained | Old loss | New loss | Reuse loss |",
             "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]

@@ -57,7 +57,7 @@ def main(args):
                                       control=quality(control[mask & (strata == i)]))
                 for i, name in enumerate(("1_to_255", "256_to_1023", "1024_to_4095", "4096_plus"))
                 if (mask & (strata == i)).any()},
-            scope="M5 E14_partial diagnostic, no serving admission" if target == 5 else "development, admitted Full-only edge"))
+            scope="M5 E14 [287,301) diagnostic, no serving admission" if target == 5 else "development, admitted Full-only edge"))
     report = dict(control=args.control, adaptive=args.adaptive, selected_users=len(configs["adaptive"]["development_uids"]),
         users_with_feedback=int(adaptive.uid.nunique()), requests=len(adaptive), quality=rows,
         maximum_baseline_logit_difference=differences, metadata_equal=True,
@@ -87,7 +87,7 @@ def main(args):
     if report["no_op_targets"]:
         names=", ".join(f"M{t}" for t in report["no_op_targets"])
         text += ["",f"{names}为用户指定的native No-op阶段，仅单列边界记录，不将它的差值算作适配方法收益。"]
-    text += ["", "M5保留不完整E14诊断边界。区间为本seed下配对UID抽样，不增加模型训练重复数。",
+    text += ["", "M5使用既定E14 [287,301)评价窗口。区间为本seed下配对UID抽样，不增加模型训练重复数。",
         "各历史长度分层、PR-AUC/log-loss/Brier及逐段恢复保存在JSON；不以分块AUC均值代替全体AUC。",
         f"必要准备（不含模型/数据IO）：固定{report['preparation_seconds']['control']:.2f}s，"
         f"{args.candidate_label}{report['preparation_seconds']['adaptive']:.2f}s；这不是完整人口成本达标结论。", ""]

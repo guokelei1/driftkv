@@ -149,7 +149,7 @@ def main(cli):
             continue
         compare = next(c for c in comparisons if all(c[k] == row[k] for k in ("target", "group", "panel", "method", "path")))
         text.append(f"| M{row['target']} | {row['method']}/{row['path']} | {row['mse']:.8g} | {compare['reuse_ratio']:.5g} | {row['median']:.6g} | {compare['better_than_reuse_uid_fraction']:.1%} |")
-    text += ["", "完整前缀/单层、拟合/留出、各UID权重和带符号交叉项见summary.json与decomposition.parquet。", "", "确认集未读取；M2仅native过渡；M5 E14_partial。自由编码使用场景教师，非部署方法。"]
+    text += ["", "完整前缀/单层、拟合/留出、各UID权重和带符号交叉项见summary.json与decomposition.parquet。", "", "确认集未读取；M2仅native过渡；M5采用既定E14 [287,301)窗口。自由编码使用场景教师，非部署方法。"]
     (out / "report.md").write_text("\n".join(text)+"\n")
     print("\n".join(text), flush=True)
 

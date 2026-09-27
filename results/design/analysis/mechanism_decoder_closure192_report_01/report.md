@@ -39,7 +39,7 @@
 
 完整前缀/单层、拟合/留出、各UID权重和带符号交叉项见summary.json与decomposition.parquet。
 
-确认集未读取；M2仅native过渡；M5 E14_partial。自由编码使用场景教师，非部署方法。
+确认集未读取；M2仅native过渡；M5采用既定E14 [287,301)窗口。自由编码使用场景教师，非部署方法。
 
 ## 判读
 

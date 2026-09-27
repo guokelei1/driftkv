@@ -714,14 +714,14 @@ class LargePipeline:
             "reuse_scope_amendment_sha256": self.reuse_scope_hash,
             "completed_full_only_cells": full_completed,
             "expected_full_only_cells": full_expected,
-            "partial_horizon_policy": "D14 v4_to_v5 E14_partial is directional diagnostic only",
+            "partial_horizon_policy": "D14 v4_to_v5 uses the preselected E14 [287,301) window",
         }
         atomic_json((ROOT / self.contract["outputs"]["summary_json"]).resolve(), payload)
         lines = [
             "# Yambda-500M Large Full-only completion", "",
             f"Status: **{payload['status']}**. Full-only {full_completed}/{full_expected}.", "",
             "Formal Reuse was cancelled before its first quality cell; the formal queue ends after Full-only.", "",
-            "`E14_partial` is never interpreted as a complete 14-day qualification horizon.",
+            "The historical `E14_partial` path denotes the preselected E14 [287,301) window.",
         ]
         atomic_text((ROOT / self.contract["outputs"]["summary_markdown"]).resolve(), "\n".join(lines) + "\n")
 

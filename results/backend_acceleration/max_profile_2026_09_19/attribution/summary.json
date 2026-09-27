@@ -1,0 +1,1925 @@
+{
+  "status": "complete_cpu_only_trace_attribution",
+  "script_sha256": "e8f3d63b2d0c7fd11562b5efea72e707d41253149b7dcf7f1a3f107deb95563d",
+  "input_sha256": {
+    "results/backend_acceleration/max_profile_2026_09_19/fixture/configuration.json": "c3162e6e2e548fc47512490277495a95ad3aee859f46e6976127dced5391be6a",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/torch_default.summary.json": "f6b0675df1aeff6a2c0c32b9efb79bbccefb79c44463414ba71c8011482ee84a",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/torch_default.rank0.trace.json": "447bca2d5df723d4ed72b04d6ede826c5570b1723063ac4e8fcf9164a9684c5d",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/torch_default.rank1.trace.json": "87a4eed34476205828b5b31abce7ec731ad6c95196f30601c12960f0b63f7e7e",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/torch_default.rank2.trace.json": "66dd08eff35779d3ea1bfcde439efa1b6ee3b69d2854872b2b3f6d6b86866e0b",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/torch_default.rank3.trace.json": "380f4c7becd533973ded03473c644b12d1062b43dccc82139763579764326b3d",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_default.summary.json": "3ad4ffcd154e26e51feb3caae4741869cf2602a205747c142cf62e8aa429fa2e",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_default.rank0.trace.json": "ce89c01e520e298217c4cf9f1b7fa14b62dd222ffe28a27e8b4ca9d974bc6240",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_default.rank1.trace.json": "a02e4b645b9ffd62fdc8126f34210df13056ecc08ee3d9204c2902377bbafd82",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_default.rank2.trace.json": "70e827921349d6a25f14e6457cebfde24e2b7888928f7e4b294294cc6c11cbd2",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_default.rank3.trace.json": "5fc92e84600a6ec0a68cea5787ce431709b136d4abec9a3cc7dde23877b9268f",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_fused.summary.json": "e471fc885779caf3bd2263885a8ce6bb0c91628fc216adeb249ee22adbb30037",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_fused.rank0.trace.json": "4c5e47c3b8dc08b8f6c65e4b18fd71f44a29426bf1e79a1832c40de3a527c3ca",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_fused.rank1.trace.json": "896f3d9cc4f7544574a494d49804601175730264d82303ba6c103b0fa4fd1b48",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_fused.rank2.trace.json": "7d4f38b53bb97c4073027cbf4ffb3eaa2c3b46671f78c303774c09dd13a96523",
+    "results/backend_acceleration/max_profile_2026_09_19/probe/measurement/auto_fused.rank3.trace.json": "e0a21bd3f9800d44c06ceddcc48b70111ab8311381c31b60dbde158feb4bbdc2"
+  },
+  "scope": {
+    "clean_timing": "Original phase intervals and wall medians; excludes profiler overhead and original CPU collate/startup/checkpoints.",
+    "gpu_work": "Sum of linked GPU activity durations via CPU External id and nested CPU scope; includes kernels, memcpy and memset. Kernel-only totals are separate. These are work sums, not wall-clock intervals; not additive across nested scopes.",
+    "attribution_check": "Each scope retains the original profiler inclusive total and extraction difference. Minor boundary/nesting discrepancies can occur; dense-gradient attribution must agree within0.01ms over all recorded steps.",
+    "units": "Trace start/end timestamps are microseconds on the trace clock. Every field ending all_profile_steps is TOTAL over the recorded two steps. Per-profile-step fields divide that total by two.",
+    "prefix": "GPU work within prefix forward only; excludes FSDP collectives outside that scope and all backward/query/optimizer work.",
+    "embedding": "All EmbeddingBackward scopes, including dense zero/fill and gradient accumulation; includes small behavior/type/action tables as well as the large item table.",
+    "collectives": "One all-gather and one reduce-scatter per recorded step. NCCL kernel durations include peer waiting and are not pure wire transmission. Cross-rank clocks are shared on this single host.",
+    "overlap": "Retained timeline union metrics distinguish summed work from elapsed span; these traces report zero communication/noncommunication overlap.",
+    "limits": "Two profiled batches (4 and 9) from the first twelve chronological startup batches, not a whole-epoch profile or a quality experiment. Profiler timing is not substituted for clean benchmark timing."
+  },
+  "cells": [
+    {
+      "variant": "torch_default",
+      "clean_max_rank_wall_ms": {
+        "median_ms": 943.1637707166374,
+        "mean_ms": 963.6991356499493,
+        "min_ms": 885.6010558083653,
+        "max_ms": 1105.0210623070598
+      },
+      "clean_max_rank_cuda_phase_ms": {
+        "data_H2D": {
+          "median_ms": 0.7840160131454468,
+          "mean_ms": 0.7908128082752228,
+          "min_ms": 0.5742080211639404,
+          "max_ms": 0.9497920274734497
+        },
+        "forward": {
+          "median_ms": 400.500732421875,
+          "mean_ms": 408.3851287841797,
+          "min_ms": 383.3958435058594,
+          "max_ms": 449.7684631347656
+        },
+        "loss": {
+          "median_ms": 0.1817599982023239,
+          "mean_ms": 0.18432000279426575,
+          "min_ms": 0.158720001578331,
+          "max_ms": 0.2181120067834854
+        },
+        "zero_grad": {
+          "median_ms": 0.11980800330638885,
+          "mean_ms": 0.11950080171227455,
+          "min_ms": 0.07065600156784058,
+          "max_ms": 0.16179199516773224
+        },
+        "backward": {
+          "median_ms": 524.2936401367188,
+          "mean_ms": 542.9844970703125,
+          "min_ms": 464.1535949707031,
+          "max_ms": 685.3744506835938
+        },
+        "optimizer": {
+          "median_ms": 43.46828842163086,
+          "mean_ms": 43.469107437133786,
+          "min_ms": 43.449344635009766,
+          "max_ms": 43.489280700683594
+        }
+      },
+      "ranks": [
+        {
+          "rank": 0,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 46,
+              "gpu_activity_counts": {
+                "kernel": 240,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 234.726348,
+              "mean_gpu_activity_ms_per_profile_step": 117.363174,
+              "sum_kernel_only_ms_all_profile_steps": 234.67658799999998,
+              "mean_kernel_only_ms_per_profile_step": 117.33829399999999,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 52,
+                  "sum_gpu_activity_ms": 170.73140500000002
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007104000000000001
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004607999999999999
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 158,
+                  "sum_gpu_activity_ms": 0.7966780000000008
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 64,
+                  "sum_gpu_activity_ms": 63.186553000000025
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 234.72634800000023,
+              "difference_from_profiler_inclusive_ms": -2.2737367544323206e-13
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1148
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 311.919464,
+              "mean_gpu_activity_ms_per_profile_step": 155.959732,
+              "sum_kernel_only_ms_all_profile_steps": 311.919464,
+              "mean_kernel_only_ms_per_profile_step": 155.959732,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 311.9194640000013,
+              "difference_from_profiler_inclusive_ms": -1.3073986337985843e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 8019,
+                "gpu_memcpy": 66
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 35.015739,
+              "mean_gpu_activity_ms_per_profile_step": 17.5078695,
+              "sum_kernel_only_ms_all_profile_steps": 32.826404000000004,
+              "mean_kernel_only_ms_per_profile_step": 16.413202000000002,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 35.02703599998931,
+              "difference_from_profiler_inclusive_ms": -0.011296999989305334
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.744258,
+              "mean_gpu_activity_ms_per_profile_step": 43.372129,
+              "sum_kernel_only_ms_all_profile_steps": 86.744258,
+              "mean_kernel_only_ms_per_profile_step": 43.372129,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.74425799999922,
+              "difference_from_profiler_inclusive_ms": 7.815970093361102e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 9,
+              "length_groups": {
+                "937": 1,
+                "939": 1,
+                "946": 1,
+                "947": 1,
+                "948": 1,
+                "952": 1,
+                "956": 1,
+                "963": 1,
+                "1024": 12
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 5,
+              "length_groups": {
+                "59": 1,
+                "711": 1,
+                "738": 1,
+                "741": 1,
+                "1024": 16
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862519563344.428,
+                "end_trace_us": 6862519769479.734,
+                "duration_ms": 206.135307,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862520766531.867,
+                "end_trace_us": 6862520973625.327,
+                "duration_ms": 207.09346,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862520579479.631,
+                "end_trace_us": 6862520710735.95,
+                "duration_ms": 131.256319,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862521605185.169,
+                "end_trace_us": 6862521870712.557,
+                "duration_ms": 265.527388,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 2359.2279111328126,
+            "busy_union_ms": 2092.7307138671877,
+            "communication_union_ms": 810.0124736328125,
+            "noncommunication_union_ms": 1282.718240234375,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 1,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 31,
+              "gpu_activity_counts": {
+                "kernel": 185,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 154.344675,
+              "mean_gpu_activity_ms_per_profile_step": 77.1723375,
+              "sum_kernel_only_ms_all_profile_steps": 154.294335,
+              "mean_kernel_only_ms_per_profile_step": 77.1471675,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 32,
+                  "sum_gpu_activity_ms": 109.94873700000002
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007392
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004384000000000001
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 143,
+                  "sum_gpu_activity_ms": 0.8045850000000004
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 44,
+                  "sum_gpu_activity_ms": 43.579577
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 154.34467500000343,
+              "difference_from_profiler_inclusive_ms": -3.439026841078885e-12
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1148
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 312.550338,
+              "mean_gpu_activity_ms_per_profile_step": 156.275169,
+              "sum_kernel_only_ms_all_profile_steps": 312.550338,
+              "mean_kernel_only_ms_per_profile_step": 156.275169,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 312.5503380000006,
+              "difference_from_profiler_inclusive_ms": -5.684341886080801e-13
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 5241,
+                "gpu_memcpy": 46
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 28.592277999999997,
+              "mean_gpu_activity_ms_per_profile_step": 14.296138999999998,
+              "sum_kernel_only_ms_all_profile_steps": 26.060251,
+              "mean_kernel_only_ms_per_profile_step": 13.0301255,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 28.60392700000119,
+              "difference_from_profiler_inclusive_ms": -0.011649000001192178
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.737784,
+              "mean_gpu_activity_ms_per_profile_step": 43.368892,
+              "sum_kernel_only_ms_all_profile_steps": 86.737784,
+              "mean_kernel_only_ms_per_profile_step": 43.368892,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.73778400000022,
+              "difference_from_profiler_inclusive_ms": -2.1316282072803006e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 1,
+              "length_groups": {
+                "1024": 20
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 8,
+              "length_groups": {
+                "52": 1,
+                "53": 1,
+                "191": 1,
+                "565": 1,
+                "934": 1,
+                "936": 1,
+                "1001": 1,
+                "1024": 13
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862519566640.623,
+                "end_trace_us": 6862519769391.337,
+                "duration_ms": 202.75071400000002,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862520765287.319,
+                "end_trace_us": 6862520973535.241,
+                "duration_ms": 208.247922,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862520248676.337,
+                "end_trace_us": 6862520710716.776,
+                "duration_ms": 462.040439,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862521737918.709,
+                "end_trace_us": 6862521870679.908,
+                "duration_ms": 132.761199,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 2355.844966796875,
+            "busy_union_ms": 2174.59920703125,
+            "communication_union_ms": 1005.8002744140625,
+            "noncommunication_union_ms": 1168.7989326171876,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 2,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 25,
+              "gpu_activity_counts": {
+                "kernel": 163,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 121.810141,
+              "mean_gpu_activity_ms_per_profile_step": 60.9050705,
+              "sum_kernel_only_ms_all_profile_steps": 121.760605,
+              "mean_kernel_only_ms_per_profile_step": 60.8803025,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 24,
+                  "sum_gpu_activity_ms": 85.434441
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007008
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004607999999999999
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 137,
+                  "sum_gpu_activity_ms": 0.7707940000000004
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 36,
+                  "sum_gpu_activity_ms": 35.593289999999996
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 121.8101410000007,
+              "difference_from_profiler_inclusive_ms": -6.963318810448982e-13
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1148
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 312.024931,
+              "mean_gpu_activity_ms_per_profile_step": 156.0124655,
+              "sum_kernel_only_ms_all_profile_steps": 312.024931,
+              "mean_kernel_only_ms_per_profile_step": 156.0124655,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 312.0249309999998,
+              "difference_from_profiler_inclusive_ms": 1.7053025658242404e-13
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 4098,
+                "gpu_memcpy": 37
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 26.86645,
+              "mean_gpu_activity_ms_per_profile_step": 13.433225,
+              "sum_kernel_only_ms_all_profile_steps": 24.275537,
+              "mean_kernel_only_ms_per_profile_step": 12.1377685,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 26.87630600000033,
+              "difference_from_profiler_inclusive_ms": -0.009856000000329601
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.787228,
+              "mean_gpu_activity_ms_per_profile_step": 43.393614,
+              "sum_kernel_only_ms_all_profile_steps": 86.787228,
+              "mean_kernel_only_ms_per_profile_step": 43.393614,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.7872279999978,
+              "difference_from_profiler_inclusive_ms": 2.2026824808563106e-12
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 5,
+              "length_groups": {
+                "414": 1,
+                "565": 1,
+                "586": 1,
+                "656": 2,
+                "1024": 15
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 2,
+              "length_groups": {
+                "691": 1,
+                "1024": 19
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862519566551.72,
+                "end_trace_us": 6862519769347.959,
+                "duration_ms": 202.796239,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862520766622.988,
+                "end_trace_us": 6862520973470.799,
+                "duration_ms": 206.84781099999998,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862520400288.166,
+                "end_trace_us": 6862520710795.55,
+                "duration_ms": 310.507384,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862521492412.798,
+                "end_trace_us": 6862521870764.957,
+                "duration_ms": 378.352159,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 2355.8241748046876,
+            "busy_union_ms": 2224.8287607421876,
+            "communication_union_ms": 1098.5035927734375,
+            "noncommunication_union_ms": 1126.32516796875,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 3,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 13,
+              "gpu_activity_counts": {
+                "kernel": 119,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 57.2113,
+              "mean_gpu_activity_ms_per_profile_step": 28.60565,
+              "sum_kernel_only_ms_all_profile_steps": 57.160866999999996,
+              "mean_kernel_only_ms_per_profile_step": 28.580433499999998,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 8,
+                  "sum_gpu_activity_ms": 36.610971
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007168
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004768
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 125,
+                  "sum_gpu_activity_ms": 0.7233980000000002
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 20,
+                  "sum_gpu_activity_ms": 19.864995
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 57.21130000000068,
+              "difference_from_profiler_inclusive_ms": -6.821210263296962e-13
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1148
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 311.76698999999996,
+              "mean_gpu_activity_ms_per_profile_step": 155.88349499999998,
+              "sum_kernel_only_ms_all_profile_steps": 311.76698999999996,
+              "mean_kernel_only_ms_per_profile_step": 155.88349499999998,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 311.7669899999972,
+              "difference_from_profiler_inclusive_ms": 2.7853275241795927e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1890,
+                "gpu_memcpy": 22
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 22.375004,
+              "mean_gpu_activity_ms_per_profile_step": 11.187502,
+              "sum_kernel_only_ms_all_profile_steps": 19.432789,
+              "mean_kernel_only_ms_per_profile_step": 9.7163945,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 22.383835999994773,
+              "difference_from_profiler_inclusive_ms": -0.008831999994772133
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.930856,
+              "mean_gpu_activity_ms_per_profile_step": 43.465428,
+              "sum_kernel_only_ms_all_profile_steps": 86.930856,
+              "mean_kernel_only_ms_per_profile_step": 43.465428,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.9308559999999,
+              "difference_from_profiler_inclusive_ms": 9.947598300641403e-14
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 1,
+              "length_groups": {
+                "1024": 20
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 2,
+              "length_groups": {
+                "445": 1,
+                "1024": 19
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862519565047.793,
+                "end_trace_us": 6862519769301.099,
+                "duration_ms": 204.253306,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862520764582.492,
+                "end_trace_us": 6862520973437.97,
+                "duration_ms": 208.855478,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862520249902.662,
+                "end_trace_us": 6862520710753.666,
+                "duration_ms": 460.851004,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862521498321.932,
+                "end_trace_us": 6862521870724.812,
+                "duration_ms": 372.40288,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 2357.7650859375,
+            "busy_union_ms": 2286.9363310546873,
+            "communication_union_ms": 1246.3626669921875,
+            "noncommunication_union_ms": 1040.5736640625,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "variant": "auto_default",
+      "clean_max_rank_wall_ms": {
+        "median_ms": 759.4713242724538,
+        "mean_ms": 804.8603898845613,
+        "min_ms": 649.0507237613201,
+        "max_ms": 1036.5835959091783
+      },
+      "clean_max_rank_cuda_phase_ms": {
+        "data_H2D": {
+          "median_ms": 0.8516800105571747,
+          "mean_ms": 0.8465664088726044,
+          "min_ms": 0.6666240096092224,
+          "max_ms": 1.040768027305603
+        },
+        "forward": {
+          "median_ms": 291.2742462158203,
+          "mean_ms": 296.7027160644531,
+          "min_ms": 257.01177978515625,
+          "max_ms": 356.25128173828125
+        },
+        "loss": {
+          "median_ms": 0.2123040035367012,
+          "mean_ms": 0.2158175989985466,
+          "min_ms": 0.19183999300003052,
+          "max_ms": 0.2443840056657791
+        },
+        "zero_grad": {
+          "median_ms": 0.11816000193357468,
+          "mean_ms": 0.11805119961500168,
+          "min_ms": 0.11337599903345108,
+          "max_ms": 0.12464000284671783
+        },
+        "backward": {
+          "median_ms": 462.9537048339844,
+          "mean_ms": 509.3017120361328,
+          "min_ms": 356.7327880859375,
+          "max_ms": 741.0010986328125
+        },
+        "optimizer": {
+          "median_ms": 43.45537567138672,
+          "mean_ms": 43.45807037353516,
+          "min_ms": 43.45087814331055,
+          "max_ms": 43.47126388549805
+        }
+      },
+      "ranks": [
+        {
+          "rank": 0,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 46,
+              "gpu_activity_counts": {
+                "kernel": 240,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 237.21590400000002,
+              "mean_gpu_activity_ms_per_profile_step": 118.60795200000001,
+              "sum_kernel_only_ms_all_profile_steps": 237.165343,
+              "mean_kernel_only_ms_per_profile_step": 118.5826715,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 52,
+                  "sum_gpu_activity_ms": 171.83822699999996
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007136
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004575
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 158,
+                  "sum_gpu_activity_ms": 0.8041620000000008
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 64,
+                  "sum_gpu_activity_ms": 64.56180399999998
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 237.21590399999863,
+              "difference_from_profiler_inclusive_ms": 1.3926637620897964e-12
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.550594,
+              "mean_gpu_activity_ms_per_profile_step": 28.275297,
+              "sum_kernel_only_ms_all_profile_steps": 56.550594,
+              "mean_kernel_only_ms_per_profile_step": 28.275297,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.550594000002164,
+              "difference_from_profiler_inclusive_ms": -2.1671553440683056e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 5779,
+                "gpu_memcpy": 66
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 33.49501,
+              "mean_gpu_activity_ms_per_profile_step": 16.747505,
+              "sum_kernel_only_ms_all_profile_steps": 31.312814999999997,
+              "mean_kernel_only_ms_per_profile_step": 15.656407499999998,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 33.500001999998986,
+              "difference_from_profiler_inclusive_ms": -0.004991999998985364
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.745218,
+              "mean_gpu_activity_ms_per_profile_step": 43.372609,
+              "sum_kernel_only_ms_all_profile_steps": 86.745218,
+              "mean_kernel_only_ms_per_profile_step": 43.372609,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.74521799999988,
+              "difference_from_profiler_inclusive_ms": 1.1368683772161603e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 9,
+              "length_groups": {
+                "937": 1,
+                "939": 1,
+                "946": 1,
+                "947": 1,
+                "948": 1,
+                "952": 1,
+                "956": 1,
+                "963": 1,
+                "1024": 12
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 5,
+              "length_groups": {
+                "59": 1,
+                "711": 1,
+                "738": 1,
+                "741": 1,
+                "1024": 16
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560064554.659,
+                "end_trace_us": 6862560268767.982,
+                "duration_ms": 204.213323,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862560992945.28,
+                "end_trace_us": 6862561196524.133,
+                "duration_ms": 203.578853,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560806404.831,
+                "end_trace_us": 6862560936811.108,
+                "duration_ms": 130.406277,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862561571040.148,
+                "end_trace_us": 6862561831168.7295,
+                "duration_ms": 260.128581,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1818.192390625,
+            "busy_union_ms": 1598.4185654296875,
+            "communication_union_ms": 798.3270341796875,
+            "noncommunication_union_ms": 800.09153125,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 1,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 31,
+              "gpu_activity_counts": {
+                "kernel": 185,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 155.691791,
+              "mean_gpu_activity_ms_per_profile_step": 77.8458955,
+              "sum_kernel_only_ms_all_profile_steps": 155.640142,
+              "mean_kernel_only_ms_per_profile_step": 77.820071,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 32,
+                  "sum_gpu_activity_ms": 110.44209400000001
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007552
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004607999999999999
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 143,
+                  "sum_gpu_activity_ms": 0.8240419999999996
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 44,
+                  "sum_gpu_activity_ms": 44.413495
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 155.69179100000025,
+              "difference_from_profiler_inclusive_ms": -2.5579538487363607e-13
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.872246,
+              "mean_gpu_activity_ms_per_profile_step": 28.436123,
+              "sum_kernel_only_ms_all_profile_steps": 56.872246,
+              "mean_kernel_only_ms_per_profile_step": 28.436123,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.8722460000017,
+              "difference_from_profiler_inclusive_ms": -1.7053025658242404e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 3801,
+                "gpu_memcpy": 46
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 26.815931,
+              "mean_gpu_activity_ms_per_profile_step": 13.4079655,
+              "sum_kernel_only_ms_all_profile_steps": 24.289697,
+              "mean_kernel_only_ms_per_profile_step": 12.1448485,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 26.815931000007055,
+              "difference_from_profiler_inclusive_ms": -7.055689366097795e-12
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.782047,
+              "mean_gpu_activity_ms_per_profile_step": 43.3910235,
+              "sum_kernel_only_ms_all_profile_steps": 86.782047,
+              "mean_kernel_only_ms_per_profile_step": 43.3910235,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.78204699999944,
+              "difference_from_profiler_inclusive_ms": 5.684341886080801e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 1,
+              "length_groups": {
+                "1024": 20
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 8,
+              "length_groups": {
+                "52": 1,
+                "53": 1,
+                "191": 1,
+                "565": 1,
+                "934": 1,
+                "936": 1,
+                "1001": 1,
+                "1024": 13
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560064125.214,
+                "end_trace_us": 6862560268682.289,
+                "duration_ms": 204.557075,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862560990397.183,
+                "end_trace_us": 6862561196434.977,
+                "duration_ms": 206.037794,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560501549.79,
+                "end_trace_us": 6862560936774.377,
+                "duration_ms": 435.224587,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862561698469.765,
+                "end_trace_us": 6862561831161.324,
+                "duration_ms": 132.69156,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1818.5929765625,
+            "busy_union_ms": 1660.3061337890624,
+            "communication_union_ms": 978.511015625,
+            "noncommunication_union_ms": 681.7951181640625,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 2,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 25,
+              "gpu_activity_counts": {
+                "kernel": 163,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 123.22538399999999,
+              "mean_gpu_activity_ms_per_profile_step": 61.612691999999996,
+              "sum_kernel_only_ms_all_profile_steps": 123.174857,
+              "mean_kernel_only_ms_per_profile_step": 61.5874285,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 24,
+                  "sum_gpu_activity_ms": 85.94440499999999
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007488
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004512
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 137,
+                  "sum_gpu_activity_ms": 0.7816450000000001
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 36,
+                  "sum_gpu_activity_ms": 36.487334
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 123.2253839999988,
+              "difference_from_profiler_inclusive_ms": 1.1937117960769683e-12
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.767589,
+              "mean_gpu_activity_ms_per_profile_step": 28.3837945,
+              "sum_kernel_only_ms_all_profile_steps": 56.767589,
+              "mean_kernel_only_ms_per_profile_step": 28.3837945,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.76758899999675,
+              "difference_from_profiler_inclusive_ms": 3.254285729781259e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 2978,
+                "gpu_memcpy": 37
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 25.419419,
+              "mean_gpu_activity_ms_per_profile_step": 12.7097095,
+              "sum_kernel_only_ms_all_profile_steps": 22.825626,
+              "mean_kernel_only_ms_per_profile_step": 11.412813,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 25.419418999998975,
+              "difference_from_profiler_inclusive_ms": 1.0267342531733448e-12
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.76387,
+              "mean_gpu_activity_ms_per_profile_step": 43.381935,
+              "sum_kernel_only_ms_all_profile_steps": 86.76387,
+              "mean_kernel_only_ms_per_profile_step": 43.381935,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.76387000000022,
+              "difference_from_profiler_inclusive_ms": -2.2737367544323206e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 5,
+              "length_groups": {
+                "414": 1,
+                "565": 1,
+                "586": 1,
+                "656": 2,
+                "1024": 15
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 2,
+              "length_groups": {
+                "691": 1,
+                "1024": 19
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560063822.608,
+                "end_trace_us": 6862560268628.853,
+                "duration_ms": 204.806244,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862560991859.276,
+                "end_trace_us": 6862561196385.196,
+                "duration_ms": 204.52592,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560638831.115,
+                "end_trace_us": 6862560936863.837,
+                "duration_ms": 298.03272200000004,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862561461730.788,
+                "end_trace_us": 6862561831237.908,
+                "duration_ms": 369.50712,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1819.0124248046875,
+            "busy_union_ms": 1717.5192138671875,
+            "communication_union_ms": 1076.872005859375,
+            "noncommunication_union_ms": 640.6472080078125,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 3,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 13,
+              "gpu_activity_counts": {
+                "kernel": 119,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 57.684474,
+              "mean_gpu_activity_ms_per_profile_step": 28.842237,
+              "sum_kernel_only_ms_all_profile_steps": 57.633307,
+              "mean_kernel_only_ms_per_profile_step": 28.8166535,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 8,
+                  "sum_gpu_activity_ms": 36.65083
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007169
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004672
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 125,
+                  "sum_gpu_activity_ms": 0.7412909999999998
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 20,
+                  "sum_gpu_activity_ms": 20.280512000000005
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 57.68447399999999,
+              "difference_from_profiler_inclusive_ms": 1.4210854715202004e-14
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.362989,
+              "mean_gpu_activity_ms_per_profile_step": 28.1814945,
+              "sum_kernel_only_ms_all_profile_steps": 56.362989,
+              "mean_kernel_only_ms_per_profile_step": 28.1814945,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.36298899999462,
+              "difference_from_profiler_inclusive_ms": 5.3788085097039584e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1410,
+                "gpu_memcpy": 22
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 21.383222999999997,
+              "mean_gpu_activity_ms_per_profile_step": 10.691611499999999,
+              "sum_kernel_only_ms_all_profile_steps": 18.445265,
+              "mean_kernel_only_ms_per_profile_step": 9.2226325,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 21.38322299999729,
+              "difference_from_profiler_inclusive_ms": 2.7071678232459817e-12
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 32
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 86.896713,
+              "mean_gpu_activity_ms_per_profile_step": 43.4483565,
+              "sum_kernel_only_ms_all_profile_steps": 86.896713,
+              "mean_kernel_only_ms_per_profile_step": 43.4483565,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 86.89671299999941,
+              "difference_from_profiler_inclusive_ms": 5.968558980384842e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 1,
+              "length_groups": {
+                "1024": 20
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 2,
+              "length_groups": {
+                "445": 1,
+                "1024": 19
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560063871.893,
+                "end_trace_us": 6862560268591.691,
+                "duration_ms": 204.719799,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862560990803.492,
+                "end_trace_us": 6862561196348.2295,
+                "duration_ms": 205.544737,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862560500384.537,
+                "end_trace_us": 6862560936824.347,
+                "duration_ms": 436.43981,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862561463308.205,
+                "end_trace_us": 6862561831196.943,
+                "duration_ms": 367.888738,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1819.3400419921875,
+            "busy_union_ms": 1768.04969140625,
+            "communication_union_ms": 1214.593083984375,
+            "noncommunication_union_ms": 553.456607421875,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "variant": "auto_fused",
+      "clean_max_rank_wall_ms": {
+        "median_ms": 690.4472284950316,
+        "mean_ms": 709.5297613181174,
+        "min_ms": 616.0563826560974,
+        "max_ms": 852.5581527501345
+      },
+      "clean_max_rank_cuda_phase_ms": {
+        "data_H2D": {
+          "median_ms": 0.8618239760398865,
+          "mean_ms": 0.8457375943660737,
+          "min_ms": 0.6601600050926208,
+          "max_ms": 1.103808045387268
+        },
+        "forward": {
+          "median_ms": 285.10142517089844,
+          "mean_ms": 292.1437683105469,
+          "min_ms": 258.5624694824219,
+          "max_ms": 340.98931884765625
+        },
+        "loss": {
+          "median_ms": 0.20892800390720367,
+          "mean_ms": 0.21030720174312592,
+          "min_ms": 0.17744000256061554,
+          "max_ms": 0.24908800423145294
+        },
+        "zero_grad": {
+          "median_ms": 0.115167997777462,
+          "mean_ms": 0.11964799985289573,
+          "min_ms": 0.10627199709415436,
+          "max_ms": 0.14454400539398193
+        },
+        "backward": {
+          "median_ms": 424.42308044433594,
+          "mean_ms": 443.15126953125,
+          "min_ms": 348.9107666015625,
+          "max_ms": 586.69970703125
+        },
+        "optimizer": {
+          "median_ms": 15.64577579498291,
+          "mean_ms": 15.64773120880127,
+          "min_ms": 15.63753604888916,
+          "max_ms": 15.665663719177246
+        }
+      },
+      "ranks": [
+        {
+          "rank": 0,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 46,
+              "gpu_activity_counts": {
+                "kernel": 240,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 236.898007,
+              "mean_gpu_activity_ms_per_profile_step": 118.4490035,
+              "sum_kernel_only_ms_all_profile_steps": 236.847992,
+              "mean_kernel_only_ms_per_profile_step": 118.423996,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 52,
+                  "sum_gpu_activity_ms": 171.54914300000002
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007104
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.00464
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 158,
+                  "sum_gpu_activity_ms": 0.8049970000000007
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 64,
+                  "sum_gpu_activity_ms": 64.53212300000001
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 236.89800700000052,
+              "difference_from_profiler_inclusive_ms": -5.115907697472721e-13
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.553324,
+              "mean_gpu_activity_ms_per_profile_step": 28.276662,
+              "sum_kernel_only_ms_all_profile_steps": 56.553324,
+              "mean_kernel_only_ms_per_profile_step": 28.276662,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.553324000000345,
+              "difference_from_profiler_inclusive_ms": -3.410605131648481e-13
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 5779,
+                "gpu_memcpy": 66
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 33.561392999999995,
+              "mean_gpu_activity_ms_per_profile_step": 16.780696499999998,
+              "sum_kernel_only_ms_all_profile_steps": 31.379357,
+              "mean_kernel_only_ms_per_profile_step": 15.6896785,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 33.566481000000174,
+              "difference_from_profiler_inclusive_ms": -0.005088000000178283
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 6
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 31.208675,
+              "mean_gpu_activity_ms_per_profile_step": 15.6043375,
+              "sum_kernel_only_ms_all_profile_steps": 31.208675,
+              "mean_kernel_only_ms_per_profile_step": 15.6043375,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 31.20867500000028,
+              "difference_from_profiler_inclusive_ms": -2.8066438062523957e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 9,
+              "length_groups": {
+                "937": 1,
+                "939": 1,
+                "946": 1,
+                "947": 1,
+                "948": 1,
+                "952": 1,
+                "956": 1,
+                "963": 1,
+                "1024": 12
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 5,
+              "length_groups": {
+                "59": 1,
+                "711": 1,
+                "738": 1,
+                "741": 1,
+                "1024": 16
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862593499335.145,
+                "end_trace_us": 6862593703478.996,
+                "duration_ms": 204.143852,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594388069.463,
+                "end_trace_us": 6862594593503.054,
+                "duration_ms": 205.43359099999998,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862594230062.936,
+                "end_trace_us": 6862594359785.392,
+                "duration_ms": 129.722456,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594964714.412,
+                "end_trace_us": 6862595295144.943,
+                "duration_ms": 330.43053100000003,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1819.59325,
+            "busy_union_ms": 1614.091302734375,
+            "communication_union_ms": 869.7304296875,
+            "noncommunication_union_ms": 744.360873046875,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 1,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 31,
+              "gpu_activity_counts": {
+                "kernel": 185,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 155.31937,
+              "mean_gpu_activity_ms_per_profile_step": 77.659685,
+              "sum_kernel_only_ms_all_profile_steps": 155.267786,
+              "mean_kernel_only_ms_per_profile_step": 77.633893,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 32,
+                  "sum_gpu_activity_ms": 110.294845
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007329
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004736
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 143,
+                  "sum_gpu_activity_ms": 0.8244519999999994
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 44,
+                  "sum_gpu_activity_ms": 44.18800800000001
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 155.31937000000022,
+              "difference_from_profiler_inclusive_ms": -2.2737367544323206e-13
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.971454,
+              "mean_gpu_activity_ms_per_profile_step": 28.485727,
+              "sum_kernel_only_ms_all_profile_steps": 56.971454,
+              "mean_kernel_only_ms_per_profile_step": 28.485727,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.97145400000078,
+              "difference_from_profiler_inclusive_ms": -7.815970093361102e-13
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 3801,
+                "gpu_memcpy": 46
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 26.850904999999997,
+              "mean_gpu_activity_ms_per_profile_step": 13.425452499999999,
+              "sum_kernel_only_ms_all_profile_steps": 24.318082999999998,
+              "mean_kernel_only_ms_per_profile_step": 12.159041499999999,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 26.850905000001863,
+              "difference_from_profiler_inclusive_ms": -1.865174681370263e-12
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 6
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 31.220329999999997,
+              "mean_gpu_activity_ms_per_profile_step": 15.610164999999999,
+              "sum_kernel_only_ms_all_profile_steps": 31.220329999999997,
+              "mean_kernel_only_ms_per_profile_step": 15.610164999999999,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 31.220329999999958,
+              "difference_from_profiler_inclusive_ms": 3.907985046680551e-14
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 1,
+              "length_groups": {
+                "1024": 20
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 8,
+              "length_groups": {
+                "52": 1,
+                "53": 1,
+                "191": 1,
+                "565": 1,
+                "934": 1,
+                "936": 1,
+                "1001": 1,
+                "1024": 13
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862593500446.528,
+                "end_trace_us": 6862593703391.121,
+                "duration_ms": 202.944593,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594385484.67,
+                "end_trace_us": 6862594593419.199,
+                "duration_ms": 207.934529,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862593939347.037,
+                "end_trace_us": 6862594359723.368,
+                "duration_ms": 420.376331,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862595162710.359,
+                "end_trace_us": 6862595295130.791,
+                "duration_ms": 132.420432,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1818.7062841796876,
+            "busy_union_ms": 1589.5491162109374,
+            "communication_union_ms": 963.675884765625,
+            "noncommunication_union_ms": 625.8732314453125,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 2,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 25,
+              "gpu_activity_counts": {
+                "kernel": 163,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 122.86810899999999,
+              "mean_gpu_activity_ms_per_profile_step": 61.434054499999995,
+              "sum_kernel_only_ms_all_profile_steps": 122.817326,
+              "mean_kernel_only_ms_per_profile_step": 61.408663,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 24,
+                  "sum_gpu_activity_ms": 85.849229
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007169
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004672000000000001
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 137,
+                  "sum_gpu_activity_ms": 0.7831440000000001
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 36,
+                  "sum_gpu_activity_ms": 36.22389499999999
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 122.86810899999656,
+              "difference_from_profiler_inclusive_ms": 3.424815986363683e-12
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.818892,
+              "mean_gpu_activity_ms_per_profile_step": 28.409446,
+              "sum_kernel_only_ms_all_profile_steps": 56.818892,
+              "mean_kernel_only_ms_per_profile_step": 28.409446,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.818891999999266,
+              "difference_from_profiler_inclusive_ms": 7.318590178329032e-13
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 2978,
+                "gpu_memcpy": 37
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 25.414784,
+              "mean_gpu_activity_ms_per_profile_step": 12.707392,
+              "sum_kernel_only_ms_all_profile_steps": 22.826144,
+              "mean_kernel_only_ms_per_profile_step": 11.413072,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 25.414783999997802,
+              "difference_from_profiler_inclusive_ms": 2.19912976717751e-12
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 6
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 31.215321,
+              "mean_gpu_activity_ms_per_profile_step": 15.6076605,
+              "sum_kernel_only_ms_all_profile_steps": 31.215321,
+              "mean_kernel_only_ms_per_profile_step": 15.6076605,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 31.215321000000344,
+              "difference_from_profiler_inclusive_ms": -3.446132268436486e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 5,
+              "length_groups": {
+                "414": 1,
+                "565": 1,
+                "586": 1,
+                "656": 2,
+                "1024": 15
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 2,
+              "length_groups": {
+                "691": 1,
+                "1024": 19
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862593499052.431,
+                "end_trace_us": 6862593703337.46,
+                "duration_ms": 204.285029,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594386392.592,
+                "end_trace_us": 6862594593363.572,
+                "duration_ms": 206.97098,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862594073045.574,
+                "end_trace_us": 6862594359809.838,
+                "duration_ms": 286.764264,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594858556.023,
+                "end_trace_us": 6862595295205.427,
+                "duration_ms": 436.649403,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1820.124419921875,
+            "busy_union_ms": 1719.3125947265626,
+            "communication_union_ms": 1134.6696767578126,
+            "noncommunication_union_ms": 584.64291796875,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        },
+        {
+          "rank": 3,
+          "profile_steps": 2,
+          "scopes": {
+            "embedding_backward_and_gradient_accumulation": {
+              "cpu_scope_calls": 13,
+              "gpu_activity_counts": {
+                "kernel": 119,
+                "gpu_memset": 40
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 57.674757,
+              "mean_gpu_activity_ms_per_profile_step": 28.8373785,
+              "sum_kernel_only_ms_all_profile_steps": 57.623684999999995,
+              "mean_kernel_only_ms_per_profile_step": 28.811842499999997,
+              "leaf_cpu_operators": {
+                "aten::add_": {
+                  "gpu_activity_count": 8,
+                  "sum_gpu_activity_ms": 36.715075
+                },
+                "aten::arange": {
+                  "gpu_activity_count": 4,
+                  "sum_gpu_activity_ms": 0.007232000000000001
+                },
+                "aten::copy_": {
+                  "gpu_activity_count": 2,
+                  "sum_gpu_activity_ms": 0.004704
+                },
+                "aten::embedding_dense_backward": {
+                  "gpu_activity_count": 125,
+                  "sum_gpu_activity_ms": 0.7406159999999998
+                },
+                "aten::fill_": {
+                  "gpu_activity_count": 20,
+                  "sum_gpu_activity_ms": 20.207129999999996
+                }
+              },
+              "profiler_inclusive_gpu_ms_all_profile_steps": 57.67475700000109,
+              "difference_from_profiler_inclusive_ms": -1.0871303857129533e-12
+            },
+            "prefix_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 732
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 56.402157,
+              "mean_gpu_activity_ms_per_profile_step": 28.2010785,
+              "sum_kernel_only_ms_all_profile_steps": 56.402157,
+              "mean_kernel_only_ms_per_profile_step": 28.2010785,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 56.402156999997764,
+              "difference_from_profiler_inclusive_ms": 2.2382096176443156e-12
+            },
+            "query_forward": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 1410,
+                "gpu_memcpy": 22
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 21.402064,
+              "mean_gpu_activity_ms_per_profile_step": 10.701032,
+              "sum_kernel_only_ms_all_profile_steps": 18.460814,
+              "mean_kernel_only_ms_per_profile_step": 9.230407,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 21.40206400000016,
+              "difference_from_profiler_inclusive_ms": -1.5987211554602254e-13
+            },
+            "optimizer": {
+              "cpu_scope_calls": 2,
+              "gpu_activity_counts": {
+                "kernel": 6
+              },
+              "sum_gpu_activity_ms_all_profile_steps": 31.293505,
+              "mean_gpu_activity_ms_per_profile_step": 15.6467525,
+              "sum_kernel_only_ms_all_profile_steps": 31.293505,
+              "mean_kernel_only_ms_per_profile_step": 15.6467525,
+              "profiler_inclusive_gpu_ms_all_profile_steps": 31.293505000000238,
+              "difference_from_profiler_inclusive_ms": -2.3803181647963356e-13
+            }
+          },
+          "matched_fixture_groups": [
+            {
+              "fixture_batch": 4,
+              "group_count": 1,
+              "length_groups": {
+                "1024": 20
+              }
+            },
+            {
+              "fixture_batch": 9,
+              "group_count": 2,
+              "length_groups": {
+                "445": 1,
+                "1024": 19
+              }
+            }
+          ],
+          "collective_count_all_profile_steps": {
+            "all_gather": 2,
+            "reduce_scatter": 2
+          },
+          "collectives": {
+            "all_gather": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862593498865.895,
+                "end_trace_us": 6862593703300.728,
+                "duration_ms": 204.43483300000003,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594385869.789,
+                "end_trace_us": 6862594593327.859,
+                "duration_ms": 207.45807000000002,
+                "kernel_name": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ],
+            "reduce_scatter": [
+              {
+                "fixture_batch": 4,
+                "start_trace_us": 6862593935493.309,
+                "end_trace_us": 6862594359746.556,
+                "duration_ms": 424.253247,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              },
+              {
+                "fixture_batch": 9,
+                "start_trace_us": 6862594860767.05,
+                "end_trace_us": 6862595295165.477,
+                "duration_ms": 434.398427,
+                "kernel_name": "ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+              }
+            ]
+          },
+          "timeline_ms_all_profile_steps": {
+            "device_span_ms": 1820.539560546875,
+            "busy_union_ms": 1768.2055390625,
+            "communication_union_ms": 1270.5445771484376,
+            "noncommunication_union_ms": 497.6609619140625,
+            "communication_noncommunication_overlap_ms": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}

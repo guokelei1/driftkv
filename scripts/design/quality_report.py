@@ -76,7 +76,7 @@ def main(run_id, repetitions):
         row["cache_action"] = "native_no_op" if target in config.get("no_op_targets",[]) else "adaptation"
         if row["cache_action"] == "native_no_op":
             assert group.learned.equals(group.reuse) and not group.correction_active.any()
-        row["release_scope"] = "E14_partial diagnostic, no serving admission" if target == 5 and config.get("v5_partial_tail") else "development diagnostic"
+        row["release_scope"] = "E14 [287,301) diagnostic, no serving admission" if target == 5 and config.get("v5_partial_tail") else "development diagnostic"
         row["coverage"] = dict(producer_supported_fraction=float(group.covered.mean()),
             correction_active_fraction=float(group.correction_active.mean()),
             no_old_state_requests=int((group.old_events==0).sum()))
@@ -135,7 +135,7 @@ def main(run_id, repetitions):
         formatted = [f"{value:.6f}" if value is not None else "未定义/小gap" for value in values]
         text.append(f"| M{row['target']} | {q['requests']}/{q['users']} | "+" | ".join(formatted)+" |")
     if config.get("v5_partial_tail"):
-        text += ["", "M5为原E14_partial诊断尾段，serving_admission仍为false。"]
+        text += ["", "M5采用既定E14 [287,301)窗口，serving_admission仍为false。"]
     if config.get("no_op_targets"):
         names=", ".join(f"M{t}" for t in config["no_op_targets"])
         text += ["",f"{names}按用户指定范围执行native No-op，保留真实模型/缓存写入；该行仅为边界记录，不计入本轮适配优化目标。"]

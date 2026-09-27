@@ -150,7 +150,7 @@ def main():
     write_json(OUT / "cost.json",costs)
     result = dict(rows=rows,contrasts=contrasts,objectives=objective_rows,status="complete",confirmation_read=False,
         decision="Coverage improves M1/M3/M4 and most M5 UIDs, but M5 mean/tail and original-fitting failures do not pass promotion; stop expansion, no6000.",
-        scope="fixed six-layer seed17, M1/M3/M4/M5, M2 native only, M5 E14_partial; reused128 diagnostic UIDs; no new6000 evaluation")
+        scope="fixed six-layer seed17, M1/M3/M4/M5, M2 native only, M5 E14 [287,301); reused128 diagnostic UIDs; no new6000 evaluation")
     write_json(OUT / "summary.json",result)
     lines = ["# Native校准覆盖：64×64、64×16、256×16", "", "本轮固定native输入结构，仅新增B/C联合校准。A为上一轮冻结64×64；B为原64×固定16，C为256×同16（含原64）。主比较C−A。", "",
         "同一128已使用诊断UID、原held64；每状态先平均query，再每UID平均状态，最后UID等权。以下均为logit MSE，不是AUC恢复。A/Reuse/方案15沿用已核对冻结raw；C新增拟合用户不进入诊断组。", "",
@@ -209,7 +209,7 @@ def main():
         "同30000人口的历史五发布Exact分母为204.3033s，20%为40.8607s，初始摘要代理4.8147s。它采用已编译Exact，本轮为eager四目标诊断，不能混用这些数值宣称完整预算达标；本轮尚无匹配的完整人口成本分母。校准/初始化/发布/持续维护/I/O仍须一起计费。", "",
         "新增U仍为每请求221184 MAC，无新增持久摘要或KV扫描；相对两次历史矩阵乘法为96/N：N=16/32/96/256/1024对应6/3/1/0.375/0.09375。该比值不包含Exact的其他算子或服务期，不设N=96阈值，也不为988060定向Exact。", "",
         "## 5. 执行边界", "", "仅B/C两份新校准；固定A mean PCA32、query/native中心尺度、W/U函数族、ridge与mu_A。新增192用户按既定分层/hash一次冻结；原64生命周期覆盖不变。B/C用自己的下层实际query；普通KV谱系共用。固定16子集只有4个item，是查询覆盖预算对照。", "",
-        "M1/M3/M4/M5全报，M2仅native过渡，M5保留E14_partial。未做256×64、扩人数、gate、producer原型、自由编码或13路径重跑；没有新6000质量输出，确认6000封存。", "",
+        "M1/M3/M4/M5全报，M2仅native过渡，M5采用既定E14 [287,301)窗口。未做256×64、扩人数、gate、producer原型、自由编码或13路径重跑；没有新6000质量输出，确认6000封存。", "",
         "本轮结论：独立用户覆盖对M1/M3/M4有明确增益，M5多数用户也改善，但没有完成尾部风险收敛，不能归为三臂全面成功。M5 C−A、C−B、C−Reuse区间均含0，且原64拟合用户的M4/M5误差恶化；不进入6000，不补256×64或继续扩人数。", "",
         "下一次讨论应区分状态条件化与聚合响应风险对闭环误差的约束，不能把原型失败再归结为人数不足。当前producer残余有异质性，但本轮没有版本条件化的匹配干预，不能宣布该方向已被证明。保留native信息接口和这次覆盖证据，结束本轮两份校准。"]
     (OUT / "report.md").write_text("\n".join(lines)+"\n")

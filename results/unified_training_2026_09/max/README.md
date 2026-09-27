@@ -1,10 +1,58 @@
-# Max：数据与训练准备
+# Max：数据、逐版训练与评测
 
-**2026-09-19：按用户新指令恢复Max V1，已启动连续2 epochs及两个端点的完整E14评测任务；V2–V5仍待后续指令。** [V1运行入口](seed17/v1_epochs12_4gpu_b80_cpu14/README.md)。此前暂停点固定的V0及其10%用户E14结果继续保留。 权重、封存、数据/ID映射、抽样UID、原始分数、配置和脚本均保留原位置。后续按[计划](../../../docs/unified_training_2026_09/plan.md)逐版训练和评测。
+**2026-09-23最新：V5连续两轮训练及两个端点的E14评价均已完成。**
+选定权重见[V4 epoch2](seed17/checkpoints/v4/checkpoint_100.pt)，
+SHA256 `e1b15e8a5b92758f5e25061e94a00aa28afca7f5adccda25f1e0c276d6d20a87`。
+V5会话`evokv_max_v5_epochs12_20260922`，见[V5运行及结果](seed17/v5_epochs12_4gpu_b80_cpu14/README.md)。
+同一E14 [287,301)评价窗口内，V5@1相对V4 AUC −0.150%、原四项准入未通过；
+V5@2相对提升+2.173%、四项准入通过。用户已选定V5@2作为模型版本清单的链尾；
+[三规模版本清单](../../../docs/unified_training_2026_09/model_versions.md)记录该权重。V5@1实体权重已清理，两个端点的原始评测和封存记录保留。
+
+**V4两轮及统一E14评测已完成。** 四卡global80、LR5e-5；仅选定的V4 epoch2权重保留，
+完整结果见[V4记录](seed17/v4_epochs12_4gpu_b80_cpu14/README.md)。以下checkpoint选择保持不变。
+
+## 当前选定checkpoint与训练来源（2026-09-23）
+
+按用户明确选择，V2/V3使用以下两个checkpoint；V4选定epoch2，V5选定epoch2。
+完整路径、SHA256和指标来源见[选定清单](seed17/selected_v2_v3_checkpoints.json)及各运行记录。
+原训练元数据与全部实验结果保持原样。
+
+| 使用名称 | 选定端点 | 训练初始化 | E14 [259,273) AUC |
+| --- | --- | --- | ---: |
+| V2 | [V2 epoch1](seed17/checkpoints/v2/checkpoint_100.pt) | V1 epoch1 | 0.6961794233 |
+| V3 | [V3 epoch2](seed17/checkpoints/v3/checkpoint_100.pt) | V2 epoch2 | 0.7086984472 |
+
+V4选定[V4 epoch2](seed17/checkpoints/v4/checkpoint_100.pt)，
+从上表V3 epoch2初始化；V5两个端点均从该V4 epoch2初始化。
+
+同一窗口92594名用户、893856条请求，选定端点的AUC相对提升 **+1.7982468%**，
+绝对增加0.0125190（1.2519024个百分点）。此处记录checkpoint选择及已有AUC比较。
+以下为各分支历史记录。
+
+**2026-09-21晚最新：按用户更正，从V2 epoch1新开V3连续两轮分支，已后台启动。**
+会话`evokv_max_v3_from_v2e1_20260921`，见[新运行入口](seed17/v3_from_v2e1_epochs12_4gpu_b80_cpu14/README.md)。
+原V2 epoch2初始化的V3已完成，epoch1相对父模型AUC −0.308%、epoch2 +0.824%；
+其全部结果和权重保留。新旧分支使用同一训练/评测窗口，各自对自己的父模型做配对评价。
+
+**2026-09-21：V2 epoch2训练及完整E14已完成，用户选定它作为V3父模型。**
+同一窗口V1 AUC0.685666，V2 epoch1为0.694208、epoch2为0.703411；epoch2相对V1
++2.5879%，原四项准入通过。现已在`evokv_max_v3_epochs12_20260921`后台启动连续两轮V3，保留两个端点并统一E14评测。
+见[V3入口](seed17/v3_epochs12_4gpu_b80_cpu14/README.md)。下文状态按日期保留为历史记录。
+
+**2026-09-21最新状态：V2 epoch1及其评测已完成；按用户新指令，从此前停止的
+追加训练step500恢复，完成V2第二epoch及完整E14评测。** 当前后台会话
+`evokv_max_v2_epoch2_resume_20260921`，见[运行记录](seed17/v2_epoch2_from_epoch1_4gpu_b80_cpu14/README.md)。
+下文保留各阶段的历史记录。
+
+**V2已在`evokv_max_v2_20260919`后台提交。** [运行设置、预算和状态入口](seed17/v2_1epoch_4gpu_b80_cpu14/README.md)。数值对照和四卡训练/评测canary通过；热态Triton步耗时约0.782秒，对照Torch0.984秒；首次编译的慢测量也保留。训练和完整评测暂排4.5–6小时。
+
+**2026-09-19：V1两个端点训练和完整E14评测均完成。用户已选择epoch1作为V2父模型，已启动V2一轮接续训练及完整E14评测。** [V1结果](seed17/v1_epochs12_4gpu_b80_cpu14/README.md)：同窗口V0 AUC 0.656376，V1 epoch1为0.691928（相对+5.4165%），epoch2为0.698493（+6.4167%），均通过原四项准入。epoch2作为已评测替代端点保留。V2父权重SHA256：`d36b7368732fe03d845bacc2aff680e7aaeda2dbb0749be605e5af6b63edd8ba`。
+
+V2沿用16L/H320、seed17、global80（四卡各20）、LR5e-5及fresh AdamW。训练[231,245)，评价[245,259)，数据、ID映射及指标口径不变。运行后端固定为auto，支持条件下使用Triton；Max固定合成输入的16层前向/反向检查通过，不承诺后续轨迹逐位一致。见[后端对照](seed17/v2_1epoch_4gpu_b80_cpu14/backend_parity.json)和[冻结配置](../../../configs/contracts/yambda5b_max_v2_1epoch_4gpu_b80_20260919.yaml)。四卡真实数据canary与预算已完成，V2已启动，V3–V5不自动启动。此前V0、V1、数据和评测证据均保留原位。
 
 2026-09-15：20万用户数据已处理，数据审计、四卡训练资源探针及评测流程检查通过。**V0已于2026-09-18 01:41完成训练与最终权重封存，退出码0；10%用户E14抽样AUC为0.653509，全人口尚未评测。**
 
-后台会话：`evokv_max_v0_20260915`；[运行日志](seed17/v0_1epoch_4gpu_b80_cpu14/train.log)、[任务状态](seed17/v0_1epoch_4gpu_b80_cpu14/progress.json)、[启动前检查](preparation/v0_launch_preflight.json)。只训练V0；后续版本不自动启动。
+后台会话：`evokv_max_v0_20260915`；运行日志与状态已归档，[启动前检查](preparation/v0_launch_preflight.json)保留。只训练V0；后续版本不自动启动。
 
 ## 数据与 ID
 
@@ -34,7 +82,7 @@
 | V5 | [273,287) | 908,323 | 16.36% |
 | V5 E14，仅评价 | [287,301) | 920,937 | 17.31% |
 
-V0 有155,497名用户产生有效 known 监督，其余选中用户仍保留历史。尾部 day300 数据不完整。固定词表使后期未知目标比例上升，AUC 结论限于 known-target 请求，不能描述为所有目标覆盖。
+V0 有155,497名用户产生有效 known 监督，其余选中用户仍保留历史。固定词表使后期未知目标比例上升，AUC 结论限于 known-target 请求，不能描述为所有目标覆盖。
 
 ## 模型与资源
 
@@ -101,3 +149,22 @@ V0 准备配方：全新初始化，`[0,217)`，1 epoch，全局80，AdamW learn
 结果位于[摘要](seed17/v0_e14_users10pct/summary.json)、[原指标实现输出](seed17/v0_e14_users10pct/evaluate/adjudication.json)、[原始分数封存](seed17/v0_e14_users10pct/evaluate/raw/raw.seal.json)。checkpoint和sample UID哈希记录在摘要，原始分数及标签保留本地。
 
 该点估计符合用户期望的0.6–0.7基础AUC范围，可继续扩大样本验证；不是全人口质量结论，也不证明后续版本的相对增益。更大范围评测与V1均未启动。仅记录V0绝对质量，无父子模型准入比较。
+
+## 2026-09-20：V2 epoch1结果与追加一轮
+
+所选V1 epoch1接续V2一轮已完成，完整E14 `[245,259)` 覆盖884178请求、91576用户：
+V1 AUC0.685666→V2 AUC0.694208，相对+1.2458%，原四项准入检查全部通过。
+[原epoch1结果](seed17/v2_1epoch_4gpu_b80_cpu14/README.md)完整保留，未自动推广服务谱系。
+
+用户随后明确要求V2再训一轮，现从V2 epoch1权重在原 `[231,245)` 窗口追加完整
+11402步，其他配方不变。上一轮最终AdamW/RNG已按旧流程清理，因此本轮fresh AdamW
+及seed17 RNG重置，不能称为不中断的两轮训练。新配置选择保留最终optimizer/RNG，
+本轮成功后仅清理中间恢复点。该保留规则不追溯更改旧清理记录。
+
+[追加epoch2运行目录](seed17/v2_epoch2_from_epoch1_4gpu_b80_cpu14/README.md)记录四卡
+canary、资源预算与后台状态。E14已在追加端点前被观察，新结果属于开发比较；训练后
+同时报告相对原V1与已保留V2 epoch1的AUC变化，不自动选择端点或继续下一版本。
+
+08:17（北京时间）用户要求停止本次追加训练，已退出并释放四卡，未启动后续正式
+评测。最后日志2750/11402步；仅第500步有完整恢复状态，之后未保存的更新未保留。
+原V2 epoch1模型和结果不变；本次没有epoch2端点或新AUC，日志退出码1为主动停止。

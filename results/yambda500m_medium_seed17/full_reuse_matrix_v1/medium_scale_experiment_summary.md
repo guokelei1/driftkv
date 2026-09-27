@@ -260,6 +260,6 @@ v5 是本轮很重要的新增证据：
 - 原始矩阵 summary：[`summary.md`](summary.md)
 - D7 forced diagnostic summary：[`D7/forced_reuse_diagnostic_v1/summary.md`](D7/forced_reuse_diagnostic_v1/summary.md)
 - D14 v5 summary：[`D14/v5_extension_v1/summary.md`](D14/v5_extension_v1/summary.md)
-- 训练/执行方案：[`docs/medium_scale_training_plan.md`](../../../docs/medium_scale_training_plan.md)
+- 训练与评价定义：[实验设计](../../../docs/experimental_design.md)（原Medium导航已合并）。
 
 所有原始分数均先于 label join 封存；各目录内的 `raw.seal.json`、`adjudication.json`、checkpoint seal 和合同 hash 是最终可审计依据。本讨论稿不替代这些 seal。

@@ -1,0 +1,13 @@
+{
+  "authorization": "2026-09-20 user requested at least ten evaluation users per calibration user, and a shared-rule versus additional-user-information comparison",
+  "scope": "frozen six-layer Yambda Medium, V1->V2 and V2->V3, 256 fitting users, 128 separate pilot users, 2560 evaluation users",
+  "device": "one NVIDIA A40; GPU0 was idle before preparation",
+  "initial_full_estimate_seconds": 600,
+  "basis": "The preceding 256/128 two-edge experiment took about 69 seconds, including 43 seconds history loading. Source+teacher prefix construction scales to about20 seconds per edge at2560 users. A conservative ten-minute budget also covers expanded causal history loading and four score paths.",
+  "cache_plan": "Retain only256 calibration users' source/teacher caches while fitting; release them before streaming evaluation in batches of8 users. Save logits and metadata on CPU.",
+  "expected_peak_gpu_gib": 10,
+  "torch_threads": 4,
+  "cpu_solver_threads": 1,
+  "execution": "directly monitor bounded canary, one128-user pilot, and2560-user evaluation; reuse pilot calibration parameters for expanded evaluation",
+  "canary_adjustment": "Record observed focused canary and pilot costs before starting expanded evaluation"
+}

@@ -1,100 +1,80 @@
 # 适配探索与对比脚本
 
-当前 Design 已完成设计，尚未实现和验证。本目录保留历史 native read-adaptation 数据生成链，供后续复用，不代表当前 Design 的实现或验证。下述校准和结果均指历史探索。
+本目录包含已完成的AUC/功能诊断、公共原语与历史native适配流水线。
+当前Design尚未实现和验证；接口计划见[适配计划](../../docs/design/plan.md)，
+方案变化见[决策记录](../../docs/design/iterations.md)。结果和运行预算在各实验目录维护。
 
-旧 runner 的 query-affine 校准已退休；仅保留通过 `--evaluation-from` 读取既有权重的评价路径，不再尝试导入已删除的拟合模块。
+## 统一 AUC 诊断入口
 
-这些历史运行读取冻结的
-Medium 模型、manifest 与已有事件；长训练仍由仓库根目录的 Medium/Large 入口负责。
+| 用途 | 输入准备与执行 | 设置、结果 |
+| --- | --- | --- |
+| 6L四边、原四预算 | `prepare_unified_auc_inputs.py`；`run_unified_auc_parallel.py`；核心 `run_unified_auc.py` | [原始结果](../../results/insight/unified_auc_10k_20260920/README.md) |
+| 6L九档教师预算 | `prepare_expanded_auc_inputs.py`；`run_expanded_auc.py` | [扩展结果](../../results/insight/unified_auc_10k_teachers7144_20260920/README.md) |
+| 10L五边 | `prepare_large_auc_inputs.py`；`run_large_auc_parallel.py`；`run_large_auc.py` | [配置](../../configs/insight/large_unified_auc_10k_20260920.json)、[结果](../../results/insight/large_unified_auc_10k_20260920/README.md) |
+| 16L两边 | `prepare_max_auc_inputs.py`；`run_max_auc.py` | [配置](../../configs/insight/max_unified_auc_10k_20260921.json)、[结果](../../results/insight/max_unified_auc_10k_20260921/README.md) |
 
-`data.py`、`run.py`、`diagnose_query_holdout.py`、`diagnose_summary_objective.py` 和
-`diagnose_decoder_closure.py`提供当前校准所需的场景、面板、坐标和共享执行原语。
-`diagnose_native_input.py`、`diagnose_native_coverage.py`、`fit_native_ablation.py` 与
-`native_service.py`生成 native C 和两个必要消融。
+`launch_large_auc.sh`、`launch_max_auc.sh`保留主诊断和退出状态记录，
+旧自动出图步骤已移除。以上运行已完成，路径不是待执行队列；不要覆盖既有结果。
+保留图表、ledger与显示口径见[图表索引](../../figures/README.md)。
 
-`evaluate_native_base.py`、`run_native_base.py`、`report_native_base.py`、
-`report_native_coverage.py`、`report_native_flops.py`、`audit_native_residual.py` 与
-`audit_native_response_scale.py`产生当前的质量、覆盖、残余和计算证据。
-`diagnose_constant_affine.py` 与 `finalize_base_method.py`只读取冻结结果，生成论文
-Design 1 的机制图表输入和定稿索引。
+公共依赖包括 `competitor_data.py`、`competitor_models.py`、
+`unified_auc_baselines.py`、`expanded_read_calibration.py`、
+`large_auc_primitives.py`、`max_auc_models.py`；它们仍会导入旧probe中的公共函数。
+`unified_auc_cost.py`、`large_auc_cost.py`、`max_auc_cost.py`提供理论成本。
+`check_large_expanded_auc.py`核对校准一致性，`probe_large_auc_ridge.py`是独立pilot；
+不要因文件名历史化而删除调用依赖。
 
-历史 v3--v15、PRO、宽源及已删除运行的入口不再保留。当前结果范围见
-`results/design/analysis/`，论文叙述以 `/home/gkl/work/paper/main.tex` 为准。
+## 六层共享读取修正：已完成的概率保真度诊断
 
-## 当前 Motivation 2 对比入口
+`run_query_read_probe.py`为执行入口，`query_read_probe.py`实现
+共享 `b+Aq` 与 `b+Aq+Tr`，`analyze_query_read_probe.py`读取元数据分析费用。
+[配置](../../configs/insight/query_read_6l_2560_20260920.json)和
+[完整结果](../../results/insight/query_read_6l_2560_20260920/README.md)维护UID划分、指标及成本。
 
-[competitor_probe.py](competitor_probe.py) 将三个对比方案接入 Motivation 2（原 Insight 1）的功能指标：
-`evaluate_batch` 从同一 Parent 快照分别执行 LR、TR、已拟合 KT，并用 Current 原生路径评分；
-`path_records` 记录配置及 K/V 更新比例；`summarize_scores` 汇总概率／logit 差异、
-Bernoulli JS、top-1 一致率、top-10 重叠和排序相关性。Current Exact 只作为评价锚点，
-不会向迁移方法提供其缓存。方法接口见 [baselines/](../../src/hstu_kvcache/baselines/README.md)。
+必须传入 `--config` 和新 `--output`；可用 `--canary`、`--pilot`、
+`--calibration-from`、`--device`、`--batch-size`、`--threads`。
+扩大评价从pilot参数原样复用，校验来源hash；分batch释放缓存。
+该诊断是静态概率保真度，不是推荐AUC、摘要必要性或连续状态结论。
 
-[run_insight1_competitors.py](run_insight1_competitors.py) 是独立的单边、单设备入口，默认 CPU。
-`--scale medium/large` 分别选择本轮已存在的六层／十层模型链；`--edge-index 0..4`
-对应 V0→V1 至 V4→V5。模型已完成，不需要等待训练结束才能连接这些接口。
-[competitor_models.py](competitor_models.py) 从当前 chain、训练配置及 contract 确定具体
-checkpoint、数据、词表、历史长度与 cutover，并检查所选边的准入状态；实际执行核验依赖 hash。
-旧 sealed 记录保持独立，新结果写入新的目录。
+前序[摘要诊断](../../results/insight/shared_read_6l_20260920/README.md)、
+[item/response诊断](../../results/insight/user_information_6l_20260920/README.md)
+及source_snapshot保留。相关runner中的公共函数仍被AUC流程引用；
+历史表格生成器已清理，不能因改图重跑实验。
 
-Medium 五条相邻边均已通过普通准入；Large 前四条边可执行。Large V5 保留用户暂定的
-`V5@1`，其普通 gates 仍为 false：V4→V5 可用 `--describe` 查看来源与状态，实际评价不会
-默认通过，也不会自动改选 `V5@2`。
+## 独立 Motivation 2 功能指标接口
 
-`--describe` 只读取模型链与数据来源的元数据，不加载权重、用户历史或 CUDA 设备，例如：
+`run_insight1_competitors.py`是单边入口，`competitor_probe.py`统一执行
+LR/TR/KT并评分。方法公式与限制见[baselines](../../src/hstu_kvcache/baselines/README.md)。
+`--scale medium|large`选择本轮模型链，`--edge-index 0..4`选择边；
+`--describe`仅查看元数据，不加载权重或用户历史：
 
 ```bash
 PYTHONPATH=src:scripts python scripts/design/run_insight1_competitors.py --scale medium --edge-index 1 --describe
-PYTHONPATH=src:scripts python scripts/design/run_insight1_competitors.py --scale large --edge-index 3 --describe
 ```
 
-实际执行必须显式提供 `--uids` JSON，格式为
-`{"evaluation": [101, 102], "fit": [201, 202], "selection": [301, 302]}`
-（仅示意格式，须为每个 scale 确定足够的实际用户）。三组内 UID 唯一、组间互斥，来自所选
-scale 的人口；启用 KT 时 `fit` 非空，`selection` 可省略。不会自动采用旧 3000 用户。
+实际评价需提供新 `--output` 和 `--uids` JSON，键为 `evaluation`、`fit`、
+可选 `selection`；组内唯一、组间互斥，来自所选规模人口。KT拟合在CPU，
+`--device`控制模型、缓存和评分。`selection`省略时源层排名标为in-sample。
+`--layer-intervals`使用从0开始、两端包含的层号，`--tail-lengths`、`--map-ks`、
+`--ridge`、`--batch-size`按该次协议显式选择，具体可用参数以CLI为准。
 
-[competitor_data.py](competitor_data.py) 提取严格早于 cutover 的完整历史窗口，静态窗口
-第一个 delta 为零，其余为真实相邻事件间隔。候选策略保留 recent 16、old-only 16 和
-novel bank 补足至 64 的规则，使用当前 scale 的 known-item 范围，排除 OOV 候选。
-bank 一次性使用 JSON 中**全部 evaluation 用户**的发布前历史构造；`--max-users` 和
-`--eval-offset` 只改变实际评分子集，batch 大小也不改变面板。若 bank 不足以填满候选则报错，
-不从未来行为补齐。
+64候选bank来自全部评价UID的发布前历史，使用各自词表的recent/old-only/novel规则；
+`--max-users`、offset和batch不能改变bank。Full-only准入按所选边核验：
+Large V5@1的原失败不因开发诊断变成已准入，也不自动换V5@2。
 
-下面是**未执行的未来命令示例**。独立校准与评价划分仍需确定；正式评价前固定配置与划分，
-再以小探针估计资源。当前未启动 GPU 或真实评价。ridge 拟合在 CPU 完成，`--device`
-控制模型、缓存变换和评分所在设备。
+输出原始分数、指标及配置/来源hash。概率缺口恢复用均值之比，
+不是逐用户比值均值；K/V更新比例不是FLOPs。这个接口不同于上面的真实反馈AUC实验，
+且不建立完整连续迁移。数据、公式和入口检查见[测试索引](../../tests/README.md)。
 
-```bash
-PYTHONPATH=src:scripts OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python scripts/design/run_insight1_competitors.py \
-  --scale medium --edge-index 1 --device cuda:0 --max-users 32 --batch-size 2 \
-  --uids /path/medium_uid_split.json \
-  --map-ks 1,2 --ridge 0.01 \
-  --output results/baselines/motivation2/medium_edge1_probe
+## 历史适配原型与清理范围
 
-PYTHONPATH=src:scripts OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python scripts/design/run_insight1_competitors.py \
-  --scale large --edge-index 3 --device cuda:0 --max-users 32 --batch-size 2 \
-  --uids /path/large_uid_split.json --layer-intervals 0:0,8:9,0:9 \
-  --map-ks 1,2 --ridge 0.01 \
-  --output results/baselines/motivation2/large_edge3_probe
-```
+`data.py`、`run.py`、`diagnose_query_holdout.py`、
+`diagnose_summary_objective.py`、`diagnose_decoder_closure.py`保留场景和共享执行原语。
+`diagnose_native_input.py`、`diagnose_native_coverage.py`、`fit_native_ablation.py`、
+`native_service.py`保留旧native C/消融路径；`evaluate_native_base.py`、
+`run_native_base.py`及相关report/audit读取历史结果。
+旧query-affine拟合已退休，runner只保留通过 `--evaluation-from`读取既有权重的评价路径。
 
-默认层区间随层数生成：首层、最后两层、全部层。Medium 为 `0:0,4:5,0:5`，Large 为
-`0:0,8:9,0:9`；编号从零开始、两端包含。默认尾长度为 `0,N/8,N/4,N`，N 来自模型 context。
-
-结果包括 `scores.npz`（评分 UID／全部面板人口 UID／路径／原始分数／候选）、`metrics.csv`
-和 `summary.json`（配置、来源 hash、面板人口规模、校准用户、teacher 规模、选层结果与指标）。首版会在每次启动时重新拟合
-共享 mapper；没有 mapper 文件管理或多卡调度。`--map-ks ''` 可只检查 LR/TR。
-`selection` 省略时源层探针标为 `in_sample`；它仍仅使用拟合用户，不使用评价用户。
-输入用户是否已被历史开发查看仍需照实记录，正式未见评价需明确划分。
-
-CPU 接口检查（不加载真实面板和模型）：
-
-```bash
-CUDA_VISIBLE_DEVICES='' PYTHONPATH=src:scripts OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
-  python -m pytest -q tests/test_insight1_competitor*.py tests/test_competitor_*.py
-```
-
-层区间采用从 0 开始、两端包含的编号。概率 gap 恢复率为
-`1 - mean(abs(p_method - p_exact)) / mean(abs(p_reuse - p_exact))`，对全部用户和候选
-先求均值再求比值；不是逐用户恢复率的均值。Reuse gap 近零时保留行并标记恢复率未定义，
-所有候选配置均保留，不根据评价结果选 winner。`kv_updated_fraction` 只表示缓存覆盖比例，
-不代表 FLOPs 或实测加速。这是单边功能差异探针，既不是推荐 AUC 评价，也不证明连续缓存生命周期效果。
+`docs/design/expert_route_2026-09-07.md`仍由历史runner纳入hash，不能只按文档长度删除。
+2026-09-22删除的四个无调用诊断入口及源码快照见
+[清理记录](../../results/README.md#2026-09-22-入口清理)；旧结果、合同和哈希未改。

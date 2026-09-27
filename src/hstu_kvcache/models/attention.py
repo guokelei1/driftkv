@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import importlib.util
+import os
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+_HAS_TRITON = importlib.util.find_spec("triton") is not None
 
 
 @dataclass
@@ -44,6 +48,11 @@ class PointwiseAttention(nn.Module):
     def __init__(self, cfg: PointwiseAttentionConfig) -> None:
         super().__init__()
         self.cfg = cfg
+        # Execution choice only: deliberately absent from parameters/configs so
+        # existing checkpoint schemas and parameter names remain unchanged.
+        self.backend = os.environ.get("EVOKV_ATTENTION_BACKEND", "auto")
+        if self.backend not in ("auto", "torch", "triton"):
+            raise ValueError("EVOKV_ATTENTION_BACKEND must be auto, torch or triton")
         self.num_heads = cfg.num_heads
         self.head_dim = cfg.head_dim or (cfg.hidden_size // cfg.num_heads)
         inner = self.num_heads * self.head_dim
@@ -130,6 +139,63 @@ class PointwiseAttention(nn.Module):
         attn = self.attn_dropout(attn * keep)
         return torch.matmul(attn, v)
 
+    def _causal_aggregate(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        *,
+        query_start: int = 0,
+        window_size: int | None = None,
+        mask_dtype: torch.dtype,
+    ) -> torch.Tensor:
+        """Shared full/prefix/stale computation, with the original eager oracle.
+
+        Only the known causal pattern takes the fused route. Arbitrary external
+        masks still call _aggregate, and existing torch.compile regions retain
+        their Inductor path. Unsupported inputs use the original implementation.
+        """
+        use_triton = (
+            self.backend != "torch"
+            and _HAS_TRITON
+            and q.is_cuda
+            and q.dtype in (torch.float32, torch.bfloat16)
+            and q.dtype == k.dtype == v.dtype
+            and q.stride(-1) == k.stride(-1) == v.stride(-1) == 1
+            and self.head_dim in (32, 64, 128)
+            and q.shape[2] > 0 and k.shape[2] > 0
+            and (window_size is None or window_size > 0)
+            and (
+                self.position_bias is None
+                or (query_start + q.shape[2] <= self.cfg.max_seq_len
+                    and k.shape[2] - query_start <= self.cfg.max_seq_len)
+            )
+            and not (self.training and self.cfg.attn_dropout > 0)
+            and not torch.compiler.is_compiling()
+        )
+        if use_triton:
+            from .triton_attention import triton_attention
+
+            return triton_attention(
+                q, k, v,
+                self.position_bias.weight if self.position_bias is not None else None,
+                scale=self.scale,
+                divisor=self.cfg.max_seq_len if self.block_variant == "hstu_reference" else 1,
+                activation=self.activation,
+                query_start=query_start,
+                causal_diagonal=self.causal_diagonal,
+                window_size=window_size,
+            )
+        query_positions = torch.arange(query_start, query_start + q.shape[2], device=q.device)
+        key_positions = torch.arange(k.shape[2], device=q.device)
+        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
+        keep = key_positions[None, :] <= query_positions[:, None] + diagonal
+        if window_size is not None:
+            keep = keep & (key_positions[None, :] > query_positions[:, None] - window_size)
+        return self._aggregate(
+            q, k, v, query_positions, key_positions, keep[None, None].to(mask_dtype)
+        )
+
     def _finish(self, out: torch.Tensor) -> torch.Tensor:
         B, _, L, _ = out.shape
         out = out.transpose(1, 2).reshape(B, L, self.inner)
@@ -155,9 +221,13 @@ class PointwiseAttention(nn.Module):
         """
         B, L, _ = x.shape
         q, k, v = self._project(x)
-        keep = self._build_keep_mask(L, attn_mask, x.device, x.dtype)
-        positions = torch.arange(L, device=x.device)
-        out = self._finish(self._aggregate(q, k, v, positions, positions, keep))
+        if attn_mask is None:
+            out = self._causal_aggregate(q, k, v, mask_dtype=x.dtype)
+        else:
+            keep = self._build_keep_mask(L, attn_mask, x.device, x.dtype)
+            positions = torch.arange(L, device=x.device)
+            out = self._aggregate(q, k, v, positions, positions, keep)
+        out = self._finish(out)
 
         if return_kv:
             k_ret = k.transpose(1, 2).reshape(B, L, self.inner)
@@ -191,23 +261,10 @@ class PointwiseAttention(nn.Module):
         k_all = torch.cat([k_cached, k_new], dim=2)  # [B, h, n+m, d]
         v_all = torch.cat([v_cached, v_new], dim=2)
 
-        mask = torch.ones(m, n + m, device=x_new.device, dtype=x_new.dtype)
-        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
-        mask[:, n:] = torch.ones(
-            m, m, device=x_new.device, dtype=x_new.dtype
-        ).tril(diagonal=diagonal)
-        query_positions = torch.arange(n, n + m, device=x_new.device)
-        key_positions = torch.arange(n + m, device=x_new.device)
-        if window_size is not None:
-            mask *= (key_positions[None, :] > query_positions[:, None] - window_size)
         out = self._finish(
-            self._aggregate(
-                q,
-                k_all,
-                v_all,
-                query_positions,
-                key_positions,
-                mask[None, None, :, :],
+            self._causal_aggregate(
+                q, k_all, v_all, query_start=n,
+                window_size=window_size, mask_dtype=x_new.dtype,
             )
         )
         k_all_flat = k_all.transpose(1, 2).reshape(B, n + m, self.inner)
@@ -233,21 +290,9 @@ class PointwiseAttention(nn.Module):
         ).transpose(1, 2)
         k_all = torch.cat([k_cached, k_new], dim=2)
         v_all = torch.cat([v_cached, v_new], dim=2)
-        mask = torch.ones(m, n + m, device=x_new.device, dtype=x_new.dtype)
-        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
-        mask[:, n:] = torch.ones(
-            m, m, device=x_new.device, dtype=x_new.dtype
-        ).tril(diagonal=diagonal)
-        query_positions = torch.arange(n, n + m, device=x_new.device)
-        key_positions = torch.arange(n + m, device=x_new.device)
         out = self._finish(
-            self._aggregate(
-                q,
-                k_all,
-                v_all,
-                query_positions,
-                key_positions,
-                mask[None, None, :, :],
+            self._causal_aggregate(
+                q, k_all, v_all, query_start=n, mask_dtype=x_new.dtype,
             )
         )
         k_new_flat = k_new.transpose(1, 2).reshape(B, m, self.inner)
@@ -271,6 +316,12 @@ class PointwiseAttention(nn.Module):
         B, m, _ = x_new.shape
         if m != 1:
             raise ValueError("append-only attention requires exactly one new token")
+        if self.block_variant == "hstu_reference" or self.causal_diagonal == "exclusive":
+            # The historical specialized formula below assumes legacy,
+            # inclusive attention (no fixed divisor and a self contribution).
+            # Use the shared equation for the other existing model settings.
+            out, (k_all, v_all) = self.forward_with_cache(x_new, cached_k, cached_v)
+            return out, (k_all[:, -1:], v_all[:, -1:])
         n = cached_k.shape[1]
         q, k_new, v_new = self._project(x_new)
         k_cached = cached_k.view(B, n, self.num_heads, self.head_dim).transpose(1, 2)
@@ -325,20 +376,8 @@ class PointwiseAttention(nn.Module):
         q, _, _ = self._project(x)
         k = cached_k.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         v = cached_v.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        diagonal = -1 if self.causal_diagonal == "exclusive" else 0
-        causal = torch.ones(L, L, device=x.device, dtype=x.dtype).tril(
-            diagonal=diagonal
-        )
-        positions = torch.arange(L, device=x.device)
         return self._finish(
-            self._aggregate(
-                q,
-                k,
-                v,
-                positions,
-                positions,
-                causal[None, None, :, :],
-            )
+            self._causal_aggregate(q, k, v, mask_dtype=x.dtype)
         )
 
     def _build_keep_mask(

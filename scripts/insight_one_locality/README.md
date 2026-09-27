@@ -5,23 +5,23 @@ sparse-token and continuous-window Exact-KV splice diagnostic.  The splices are
 observation-only interventions and must not enter an executable migration
 frontier.
 
-## Paper figure versus experiment execution
+## Historical figures and retained evidence
 
-The paper uses the four-panel, single-column renderer at
-`figures/src/insight1.py` at the repository root: the first three transitions plus
-their mean, annotated endpoints, red target areas, and the original layer-only
-minus-five-percentage-point display convention. See `figures/README.md` at the
-repository root. Do not rerun the experiment to change this figure.
+The former `figures/src/insight1.py` renderer has been removed. Its historical
+four-panel view used the first three transitions and their mean, including the
+layer-only minus-five-percentage-point display convention. Current retained
+figures are indexed in [figures/README.md](../../figures/README.md).
 
 The scripts below preserve the full five-transition experiment and its sealed
-data. Adjudication writes tables and reports; `figures/src/insight1.py` reads the
-existing `analysis/best_observed_by_edge.csv` for rendering. The original
+data. Adjudication writes tables and reports, including the retained
+`analysis/best_observed_by_edge.csv`. The original
 diagnostic images remain in the results directory as historical outputs.
 These reproduction commands are not permission to launch a new formal run.
 
 The 2026-09-05 cleanup retained formal_raw, analysis, the passing canary and
 resource_estimate.json. Repeated benchmark raw and the interrupted non-tmux
-run were deleted; their text summaries are in the results cleanup archive.
+run were deleted; the historical cleanup archive is currently missing locally,
+as recorded in [results/README.md](../../results/README.md).
 The examples below describe a fresh authorized run, not existing benchmark
 directories. Do not rerun them merely because cleanup removed those outputs.
 

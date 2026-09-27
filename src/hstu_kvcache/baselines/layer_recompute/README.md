@@ -1,5 +1,7 @@
 # LR：DroidSpeak 启发的按层重算
 
+2026-09-26 四 baseline 诊断：本目录的原语同时适用于 6、10、16 层。共同评测器在每个请求前对原始滚动 Reuse 状态临时修复，评分后丢弃修复；候选区间在独立校准用户上选择。下文 2026-09-16 的发布时维护方案保留为原设计记录，不代表本次请求级实验采用持久修复。
+
 日期：2026-09-16。状态：基本原理已实现并通过 CPU 数值检查，完整质量／成本评价未开展。共同执行与评价口径见 [上级说明](../README.md)。层编号使用 `0..5`。
 
 [原论文核心 Design 笔记](paper_design.md) 单独保存 DroidSpeak 的方法；本文记录本仓库的 HSTU 适配设计。
@@ -22,7 +24,7 @@ updated = lr.append(current, updated, new_item_ids, new_behaviors, new_time_delt
 
 `enumerate_intervals(6)` 给出空动作及 21 个区间；`profile_intervals(..., score=callback, intervals=...)` 对同一输入独立重算并返回分数和重算层数。调用方负责数据及最终区间选择，没有隐含教师查询或自动调参；层数不是完整成本计量。
 
-当前 [CPU 测试](../../../../tests/test_baseline_layer_recompute.py) 覆盖真实 E 捕获、完整／局部参考、追加和淘汰后换起点、候选评分隔离。下文关于完整开发选择、成本和 producer 谱系的部分仍是后续实验设计。
+当前 [CPU 测试](../../../../tests/selective_recompute/layer_recompute/test_baseline_layer_recompute.py) 覆盖真实 E 捕获、完整／局部参考、追加和淘汰后换起点、候选评分隔离。下文关于完整开发选择、成本和 producer 谱系的部分仍是后续实验设计。
 
 ## 论文中借鉴什么
 

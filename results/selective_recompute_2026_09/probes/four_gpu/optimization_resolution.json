@@ -1,0 +1,109 @@
+{
+  "status": "resolved_on_targeted_actual_requests",
+  "original_comparison": {
+    "path": "results/selective_recompute_2026_09/probes/four_gpu/optimization_check.json",
+    "status_retained": "failed",
+    "note": "Original per-request pre-fix comparison is preserved. The numeric selection policy was corrected after this comparison; this record does not relabel its old scores as matching."
+  },
+  "root_cause": "Band and scalar GEMMs produce different tiny layer-0 roundoff for mathematically identical current-produced rows. Raw MSE rankings amplified these near-zero ties into different selected upper-layer repairs.",
+  "numeric_policy": "score<=((32*finfo(projection_dtype).eps)^2)*(mean(K_current^2)+mean(V_current^2)) => exactzero; stable chronological ties",
+  "policy_uses_labels": false,
+  "arithmetic_change": "One additional row K/V squared-magnitude reduction and dtype-relative numerical floor; positive scores above this floor are retained bitwise and zero ties use chronological order.",
+  "original_mismatched_deviation_rows": 536,
+  "original_mismatches_with_budget_beyond_remaining_parent_rows": 536,
+  "targeted_regression": {
+    "medium": {
+      "path": "results/selective_recompute_2026_09/probes/four_gpu/deviation_roundoff_fixed_medium.json",
+      "sha256": "4b743143b784012626828e0a09cabacb07727e4a53654f3e78b1f17400827f45",
+      "uid": 669540,
+      "query_timestamp": 21115625,
+      "history_length": 1024,
+      "append_count": 1042,
+      "raw_sorted_index_disagreements_by_budget": {
+        "32": 31,
+        "64": 62,
+        "128": 127,
+        "256": 252,
+        "512": 505
+      },
+      "corrected_sorted_index_disagreements_by_budget": {
+        "32": 0,
+        "64": 0,
+        "128": 0,
+        "256": 0,
+        "512": 0
+      },
+      "zero_tie_rows": 1023,
+      "above_floor_rows_unchanged_by_policy": 1,
+      "actual_selector_equals_documented_mask_formula": true,
+      "max_abs_logit_difference": 2.384185791015625e-07
+    },
+    "large": {
+      "path": "results/selective_recompute_2026_09/probes/four_gpu/deviation_roundoff_fixed_large.json",
+      "sha256": "7d09c1340a2b6a2a8b1bc19a9abd704db62eb0e6ec65b901fa832ec6573477d1",
+      "uid": 61660,
+      "query_timestamp": 21110335,
+      "history_length": 1024,
+      "append_count": 1690,
+      "raw_sorted_index_disagreements_by_budget": {
+        "32": 31,
+        "64": 60,
+        "128": 124,
+        "256": 239,
+        "512": 503
+      },
+      "corrected_sorted_index_disagreements_by_budget": {
+        "32": 0,
+        "64": 0,
+        "128": 0,
+        "256": 0,
+        "512": 0
+      },
+      "zero_tie_rows": 1023,
+      "above_floor_rows_unchanged_by_policy": 1,
+      "actual_selector_equals_documented_mask_formula": true,
+      "max_abs_logit_difference": 4.76837158203125e-07
+    },
+    "max": {
+      "path": "results/selective_recompute_2026_09/probes/four_gpu/deviation_roundoff_fixed_max.json",
+      "sha256": "cbffd6803cac3243e916b7d40eaa9770b6a049680d58facd4b50541ae462bc49",
+      "uid": 207023,
+      "query_timestamp": 20955295,
+      "history_length": 1024,
+      "append_count": 663,
+      "raw_sorted_index_disagreements_by_budget": {
+        "32": 0,
+        "64": 0,
+        "128": 0,
+        "256": 0,
+        "512": 144
+      },
+      "corrected_sorted_index_disagreements_by_budget": {
+        "32": 0,
+        "64": 0,
+        "128": 0,
+        "256": 0,
+        "512": 0
+      },
+      "zero_tie_rows": 663,
+      "above_floor_rows_unchanged_by_policy": 361,
+      "actual_selector_equals_documented_mask_formula": true,
+      "max_abs_logit_difference": 2.384185791015625e-07
+    }
+  },
+  "all_15_budget_selections_identical_between_band1_and_band32": true,
+  "global_max_abs_logit_difference_after_fix": 4.76837158203125e-07,
+  "changed_execution_sources_since_broad_canary": {
+    "scripts/selective_recompute_2026_09/cost.py": {
+      "broad_canary_sha256": "26534a46b21f6731a8494e6cea9b73e14a07fb7c9cd210a1337d7214ee2dd1f2",
+      "current_sha256": "c8dbca999615dbd86daed256f4fc8dc6216aa902aa35abe247196a6a767f6a75"
+    },
+    "src/hstu_kvcache/baselines/deviation_recompute/core.py": {
+      "broad_canary_sha256": "7fe241f9b8e8bb26afe2d0b0c54cc47c7b9c70895c4f1168859d4f3c6da9be28",
+      "current_sha256": "2f791411717c782df2be52b95ecfe6a1eab9d01171e025cdb2db9f6f4ea13fba"
+    }
+  },
+  "remaining_scope": "The corrected selector was exercised on one previously affected actual request per scale, each with all five budgets, plus the initial three-request Medium investigation. The earlier 12-rank memory and common-control probes are retained; the complete canary population was not rerun under the new tie policy.",
+  "initial_medium_investigation": "results/selective_recompute_2026_09/probes/four_gpu/deviation_roundoff_diagnostic.json",
+  "focused_cpu_regression": "tests/selective_recompute/deviation_recompute: 3 passed; includes opposing rounding-noise patterns and preserved genuine positive scores"
+}

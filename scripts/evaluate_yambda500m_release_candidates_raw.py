@@ -23,6 +23,7 @@ import torch.distributed as dist
 
 from evaluate_yambda500m_foundation_raw import balanced_users, load_histories
 from hstu_kvcache.models import HSTU, HSTUConfig
+from hstu_kvcache.models.backend_info import attention_backend_info
 from hstu_kvcache.training import collate_foundation_batch
 
 
@@ -283,6 +284,7 @@ def main() -> None:
                 "oov_buckets": oov_buckets, "known_vocab_size": known_vocab_size,
                 "max_seq_len": max_history, "dataset_manifest": str(dataset_path),
                 "execution_runtime": {
+                    "attention_execution": attention_backend_info(),
                     "world_size": world,
                     "batch_size_per_rank": args.batch_size,
                     "max_users_per_rank": args.max_users,

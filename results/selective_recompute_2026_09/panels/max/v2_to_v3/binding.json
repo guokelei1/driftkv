@@ -1,0 +1,264 @@
+{
+  "status": "frozen",
+  "scale": "max",
+  "edge": "v2_to_v3",
+  "edge_index": 3,
+  "days": [
+    259,
+    273
+  ],
+  "cutover": 22377600,
+  "full_current_name": "v3_e2",
+  "selection": {
+    "rule": "mean_class_balanced_pairwise_concordance_advantage_v1",
+    "evaluation_users": 3000,
+    "calibration_users": 32,
+    "canary_users": 16,
+    "uid_hash_namespace": "selective_recompute_2026_09/user_reservation_v1",
+    "reserve_controls_first": true,
+    "reference_pool": "all remaining source users after hash reservation",
+    "user_score": "mean of N/(2*N_class) times the Full-minus-Reuse opposite-label pairwise concordance",
+    "sort": "descending user score; SHA256(namespace/uid), then uid for ties",
+    "score_transform": "sigmoid (same ROC AUC definition as retained binary_metrics)",
+    "selection_passes": 1,
+    "all_selected_user_requests_retained": true,
+    "scope": "outcome-conditioned diagnostic subset; not a representative population estimate"
+  },
+  "sources": {
+    "reuse_binding": {
+      "path": "results/unified_reuse_2026_09/max/v2_to_v3/binding.json",
+      "sha256": "c362eeb8c39ddfaf985a42031c3b6415e24328498924d1d2b5ea8c31810888ed"
+    },
+    "reuse_summary": {
+      "path": "results/unified_reuse_2026_09/max/v2_to_v3/summary.json",
+      "sha256": "a09f7fded09057302179dddf58832d405238a2375affd5c64a4d1b17ad90fa36"
+    },
+    "parent": {
+      "path": "results/unified_training_2026_09/max/seed17/checkpoints/v2/checkpoint_100.pt",
+      "sha256": "9cce41b4d15083d58351858f4fa4761c4e677630143012c3818c1b0bdfeef3d3"
+    },
+    "current": {
+      "path": "results/unified_training_2026_09/max/seed17/checkpoints/v3/checkpoint_100.pt",
+      "sha256": "5a696d2e8e23706efb13ad25e5918ac2c4baba084b1868b3c05b21a1ba9be9ea"
+    },
+    "full_raw": {
+      "path": "results/unified_training_2026_09/max/seed17/v3_epochs12_4gpu_b80_cpu14/full_only/E14/raw.parquet",
+      "sha256": "fb5a9ed72c6bf497cff59641fc9afa93f67888ba924523f951896ced22219181"
+    },
+    "requests": {
+      "path": "data/manifests/yambda5b_max_200k_hstu_native_v1/requests_fidelity.parquet",
+      "sha256": "f19a07119816cff9ee1b24480b970badd4bbc56ced2f9921b7fffec0e9358912"
+    },
+    "labels": {
+      "path": "data/manifests/yambda5b_max_200k_hstu_native_v1/requests_quality.parquet",
+      "sha256": "9817aaade124a331ffd989a0d6b50e18d7e9d80aee91b2ff7726ffb031d84958"
+    },
+    "dataset": {
+      "path": "data/processed/yambda5b_max_200k_v1/scales/max/dataset.json",
+      "sha256": "183f84998309ef93b646e83f47a79c279079bc0f2659c2ea19ec2f3d73fbf7b0"
+    }
+  },
+  "source_checkpoint_hashes_verified_here": false,
+  "source_checkpoint_note": "hashes inherited from completed Reuse binding; execution preflight verifies weights",
+  "population": {
+    "users": 92594,
+    "requests": 893856,
+    "positive_requests": 800297,
+    "negative_requests": 93559,
+    "current_full": {
+      "log_loss": 0.3145567315340995,
+      "Brier": 0.0893885654370436,
+      "ROC_AUC": 0.7086984472491452,
+      "dislike_PR_AUC": 0.22471439920600136,
+      "dislike_only_log_loss": 2.361279284650892
+    },
+    "current_reuse": {
+      "log_loss": 0.3120502744930909,
+      "Brier": 0.08907699419080327,
+      "ROC_AUC": 0.7024004405549318,
+      "dislike_PR_AUC": 0.21149330759651025,
+      "dislike_only_log_loss": 2.1661155935051726
+    },
+    "full_minus_reuse_auc_pp": 0.6298006694213432,
+    "first_query_timestamp": 22377600,
+    "last_query_timestamp": 23587190,
+    "history_length": {
+      "min": 1.0,
+      "p50": 1024.0,
+      "p90": 1024.0,
+      "max": 1024.0
+    },
+    "append_count_since_cutover": {
+      "min": 0.0,
+      "p50": 222.0,
+      "p90": 811.0,
+      "max": 5764.0
+    }
+  },
+  "panels": {
+    "evaluation": {
+      "users": 3000,
+      "requests": 25140,
+      "positive_requests": 9426,
+      "negative_requests": 15714,
+      "current_full": {
+        "log_loss": 1.560793080322418,
+        "Brier": 0.5112363904372499,
+        "ROC_AUC": 0.6780067094713722,
+        "dislike_PR_AUC": 0.7707462954860597,
+        "dislike_only_log_loss": 2.4530672538004983
+      },
+      "current_reuse": {
+        "log_loss": 1.588442209038748,
+        "Brier": 0.5151469555180406,
+        "ROC_AUC": 0.508056789621162,
+        "dislike_PR_AUC": 0.616083005881838,
+        "dislike_only_log_loss": 2.4761166793246234
+      },
+      "full_minus_reuse_auc_pp": 16.994991985021024,
+      "first_query_timestamp": 22377705,
+      "last_query_timestamp": 23586925,
+      "history_length": {
+        "min": 1.0,
+        "p50": 1024.0,
+        "p90": 1024.0,
+        "max": 1024.0
+      },
+      "append_count_since_cutover": {
+        "min": 0.0,
+        "p50": 262.0,
+        "p90": 1055.0,
+        "max": 3821.0
+      },
+      "population_user_fraction": 0.032399507527485584,
+      "population_request_fraction": 0.028125335624530127
+    },
+    "calibration": {
+      "users": 32,
+      "requests": 202,
+      "positive_requests": 184,
+      "negative_requests": 18,
+      "current_full": {
+        "log_loss": 0.29195673496952573,
+        "Brier": 0.08019644208394701,
+        "ROC_AUC": 0.6482487922705314,
+        "dislike_PR_AUC": 0.18621144738511328,
+        "dislike_only_log_loss": 2.337892660526604
+      },
+      "current_reuse": {
+        "log_loss": 0.3015517374363797,
+        "Brier": 0.08406501887250825,
+        "ROC_AUC": 0.6403985507246377,
+        "dislike_PR_AUC": 0.15199475743123866,
+        "dislike_only_log_loss": 2.047938183323933
+      },
+      "full_minus_reuse_auc_pp": 0.7850241545893755,
+      "first_query_timestamp": 22389515,
+      "last_query_timestamp": 23587075,
+      "history_length": {
+        "min": 239.0,
+        "p50": 1024.0,
+        "p90": 1024.0,
+        "max": 1024.0
+      },
+      "append_count_since_cutover": {
+        "min": 0.0,
+        "p50": 130.5,
+        "p90": 472.1,
+        "max": 946.0
+      },
+      "population_user_fraction": 0.0003455947469598462,
+      "population_request_fraction": 0.00022598718361794293
+    },
+    "canary": {
+      "users": 16,
+      "requests": 104,
+      "positive_requests": 87,
+      "negative_requests": 17,
+      "current_full": {
+        "log_loss": 0.4474430783061588,
+        "Brier": 0.1300049310585059,
+        "ROC_AUC": 0.6713995943204868,
+        "dislike_PR_AUC": 0.4831999024707982,
+        "dislike_only_log_loss": 2.2889747249635706
+      },
+      "current_reuse": {
+        "log_loss": 0.43925338041101275,
+        "Brier": 0.127125384952167,
+        "ROC_AUC": 0.6551724137931034,
+        "dislike_PR_AUC": 0.439694406010515,
+        "dislike_only_log_loss": 2.0943701188883033
+      },
+      "full_minus_reuse_auc_pp": 1.6227180527383367,
+      "first_query_timestamp": 22407160,
+      "last_query_timestamp": 23573075,
+      "history_length": {
+        "min": 47.0,
+        "p50": 1024.0,
+        "p90": 1024.0,
+        "max": 1024.0
+      },
+      "append_count_since_cutover": {
+        "min": 2.0,
+        "p50": 132.5,
+        "p90": 950.8,
+        "max": 1215.0
+      },
+      "population_user_fraction": 0.0001727973734799231,
+      "population_request_fraction": 0.00011634983711022804
+    }
+  },
+  "evaluation_selection_score": {
+    "min": 0.145760001496703,
+    "max": 2.302292076650531,
+    "mean": 0.34987467283915785
+  },
+  "users_file": {
+    "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/users.json",
+    "sha256": "7b813c3e6c38a66cafefc9f6bfdf85986ef00a226470d9ec02d2e0ea813b6d75"
+  },
+  "files": {
+    "evaluation_requests": {
+      "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/evaluation_requests.parquet",
+      "sha256": "659f14368e69086303ba7c9888d51e435fb47783ef6d75042c0dbfe36ef912e9",
+      "rows": 25140
+    },
+    "evaluation_users": {
+      "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/evaluation_users.parquet",
+      "sha256": "581b24b2ec20388c93a1a878f2b46fb14761efce8e3117c884a61d94ca1be5c2",
+      "rows": 3000
+    },
+    "calibration_requests": {
+      "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/calibration_requests.parquet",
+      "sha256": "346240932b83b67d9f84f52adc5dc24d559099fa07da0d4c92820364c0422a67",
+      "rows": 202
+    },
+    "calibration_users": {
+      "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/calibration_users.parquet",
+      "sha256": "d59a4271d4faf38d21411228e0f6e8ce668f20b7cf771d362f4fc5d4620fa10b",
+      "rows": 32
+    },
+    "canary_requests": {
+      "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/canary_requests.parquet",
+      "sha256": "69c6366281f87b0c6f86e7e4c37a8415aed24d43baf8c913c0cae8cf481283ca",
+      "rows": 104
+    },
+    "canary_users": {
+      "path": "results/selective_recompute_2026_09/panels/max/v2_to_v3/canary_users.parquet",
+      "sha256": "6dbd87d231f2069a861cac6c17581d61846d7a0ddf7f2e51cc340d12cf9b80eb",
+      "rows": 16
+    }
+  },
+  "preparation_sources": {
+    "scripts/selective_recompute_2026_09/prepare.py": "c4b0b1ca24bf0ed9a38a6cc036d2b39d201e226e9f815420caaf7e8ce67f8543",
+    "scripts/selective_recompute_2026_09/cohort.py": "7a86e4f6f5a005a1a55e8f1abe87c19f88dc99cc107d4aab6c8d20326aeac7a0"
+  },
+  "checks": [
+    "source Full raw seal and Reuse shard hashes verified",
+    "Full, Reuse, requests and labels share every request ID, UID and timestamp",
+    "source population Full and Reuse AUC reproduce their recorded summary",
+    "evaluation, calibration and canary UID sets are disjoint",
+    "each subset preserves every scored request for its selected users",
+    "no baseline outcome used and no resampling based on subset gap"
+  ]
+}

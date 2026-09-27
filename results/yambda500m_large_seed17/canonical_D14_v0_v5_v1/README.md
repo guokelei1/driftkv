@@ -1,9 +1,10 @@
 # Large D14 canonical V0–V5 chain
 
-状态：**当前唯一工作序列**。本目录不复制约 2.67 GiB/checkpoint 的模型文件；`chain.json` 和
-canonical contract 提供唯一的路径、hash、训练窗口、epoch 与父子关系。
+状态：**历史开发序列**。2026-09-23按当前[三规模模型清单](../../../docs/unified_training_2026_09/model_versions.md)
+清理后，V0–V3的旧路径链接到哈希相同的选定权重；本序列V4/V5的实体权重已删除，
+原始指标、raw seals、adjudication及`chain.json`仍保留。下表记录当时的端点选择。
 
-| Version | 训练窗口 | Epoch | 当前 checkpoint |
+| Version | 训练窗口 | Epoch | 当时 checkpoint |
 | --- | --- | ---: | --- |
 | V0 | `[0,217)` | 1.0 | `qualification_v1/shared_v0/checkpoint_100.pt` |
 | V1 | `[217,231)` | 1.0 | `qualification_v1/D14/checkpoints/v1/checkpoint_100.pt` |

@@ -1,6 +1,9 @@
 # 六层跨版本缓存适配计划
 
-状态：当前 Design 已完成设计，尚未实现和验证。已有代码与下列开发证据属于历史探索。后续计划重新训练所有模型并重做全部实验；新运行设置与启动另行确定，本文件的冻结六层范围描述现有开发资产。
+状态：当前 Design 已完成设计，尚未实现和验证。已有代码与下列开发证据属于历史探索。
+本轮模型训练和诊断进展见[统一训练索引](../unified_training_2026_09/README.md)及
+[脚本入口](../../scripts/design/README.md)；当前 Design 的适配实验仍待实现和验证。
+本文件的冻结六层范围描述现有适配开发资产。
 
 当前方法是 Cross-Version Cache Adaptation：旧模型在写入时生成紧凑摘要；新版本发布时翻译摘要；读取旧缓存时修正 K/V；状态层维护跨版本缓存的来源、追加与淘汰。论文叙事以 [`/home/gkl/work/paper/main.tex`](/home/gkl/work/paper/main.tex) 为准，具体模型与评估协议见 [实验设计](../experimental_design.md)。
 
