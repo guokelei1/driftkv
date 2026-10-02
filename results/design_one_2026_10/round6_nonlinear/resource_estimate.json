@@ -1,0 +1,79 @@
+{
+  "status": "complete",
+  "role": "synthetic_resource_microprobe",
+  "gpu": 2,
+  "device_name": "NVIDIA A40",
+  "torch_version": "2.12.1+cu130",
+  "cuda_version": "13.0",
+  "seed": 17,
+  "torch_threads": 4,
+  "allow_tf32": false,
+  "dtype": "float32",
+  "optimizer": {
+    "kind": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip": 1.0
+  },
+  "command": "python /tmp/design_one_resource_probe.py",
+  "probe_source": {
+    "path": "/tmp/design_one_resource_probe.py",
+    "sha256": "79c615287e8f1245201bdb2c203a15994aea10262c419d17d662dab2a2680c03",
+    "text": "\"\"\"GPU 2 synthetic operation timing only; no checkpoint/data quality evaluation.\"\"\"\nfrom pathlib import Path\nimport gc\nimport hashlib\nimport json\nimport sys\nimport time\n\nROOT = Path('/home/gkl/work/evokv')\nsys.path[:0] = [str(ROOT / 'scripts'), str(ROOT / 'src')]\nimport torch\nfrom hstu_kvcache.adaptation.reader import history_read\nfrom hstu_kvcache.design_one.nonlinear import NonlinearResponseAdapter, KVReadViewAdapter\nfrom hstu_kvcache.models.attention import PointwiseAttention, PointwiseAttentionConfig\n\nOUTPUT = ROOT / 'results/design_one_2026_10/round6_nonlinear/resource_estimate.json'\nif OUTPUT.exists():\n    raise FileExistsError(OUTPUT)\nDEVICE = torch.device('cuda:2')\ntorch.cuda.set_device(DEVICE)\ntorch.set_num_threads(4)\ntorch.backends.cuda.matmul.allow_tf32 = False\ntorch.manual_seed(17)\n\n\ndef probe(kind, batch, hidden, projected_steps):\n    heads, head_dim, queries, length = 6, 32, 16, 1024\n    cls = NonlinearResponseAdapter if kind == 'response' else KVReadViewAdapter\n    module = cls(1, heads, head_dim, hidden_width=hidden).layers[0].to(DEVICE).train()\n    attention = PointwiseAttention(PointwiseAttentionConfig(\n        hidden_size=heads * head_dim, num_heads=heads, head_dim=head_dim,\n        max_seq_len=length, activation='elu_plus1', block_variant='legacy')).to(DEVICE)\n    attention.eval().requires_grad_(False)\n    shape = (batch, heads, queries, head_dim)\n    query = torch.randn(shape) * .1\n    keys = torch.randn(batch, length, heads * head_dim) * .1\n    values = torch.randn_like(keys) * .1\n    with torch.no_grad():\n        native = history_read(attention, query.to(DEVICE), keys.to(DEVICE), values.to(DEVICE)).cpu()\n    target = torch.full(shape, .01)\n    counts = torch.full((batch,), float(length))\n    selected = torch.arange(batch)\n    unit = torch.tensor(.01)\n    optimizer = torch.optim.AdamW(module.parameters(), lr=.001, weight_decay=.0001)\n\n    def step():\n        # The real fitter indexes CPU tensors and transfers the selected batch.\n        q, r, wanted, count = [x[selected].to(DEVICE) for x in (query, native, target, counts)]\n        optimizer.zero_grad(set_to_none=True)\n        if kind == 'response':\n            prediction = module.delta_rate(q, r, count)\n        else:\n            k, v = module.map_tokens(keys[selected].to(DEVICE), values[selected].to(DEVICE))\n            valid = torch.arange(length, device=DEVICE)[None] < count[:, None]\n            mapped = history_read(attention, q, k, v, count=valid)\n            prediction = (mapped - r) / count[:, None, None, None]\n        error = ((prediction - wanted) / unit.to(DEVICE)).square().mean((1, 2, 3))\n        objective = (error * (count / length).square()).mean()\n        if not torch.isfinite(objective):\n            raise RuntimeError('nonfinite synthetic objective')\n        objective.backward()\n        grad = torch.nn.utils.clip_grad_norm_(module.parameters(), 1.)\n        if not torch.isfinite(grad):\n            raise RuntimeError('nonfinite synthetic gradient')\n        float(grad)\n        optimizer.step()\n        float(objective.detach())\n\n    for _ in range(3):\n        step()\n    torch.cuda.synchronize(DEVICE)\n    torch.cuda.reset_peak_memory_stats(DEVICE)\n    started = time.perf_counter()\n    for _ in range(20):\n        step()\n    torch.cuda.synchronize(DEVICE)\n    seconds = time.perf_counter() - started\n    mean = seconds / 20\n    return dict(kind=kind, shape=dict(batch=batch, queries=queries, heads=heads,\n        head_dim=head_dim, history_length=length, layers_per_step=1, hidden_width=hidden),\n        warmup_steps=3, timed_steps=20, wall_seconds=seconds,\n        mean_step_seconds=mean,\n        peak_allocated_gib=torch.cuda.max_memory_allocated(DEVICE) / 2**30,\n        peak_reserved_gib=torch.cuda.max_memory_reserved(DEVICE) / 2**30,\n        projected_optimizer_steps=projected_steps,\n        projected_optimizer_seconds=mean * projected_steps,\n        capture_trace_diagnostics_allowance_seconds=60,\n        projected_total_minutes_with_allowance=(mean * projected_steps + 60) / 60)\n\n\nresults = []\nfor args in [('response', 256, 256, 1200), ('kv_view', 8, 32, 12288)]:\n    gc.collect()\n    torch.cuda.empty_cache()\n    results.append(probe(*args))\n    print(json.dumps(results[-1]), flush=True)\npaths = [ROOT / 'scripts/design_one/calibrate_nonlinear.py',\n         ROOT / 'src/hstu_kvcache/design_one/nonlinear.py',\n         ROOT / 'src/hstu_kvcache/adaptation/reader.py',\n         ROOT / 'src/hstu_kvcache/models/attention.py',\n         OUTPUT.parent / 'configuration.json']\nsource = Path(__file__).read_text()\nrecord = dict(status='complete', role='synthetic_resource_microprobe', gpu=2,\n    device_name=torch.cuda.get_device_name(DEVICE), torch_version=torch.__version__,\n    cuda_version=torch.version.cuda, seed=17, torch_threads=4, allow_tf32=False,\n    dtype='float32', optimizer=dict(kind='AdamW', learning_rate=.001,\n                                  weight_decay=.0001, gradient_clip=1.),\n    command='python /tmp/design_one_resource_probe.py',\n    probe_source=dict(path=str(Path(__file__)),\n        sha256=hashlib.sha256(source.encode()).hexdigest(), text=source),\n    execution_sources={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()\n                       for p in paths},\n    results=results,\n    estimate_scope='Measured single-layer optimizer work at full training shapes, including CPU batch indexing/transfers, real masked legacy ELU+1 history_read, backward, clipping and AdamW. Six-layer optimizer step totals supplied by the prospective experiment. Additional capture/query/validation allowance is 60 seconds per candidate, not measured by this synthetic probe. No quality data or training checkpoint retained.',\n    caveat='Short synthetic steady-state timing estimates throughput and shape memory; full calibration also retains captured source/teacher states and may vary with scheduling/CPU traffic.')\nOUTPUT.write_text(json.dumps(record, indent=2) + '\\n')\nprint(json.dumps({'output': str(OUTPUT), 'sha256': hashlib.sha256(OUTPUT.read_bytes()).hexdigest()}))\n"
+  },
+  "execution_sources": {
+    "scripts/design_one/calibrate_nonlinear.py": "68ce09063005b95c56700b2dc5baeeb22b819ae0212cce0eb4de781b81fae757",
+    "src/hstu_kvcache/design_one/nonlinear.py": "98f4875719b68c60d9177c82c3b70a01b1c9980ad73899ccb9fe455e0bcfb615",
+    "src/hstu_kvcache/adaptation/reader.py": "f5cfcb9e6303053c002d4720761df28b72d69a539e2b1bae61cb3d46e028b153",
+    "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+    "results/design_one_2026_10/round6_nonlinear/configuration.json": "116f3c9b89ca4094f32e5e4a85e1a5fddf16bed6829fa544d850dfd9b4511329"
+  },
+  "results": [
+    {
+      "kind": "response",
+      "shape": {
+        "batch": 256,
+        "queries": 16,
+        "heads": 6,
+        "head_dim": 32,
+        "history_length": 1024,
+        "layers_per_step": 1,
+        "hidden_width": 256
+      },
+      "warmup_steps": 3,
+      "timed_steps": 20,
+      "wall_seconds": 0.06396135035902262,
+      "mean_step_seconds": 0.003198067517951131,
+      "peak_allocated_gib": 0.058118343353271484,
+      "peak_reserved_gib": 0.6796875,
+      "projected_optimizer_steps": 1200,
+      "projected_optimizer_seconds": 3.837681021541357,
+      "capture_trace_diagnostics_allowance_seconds": 60,
+      "projected_total_minutes_with_allowance": 1.0639613503590226
+    },
+    {
+      "kind": "kv_view",
+      "shape": {
+        "batch": 8,
+        "queries": 16,
+        "heads": 6,
+        "head_dim": 32,
+        "history_length": 1024,
+        "layers_per_step": 1,
+        "hidden_width": 32
+      },
+      "warmup_steps": 3,
+      "timed_steps": 20,
+      "wall_seconds": 0.08608243148773909,
+      "mean_step_seconds": 0.004304121574386954,
+      "peak_allocated_gib": 0.07959604263305664,
+      "peak_reserved_gib": 0.119140625,
+      "projected_optimizer_steps": 12288,
+      "projected_optimizer_seconds": 52.88904590606689,
+      "capture_trace_diagnostics_allowance_seconds": 60,
+      "projected_total_minutes_with_allowance": 1.881484098434448
+    }
+  ],
+  "estimate_scope": "Measured single-layer optimizer work at full training shapes, including CPU batch indexing/transfers, real masked legacy ELU+1 history_read, backward, clipping and AdamW. Six-layer optimizer step totals supplied by the prospective experiment. Additional capture/query/validation allowance is 60 seconds per candidate, not measured by this synthetic probe. No quality data or training checkpoint retained.",
+  "caveat": "Short synthetic steady-state timing estimates throughput and shape memory; full calibration also retains captured source/teacher states and may vary with scheduling/CPU traffic."
+}

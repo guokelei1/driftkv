@@ -25,7 +25,7 @@ Max V2 训练完整结束，仅暂缓等待训练的外层调度，在训练与�
 保留测量入口：`scripts/unified_training/prepare_max_profile_fixture.py`、
 `scripts/unified_training/profile_max_training.py`。
 当时使用的 `run_max_profile_after_training.py` 一次性调度入口已于2026-09-22清理，
-删除前源码快照见[结果索引](../../README.md#2026-09-22-入口清理)，本次操作与测量证据保留。
+删除前源码快照见[结果索引](../../README.md#历史源码与文档快照)，本次操作与测量证据保留。
 状态／命令／退出记录在 `probe/progress.json`、`probe/runtime.json` 和 `queue.log`。
 主测的紧凑证据写入 `probe/measurement/summary.json`；原始NPZ／trace／日志留本地忽略。
 
@@ -77,7 +77,7 @@ CPU fixture准备已完成，耗时108.9秒、峰值RSS1.83GiB。CPU collate均�
 context长度分别专门化的单query变体。缓存增长与早期慢步对应，支持编译预热成本。
 缓存写入数不能换算成精确编译秒数；首次新缓存前约30.5分钟仍是未分解启动成本。
 
-## 数值及下一步边界
+## 数值与测量边界
 
 auto默认组两步canary的梯度和loss有限；三组计时与profile步骤的loss均有限，
 初始80个logit完全一致。14次更新后，auto默认
@@ -85,7 +85,7 @@ auto默认组两步canary的梯度和loss有限；三组计时与profile步骤�
 抽样证据，不证明全参数逐位相等或长期质量等价。执行源码起止hash一致，旧V1严格
 加载成功；诊断没有保存候选权重或读取E14质量结果。
 
-由实测支持的后续优先级是：先统一候选embedding lookup，再按长度索引vectors，
+本次测量提出的优化方向是：先统一候选embedding lookup，再按长度索引vectors，
 减少每组重复的大表梯度；减少单query按每种长度编译；再衡量fused AdamW及FSDP
 通信组织。现有candidate_item_vectors接口可支持第一个小改动，但本轮尚未实施或
-测量该改动的收益。当前正在运行的正式评测源码保持原样。
+测量该改动的收益。当时的正式评测源码未改；三规模训练与评测现已完成。

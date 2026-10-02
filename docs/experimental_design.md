@@ -9,7 +9,7 @@
 | 轨道 | 架构与人口 | 配置和版本状态 |
 | --- | --- | --- |
 | Medium | Yambda-500M，6L/H192/6 heads，30,000用户 | [模型链](../results/unified_training_2026_09/medium/README.md) |
-| Large | Yambda-500M，10L/H320/10 heads，79,681用户 | [工作链及准入限制](../results/unified_training_2026_09/large/README.md) |
+| Large | Yambda-500M，10L/H320/10 heads，79,681用户 | [选定模型链](../results/unified_training_2026_09/large/README.md) |
 | Max | Yambda-5B，16L/H320/10 heads，200,000用户 | [数据、训练与评测](../results/unified_training_2026_09/max/README.md) |
 | RecFlow | 独立生成式开发，当前6L/H192、4096用户、初始1M目录 | [独立协议](recflow/plan.md) |
 
@@ -31,7 +31,7 @@ V3 [245,259)，V4 [259,273)，V5 [273,287)；V5 后的 E14 评价窗口为
 - 各规模使用自己的 item mapping、OOV 和反馈审计规则。未知目标与有效分母必须显式报告。
 - 先完成同窗口 Parent/Current Full-only 准入，再解锁该边的 Reuse 评价。
   未准入候选不改变服务父模型或缓存谱系；开发例外不改写原 admission。
-- checkpoint endpoint 不等于 release。Large V5 等暂定工作端点的原失败记录继续保留。
+- checkpoint endpoint 不等于 release。当前 18 个端点以[固定清单](unified_training_2026_09/model_versions.md)为准；历史候选的失败记录不改写成当前端点的结论。
 
 ## 拟合、开发与确认
 
@@ -68,7 +68,13 @@ Yambda 的 AUC、log-loss 等任务质量与概率/响应保真度是不同指�
 概率功能探针的64候选不等于真实反馈 AUC 请求集。
 RecFlow 的候选排序、beam自由生成和exact全目录排序分别定义，不能互相冒充。
 
-[已完成统一AUC诊断](../results/insight/unified_auc_10k_teachers7144_20260920/README.md)
+当前三规模 [15 条 Full/Reuse 边](../results/unified_reuse_2026_09/README.md)、
+[四种局部重算](../results/selective_recompute_2026_09/README.md)和
+[非线性 Q/H](design/read_correction_probe_2026_09.md)分别保留自己的用户面板、
+完整结果与实际成本口径。当前图的增量成本以 Reuse 为 0%、Recompute 为 100%，
+计入各次配置实际采用的校准、拟合及应用成本。
+
+论文附录仍引用的[历史统一AUC诊断](../results/insight/unified_auc_10k_teachers7144_20260920/README.md)
 采用发布时的1024-event固定快照和真实E14反馈，不是逐请求滚动缓存；
 其正gap >1e-4规则属于该次诊断，不自动成为以后实验的阈值。
 其他规模、选边与显示口径见[结果索引](../results/README.md)及[图表索引](../figures/README.md)。
@@ -97,11 +103,13 @@ Exact-KV splice 是干预，不进入可执行成本前沿。旧oracle结果不�
 生命周期比例必须先固定服务时段，累计绝对工作量后再求比，不能直接相加比例。
 理论MAC/FLOPs、GPU时间、端到端时间及峰值内存分别报告。
 
-研究目标是以小部分Exact-All成本恢复实质缺口。旧草稿的20%发布预算、80%恢复/
-90% stretch目标仅是历史目标，不是已验证效果或新实验自动门槛。
+当前Design 1开发目标由2026-10-01用户明确为恢复至少80%、新增FLOPs不超过15%，
+成本分母沿用该固定面板的逐请求Full−Reuse历史计算缺口，详见[计划](design/plan.md)。
+上文按发布时Exact-All计费的账本属于生命周期问题，不能与本轮比例互换。
+旧草稿的20%发布预算与90% stretch仍仅是历史目标，不是已验证效果。
 新确认实验应事前固定可解释的质量和成本标准；低成本但弱恢复、高成本或持续性失败均如实保留。
 
-先以能回答问题的小样本联动检查四组件：原算子/参考的一致性、count与坐标、
+先以能回答当前问题的小样本检查实际使用的组件：原算子/参考的一致性、count与坐标、
 实际查询下的闭环修正、追加/淘汰和必要资源。HSTU checkpoint 的激活、偏置和归一化
 必须一致；不能将旧ELU+1聚合或忽略偏置的oracle直接套到SiLU/RecFlow。
 softmax需要组合numerator/normalizer，不能照搬无归一化segment求和。
@@ -111,7 +119,7 @@ softmax需要组合numerator/normalizer，不能照搬无归一化segment求和�
 
 旧32-slot paired-summary算式、重建/响应loss、后续native C/PCA32方案属于不同探索。
 它们不是当前论文的统一实现规格；完整原文保存在
-[2026-09-22文档快照](../results/README.md#2026-09-22-文档精简)。
+[历史文档快照](../results/README.md#历史源码与文档快照)。
 [历史机制证据](design/expert_route_2026-09-07.md)、[决策记录](design/iterations.md)
 及 `results/design/` 原报告继续保留。旧诊断序号S0–S5与逐层tensor编号S0–S8
 不是同一套编号，也不是新增工程交付门禁。

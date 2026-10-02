@@ -8,4 +8,6 @@
 | v3_e1 | 0.702906 | 0.700743 | -0.308% | False | False |
 | v3_e2 | 0.702906 | 0.708698 | +0.824% | True | False |
 
-完整指标见summary.json。所有约定端点均报告，不自动选择或推广模型。
+完整指标见 [summary.json](summary.json)，原始分数及准入判定保持原样。
+
+本分支从 V2 epoch2 训练，当前 V3 选用本分支 epoch2；epoch1 实体权重已删除。表中 Parent 按原训练分支记录，当前选定 V2@1 与 V3@2 的比较见 [Max 索引](../../README.md)。

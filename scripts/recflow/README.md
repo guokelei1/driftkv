@@ -36,34 +36,30 @@
 避免等待collective阻塞同GPU的评价worker。保持global batch和不等长尾部权重；
 worker显存不是驻留模型/optimizer存在时的整卡峰值。
 
-## 已完成开发分支的工具
+## 当前保留的公共依赖
 
-| 入口 | 保留用途 |
+| 模块 | 当前用途 |
 | --- | --- |
-| `window_panels.py` | 512用户完整拟合池及平衡三日面板 |
-| `daily_window_panels.py` | 同512用户D19/D20拟合、D20/D21完整评价及独立768采样面板 |
-| `daily_followup_panels.py` | D21拟合/D22评价；D22已使用，不是最终未见数据 |
-| `run_daily_probe.py`、`daily_comparison.py` | 日更新1/3轮分支执行与四端点汇总 |
-| `run_daily_lr_probe.py`、`lr_comparison.py` | 新增LR1e-4/3e-5与保留1e-3比较，核对复用的A/day20评价 |
-| `metric_grid.py` | 三个LR、三个cutoff、三个scope、两天共54单元；保留全部结果 |
-| `update_parameter_drift.py` | CPU参数漂移诊断，不代表KV兼容性 |
-| `daily_confirmation.py` | 核对C→D、完整epoch和未来面板；`--root --settings`区分free确认与sampled探索 |
-| `window_comparison.py` | 声明的A/B/C端点、相同未来面板、逐日和随机对照 |
+| `window_panels.py` | 固定用户、目录和请求采样常量；4096用户面板生成器复用 |
+| `daily_window_panels.py` | 当前4096面板依赖的旧512用户输入面板准备；原NPZ及manifest一并保留 |
+| `development_probe.py` | 当前训练与并行评价复用的数据、batch和生成评分原语 |
+| `window_comparison.py` | 当前配对评价复用的同面板检查 |
+| `daily_comparison.py` | 当前扩展链报告复用的读取、hash和一致性检查 |
 
-配置位于 `configs/recflow/`；日更新、LR、free确认和sampled分支各自保留冻结配置。
-已经完成的输出不得覆盖或因文档提供入口而重复启动。
-完整历史设置及为何切换协议见[决策表](../../docs/recflow/plan.md#已完成决策与失败边界)。
+这些模块与上表9个入口组成当前A–F执行链的14个脚本，旧命名不代表已退役。
+全部 `src/hstu_kvcache/recflow/`、共享模型实现及RecFlow测试继续保留。
 
-## 其他公共原语与诊断
+## 保留模型与执行来源
 
-| 入口 | 用途 |
-| --- | --- |
-| `development_probe.py` | 历史bounded/resource probe、共享评分函数及独立checkpoint重评；不是当前完整epoch训练入口 |
-| `check_decode.py` | beam与exhaustive结构化路径排名对照 |
-| `check_history.py` | 同目标的完整/短/空历史条件loss，不等于检索质量 |
-| `popularity_probe.py` | 同因果窗口的initial/cumulative/recent计数对照 |
-| `supervision_coverage.py` | 重建旧pilot的seeded正例抽样与实际监督覆盖 |
-| `initial_supervision_coverage.py` | 512/2048用户初始池的覆盖上界，不是模型改进 |
+实体模型保留4096用户六层链的A epoch3及B–F epoch1，共六个端点。
+旧分支、中间和canary权重已移除；对应配置、全部结果、失败、随机对照及
+训练/谱系记录继续保留，旧权重不再是现存输入。
+完整历史设置及协议选择见[决策表](../../docs/recflow/plan.md#已完成决策与失败边界)。
+
+当前冻结配置为 `configs/recflow/window_6l_expanded_u4096_seed17.json`。
+原运行22份执行源的哈希及3份精确历史副本见
+[源码封存清单](../../results/recflow/source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json)。
+副本只作复现证据，不替换当前共享模块；完成记录不授权重新训练。
 
 独立重评通过 `development_probe.py --evaluate-checkpoint PATH --eval-day DAY --output NEW_DIR`；
 必须匹配保存的架构、catalogue和 `--history-categories`设置，

@@ -1,5 +1,9 @@
 # Translation with 64 teachers: four-release preview
 
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
 The supplemental run completed in **176.56 s (2 min 57 s)**. It adds independent 64-teacher KV translation fits with 1–4 source layers on V0→V1, V2→V3, V3→V4 and V4→V5, alongside the existing 256-teacher results. The paper and its assets remain unchanged.
 
 The [configuration](../../../configs/insight/translation64_auc_preview_20260920.json) was fixed before these scores (SHA-256 `1867fa127c6501a5b47f4b5804d51e60733770da2b8a3e8c759b4984c8f5cc74`). The frozen six-layer Medium models, seed 17, 10,000 evaluation users, release snapshots and real-feedback requests are unchanged. Histories contain 1,024 events strictly before cutover; V0→V1, V2→V3 and V3→V4 use their original 14-day windows, and V4→V5 uses the original manifest's 13 complete days [287,300).
@@ -48,11 +52,11 @@ Absolute AUC and raw recovery for every measured pair are retained below; [analy
 
 ## Preview display
 
-The [preview renderer](../../../figures/src/unified_auc_preview.py) combines this supplement with the existing [teacher-budget results](../unified_auc_10k_teachers7144_20260920/README.md) and [V4→V5 record](../unified_auc_v4_v5_preview_20260920/README.md). Each panel uses release curves in four distinct gray shades with distinct markers and a red equal-weight mean. For each matched configuration, the red y value is **the mean of the four individually clipped recovery percentages**, `mean(clip(recovery_edge, 0, 100))`; red x is the mean of the four corresponding compute percentages. This displayed mean is not a pooled AUC or the clipped mean of raw recoveries.
+The retired preview renderer combined this supplement with the existing [teacher-budget results](../unified_auc_10k_teachers7144_20260920/README.md) and [V4→V5 record](../unified_auc_v4_v5_preview_20260920/README.md). Each panel used release curves in four distinct gray shades with distinct markers and a red equal-weight mean. For each matched configuration, the red y value is **the mean of the four individually clipped recovery percentages**, `mean(clip(recovery_edge, 0, 100))`; red x is the mean of the four corresponding compute percentages. This displayed mean is not a pooled AUC or the clipped mean of raw recoveries.
 
-The current translation panel displays the original 256-teacher configurations with source-layer counts 1–4; all users are translated, and the region below the minimum 27.07% cost remains empty. The measured 64-teacher configurations are retained in this record and the ledger but are no longer displayed, following the user's plotting preference. The final two read-correction panels show teacher counts 64, 256, 1,024, 4,096 and 7,144. Axes remain linear 0–100%, with no shading; raw numerical outcomes remain unclipped in the retained evidence.
+The last preview translation panel displayed the original 256-teacher configurations with source-layer counts 1–4; all users were translated, and the region below the minimum 27.07% cost was left empty. The measured 64-teacher configurations remain in this record and its comparison CSV; the last preview omitted them following the user's plotting preference. The final two read-correction panels showed teacher counts 64, 256, 1,024, 4,096 and 7,144. The display used linear 0–100% axes without shading; raw numerical outcomes remain unclipped in the retained evidence.
 
-The updated combined preview is available as [PDF](../../../figures/out/unified_auc_v4_v5_preview/combined.pdf) and [PNG](../../../figures/out/unified_auc_v4_v5_preview/combined.png). Its [ledger](../../../figures/out/unified_auc_v4_v5_preview/cost_ledger.json) retains every release point and the exact displayed mean curves. The red read-correction means at 64 teachers are 33.3039% for shared offset and 66.0449% with user response; at 256 they are 33.1003% and 64.7947%, respectively.
+The combined PDF/PNG and derived preview ledger have been removed. All 32 measured translation rows remain in [the comparison CSV](analysis/translation_comparison.csv). The red read-correction means at 64 teachers are 33.3039% for shared offset and 66.0449% with user response; at 256 they are 33.1003% and 64.7947%, respectively.
 
 ## Execution and sources
 

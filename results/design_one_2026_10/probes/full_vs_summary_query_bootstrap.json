@@ -1,0 +1,77 @@
+{
+  "comparisons": [
+    {
+      "primary": "pure_mean8_rank8",
+      "comparator": "summary_query",
+      "primary_auc": 0.6630647512666815,
+      "comparator_auc": 0.6571641752470706,
+      "auc_difference": 0.005900576019610915,
+      "bootstrap_mean_auc_difference": 0.006051067521179663,
+      "percentile_95_interval": [
+        -0.007147486892646079,
+        0.015470997039809715
+      ]
+    }
+  ],
+  "repetitions": 1000,
+  "seed": 17,
+  "valid_draws": 1000,
+  "single_class_draws": 0,
+  "draws_sha256": "1b024ac068a751e45725f619727f6d9c3e3f839dbb40c8b5d0e4ec8a588b5edb",
+  "draw_column_order": [
+    "pure_mean8_rank8",
+    "summary_query"
+  ],
+  "status": "complete",
+  "evaluation_role": "development_descriptive",
+  "panel": {
+    "binding": {
+      "path": "/home/gkl/work/evokv/results/design_one_2026_10/benchmark_panel/binding.json",
+      "sha256": "f08d5d6341d3443e6d04a05aec7433fb2c74cb89c144bfe875f5570bf7b6e000"
+    },
+    "requests": {
+      "path": "/home/gkl/work/evokv/results/design_one_2026_10/benchmark_panel/evaluation_requests.parquet",
+      "sha256": "fa6ff66d533f5557b3c154409855c2264f77abf98b2137ebfe5418a1120f456e",
+      "rows": 90296
+    },
+    "users": 10000,
+    "request_count": 90296,
+    "sorted_uid_sha256": "fa7a2179b568b779913ee3caf89bd30773a44d730408650f1425b5a7b89651d2"
+  },
+  "scores": {
+    "pure_mean8_rank8": {
+      "path": "/home/gkl/work/evokv/results/design_one_2026_10/rank8_10k/Design1.parquet",
+      "sha256": "a582b7d92702cd4e101ee4ec4896eda11ce13eddecdc75179b94efe43d7ac952",
+      "requests": 90296
+    },
+    "summary_query": {
+      "path": "/home/gkl/work/evokv/results/design_one_2026_10/round5_response_ablation/summary_query.parquet",
+      "sha256": "24b43fc455f781338fecd00bb659c649e41c5e6845e8b070fefee5f9c185ff7f",
+      "requests": 90296
+    }
+  },
+  "scope": "Paired user-cluster resampling of this fixed selected development panel. Training seed is not replicated; no qualification or adjustment for choosing the primary after development comparisons.",
+  "estimand": "Pooled request ROC-AUC(primary) minus pooled request ROC-AUC(comparator), using canonical sigmoid score ties.",
+  "resampling": "Sample 10000 UIDs with replacement per draw; every request gets its user's multiplicity. The identical UID multiset is shared by all policies. Single-class draws, if any, are counted and excluded without resampling.",
+  "confidence_interval": "Two-sided 95% percentile interval; NumPy linear quantiles; no clipping.",
+  "configuration": {
+    "primary": [
+      "pure_mean8_rank8",
+      "results/design_one_2026_10/rank8_10k/Design1.parquet"
+    ],
+    "compare": [
+      [
+        "summary_query",
+        "results/design_one_2026_10/round5_response_ablation/summary_query.parquet"
+      ]
+    ],
+    "seed": 17,
+    "repetitions": 1000
+  },
+  "execution_sources": {
+    "scripts/design_one/compare.py": "efbcd0bf8ecf5a61e19abc018f4b407daae4e6efa51f450c5a43c13ddabf3ac4",
+    "src/hstu_kvcache/evaluation/binary_metrics.py": "3621f178dc1731bd67212acb705e9c7bc65ecf4fd679c4a54328340a4b142f90"
+  },
+  "numpy_version": "2.4.3",
+  "elapsed_seconds": 4.221831205300987
+}

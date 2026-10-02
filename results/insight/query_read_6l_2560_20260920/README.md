@@ -1,5 +1,9 @@
 # 六层 Yambda：256 校准／2560 评价的共享读取修正
 
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
 2026-09-20 完成。固定共享规则 `b+Aq+Tr` 在两条预选边上分别恢复 **8.05%／17.90%**
 的逐用户概率差距，2164／2154 名用户优于 Reuse。去掉直接历史响应后的 `b+Aq`
 主指标均为负。结果支持当前用户响应参与的跨用户共享修正；全部负尾、pilot 和
@@ -113,12 +117,10 @@ FP32 callback 与参考计算通过既定容差；真实 native／Exact replacem
   两份 NPZ 保存 UID、候选、query deltas 与 Reuse／Exact／两种共享规则的原始 logits。
 - [pilot/summary.json](pilot/summary.json)及两份 `*_rules.pt`：原始校准及128人结果；
   [canary/summary.json](canary/summary.json)保留32/8探针全部结果。
-- [run_query_read_probe.py](../../../scripts/design/run_query_read_probe.py)执行实验；
-  [query_read_probe.py](../../../scripts/design/query_read_probe.py)实现共享修正。
-  扩大评价使用 `--calibration-from .../pilot`，与pilot相同配置并另给新输出目录。
-- [shared_read_insight.py](../../../figures/src/shared_read_insight.py)只读原始结果重算U/P并生成
-  [论文表](../../../figures/tables/insight_shared_read.tex)；
-  [analyze_query_read_probe.py](../../../scripts/design/analyze_query_read_probe.py)只读重建成本分解。
+- 原实验入口 `run_query_read_probe.py` 和成本分析入口已退役；保留的
+  [query_read_probe.py](../../../scripts/design/query_read_probe.py)是共享数值接口。
+- [原表生成器及快照](source_snapshot/README.md)保留，按原 raw 重算 U/P；
+  当前图表入口统一见[图表索引](../../../figures/README.md)。
 
 [旧128人 item／response 实验](../user_information_6l_20260920/README.md)及
 [摘要实验](../shared_read_6l_20260920/README.md)完整保留。本次按用户修改后的问题与规模

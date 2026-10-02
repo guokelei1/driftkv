@@ -5,6 +5,13 @@
 [结果索引](../../results/recflow/README.md)维护全部指标、随机对照、失败和资源实测；
 [脚本索引](../../scripts/recflow/README.md)维护执行入口。本页只保留当前协议与决策依据。
 
+当前实体模型固定为4096用户六层链的 **A epoch3、B–F epoch1**，
+均在 `results/recflow/development/window_6l_expanded_u4096_seed17/`。
+旧分支/中间/canary权重与旧探索入口已退役；全部旧结果、失败、随机对照、
+训练与谱系记录继续保留，旧权重不能再作为现存复评输入。
+原始数据、预处理数据及固定面板依赖链保留；
+原执行源见[封存源码](../../results/recflow/source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json)。
+
 ## 当前设置与范围
 
 以[已封存配置](../../configs/recflow/window_6l_expanded_u4096_seed17.json)为准：
@@ -161,4 +168,4 @@ oracle anchor/heldout应使用不同合法类别路径，避免同类视频重�
 
 正式准入须使用其专用UID角色并在服务切换前完成，开发不得读取final结果。
 该草案不授权启动；早期phi0..phi3命名已被此六候选设想替代。
-修改前完整计划和历史预算见[文档快照](../../results/README.md#2026-09-22-文档精简)。
+历史文档与源码的恢复范围见[结果索引](../../results/README.md#历史源码与文档快照)。

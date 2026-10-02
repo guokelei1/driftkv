@@ -1,6 +1,10 @@
 # Unified AUC diagnostics, six-layer Yambda, 2026-09-20
 
-The [completed teacher-budget extension](../unified_auc_10k_teachers7144_20260920/README.md) is now the current nine-budget record through 7,144 teachers. It adds ten shared-read paths per edge while preserving every original score, comparison and result below.
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
+The [completed teacher-budget extension](../unified_auc_10k_teachers7144_20260920/README.md) extends this historical record to nine budgets through 7,144 teachers. It adds ten shared-read paths per edge while preserving every original score, comparison and result below.
 
 Prospectively fixed in `configs/insight/unified_auc_10k_20260920.json` before unified scores. Motivation 1, Motivation 2 and the shared-read Insight use the same models, users, genuine feedback requests and release snapshots. The four admitted adjacent edges target V1–V4 at days 231, 245, 259 and 273; every evaluation window contains the following complete 14 days.
 
@@ -17,7 +21,10 @@ At the fixed 256-user teacher budget, the two shared rules give the following re
 
 The equal-edge mean recovery is 26.90% for the shared offset and 52.59% after adding the native user response. The latter improves over the offset on all four edges at this budget; both remain worse than Reuse on V1→V2. One-layer DroidSpeak reaches 93.39% recovery at 8.63% compute on V3→V4. These are fixed-state, single-seed development results.
 
-Every method and budget is retained in the [complete quality summary](diagnostic/summary.json) and [cost ledger](../../../figures/out/unified_auc/cost_ledger.json). The [five-panel figure](../../../figures/out/unified_auc/combined_logx.pdf), [Motivation AUC table](../../../figures/tables/motivation_auc.tex) and [generator](../../../figures/src/unified_auc.py) use the same four-edge evidence. Calibration budgets remain 32/64/128/256 rather than selecting the best observed budget.
+Every method and budget is retained in the [complete quality summary](diagnostic/summary.json).
+The former five-panel preview, derived cost ledger and renderer have been removed.
+The historical [Motivation AUC table](../../../figures/tables/motivation_auc.tex)
+retains the same four-edge values. Calibration budgets remain 32/64/128/256.
 
 The cohort contains 10,000 development users with at least 1,024 events before day 217: 3,970 eligible original development users and 6,030 unused calibration-reserve users selected by frozen selector rank. The unchanged 256 fitting users, all 512 historical fitted users, 128 pilot users and both reserved confirmation groups are excluded. The original split is unchanged. This is a long-history development cohort. Each user has one frozen latest-1,024 prefix per cutover; actual E14 feedback items use their real query times against that same prefix. This is a fixed-state diagnostic.
 
@@ -34,7 +41,7 @@ Fixed comparisons are Reuse, Current Exact and Parent Full; DroidSpeak with one 
 
 Compute is additional compatibility arithmetic over common native reading: one-time fitting/profiling/teacher work plus actual E14 read overhead, divided by one Exact rebuild per user snapshot. Existing Parent caches are common; Current teacher rebuilds are charged. It is not a per-request Exact rebuild denominator or an end-to-end timing ratio.
 
-Initial planning estimate is 15–30 minutes on GPU 0 with a 32 GiB budget. Full 256-user translation with four source layers may peak near 20 GiB because it retains FP32 cache pairs and FP64 OLS views and design matrices. The canary uses the first 16 of the 121 mature users among the original 128 pilot users, on the first edge: 32 fitting users, shared budgets 8/16/32, DroidSpeak profiling on 8 users and translation on 32 users with 1–4 source layers. It checks causality, numerical agreement, request identity and measured resource use without changing the full-run budgets. All 128 original pilot users remain excluded from evaluation. Raw scores, method/budget choices and all outcomes are retained.
+The initial planning estimate was 15–30 minutes on GPU 0 with a 32 GiB budget. Full 256-user translation with four source layers may peak near 20 GiB because it retains FP32 cache pairs and FP64 OLS views and design matrices. The canary uses the first 16 of the 121 mature users among the original 128 pilot users, on the first edge: 32 fitting users, shared budgets 8/16/32, DroidSpeak profiling on 8 users and translation on 32 users with 1–4 source layers. It checks causality, numerical agreement, request identity and measured resource use without changing the full-run budgets. All 128 original pilot users remain excluded from evaluation. Raw scores, method/budget choices and all outcomes are retained.
 
 The original [canary](canary/summary.json) passed in 46.23 seconds with 4.51 GiB peak GPU allocation. A separate resource probe on 96 pilot users measured 2.90 seconds at batch 16 and 1.78 seconds at batch 64. These are throughput measurements used for execution planning; they are not the figure's compute axis. The [expanded serial estimate](expanded_resource_estimate.json) was 30–50 minutes. The initial single-GPU attempt was stopped during history loading, before calibration or scores, and remains in [serial_attempt](serial_attempt/configuration.json). The [initial estimate](resource_estimate.json) and serial estimate are retained.
 

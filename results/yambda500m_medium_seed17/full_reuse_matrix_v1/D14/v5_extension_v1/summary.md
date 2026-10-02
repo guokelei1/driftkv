@@ -1,5 +1,9 @@
 # Medium D14 v4 → v5 extension
 
+Historical D14 models used by the paper's original producer-age observations.
+These V4/V5 endpoints differ from the [current selected Medium models](../../../../../docs/unified_training_2026_09/model_versions.md).
+The table preserves the original matched three-path results.
+
 Status: **medium_D14_v5_extension_complete**. E3/E7/E14 are reported under the unified horizon convention; E14 preserves its exact range and request count.
 
 | Window | Requests | New vs Old AUC | Reuse retained | Old loss | New loss | Reuse loss |

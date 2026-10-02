@@ -64,6 +64,7 @@ class Snapshot:
     candidates: torch.Tensor
     query_deltas: torch.Tensor
     requests: list[dict]
+    context: object = None
 
 
 def prefix_events(raw, cutover, max_length):
@@ -74,7 +75,7 @@ def prefix_events(raw, cutover, max_length):
 
 @torch.inference_mode()
 def snapshots(uids, by_user, history, parent, current, cutover, *, max_length,
-              query_batch, stats, append_band_size=32):
+              query_batch, stats, append_band_size=32, observer=None):
     """Yield equal-length request batches; short histories run as singleton cohorts."""
     device = next(current.parameters()).device
     prefixes = [prefix_events(history.rows[uid], cutover, max_length) for uid in uids]
@@ -87,6 +88,11 @@ def snapshots(uids, by_user, history, parent, current, cutover, *, max_length,
     deltas = torch.zeros_like(times, dtype=torch.float32)
     deltas[:, 1:] = times[:, 1:] - times[:, :-1]
     state = lr.capture_state(parent, items, behaviors, deltas)
+    if observer is not None:
+        if getattr(observer, 'needs_raw_events', False):
+            observer.initialized(state.cache, raw_events=(items, behaviors, deltas))
+        else:
+            observer.initialized(state.cache)
     stats["initial_history_hist"].update({n: len(uids)})
     actions = []
     for uid in uids:
@@ -132,6 +138,12 @@ def snapshots(uids, by_user, history, parent, current, cutover, *, max_length,
             n = state.cache.seq_len
             selected = take_state(state, append_indices)
             updated = lr.append_band(current, selected, new_items, new_behaviors, new_deltas, max_length)
+            if observer is not None:
+                if getattr(observer, 'needs_raw_events', False):
+                    observer.appended(append_indices, selected.cache, updated.cache, width,
+                                      raw_events=(new_items, new_behaviors, new_deltas))
+                else:
+                    observer.appended(append_indices, selected.cache, updated.cache, width)
             state = put_state(state, append_indices, updated)
             del updated, selected
             stats.setdefault("band_append_hist", Counter()).update({f"{n}:{width}": len(append_indices)})
@@ -164,10 +176,11 @@ def snapshots(uids, by_user, history, parent, current, cutover, *, max_length,
             selected = take_state(state, owner)
             stats["full_history_hist"].update({selected.cache.seq_len: len(chunk)})
             yield Snapshot(selected, (items[owner], behaviors[owner], raw_deltas), candidates,
-                           query_deltas, [v[2] for v in chunk])
+                           query_deltas, [v[2] for v in chunk],
+                           observer.reading(owner) if observer is not None else None)
 
 
-def all_snapshots(cohorts, by_user, history, parent, current, cutover, query_batch, stats, default_cost, append_band_size):
+def all_snapshots(cohorts, by_user, history, parent, current, cutover, query_batch, stats, default_cost, append_band_size, observer=None):
     for cohort in cohorts:
         short = len(prefix_events(history.rows[cohort[0]], cutover, current.cfg.max_seq_len)) < current.cfg.max_seq_len
         backend = "torch" if short else default_cost.attention_backend
@@ -175,7 +188,7 @@ def all_snapshots(cohorts, by_user, history, parent, current, cutover, query_bat
         with native_backend((parent, current), backend):
             for snap in snapshots(cohort, by_user, history, parent, current, cutover,
                                   max_length=current.cfg.max_seq_len, query_batch=query_batch, stats=cohort_stats,
-                                  append_band_size=append_band_size):
+                                  append_band_size=append_band_size, observer=observer):
                 yield snap, replace(default_cost, attention_backend=backend)
         for name, values in cohort_stats.items():
             stats[name].update(values)

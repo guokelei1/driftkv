@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-02",
+  "scope": "Authorized fixed Medium V4-to-V5 Design 1 continuation; no foundation training",
+  "objectives": {"auc_gap_recovery_percent_min":80,"extra_flops_percent_max":15,"extra_persistent_kv_percent_max":20},
+  "method": "Store Item64 SiLU hidden rows only; factor the linear K/V residual output into query-key scores and weighted values; apply the original Response256 after aggregation",
+  "reference_calibration": "results/design_one_2026_10/round18_item_response/calibration",
+  "reference_calibration_flops": 44011639599736,
+  "compact_encode_flops_estimate_T": 5.830791,
+  "compact_read_response_flops_estimate_T": 1.445848,
+  "total_extra_flops_estimate_percent": 12.710,
+  "extra_persistent_kv_estimate_percent": 16.6666666667,
+  "state_bytes_per_full_history_user": {"native_fp32_kv":9437184,"hidden_fp32":1572864},
+  "state_scope": "Per-user persistent tensor payload; shared weights/projections and transient candidate buffers reported separately",
+  "fresh_calibration_candidates": [
+    {"item_epochs":32,"response_epochs":100,"calibration_flops_estimate":25372591367800,"total_extra_flops_percent_estimate":8.091},
+    {"item_epochs":48,"response_epochs":100,"calibration_flops_estimate":33839531918968,"total_extra_flops_percent_estimate":10.189}
+  ],
+  "calibration_users": {"fit":256,"validation":16,"queries_per_user":16},
+  "evaluation_users":10000,
+  "evaluation_requests":90296,
+  "history_packs":"results/design_one_2026_10/history_packs_fast",
+  "checks":"Reference same-weight logits, nonzero bias/output scales, real append/evict equivalence, native cache unchanged, cost ledger, source binding and persistent-state accounting",
+  "gpu_memory_fraction":0.7,
+  "runtime_estimate_seconds":{"gpu_canary":40,"each_fresh_item_calibration":90,"each_response_calibration":40,"four_gpu_single_policy_evaluation":180},
+  "runtime_basis":"Previous Item64 fit103s for64epochs, Response256 fit41s for200epochs, single-policy evaluation82s slowest shard plus startup/aggregation; compact execution requires measured canary",
+  "gpu_placement":"Canaries then independent calibration on available cards; four-shard evaluation only after calibration completes"
+}

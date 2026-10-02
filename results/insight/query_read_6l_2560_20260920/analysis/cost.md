@@ -17,4 +17,4 @@ The last column counts additional compatibility computation, with one 32-candida
 
 Calibration includes both cache prefills, six full source reads, six one-layer teacher reads, 15 prior-layer corrections, and all six ridge fits including residual checks and prediction diagnostics. Empty read columns cost no floating arithmetic. Reductions/LU/special functions use the stated approximation; memory and execution overhead are excluded.
 
-Reproduce: `PYTHONPATH=src:scripts python scripts/design/analyze_query_read_probe.py`.
+Historical generator (retired): `PYTHONPATH=src:scripts python scripts/design/analyze_query_read_probe.py`.

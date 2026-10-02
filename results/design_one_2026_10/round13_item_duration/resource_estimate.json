@@ -1,0 +1,21 @@
+{
+  "question": "Does increasing joint Full-logit refinement from8 to12epochs improve the fixed development benchmark while remaining below15% extra FLOPs?",
+  "initial_calibration": "results/design_one_2026_10/round11_item_features/calibration",
+  "fit_users": 256,
+  "validation_users": 16,
+  "queries_per_user": 16,
+  "epochs": 12,
+  "learning_rate": 0.0001,
+  "batch_size": 8,
+  "calibration_flops_estimate": 49062867360513,
+  "total_extra_flops_percent_estimate": 14.676824202585362,
+  "cost_basis": "Round12 measured8epoch ledger, unchanged one-off operations plus12/8 times training/loss/optimizer operations. Round11 inherited cost charged once. Independent full12epoch fit from original weights, not hidden continuation from Round12.",
+  "canary": "Round12 matched Item64 logit objective passed focused gradient/source/normalization checks and full GPU canary. Only explicit training duration changes; reuse those numerical/resource checks.",
+  "runtime_estimate_seconds": {"calibration": 60, "four_gpu_evaluation": 180},
+  "runtime_basis": "Round12 joint8 fit47.35s; single-point Round11 evaluation81s slowest scoring shard plus startup/aggregation.",
+  "gpu_memory_fraction": 0.7,
+  "gpu_placement": {"calibration": 0, "evaluation": [0,1,2,3]},
+  "evaluation_users": 10000,
+  "evaluation_requests": 90296,
+  "history_packs": "results/design_one_2026_10/history_packs_fast"
+}

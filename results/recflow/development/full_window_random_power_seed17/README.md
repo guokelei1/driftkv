@@ -1,7 +1,7 @@
 # Full-window random-ranking resolution audit
 
 CPU-only diagnostic on the existing 512 development users and frozen 1M-item
-catalog. No model was loaded, no GPU was used, and the current 3072-request
+catalog. No model was loaded, no GPU was used, and the original 3072-request
 evaluation panels/configuration were not changed. The cohort remains fixed;
 486/475/462 users have positive requests in the respective full windows.
 
@@ -18,8 +18,8 @@ expectation exceeds full-window null99 for D19–21, but remains slightly below 
 for D22–24 and D25–27. The latter null tail probabilities are approximately
 1.38% and 1.44%, compared with 8.50% and 7.86% on the small panels.
 
-This supports considering a separately declared, matched full-window sensitivity
-check. It does **not** establish that an existing model's score will persist on
+This motivated the subsequently completed matched full-window sensitivity
+check in the [RecFlow result index](../../README.md). It does **not** establish that an existing model's score will persist on
 the full window, that its sparse small-panel hits are representative, or that
 it passes the gate. No model results are rescored here. The null concerns random
 policy variation on fixed requests; actual model-test power and model
@@ -29,7 +29,7 @@ The original panel results and failures must remain visible.
 Each positive request has equal weight. The original panel contains 1024
 requests per day; the full windows contain different daily request volumes, so
 their day mixture and analytic expectation differ slightly. This weighting
-must be stated if a later full-window check is conducted.
+is retained when interpreting the later full-window check.
 
 | Day | Positive requests | With known positives | All-OOV requests | Users |
 | --- | ---: | ---: | ---: | ---: |
@@ -43,8 +43,8 @@ must be stated if a later full-window check is conducted.
 | 26 | 8,233 | 3,349 | 4,884 | 422 |
 | 27 | 9,027 | 3,527 | 5,500 | 421 |
 
-Reproduction uses `scripts/recflow/full_window_random_power.py`, which calls the
-existing exact without-replacement `draw_random_panel` implementation with
+The retired `scripts/recflow/full_window_random_power.py` used the
+exact without-replacement `draw_random_panel` implementation with
 5000 trials, seed 20260918, and the same panel-derived seed convention as
 `random_baseline.py`. Only NDCG@50 is retained in the local trial arrays. OOV
 positives remain in IDCG and all-OOV requests score zero. Analytic mean/variance

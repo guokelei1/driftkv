@@ -1,7 +1,11 @@
 # Max 16-layer AUC comparison and three-scale preview
 
-The user authorized this frozen-model diagnostic on 2026-09-21. The Max chain
-is V0 → V1 epoch1 → V2 epoch1. Both parent/current Full assessments passed their
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
+The user authorized this frozen-model diagnostic on 2026-09-21. The Max chain used here
+was V0 → V1 epoch1 → V2 epoch1; the selected chain now continues through V5. Both parent/current Full assessments passed their
 original four gates. The experiment evaluates five methods on both completed
 edges: DroidSpeak, tail recomputation, KV translation, shared correction, and
 shared correction with the user's native history response.
@@ -45,8 +49,8 @@ At 7,144 teachers, the paired 16L FP32 CPU caches require 558.125 GiB in total;
 initial inspection found about 790 GiB available RAM and four idle A40 GPUs.
 The initial planning estimate is 80–150 minutes, extrapolated from the
 completed 130-minute five-edge 10L run with greater depth and interval-profile
-work. A focused numerical/resource check will refine this before detached
-execution. This diagnostic and its launch are covered by the user's request.
+work. The focused numerical/resource check refined this estimate before execution,
+as recorded below.
 
 Preparation completed in 19.43 seconds with 48 CPU threads. Four reference
 users across both edges matched the existing loader exactly, including all
@@ -70,8 +74,9 @@ Status: completed, exit code 0, at 2026-09-20 21:27:23 UTC
 including the reused initial calibration, successful computation took
 102.62 minutes. Both edges completed all 47 score paths on 101,734 requests
 in total. The renderer checked all 94 AUC values against retained raw scores.
-All 15 PNG/PDF panel pairs, three scale strips and the combined figure exist;
-the combined figure was visually inspected. No mean curves are included.
+All 15 PNG/PDF panel pairs, three scale strips and the combined figure were
+produced and inspected at completion; those derived images have since been
+retired. The retained numerical ledger includes every measured point.
 
 At 256 teachers, shared correction costs 3.528% of Exact FLOPs and recovers
 -95.67% / 11.15% on V0→V1e1 / V1e1→V2e1. Adding the native user history
@@ -82,14 +87,9 @@ Tail512 costs 59.636% and recovers 57.52% / 52.53%; full tail recomputation
 recovers 100% at 100% cost. Negative recoveries are retained in the ledger
 and displayed at zero, following the requested plotting convention.
 
-Execution history: repaired and restarted in detached tmux `evokv_max_auc_10k` at
-2026-09-20 19:55 UTC. Both complete initial calibrations passed and are reused
-by the four-GPU main run. At 20:13 UTC, the user permitted ending interactive
-supervision while the detached job continues. The tmux session was verified
-alive, with all four calibration workers active and the first edge at the
-4,096-teacher user-history fit. All five methods remain scheduled on both
-edges; the launcher automatically verifies and renders all 15 panels after
-scoring. The subsequent completion is recorded above.
+Execution history: the repaired run restarted in detached tmux `evokv_max_auc_10k`
+at 2026-09-20 19:55 UTC and reused both complete initial calibrations. It has
+finished; completion and all outcomes are recorded above.
 
 The first run stopped on GPU memory exhaustion. The failed attempt
 is retained in `failed_initial_attempt_20260921_032712/`, including its original
@@ -111,14 +111,11 @@ The main run verifies and reuses these artifacts through `--initial-record`.
 The preflight time is recorded separately from the restarted main timer and
 must be added when reporting total successful execution time.
 
-The first attempt used detached tmux `evokv_max_auc_10k`, launched at
-2026-09-20 19:27 UTC (2026-09-21 03:27 Asia/Shanghai). The launcher is
-`scripts/design/launch_max_auc.sh`: initial edge calibrations run in parallel
-on GPUs 0/1, followed by four-GPU expanded calibration and scoring, one edge
-at a time. It then runs `figures/src/three_scale_auc_preview.py`, which checks
-all 94 Max raw-score AUC values and writes the 15 individual panels, three
-scale strips and `combined_15panels.png/pdf` under
-`figures/out/three_scale_auc_preview/`. Every panel identifies its version
-curves and has no mean. `phase.txt`, `main.runtime.log`, `render.runtime.log`
-and `exit_status.txt` record execution and completion. The `existing_layout/`
-figure subdirectory contains only the already-completed 6L/10L layout check.
+The first attempt launched at 2026-09-20 19:27 UTC (03:27 Asia/Shanghai). Its
+retired launcher calibrated the two edges on GPUs 0/1, then used all four GPUs
+for calibration and scoring serially by edge. `phase.txt`, `main.runtime.log`,
+`render.runtime.log` and `exit_status.txt` preserve execution and completion.
+The old renderer and preview images are retired; the retained
+[cost ledger](../../../figures/out/three_scale_auc_preview/cost_ledger.json)
+and [display points](../../../figures/out/three_scale_auc_preview/display_points.csv)
+record all numerical points, including unfavorable outcomes.

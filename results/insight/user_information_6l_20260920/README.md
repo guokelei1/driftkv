@@ -1,6 +1,10 @@
 # 历史 128 用户诊断：候选特征与用户读取信息
 
-2026-09-20 完成并保留。当前论文入口已改为
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
+2026-09-20 完成并保留。随后完成
 [256 校准／2560 评价的查询与响应诊断](../query_read_6l_2560_20260920/README.md)，
 本组全部原始结果、失败、成本记录及[原表快照](source_snapshot/README.md)保持原样。
 当时的论文表展示两种共享探针在两条预选发布边上的对照；
@@ -34,8 +38,8 @@
   `per_user_rank1` 另用该评价用户自己的 32 个偶数索引教师响应拟合 offset+rank1；
   它仅是表达能力参照，不是共享方法或严格上界。
 
-共享原语：[user_information_probe.py](../../../scripts/design/user_information_probe.py)；
-执行入口：[run_shared_read_probe.py](../../../scripts/design/run_shared_read_probe.py)。
+原共享原语 `user_information_probe.py` 与执行入口 `run_shared_read_probe.py`
+已退役；执行版本及输入绑定以保存的 `diagnostic/configuration.json` 为准。
 发布相关的共享线性映射并非新的数学机制；按头的线性响应变换可以与 Value 映射等价，
 跨头混合通常不能直接交换到各头聚合前。本诊断未比较同预算 K/V translation 的优劣。
 
@@ -112,31 +116,14 @@ CPU ridge 使用单线程，避免当前 PyTorch 2.12.1／MKL 多线程 LU 的�
 - [历史表生成器与原表](source_snapshot/README.md)只读并独立重算 raw 中的 U/P。
   当时的表展示两个共享分支、两条边，不显示已执行的每用户教师行。
 
-## 复现入口与旧证据边界
+## 保留证据与旧实验边界
 
-以下为已完成诊断的复现形式，输出必须使用新目录；不覆盖本次证据，不表示要求再次执行：
-
-```bash
-EVOKV_ATTENTION_BACKEND=torch PYTHONPATH=src:scripts python scripts/design/run_shared_read_probe.py \
-  --config configs/insight/user_information_6l_20260920.json \
-  --output results/insight/user_information_6l_rerun_canary --canary --device cuda:0 --batch-size 8 --threads 4
-EVOKV_ATTENTION_BACKEND=torch PYTHONPATH=src:scripts python scripts/design/run_shared_read_probe.py \
-  --config configs/insight/user_information_6l_20260920.json \
-  --output results/insight/user_information_6l_rerun --device cuda:0 --batch-size 8 --threads 4
-```
-
-只重读结果、无需模型执行的入口：
-
-```bash
-PYTHONPATH=src:scripts python scripts/design/analyze_user_information_probe.py
-python results/insight/user_information_6l_20260920/source_snapshot/shared_read_insight.py \
-  --result results/insight/user_information_6l_20260920/diagnostic \
-  --output /tmp/insight_user_information_128.tex
-```
+旧诊断和成本分析启动器已退役。保留的[原表生成器](source_snapshot/shared_read_insight.py)
+可只读本组 raw 重算原表；它生成的是本组历史表，不是当前 Q-v5/H-v4 图。
 
 前一[摘要诊断](../shared_read_6l_20260920/diagnostic/summary.json)及其
 [旧表／源码快照](../shared_read_6l_20260920/source_snapshot/README.md)完整保留。
-按用户对研究问题的纠正，当前 Insight 不展示摘要，不把该分支当择优候选，也不抹掉其混合结果。
+按当时对研究问题的澄清，该组 Insight 不展示摘要，不把该分支当择优候选，也不抹掉其混合结果。
 历史逐用户 95.34%／99.46% 和动态 93.39% 等结果见
 [历史 Insight 2](../../../scripts/insight_two/README.md)；它们不进入本次正文论证，
 原 raw、analysis_v2、失败结果与 invalidation 均维持原范围。

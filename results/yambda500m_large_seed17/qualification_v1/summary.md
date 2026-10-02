@@ -1,10 +1,11 @@
-# Yambda-500M Large D14/E14 Reuse + PRO qualification
+# Historical Large qualification placeholder
 
-Status: **large_D14_E14_reuse_PRO_scope_in_progress** (0/5 cells).
+The original status was **large_D14_E14_reuse_PRO_scope_in_progress** (0/5 cells).
+This old Reuse/PRO queue is retired; it is not an active or incomplete current experiment.
 
-Formal Reuse is scoped to D14/E14 only; D7/E7 and D14/E7 Reuse are not run.
+Current Large V0–V5 models are fixed in [the unified model index](../../unified_training_2026_09/large/README.md).
+Their five adjacent Full/Reuse edges are complete; see [the current results](../../unified_reuse_2026_09/README.md).
 
-Every 14-day cell is displayed as `E14`; its exact day range and request count remain explicit.
-
-| Branch | Edge | Horizon | Requests | New vs Old AUC | Reuse AUC gain retained | Reuse loss gain retained | PRO AUC gain retained | PRO loss gain retained |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+The retained `shared_v0` and D14 V1–V3 Full-only results supply the current model prefix.
+The former D7 directory and obsolete later sweep branches have been removed.
+Existing sealed JSON records retain their original status and interpretation.

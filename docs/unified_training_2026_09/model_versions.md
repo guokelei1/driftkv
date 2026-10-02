@@ -35,7 +35,7 @@
 | V4 | [259,273) | 2 / 64 | [8df05079a7b8](../../results/unified_training_2026_09/large/seed17/checkpoints/v4/checkpoint_100.pt) | +1.372% |
 | V5 | [273,287) | 1 / 64 | [34c37ebe9da8](../../results/unified_training_2026_09/large/seed17/checkpoints/v5/checkpoint_100.pt) | +1.378%² |
 
-² V5 第 1 轮是当前暂定端点；AUC 提升为正，但原四项准入未全部通过。
+² V5 第 1 轮是用户选定端点；AUC 提升为正，但原四项准入未全部通过。
 [Large 逐版指标及备选端点](../../results/unified_training_2026_09/large/README.md)。
 
 ## Max

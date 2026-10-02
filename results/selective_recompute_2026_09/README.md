@@ -1,12 +1,12 @@
-# Four-baseline preparation record — 2026-09-26
+# Four selective-recomputation baselines — completed results
 
 **Status: complete — all15 edges,60 curves and12 figures; exit code0.**
 Finished2026-09-26 13:58:50 Asia/Shanghai. Outputs include401,187 evaluated
-requests,415 plot points (including Full/Reuse references), and
+requests,295 measured method points and120 Full/Reuse reference points, and
 [12 figures with their source data](../../figures/out/selective_recompute_2026_09/).
 The former tmux session was `evokv_selective_recompute_20260926`. The
 [launch record](launch_record.json) preserves authorization and frozen sources;
-`status.json` and `runtime.log` hold live progress. No paper text is changed.
+`status.json` and `runtime.log` retain the completed run record. No paper text is changed.
 [Programs](../../scripts/selective_recompute_2026_09/README.md)
 and [configuration](../../configs/selective_recompute_2026_09/plan.json).
 
@@ -163,7 +163,8 @@ and13,782,376 intervening event appends. Extrapolating measured rates, adjusting
 history/append workload and including load/calibration gives about10.4h on four
 GPUs. Use a broad5–21h planning range: the canaries have few users, while formal
 cohorts offer more batching and omit the canary's repeated Full controls.
-Progress reports will replace this extrapolation with completed-unit rates.
+This is the retained prelaunch estimate; completion is recorded in `status.json`
+and `runtime.log`.
 
 An interrupted-after-unit resume was simulated on Medium rank2. The worker
 reused its sealed unit; every baseline output and the unit seal retained both

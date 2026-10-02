@@ -1,0 +1,27 @@
+{
+  "question": "Can a short refinement of the Item-KV64 response-distilled model improve held-out recovery within the fixed15% extra-FLOPs budget?",
+  "initial_calibration": "results/design_one_2026_10/round11_item_features/calibration",
+  "refinements": ["layerwise same-query response", "joint final Full logits"],
+  "fit_users": 256,
+  "validation_users": 16,
+  "queries_per_user": 16,
+  "epochs": 8,
+  "learning_rate": 0.0001,
+  "batch_size": 8,
+  "response_total_extra_flops_percent_estimate": 13.8091430956,
+  "logit_total_extra_flops_percent_estimate": 13.987459126,
+  "cost_scope": "Each point inherits Round11 calibration once, plus new captures, targets, fitting, diagnostics and its own full serving cost.",
+  "interpretation": "This compares two refinement procedures. Layerwise and joint schedules differ, so effects cannot be attributed solely to the supervision target.",
+  "canary": {
+    "response_seconds": 10.311867167241871,
+    "logit_seconds": 8.044342804700136,
+    "status": "Both fixed4-fit/2-validation,2epoch runs exited0 with finite diagnostics; focused CPU normalization, gradient and source binding checks passed. Serving architecture unchanged from Round11."
+  },
+  "runtime_estimate_seconds": {"parallel_calibration": 180, "four_gpu_evaluation": 240},
+  "runtime_basis": "Round11 single-point fitting103s/evaluation slowest shard81s; Round7 joint fitting59s/evaluation three-point shard124s. Two refined policies reuse the same native replay.",
+  "gpu_memory_fraction": 0.7,
+  "gpu_placement": {"response_calibration": 0, "logit_calibration": 1, "evaluation": [0,1,2,3]},
+  "evaluation_users": 10000,
+  "evaluation_requests": 90296,
+  "history_packs": "results/design_one_2026_10/history_packs_fast"
+}

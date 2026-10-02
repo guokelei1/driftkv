@@ -1,12 +1,40 @@
 # RecFlow development evidence
 
 This is an independent development track, not the current Yambda motivation
-result or an admitted RecFlow version chain. The latest user instruction
-authorizes the complete-window development and conditional six-layer progression
-described below. The evolving interpretation and next-stage criteria are in
+result or an admitted RecFlow version chain. The authorized complete-window
+development and 4096-user six-layer expansion have completed. The current
+protocol and remaining cache-compatibility questions are in
 [the working plan](../../docs/recflow/plan.md).
 
-## Completed expanded4096-user background run
+## Current retained models
+
+The authoritative retained model/AdamW endpoints are the six 4096-user 6L models
+under `development/window_6l_expanded_u4096_seed17/`:
+
+| Stage | Retained checkpoint |
+| --- | --- |
+| A | `A/A_epoch3/checkpoint.pt` |
+| B | `B/B_epoch1/checkpoint.pt` |
+| C | `C/C_epoch1/checkpoint.pt` |
+| D | `D/D_epoch1/checkpoint.pt` |
+| E | `E/E_epoch1/checkpoint.pt` |
+| F | `F/F_epoch1/checkpoint.pt` |
+
+Old branch, intermediate and canary weights and their obsolete entrypoints have
+been retired. Every recorded outcome, raw score, random-policy trial,
+configuration, training/optimizer record and failure explanation is retained.
+Historical sections below describe completed experiments;
+their old weight paths identify past inputs and no longer imply local payloads.
+Recomputing old model predictions requires recovering or retraining those models.
+Original RecFlow data, prepared data and the fixed panel dependency chain remain.
+The exact inventory is in the [repository cleanup record](../history/repository_cleanup_2026_09_30.json).
+
+The [original-source manifest](source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json)
+binds all 22 launch sources: 19 unchanged current files and 3 exact historical
+copies recovered from Git. The frozen config and six per-phase configurations
+remain; these historical copies do not replace active shared modules.
+
+## Completed 4096-user A–F chain
 
 Launched2026-09-18 17:47 Asia/Shanghai in tmux **`recflow_6l_u4096_seed17`**,
 using GPUs0/1/2/3. The [prospective configuration](../../configs/recflow/window_6l_expanded_u4096_seed17.json)
@@ -66,10 +94,10 @@ stage. Keep the frozen primary and OOV denominator; target coverage and any
 known-item conditional diagnostics must be reported separately. Dynamic
 catalog expansion and OOV-to-known history recoding are outside this setting.
 
-## Current working candidate-ranking setting
+## Historical 512-user candidate-ranking exploration
 
 The [completed three-update report](development/window_6l_daily_sampled_seed17/daily_comparison/summary.json)
-supports a provisional development setting: **6L/H192/context1024, seed17,
+established the setting later used for the 4096-user expansion: **6L/H192/context1024, seed17,
 LR1e-3, one complete epoch per day, uniform1000 NDCG@50**. The base fits all
 eligible D1–18 data for three complete epochs; updates fit D19, D20 and D21
 respectively. Each comparison uses the same next-day768-request panel for
@@ -148,10 +176,10 @@ checks all194,461,521 unique trainable parameters, excluding buffers, with
 checkpoint hashes and FP64 accumulation. A→first daily B relative L2 is7.12%,
 0.50%,0.10% at the three LRs. This corroborates a smaller actual parameter
 update; it does not establish cache compatibility or quality stability.
-The [cleanup record](development/window_6l_daily_lr_seed17/checkpoint_cleanup.json)
-removes only the completed263-request low-LR canary weight. Its optimizer/loss
-checks, config, raw evaluation and log remain; every actual B/C/D endpoint and
-all failed outcomes are retained.
+The earlier [cleanup record](development/window_6l_daily_lr_seed17/checkpoint_cleanup.json)
+removed the completed263-request low-LR canary weight. Its optimizer/loss checks,
+config, raw evaluation and log remain. The later2026-09-30 cleanup also retires
+this old branch's B/C/D weights while retaining every outcome.
 
 ## Completed daily-window development
 
@@ -184,11 +212,12 @@ visits6929 requests in55 steps; D20 visits5805 in46. The C branches have equal
 first-epoch order/target and fixed-NLL-probe hashes. AdamW starts4065 in B,
 then4120/4230 in the1/3-epoch C branches; inferred final steps are4166/4368.
 The rerun A's D20 raw metric arrays exactly match the original three-day
-evaluation's D20 slice. Per-phase logs, settings, raw metrics, random draws,
-and all four endpoint weights are retained. The
+evaluation's D20 slice. Per-phase logs, settings, raw metrics and random draws
+are retained. The earlier
 [checkpoint cleanup record](development/window_6l_daily_seed17/checkpoint_cleanup.json)
-lists only unused intermediate weights and the tiny canary weight; their
-training/evaluation records remain, and replay of the canary regenerates its weight.
+covered unused intermediates and the tiny canary. The four old endpoint weights
+were subsequently retired in the2026-09-30 cleanup; their training/evaluation
+records remain.
 
 The metric is **NDCG, not AUC**. Daily updates work in this development probe,
 but relative gains remain large even at one epoch. Three epochs are not
@@ -283,18 +312,18 @@ versus 0.0001893917 for B. The predeclared complete three-day, traffic-weighted
 mean passes; this is not evidence of improvement on every day or generally
 stable updates. The report retains that negative day and all companion metrics.
 
-The final model/optimizer checkpoints are:
+The historical model/optimizer checkpoint paths were (weights retired2026-09-30):
 
 - `development/window_6l_full_seed17/A/A_epoch3/checkpoint.pt`
 - `development/window_6l_full_seed17/B/B_epoch3/checkpoint.pt`
 - `development/window_6l_full_seed17/C/C_epoch3/checkpoint.pt`
 
-The [cleanup manifest](development/window_6l_full_seed17/checkpoint_cleanup.json)
+The earlier [cleanup manifest](development/window_6l_full_seed17/checkpoint_cleanup.json)
 records seven deleted payloads: six unevaluated epoch1/2 checkpoints and the
-completed tiny-canary weights, releasing 15.37 GiB. Final A3/B3/C3 model and
-optimizer states remain, including C's saved AdamW step 4722. Source, results,
-raw metrics/rankings, logs and failures are retained; direct canary replay
-requires regenerating its three-step checkpoint.
+completed tiny-canary weights, releasing15.37 GiB. The later cleanup also retires
+these old A3/B3/C3 payloads. Their records, including C's verified AdamW step4722,
+raw metrics/rankings, logs and failures remain. These records do not imply that
+the old model/optimizer payloads are still available.
 
 The chronological 2L variant completed A/B but still fails its old-parent
 random-tail check, so that variant does not proceed to C.
@@ -303,9 +332,8 @@ random-tail check, so that variant does not proceed to C.
 
 The completed setting used [`window_development_seed17.json`](../../configs/recflow/window_development_seed17.json)
 and `scripts/recflow/window_chain.py`: 2L/H96, context1024, fixed 512 development
-users, 1M initial catalog, batch128 and learning rate 0.001. The user explicitly
-authorized parameter iteration, optional C and progression to 6L after the small
-protocol is stable. Do not repeat the old 50–60-minute launch question. A/B
+users, 1M initial catalog, batch128 and learning rate 0.001. This completed
+experiment preceded the six-layer progression and 4096-user expansion. A/B
 canaries completed 263/263 requests including the last 7-request batch, retained
 matching fixed training-probe hashes and passed real optimizer inheritance and
 sampled-panel random-analysis checks. Main A completed in tmux
@@ -320,9 +348,9 @@ step. Jobs exceeding30 minutes retain detached tmux logs and exit status.
 | --- | --- | --- |
 | A | D1–18 / 173,395 | A and random on D19–21 |
 | B, from A | D19–21 / 17,046 | A, B and random on D22–24 |
-| Optional C, from B | D22–24 / 10,854 | B, C and random on D25–27 |
+| C, from B | D22–24 / 10,854 | B, C and random on D25–27 |
 
-The new budget is three complete epochs per phase, without a 150k request cap or
+The recorded budget was three complete epochs per phase, without a 150k request cap or
 timed endpoint. Retrieval is recorded at epochs 1 and 3; 2048 fixed training-only
 requests/targets measure NLL before fitting and after every epoch. Epoch3 is the
 predeclared candidate; epoch1 is a learning-curve companion, not an invitation
@@ -356,7 +384,8 @@ DDP/evaluation canary passed (`development/gloo_resident_parallel_eval_canary_se
 The unchanged B experiment completed in `development/window_2l_seed17/B_retry`.
 Tiny DDP A/B canary weights were removed after verified optimizer continuation;
 each canary's `checkpoint_cleanup.json` records exact paths, bytes and hashes.
-Their summaries, metrics and validation evidence remain; main A weights remain.
+Their summaries, metrics and validation evidence remain; the old2L main weights
+were subsequently retired in the2026-09-30 cleanup.
 
 Completed original3072-panel comparisons (`development/window_2l_seed17/AB_final_comparison`
 and `ABC_final_comparison`):
@@ -473,7 +502,7 @@ never run. No earlier result qualifies the new complete-window chain in advance.
   200k diagnostics too. Identical panels reuse identical 5000-trial null arrays;
   each learned seed is reported separately, not replaced by a favorable seed.
 - `development/free_fullpanel_{parent,current}_seed{23,29}/`: completed FP32
-  beam300 evaluation, not exact search, of the two complete stored checkpoint
+  beam300 evaluation, not exact search, of the two then-complete checkpoint
   pairs on the identical 9039-request D22 panel. No new training was performed.
 - `development/random_baseline_fullpanel/summary.json`: matched analytic random
   expectations and 5000-trial null distributions for those larger-panel results.
@@ -493,8 +522,9 @@ never run. No earlier result qualifies the new complete-window chain in advance.
 
 On D19, the ordinary seed17 base's popularity1000 NDCG@50 is 0.007678 against
 random expectation 0.007985 (0.96x); NDCG@100 is 0.012577 against 0.012963 (0.97x).
-That proposed popularity diagnostic did not pass; it is not the active
-free-catalog primary gate. Its uniform1000 NDCG@50/100 instead
+That proposed popularity diagnostic did not pass; its result remains separate
+from both the historical free-catalog primary and the current uniform1000 setting.
+Its uniform1000 NDCG@50/100 instead
 gives 2.73x/2.22x and passes the working screen. The criterion is not merely
 that an update improves on a weak parent or one easier pool passes.
 
@@ -561,7 +591,7 @@ replaying the same panel reproduces the arrays exactly. Use
 
 ## Historical completed 9039-request free-generation check
 
-All four checkpoints use the identical D22 panel: 9039 positive requests,
+All four historical checkpoints used the identical D22 panel:9039 positive requests,
 437 active users from the fixed 512-user cohort, 23.7348% target coverage and
 5025 all-OOV requests retained at zero. Evaluation uses **FP32 free beam300,
 not exact ranking** and took 997–1011 seconds per checkpoint. There was no new
@@ -578,7 +608,7 @@ its fixed-panel random-policy 99th percentile is 0.0000429740.
 Both current models pass both checks at every reported NDCG/Recall@20/50/100;
 both parents fail the random 99th-percentile check at every cutoff. The result
 shows neural free-generation learning and a future-window update signal in two
-stored model pairs. Absolute quality remains low, initial base qualification
+historical model pairs. Absolute quality remains low, initial base qualification
 still fails, and a complete version chain is not established.
 
 The two seed23/29 pairs were selected by checkpoint completeness before their
@@ -593,11 +623,10 @@ than attributing every difference between the old and new evaluations to size.
 
 The earlier `configs/recflow/medium_development_one_pass.json` is superseded
 before launch. Its 136,928 eligible initial requests came from the old 150k cap,
-whereas the active complete D1–18 window has 173,395. Its single-day evaluation,
-exact decoder and 50–60-minute permission question are no longer the next-step
-protocol. The latest user authorization applies to the active small-backbone
-window experiments and, after they work, the six-layer progression described at
-the top. Historical failures remain visible; no longer-run success is assumed.
+whereas the later 512-user complete D1–18 window had 173,395. Its single-day
+evaluation, exact decoder and timed budget were replaced before execution.
+The subsequent small-backbone runs, six-layer progression and 4096-user A–F
+expansion are complete; historical failures remain visible alongside them.
 
 Only compact summaries/configurations are tracked. Prepared data, weights,
 per-request arrays/rankings and runtime logs remain local and ignored by Git.

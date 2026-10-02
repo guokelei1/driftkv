@@ -1,30 +1,47 @@
-# 本轮统一训练配置
+# Yambda 三规模训练配置
 
-Medium最终V0–V5已固定，见[模型链索引](../../results/unified_training_2026_09/medium/README.md)。V0/V1为历史复用；以下为本轮保留版本的执行设置。
+本目录保存已完成训练的执行配置。[18 个选定模型](../../docs/unified_training_2026_09/model_versions.md)
+是当前使用入口；各配置中的合同和源码哈希描述原运行，已完成输出不得覆盖。
 
-- [V2：2 epochs、四卡global32、CPU14](medium_v2_4gpu_b32_cpu14_execution.yaml)
-- [V3：1 epoch、四卡global32、CPU14](medium_v3_4gpu_b32_cpu14_execution.yaml)
-- [V4：1 epoch、四卡global32、CPU14](medium_v4_4gpu_b32_cpu14_execution.yaml)
-- [V5：1 epoch、四卡global32、CPU14](medium_v5_4gpu_b32_cpu14_execution.yaml)
-- [仅E14评测](evaluation_e14_only.yaml)
+## Medium / Large
 
-各执行配置引用`configs/contracts/`中的对应冻结合同。入口`scripts/unified_training/run_medium_v2_2epoch.py`必须显式传入`--execution-config`选择保留配置；支持按合同读取Medium/Large/Max数据和epoch端点。历史运行记录中的代码哈希描述当时版本，已完成输出不得覆盖。
+| 运行 | 配置 | 当前端点 |
+| --- | --- | --- |
+| Medium V2 | [四卡 global32 / CPU14](medium_v2_4gpu_b32_cpu14_execution.yaml) | epoch2 |
+| Medium V3 | [四卡 global32 / CPU14](medium_v3_4gpu_b32_cpu14_execution.yaml) | epoch1 |
+| Medium V4 | [四卡 global32 / CPU14](medium_v4_4gpu_b32_cpu14_execution.yaml) | epoch1 |
+| Medium V5 | [四卡 global32 / CPU14](medium_v5_4gpu_b32_cpu14_execution.yaml) | epoch1 |
+| Large V4 | [四卡 global64 / CPU14](large_v4_4gpu_b64_cpu14_execution.yaml) | epoch2 |
+| Large V5 | [四卡 global64 / CPU14](large_v5_4gpu_b64_cpu14_execution.yaml) | epoch1；epoch2 评价保留 |
 
-- [Large V4：2 epochs、四卡global64、CPU14](large_v4_4gpu_b64_cpu14_execution.yaml)：从固定V3训练，仅保留最终2 epochs checkpoint并评估E14。
-- [Large V5：保存epochs 1/2、四卡global64、CPU14](large_v5_4gpu_b64_cpu14_execution.yaml)：从本轮达标V4连续训练，两个端点在同一E14 [287,301)上分别评测。
+Medium V0/V1、Large V0–V3 复用历史模型，其原配置由模型清单引用。
+本轮版本训练入口为 `scripts/unified_training/run_medium_v2_2epoch.py`，
+显式传入 `--execution-config` 选择运行；名字沿用最初 Medium V2，
+实际按合同读取 Medium/Large/Max 数据和端点配置。
+本轮只运行[既定 E14](evaluation_e14_only.yaml)。
 
-被替代的执行配置和任务已按用户要求清理。原合同、最终运行配置、轻量canary通过证明及资源估计保留；探针payload已删除。目录存在不代表新训练授权。
+## Max
 
-## Max 数据与逐版训练
+- [5B / 20万用户数据处理](max_data_preparation.yaml)。
+- [batch80 资源探针](max_probe_b80_execution.yaml)：历史四卡、每卡20、12步检查。
+- [V0](max_v0_prepared_execution.yaml)：从头训练一轮；入口
+  `scripts/unified_training/run_max_v0.py`。
+- [V1](max_v1_epochs12_4gpu_b80_cpu14_execution.yaml)：连续两轮，选 epoch1。
+- [V2 epoch1](max_v2_1epoch_4gpu_b80_cpu14_execution.yaml)：当前 V2；
+  [追加 epoch2](max_v2_epoch2_from_epoch1_4gpu_b80_cpu14_execution.yaml)
+  是重置 AdamW/RNG 的已完成历史分支。
+- [V3 from V2@2](max_v3_epochs12_4gpu_b80_cpu14_execution.yaml)：当前 V3 取其 epoch2；
+  [V3 from V2@1](max_v3_from_v2e1_epochs12_4gpu_b80_cpu14_execution.yaml)
+  是另一条已完成比较分支。
+- [V4](max_v4_epochs12_4gpu_b80_cpu14_execution.yaml)、
+  [V5](max_v5_epochs12_4gpu_b80_cpu14_execution.yaml)：均连续两轮，均选 epoch2。
 
-- [5B/20万用户数据处理](max_data_preparation.yaml)：人口资格、稳定选择、独立词表和显式OOV布局。
-- [选定batch80资源探针](max_probe_b80_execution.yaml)：四卡每卡20，仅12步canary。
-- [V0执行配置](max_v0_prepared_execution.yaml)：1 epoch、四卡global80、CPU14；V0已完成并封存。
-- V0恢复策略：第500步首存、以后每4000步保存，最近两份完整恢复点；包含AdamW及随机状态，同四卡配置以`run_max_v0.py --resume`续训。
-- [资源与逐版结果](../../results/unified_training_2026_09/max/README.md)：V0–V5已有端点与评测；V5从选定V4 epoch2训练。
+Max 使用四卡 global80 / CPU14。V1–V5 复用上述版本训练入口；
+具体训练来源、数值检查和原准入见[Max 结果](../../results/unified_training_2026_09/max/README.md)。
 
-- [Max V1：连续2epochs、四卡global80、CPU14](max_v1_epochs12_4gpu_b80_cpu14_execution.yaml)：2026-09-19用户授权启动，分别保留epochs1/2，在同一完整E14上与固定V0比较。
-- [Max V2：1 epoch](max_v2_1epoch_4gpu_b80_cpu14_execution.yaml)；[追加epoch2](max_v2_epoch2_from_epoch1_4gpu_b80_cpu14_execution.yaml)：追加分支重置AdamW/RNG，原epoch1保留。
-- [Max V3：from V2 epoch2](max_v3_epochs12_4gpu_b80_cpu14_execution.yaml)；[from V2 epoch1替代分支](max_v3_from_v2e1_epochs12_4gpu_b80_cpu14_execution.yaml)：各连续两轮，全部结果保留。
-- [Max V4：连续两轮](max_v4_epochs12_4gpu_b80_cpu14_execution.yaml)：已完成并选定epoch2。
-- [Max V5：连续两轮](max_v5_epochs12_4gpu_b80_cpu14_execution.yaml)：训练及两个端点的统一E14 [287,301)评价均已完成。
+## 保存范围
+
+最终配置、合同、canary 摘要、预算、原始评分与封存保留；
+中间探针及优化器恢复 payload 已清理，当前不存在可直接续训的这些恢复点。
+只保留模型清单中的实体权重，历史多端点评价记录不代表备选权重可用。
+配置存在不代表新训练授权。

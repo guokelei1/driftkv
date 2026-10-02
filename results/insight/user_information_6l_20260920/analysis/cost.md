@@ -15,4 +15,4 @@ The conditional ratio is `(K + U*C_read)/(U*C_rebuild)`, assuming every user has
 
 Multiply-add counts as two; special functions count as one. Dense products follow the eager runner; reduction and LU costs are estimates. Memory traffic, transfers and dispatch are excluded. Evaluation-user teachers and per-user oracle fitting are research measurements, not inputs needed to serve either shared rule.
 
-Reproduce: `PYTHONPATH=src:scripts python scripts/design/analyze_user_information_probe.py`.
+Historical generator (retired): `PYTHONPATH=src:scripts python scripts/design/analyze_user_information_probe.py`.

@@ -1,0 +1,200 @@
+{
+  "status": "prospective_estimate",
+  "revision": "v1",
+  "users_per_edge": 3000,
+  "edges": 15,
+  "requests": 401187,
+  "gpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "estimated_wall_hours": 3.3127197111361744,
+  "planning_range_hours": [
+    1.6563598555680872,
+    8.281799277840436
+  ],
+  "measured_scoring": {
+    "medium": {
+      "measured_compute_seconds": 37.768789385445416,
+      "measured_requests": 9981,
+      "measured_budgets": 2,
+      "seconds_per_request_for_three_budgets": 0.005676103003523507
+    },
+    "large": {
+      "measured_compute_seconds": 7.508318657055497,
+      "measured_requests": 273,
+      "measured_budgets": 1,
+      "seconds_per_request_for_three_budgets": 0.0825089962313791
+    },
+    "max": {
+      "measured_compute_seconds": 3.8570155315101147,
+      "measured_requests": 80,
+      "measured_budgets": 1,
+      "seconds_per_request_for_three_budgets": 0.1446380824316293
+    }
+  },
+  "calibration_extrapolation": {
+    "medium": {
+      "c32_query_fit_seconds": 0.7227485319599509,
+      "c32_history_fit_seconds": 9.47003971785307,
+      "shared_prepare_seconds": 10.041256545111537,
+      "estimated_all_budgets_seconds": 234.1310663362965
+    },
+    "large": {
+      "c32_query_fit_seconds": 2.5534667000174522,
+      "c32_history_fit_seconds": 23.505487954244018,
+      "shared_prepare_seconds": 17.53929647244513,
+      "estimated_all_budgets_seconds": 582.3166406843811
+    },
+    "max": {
+      "c32_query_fit_seconds": 6.921438931487501,
+      "c32_history_fit_seconds": 50.22797765489668,
+      "shared_prepare_seconds": 31.519416441209614,
+      "estimated_all_budgets_seconds": 1263.176581196487
+    }
+  },
+  "edge_estimates": [
+    {
+      "scale": "medium",
+      "edge": 1,
+      "requests": 26014,
+      "estimated_gpu_seconds": 450.30549592644576
+    },
+    {
+      "scale": "medium",
+      "edge": 2,
+      "requests": 26001,
+      "estimated_gpu_seconds": 450.23170658739997
+    },
+    {
+      "scale": "medium",
+      "edge": 3,
+      "requests": 27313,
+      "estimated_gpu_seconds": 457.6787537280228
+    },
+    {
+      "scale": "medium",
+      "edge": 4,
+      "requests": 24155,
+      "estimated_gpu_seconds": 439.75362044289557
+    },
+    {
+      "scale": "medium",
+      "edge": 5,
+      "requests": 29860,
+      "estimated_gpu_seconds": 472.1357880779972
+    },
+    {
+      "scale": "large",
+      "edge": 1,
+      "requests": 23450,
+      "estimated_gpu_seconds": 2554.5872164079206
+    },
+    {
+      "scale": "large",
+      "edge": 2,
+      "requests": 25975,
+      "estimated_gpu_seconds": 2762.922431892153
+    },
+    {
+      "scale": "large",
+      "edge": 3,
+      "requests": 27553,
+      "estimated_gpu_seconds": 2893.1216279452688
+    },
+    {
+      "scale": "large",
+      "edge": 4,
+      "requests": 29546,
+      "estimated_gpu_seconds": 3057.5620574344075
+    },
+    {
+      "scale": "large",
+      "edge": 5,
+      "requests": 23880,
+      "estimated_gpu_seconds": 2590.0660847874133
+    },
+    {
+      "scale": "max",
+      "edge": 1,
+      "requests": 24626,
+      "estimated_gpu_seconds": 4891.823531841579
+    },
+    {
+      "scale": "max",
+      "edge": 2,
+      "requests": 26163,
+      "estimated_gpu_seconds": 5114.132264538994
+    },
+    {
+      "scale": "max",
+      "edge": 3,
+      "requests": 25140,
+      "estimated_gpu_seconds": 4966.167506211437
+    },
+    {
+      "scale": "max",
+      "edge": 4,
+      "requests": 33512,
+      "estimated_gpu_seconds": 6177.077532329037
+    },
+    {
+      "scale": "max",
+      "edge": 5,
+      "requests": 27999,
+      "estimated_gpu_seconds": 5379.687783883465
+    }
+  ],
+  "scheduled_gpu_hours": [
+    2.4664444808561132,
+    2.9336256983317144,
+    3.3127197111361744,
+    3.1364471657966755
+  ],
+  "assumptions": [
+    "Three-budget replay scaled from one/two-budget probes; this overcounts shared native replay work.",
+    "Medium probe deliberately includes128 most-request-active users; Large/Max use16-user numerical canaries, not representative throughput.",
+    "Calibration scales linearly by summed C; candidate-specific convergence does not change the fixed40 epochs.",
+    "Four dynamically assigned independent GPU edge jobs; CPU history IO and long-tail short-history execution may differ."
+  ],
+  "memory_evidence": [
+    {
+      "path": "results/read_correction_2026_09/probes/v0/resources_final/large_gpu1.json",
+      "sha256": "cab0e528a28c47cf11bef48f8ecb0770d257d84345e3eaa258318ee7d024c2ed",
+      "scale": "large",
+      "gpu": 1,
+      "eval_peak_allocated_gib": 17.07431411743164,
+      "peak_reserved_gib": 27.79296875,
+      "retained_growth_bytes": 0
+    },
+    {
+      "path": "results/read_correction_2026_09/probes/v0/resources_final/max_gpu2.json",
+      "sha256": "5ff1f8258999fdb2c4c3fb8121484d8db81e6a420525f58acb77a19a74030389",
+      "scale": "max",
+      "gpu": 2,
+      "eval_peak_allocated_gib": 17.673812866210938,
+      "peak_reserved_gib": 26.048828125,
+      "retained_growth_bytes": 0
+    },
+    {
+      "path": "results/read_correction_2026_09/probes/v0/resources_final/max_gpu3.json",
+      "sha256": "559c1231ceedeaebaab8c2a57576fd83d68eb7031fb87f804646aada2076d4bb",
+      "scale": "max",
+      "gpu": 3,
+      "eval_peak_allocated_gib": 17.673812866210938,
+      "peak_reserved_gib": 26.048828125,
+      "retained_growth_bytes": 0
+    },
+    {
+      "path": "results/read_correction_2026_09/probes/v0/resources_final/medium_gpu0.json",
+      "sha256": "61c193a07a2ba2d63d76906c8bd4dafa2843a84efadcc38df5bc7de264c99385",
+      "scale": "medium",
+      "gpu": 0,
+      "eval_peak_allocated_gib": 10.727630615234375,
+      "peak_reserved_gib": 18.642578125,
+      "retained_growth_bytes": 0
+    }
+  ]
+}

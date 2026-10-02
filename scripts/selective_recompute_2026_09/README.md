@@ -1,8 +1,9 @@
 # Four selective-recomputation baselines
 
-Preparation and formal launch authorized 2026-09-26. **The formal queue completed all15 edges and12 figures with exit code0.**
-The paper is not edited by this preparation. Experiment record and panel
-statistics: [results](../../results/selective_recompute_2026_09/README.md).
+**Completed: all 15 edges, 60 curves, 295 measured method points and 12 figures;
+exit code 0.** The original run was authorized on 2026-09-26.
+Experiment record and panel statistics:
+[results](../../results/selective_recompute_2026_09/README.md).
 
 ## Layout
 
@@ -18,7 +19,10 @@ directory contains the common timeline, panel preparation, GPU workers,
 calibration, arithmetic accounting and resumable queue. Existing historical
 experiments and the unrelated K/V-translation baseline retain their own files.
 
-## Commands
+## Retained commands
+
+The queue is complete. The launch commands below document the execution
+interface; a new formal run requires its own explicit launch authorization.
 
 ```bash
 # CPU-only panel/file preflight; existing frozen panels are reused.

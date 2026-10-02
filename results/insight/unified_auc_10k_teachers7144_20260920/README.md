@@ -1,5 +1,9 @@
 # Shared-read teacher budgets through 7,144 users
 
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
 The [four-edge extension](diagnostic/summary.json) completed successfully in 969.436 seconds (16 minutes 9 seconds); its [runtime log](diagnostic.runtime.log) is retained. The [prospective configuration](../../../configs/insight/unified_auc_10k_teachers7144_20260920.json) fixes nine nested teacher budgets: 32, 64, 128, 256, 512, 1,024, 2,048, 4,096 and 7,144. All execution-source hashes remained unchanged. The [base experiment](../unified_auc_10k_20260920/README.md) and its 27 score paths remain unchanged; the extension adds ten paths, for 37 per edge. Recomputed Reuse scores match the base exactly on all four edges.
 
 The table reports equal-weight means over all four edges. Compute is additional compatibility arithmetic, including calibration and actual E14 reads, as a percentage of one Exact rebuild for each of the 10,000 snapshots.
@@ -16,7 +20,7 @@ The table reports equal-weight means over all four edges. Compute is additional 
 | 4096 | 27.31 | 45.94 | 48.4078 | 48.8474 |
 | 7144 | 27.27 | 45.61 | 84.4299 | 85.1543 |
 
-Adding user response improves over the shared offset in all 20 new edge/budget comparisons. Increasing teachers does not produce monotonic recovery gains: at 256, 1,024 and 7,144 teachers, the response rule's mean recovery is 52.59%, 45.14% and 45.61%, while compute rises from 3.1065% to 12.2547% and 85.1543%. Both rules remain below Reuse on V1→V2 at every new budget. The full [72-row metric CSV](analysis/shared_budget_metrics.csv) contains every budget, edge, arm, absolute AUC, recovery and cost; the [cost ledger](../../../figures/out/unified_auc_teachers7144/cost_ledger.json) retains all comparison methods too.
+Adding user response improves over the shared offset in all 20 new edge/budget comparisons. Increasing teachers does not produce monotonic recovery gains: at 256, 1,024 and 7,144 teachers, the response rule's mean recovery is 52.59%, 45.14% and 45.61%, while compute rises from 3.1065% to 12.2547% and 85.1543%. Both rules remain below Reuse on V1→V2 at every new budget. The full [72-row metric CSV](analysis/shared_budget_metrics.csv) contains every budget, edge, arm, absolute AUC, recovery and cost. Other comparison methods remain in the [base experiment summary](../unified_auc_10k_20260920/diagnostic/summary.json).
 
 At the maximum 7,144-teacher budget:
 
@@ -35,4 +39,4 @@ Only five new budgets were fitted for each of the two shared rules, `N*b` and `N
 
 The 256-user calibration canary reproduced the original parameters and logits with maximum difference zero. The [evaluation canary](calibration_canary/evaluation_canary.json) compared the new 512-user rules with the reference reader on 96 pilot users and 473 requests: Reuse and both new rule paths had zero logit difference, without reading labels. The [prospective resource estimate](resource_estimate.json) was 20–35 minutes on GPUs 0–3, with 48-thread input preparation, four CPU threads per GPU worker and serial release edges. The completed run used 125.58 GiB for paired CPU teacher-cache tensors; the maximum allocation across calibration and evaluation workers was 3.19 GiB per GPU. Runtime measurements remain separate from the theoretical compute plotted in the paper.
 
-The current [five-panel figure](../../../figures/out/unified_auc_teachers7144/combined.pdf) includes all nine budgets with a linear 0–100% compute axis, the unchanged recovery axis and no shaded region; [figure provenance](figure_record.json) binds its evidence and paper copies.
+The former five-panel figure is retired; [figure provenance](figure_record.json) records its historical evidence and paper-copy bindings.

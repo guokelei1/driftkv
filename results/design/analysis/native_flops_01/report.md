@@ -1,5 +1,9 @@
 # 读取修正的增量FLOPs与人口规模分析
 
+历史六层原型报告。文中的“当前”“冻结方案”均指本次旧实验；完整现行 Design
+尚未实现或验证，保留接口见[Design 计划](../../../../docs/design/plan.md)。
+旧实验启动器已退役，以下数值、消融和失败结论保留。
+
 冻结C、summary_input、no_source；只读4091人既有反馈/状态计数、256校准历史时间戳与冻结参数。无新拟合、无新人口前向、无kernel优化；确认6000未读。
 
 ## 1. 核算口径与结论
@@ -156,10 +160,10 @@ Backfill至少读一次普通KV；每次写入/淘汰摘要各读取一个事件
 
 ## 9. 验证、证据与研究决定
 
-生成：`PYTHONPATH=src:scripts OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=2 python scripts/design/report_native_flops.py`。校准只扫描已有合法256UID时间戳；场景数/长度与冻结metadata交叉验证，模型canary只用4个合成token；原质量不变，额外bootstrap不调用模型。原始运行哈希及本次输入/代码哈希见provenance.json。
+原生成器 `scripts/design/report_native_flops.py` 已退役；公式与计数保留在本目录 JSON，原源码哈希见 `provenance.json`。校准只扫描已有合法256UID时间戳；场景数/长度与冻结metadata交叉验证，模型canary只用4个合成token；原质量不变，额外bootstrap不调用模型。原始运行哈希及本次输入/代码哈希见provenance.json。
 
 交付：ledger.json完整三方法/候选/阈值/敏感性；calibration_counts.json构建长度与回放形状直方图；population_counts.json真实执行次数；shapes_canary.json冻结形状与canary；quality_bootstrap.json新增相对Exact区间。
 
-**本轮决定：保留冻结完整native设计，当前没有由FLOPs要求立即简化的理由。** 基础质量收益与条件规模算术优势可以并列；native及源条件的AUC必要性、百万用户质量泛化、持续迁移/短历史和实际时间节省仍未成立。无新结构修改、无校准扩展、无确认读取；本轮在账本交付后收束。
+**当时结论：该账本没有要求立即简化冻结 native 原型。** 基础质量收益与条件规模算术优势可以并列；native及源条件的AUC必要性、百万用户质量泛化、持续迁移/短历史和实际时间节省仍未成立。无新结构修改、无校准扩展、无确认读取；本轮在账本交付后收束。
 
 计数参考：[NVIDIA矩阵乘法约定](https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html)采用FMA=2；[NVIDIA性能说明](https://docs.nvidia.com/deeplearning/performance/dl-performance-getting-started/index.html)区分算术、带宽与实现性能。本报告的模型尺寸、算法与数值来自本地代码和冻结证据，不是这些网页给出的EvoKV结果。

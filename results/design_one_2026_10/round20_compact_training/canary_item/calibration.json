@@ -1,0 +1,508 @@
+{
+  "status": "complete",
+  "kind": "design_one_item_kv_view_v1",
+  "method": "kv_item",
+  "scale": "medium",
+  "edge": "v4_to_v5",
+  "role": "development_canary",
+  "configuration": {
+    "path": "/home/gkl/work/evokv/configs/design/medium_v0_v5_development.json",
+    "sha256": "cc7e5f4027d7c33fbe96ea2e3a304434596f8e63d92c5f0d55863bb639b27e1e"
+  },
+  "users_file_sha256": "a345d9fab71e45a5e58a9d81dc11b79903d0d50975a73c69d542cdf473e5638a",
+  "uids": [
+    947210,
+    557970,
+    544870,
+    496380
+  ],
+  "fit_uids": [
+    947210,
+    557970,
+    544870,
+    496380
+  ],
+  "validation_uids": [
+    786790,
+    403590
+  ],
+  "users": 4,
+  "budget": 4,
+  "queries_per_user": 16,
+  "evaluation_users_excluded": 10000,
+  "cutover": 24796800,
+  "latest_history_timestamp": 24796750,
+  "history_length": 1024,
+  "history_length_histogram": {
+    "1024": 6
+  },
+  "cache_state": "pure V4 strictly before release; serving applies the rule to all retained entries including native Current writes",
+  "candidate_rule": "8 most recent unique known items; remaining uniform known catalog without replacement; SeedSequence([17,uid]); no feedback labels",
+  "history_tie_order": "timestamp_mapped_item_behavior, aligned Parent and Current Full histories",
+  "teacher": "Current Full same-window cache; each layer reads at the actual query from its frozen fitted lower layers",
+  "fitting": "mean per-user rate residual MSE weighted by (N/1024)^2, divided by one fitting-only global residual-rate RMS squared; equivalent aggregate-response objective up to a constant",
+  "normalization": "fit-only valid-token [K,V,Current item embedding] means/scales; residual output units use only source K/V std; padding excluded",
+  "validation_rule": "fixed endpoint; separate validation users report response and Full-logit error only, with no checkpoint selection",
+  "kv_supervision": "same-query read distillation only; no token-KV target loss or warm start",
+  "checkpoint_hashes": {
+    "v4": "c1a41440ce4663b499d5c8fa27bd52a8d651898a53df062bf4217a8174885082",
+    "v5": "c82fba0c9a954e175b4eba8d9da531ec92f637edf5df144a2af8ca9fb59e722d"
+  },
+  "checkpoint_verification": "sealed manifest and seal bindings checked; large payload hashes inherited",
+  "model_config": {
+    "num_items": 1380765,
+    "num_behaviors": 4,
+    "num_prediction_items": 1380765,
+    "hidden_size": 192,
+    "num_layers": 6,
+    "num_heads": 6,
+    "head_dim": null,
+    "max_seq_len": 1024,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "elu_plus1",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.1,
+    "tie_item_embeddings": true,
+    "block_variant": "legacy",
+    "relative_position_bias": false,
+    "causal_diagonal": "inclusive",
+    "num_query_types": 3,
+    "num_query_actions": 1,
+    "query_type_id": 2,
+    "query_action_id": 0
+  },
+  "adapter_config": {
+    "num_layers": 6,
+    "heads": 6,
+    "head_dim": 32,
+    "hidden_width": 64,
+    "max_length": 1024
+  },
+  "execution_sources": {
+    "scripts/design_one/calibrate.py": "882dc4fdd10b4e4914ae385e32f43524f053231bafb5e93ddd6eb752fdc2b345",
+    "scripts/design/shared_read_probe.py": "4673ce2b59770e4ba6b1abd9f336925015f5fe15c60ddb7e8e226620d23e38d7",
+    "scripts/design/diagnose_native_input.py": "fa56bb1b731e71b6c89899852d75fae067603496dd388fa1d38f99342c925b55",
+    "scripts/evaluate_yambda500m_foundation_raw.py": "d398d5d0dab42f1bcdde299457d63d5e5d2ad2b29bff98e6c3e1379129fcc851",
+    "scripts/read_correction_2026_09/calibrate.py": "7f4fc5e844e90685a5857281c97c421cbd9b662c03d7fdd8e5a7c260f5eeeb1d",
+    "scripts/read_correction_2026_09/v2/calibrate.py": "c15844b56600588ba2b968be7d8fd71647b56865f5531b1bf1ed05a7031e4ed6",
+    "scripts/read_correction_2026_09/cost.py": "02591a168a81c68ad2d7a3603d195229d090dcafe19c9b0ce9b5195f766b887a",
+    "scripts/read_correction_v5/history_conditioned/capture.py": "9310a369a4533ee1fbe2bd39c40f1ff7f64bde16e8ffd3fd5bae61d8220509d2",
+    "scripts/selective_recompute_2026_09/calibrate.py": "4b0680694224c801e8edb4fa79b6029c465d12f767490765ca99b46bdb8ef0d3",
+    "scripts/selective_recompute_2026_09/cost.py": "c8dbca999615dbd86daed256f4fc8dc6216aa902aa35abe247196a6a767f6a75",
+    "scripts/selective_recompute_2026_09/evaluate.py": "2493cce6265800226e71e60fd1ea6de2c8f9655c4c3788681f09d72462d63bed",
+    "src/hstu_kvcache/adaptation/reader.py": "f5cfcb9e6303053c002d4720761df28b72d69a539e2b1bae61cb3d46e028b153",
+    "src/hstu_kvcache/data/yambda_history.py": "23a046f5bcfdc595a2ae68fd2949ea004cfd7439a583d5dff53f493cd71fcde8",
+    "src/hstu_kvcache/data/oov.py": "4d8a369fcedd1667ce0b314462a542820aaeb80c32fb0ac6411911eaa744b82e",
+    "src/hstu_kvcache/training/foundation.py": "001a24880e2b00862f63ea50924fae50cb0c2aec86e8f2b86948af7f763de655",
+    "src/hstu_kvcache/models/__init__.py": "d3963c0c951206de278a16e0ffbabaf7c54a459325cac34eed59b18ef1e554fa",
+    "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+    "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895",
+    "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+    "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+    "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+    "src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+    "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+    "src/hstu_kvcache/models/state_transition.py": "b3eaca9f73245bc358f1fd7bc278972d8d06435eac9f6c23d98168e218267749",
+    "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+    "src/hstu_kvcache/design_one/__init__.py": "48c03daeec53985c8fde779f0d4966906da1f9255916df938e7f3749226c1317",
+    "src/hstu_kvcache/design_one/adapter.py": "01faa99e977db51f3f2f25a63b6bb64da876be9d3cab2f9f44fe61cc015fd517",
+    "src/hstu_kvcache/design_one/affine.py": "22f908741c0687dff35e1009007b6969608112c967e107fa796cef1cb63faeb0",
+    "src/hstu_kvcache/design_one/compact.py": "f81e4c4efd43dc07bf5633faf22ccb300bd8b4266c0b06ca2da5e07e58d73286",
+    "src/hstu_kvcache/design_one/composite.py": "46db43c2c96cff341f355d93e0b6d6e9b0a206b92343f8a917974037354b83ba",
+    "src/hstu_kvcache/design_one/item_kv.py": "4a01111779c5472a3ddef1adc80aa36312274e989798f7fe1e4385794daade5e",
+    "src/hstu_kvcache/design_one/nonlinear.py": "5efcb52119a57c975394de7395cebf14b7ac8f8817ef87ef99cdaa0b316fea06",
+    "src/hstu_kvcache/design_one/producer_scaled_item.py": "01db2bf1afbf77abbfd8c3801e2bfbf57bbfab495263004625418fa3fa16fe42",
+    "src/hstu_kvcache/design_one/summary.py": "d0772edd53b275107a171fc42bec95a3fd634c215b615b0f3f661d54f8264abd",
+    "scripts/design_one/calibrate_nonlinear.py": "a36a8327544d6d11cbe261427e5f5fcaf4d9b1f9b8fc1ab98b63a16fe21870eb"
+  },
+  "diagnostics": {
+    "layers": [
+      {
+        "layer": 0,
+        "initial_train": {
+          "objective": 1.0,
+          "rate_mse": 7981.929210252488,
+          "uncorrected_rate_mse": 7981.929210252488,
+          "relative_rate_mse": 1.0,
+          "aggregate_response_mse": 8369659403.569713,
+          "uncorrected_aggregate_response_mse": 8369659403.569713,
+          "relative_aggregate_response_mse": 1.0
+        },
+        "final_train": {
+          "objective": 0.2713809609413147,
+          "rate_mse": 2166.1434839870476,
+          "uncorrected_rate_mse": 7981.929210252488,
+          "relative_rate_mse": 0.27138094399593493,
+          "aggregate_response_mse": 2271366069.8652024,
+          "uncorrected_aggregate_response_mse": 8369659403.569713,
+          "relative_aggregate_response_mse": 0.27138094399593493
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "online_training_objective": 1.0
+          },
+          {
+            "epoch": 2,
+            "online_training_objective": 0.6956312656402588
+          }
+        ],
+        "optimizer_steps": 2,
+        "clipped_steps": 2,
+        "trainable_parameters": 61888,
+        "residual_rate_rms": 89.34164428710938,
+        "actual_training_batch": 8,
+        "padded_history_length": 1024,
+        "fitting_users": 4,
+        "fitting_scenes": 4,
+        "fitting_queries": 16
+      },
+      {
+        "layer": 1,
+        "initial_train": {
+          "objective": 1.0,
+          "rate_mse": 686.2683424273712,
+          "uncorrected_rate_mse": 686.2683424273712,
+          "relative_rate_mse": 1.0,
+          "aggregate_response_mse": 719604513.4291232,
+          "uncorrected_aggregate_response_mse": 719604513.4291232,
+          "relative_aggregate_response_mse": 1.0
+        },
+        "final_train": {
+          "objective": 0.6231164336204529,
+          "rate_mse": 427.62505244173485,
+          "uncorrected_rate_mse": 686.2683424273712,
+          "relative_rate_mse": 0.6231163904912181,
+          "aggregate_response_mse": 448397366.98914456,
+          "uncorrected_aggregate_response_mse": 719604513.4291232,
+          "relative_aggregate_response_mse": 0.6231163904912181
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "online_training_objective": 1.0
+          },
+          {
+            "epoch": 2,
+            "online_training_objective": 0.8844024538993835
+          }
+        ],
+        "optimizer_steps": 2,
+        "clipped_steps": 2,
+        "trainable_parameters": 61888,
+        "residual_rate_rms": 26.19672393798828,
+        "actual_training_batch": 8,
+        "padded_history_length": 1024,
+        "fitting_users": 4,
+        "fitting_scenes": 4,
+        "fitting_queries": 16
+      },
+      {
+        "layer": 2,
+        "initial_train": {
+          "objective": 1.0,
+          "rate_mse": 23014.429835894844,
+          "uncorrected_rate_mse": 23014.429835894844,
+          "relative_rate_mse": 1.0,
+          "aggregate_response_mse": 24132378779.60327,
+          "uncorrected_aggregate_response_mse": 24132378779.60327,
+          "relative_aggregate_response_mse": 1.0
+        },
+        "final_train": {
+          "objective": 0.683796226978302,
+          "rate_mse": 15737.179541860358,
+          "uncorrected_rate_mse": 23014.429835894844,
+          "relative_rate_mse": 0.683796194564664,
+          "aggregate_response_mse": 16501628775.285767,
+          "uncorrected_aggregate_response_mse": 24132378779.60327,
+          "relative_aggregate_response_mse": 0.683796194564664
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "online_training_objective": 1.0
+          },
+          {
+            "epoch": 2,
+            "online_training_objective": 0.9030698537826538
+          }
+        ],
+        "optimizer_steps": 2,
+        "clipped_steps": 2,
+        "trainable_parameters": 61888,
+        "residual_rate_rms": 151.705078125,
+        "actual_training_batch": 8,
+        "padded_history_length": 1024,
+        "fitting_users": 4,
+        "fitting_scenes": 4,
+        "fitting_queries": 16
+      },
+      {
+        "layer": 3,
+        "initial_train": {
+          "objective": 1.0,
+          "rate_mse": 2767.8365898257034,
+          "uncorrected_rate_mse": 2767.8365898257034,
+          "relative_rate_mse": 1.0,
+          "aggregate_response_mse": 2902287020.013077,
+          "uncorrected_aggregate_response_mse": 2902287020.013077,
+          "relative_aggregate_response_mse": 1.0
+        },
+        "final_train": {
+          "objective": 0.68260657787323,
+          "rate_mse": 1889.3432937198281,
+          "uncorrected_rate_mse": 2767.8365898257034,
+          "relative_rate_mse": 0.6826065168243203,
+          "aggregate_response_mse": 1981120033.5555625,
+          "uncorrected_aggregate_response_mse": 2902287020.013077,
+          "relative_aggregate_response_mse": 0.6826065168243203
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "online_training_objective": 1.0
+          },
+          {
+            "epoch": 2,
+            "online_training_objective": 0.8979960083961487
+          }
+        ],
+        "optimizer_steps": 2,
+        "clipped_steps": 2,
+        "trainable_parameters": 61888,
+        "residual_rate_rms": 52.610233306884766,
+        "actual_training_batch": 8,
+        "padded_history_length": 1024,
+        "fitting_users": 4,
+        "fitting_scenes": 4,
+        "fitting_queries": 16
+      },
+      {
+        "layer": 4,
+        "initial_train": {
+          "objective": 1.0,
+          "rate_mse": 109.18230878488328,
+          "uncorrected_rate_mse": 109.18230878488328,
+          "relative_rate_mse": 1.0,
+          "aggregate_response_mse": 114485948.61641777,
+          "uncorrected_aggregate_response_mse": 114485948.61641777,
+          "relative_aggregate_response_mse": 1.0
+        },
+        "final_train": {
+          "objective": 0.8616883754730225,
+          "rate_mse": 94.08111411903654,
+          "uncorrected_rate_mse": 109.18230878488328,
+          "relative_rate_mse": 0.8616882640245326,
+          "aggregate_response_mse": 98651198.31848286,
+          "uncorrected_aggregate_response_mse": 114485948.61641777,
+          "relative_aggregate_response_mse": 0.8616882640245326
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "online_training_objective": 1.0
+          },
+          {
+            "epoch": 2,
+            "online_training_objective": 0.952265202999115
+          }
+        ],
+        "optimizer_steps": 2,
+        "clipped_steps": 2,
+        "trainable_parameters": 61888,
+        "residual_rate_rms": 10.449033737182617,
+        "actual_training_batch": 8,
+        "padded_history_length": 1024,
+        "fitting_users": 4,
+        "fitting_scenes": 4,
+        "fitting_queries": 16
+      },
+      {
+        "layer": 5,
+        "initial_train": {
+          "objective": 1.0000001192092896,
+          "rate_mse": 67.12543930365315,
+          "uncorrected_rate_mse": 67.12543930365315,
+          "relative_rate_mse": 1.0,
+          "aggregate_response_mse": 70386124.64326741,
+          "uncorrected_aggregate_response_mse": 70386124.64326741,
+          "relative_aggregate_response_mse": 1.0
+        },
+        "final_train": {
+          "objective": 0.6458902955055237,
+          "rate_mse": 43.355667474468,
+          "uncorrected_rate_mse": 67.12543930365315,
+          "relative_rate_mse": 0.6458902604471813,
+          "aggregate_response_mse": 45461712.37770776,
+          "uncorrected_aggregate_response_mse": 70386124.64326741,
+          "relative_aggregate_response_mse": 0.6458902604471813
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "online_training_objective": 1.0000001192092896
+          },
+          {
+            "epoch": 2,
+            "online_training_objective": 0.8502839803695679
+          }
+        ],
+        "optimizer_steps": 2,
+        "clipped_steps": 2,
+        "trainable_parameters": 61888,
+        "residual_rate_rms": 8.193011283874512,
+        "actual_training_batch": 8,
+        "padded_history_length": 1024,
+        "fitting_users": 4,
+        "fitting_scenes": 4,
+        "fitting_queries": 16
+      }
+    ],
+    "validation": {
+      "layers": [
+        {
+          "layer": 0,
+          "rate_mse": 2734.6956277503,
+          "uncorrected_rate_mse": 11972.553260575794,
+          "relative_rate_mse": 0.22841373667180334,
+          "aggregate_response_mse": 2867536202.5638986,
+          "uncorrected_aggregate_response_mse": 12554132007.761524,
+          "relative_aggregate_response_mse": 0.22841373667180334
+        },
+        {
+          "layer": 1,
+          "rate_mse": 575.2274069188302,
+          "uncorrected_rate_mse": 919.8554774073363,
+          "relative_rate_mse": 0.6253454168041056,
+          "aggregate_response_mse": 603169653.4373193,
+          "uncorrected_aggregate_response_mse": 964538377.077875,
+          "relative_aggregate_response_mse": 0.6253454168041056
+        },
+        {
+          "layer": 2,
+          "rate_mse": 30539.93560114547,
+          "uncorrected_rate_mse": 43128.33626935943,
+          "relative_rate_mse": 0.7081176377963505,
+          "aggregate_response_mse": 32023443512.90671,
+          "uncorrected_aggregate_response_mse": 45223338331.979836,
+          "relative_aggregate_response_mse": 0.7081176377963505
+        },
+        {
+          "layer": 3,
+          "rate_mse": 3722.1601476956994,
+          "uncorrected_rate_mse": 5393.952605452775,
+          "relative_rate_mse": 0.6900617079825558,
+          "aggregate_response_mse": 3902967799.0301657,
+          "uncorrected_aggregate_response_mse": 5655969247.215249,
+          "relative_aggregate_response_mse": 0.6900617079825558
+        },
+        {
+          "layer": 4,
+          "rate_mse": 58.679884271825735,
+          "uncorrected_rate_mse": 74.72490417788919,
+          "relative_rate_mse": 0.7852788159103306,
+          "aggregate_response_mse": 61530318.33021394,
+          "uncorrected_aggregate_response_mse": 78354741.12323433,
+          "relative_aggregate_response_mse": 0.7852788159103306
+        },
+        {
+          "layer": 5,
+          "rate_mse": 74.91818006522685,
+          "uncorrected_rate_mse": 129.47762676684215,
+          "relative_rate_mse": 0.5786187307876468,
+          "aggregate_response_mse": 78557405.58007531,
+          "uncorrected_aggregate_response_mse": 135767131.96466827,
+          "relative_aggregate_response_mse": 0.5786187307876468
+        }
+      ],
+      "full_logit_mse": 0.0003509078948251698,
+      "native_full_logit_mse": 0.00038385882188229914,
+      "relative_full_logit_mse": 0.9141587344650557
+    }
+  },
+  "settings": {
+    "seed": 17,
+    "initialization": "one global torch.manual_seed(17) before constructing all layers",
+    "shuffle_seed": "17+layer",
+    "hidden_width": 64,
+    "epochs": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip": 1.0,
+    "batch_size": 8,
+    "response_training_batch": "all fitting users",
+    "attention_backend": "triton",
+    "device": "cuda:0",
+    "gpu_memory_fraction": 0.7,
+    "torch_threads": 4,
+    "history_threads": 8,
+    "compact_training": true
+  },
+  "cost": {
+    "parent_cache_capture_flops": 30071967792,
+    "teacher_cache_capture_flops": 30071967792,
+    "query_trace_flops": 2742365088,
+    "corrected_prefix_flops": 8471838720,
+    "teacher_same_query_flops": 463601664,
+    "target_normalization_flops": 147456,
+    "normalization_statistics_flops": 85155840,
+    "fitting_diagnostic_flops": 5572022784,
+    "network_and_read_training_flops_estimate": 12968813568,
+    "loss_training_flops_estimate": 1769712,
+    "optimizer_and_clip_flops_estimate": 13367808,
+    "validation_native_and_corrected_trace_flops": 457060896,
+    "teacher_full_query_flops": 228530448,
+    "validation_correction_flops": 1848901632,
+    "validation_metric_flops": 442688,
+    "calibration_flops": 92997953888,
+    "teacher_flops": 30764099904,
+    "scope": "both source/teacher captures, actual-query traces and prefix corrections, teacher reads, normalization, all optimizer steps, initial/final training and held-out response/logit diagnostics",
+    "convention": "multiply-add=2; dense executed shapes including padding; network forward/backward use core arithmetic helpers with frozen inputs; mapped-read forward+backward conservatively3x forward; AdamW+gradient clipping estimated18 operations/parameter/step; not measured hardware instructions; compact Item training uses the declared encoder/read/live-fold formulas, including full read backward; loss/optimizer/clipping unchanged"
+  },
+  "timings_seconds": {
+    "model_load": 3.5418435344472528,
+    "history_io": 1.5425131125375628,
+    "parent_and_teacher_capture": 0.9925624104216695,
+    "fitting_teacher_and_query_reads": 0.11343372147530317,
+    "network_fit": 0.8862965824082494,
+    "held_out_validation": 0.016132904216647148
+  },
+  "elapsed_seconds": 9.350924948230386,
+  "paired_cache_bytes": 113246208,
+  "cpu_peak_rss_gib": 3.6444778442382812,
+  "peak_gpu_allocated_gib": 2.1597518920898438,
+  "input_width": 576,
+  "item_feature_source": {
+    "model": "Current V5",
+    "parameter": "item_emb",
+    "checkpoint_sha256": "c82fba0c9a954e175b4eba8d9da531ec92f637edf5df144a2af8ca9fb59e722d",
+    "scope": "retained pre-release history IDs; one lookup per UID, reused across all layers; frozen parameters",
+    "lookup_tokens": 6144,
+    "lookup_bytes": 4718592,
+    "arithmetic_flops": 0,
+    "history_attention": false
+  },
+  "training_epoch_override": {
+    "requested": 64,
+    "default": 64,
+    "effective": 2,
+    "scope": "fresh pure fitting stage; frozen configuration hash, UID split and queries retained"
+  },
+  "compact_training": {
+    "scope": "Item layer fitting and initial/final training diagnostics only; captures, corrected-prefix traces and held-out validation retain the materialized reference",
+    "execution": "SiLU hidden64; live affine output folded through corrected QK and weighted V; activation after complete corrected QK; original parameters and AdamW settings",
+    "folding": "every prediction rebuilds physical-unit output weights/biases with autograd; no detached or reused decoder during optimization",
+    "cost_symbols": "B=batch, N=padded history, Q=queries, F=3W, M=hidden width, W=total head width, H=heads",
+    "encoder_forward": "BN*(2F+2FM+2M)",
+    "encoder_backward": "BN*(2FM+2M)",
+    "read_forward": "BQ*(N*(4W+7H+4HM)+4WM+7W)",
+    "read_backward": "2*read_forward (conservative)",
+    "live_fold_each_direction": "2W*(M+1) per batch; forward and backward included in network_and_read_training_flops_estimate",
+    "numerical_scope": "same real-valued function and gradients; floating-point reassociation can change the fresh optimization trajectory"
+  },
+  "weights_sha256": "8315ee1050674310d43128ba9a72e172b97e53211dd2390df10e44a106064d29"
+}

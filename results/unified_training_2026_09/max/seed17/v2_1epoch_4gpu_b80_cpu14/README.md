@@ -7,4 +7,6 @@
 | --- | ---: | ---: | ---: | --- | --- |
 | v2 | 0.685666 | 0.694208 | +1.246% | True | True |
 
-完整指标见summary.json。所有约定端点均报告，不自动选择或推广模型。
+完整指标见 [summary.json](summary.json)，原始分数及准入判定保持原样。
+
+这是当前选定 V2 的 epoch1 端点；权重位于 [统一目录](../checkpoints/v2/checkpoint_100.pt)。

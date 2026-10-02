@@ -1,0 +1,22 @@
+{
+  "question": "Does calibrating on recent known history items instead of a half-uniform catalog mixture improve the existing Item64 correction?",
+  "reference": "Round11 Item64 fresh fit",
+  "changed_setting": "Choose16 most recent unique known pre-release history items; same deterministic uniform completion if fewer16 are available. No feedback-label selection or future queries.",
+  "fit_users": 256,
+  "validation_users": 16,
+  "queries_per_user": 16,
+  "epochs": 64,
+  "learning_rate": 0.001,
+  "batch_size": 8,
+  "hidden_width": 64,
+  "total_extra_flops_percent_estimate": 11.8363370093,
+  "cost_basis": "Round11 complete calibration and serving ledger; same executed tensor shapes and update count, only candidate IDs change.",
+  "numerical_checks": "New candidate rule uses reverse chronological unique known items with reproducible completion; old default eight-recent mixture unchanged. Same-model numerical/serving checks already passed; run small changed-candidate calibration.",
+  "runtime_estimate_seconds": {"calibration": 120, "four_gpu_evaluation": 180},
+  "runtime_basis": "Round11 same architecture64epoch fit103s; single-policy four-GPU scoring81s slowest shard plus startup/aggregation.",
+  "gpu_memory_fraction": 0.7,
+  "gpu_placement": {"calibration": 0, "evaluation": [0,1,2,3]},
+  "evaluation_users": 10000,
+  "evaluation_requests": 90296,
+  "history_packs": "results/design_one_2026_10/history_packs_fast"
+}

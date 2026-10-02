@@ -1,19 +1,22 @@
 # 合同索引
 
-本目录仅保留当前训练、论文数据生成和其冻结证据闭包所需的 YAML 合同。这个 README 只负责导航。
+本目录保存当前模型、数据与评测所依赖的冻结合同，以及仍需解释保留证据的历史协议。
+活动配置从[配置索引](../README.md)进入，不能仅按合同文件名判断当前版本。
+合同中的 `prospective`、资源预算和旧阶段状态保留封存原文；实际完成状态由对应结果索引维护。
 
-- yambda500m_medium_*：六层模型训练、Full/Reuse、旧 producer 对比和两个 Insight。
-- yambda500m_large_*：十层模型训练、Full-only、epoch 对照与 canonical 工作序列。
-- Small 合同及其 PRO 分支已退休。旧 Large v1 合同中的 Small PRO 字段只保留为
-  已封存的历史元数据；当前 Full-only 执行器不读取它们。
-- scale population / streaming windows / unified scales：现行数据预处理边界。
-- 当前 Insight 合同只保留 locality、functional boundary、temporal persistence 及其
-  temporal-coefficient 证据输入。
+| 范围 | 当前入口 |
+| --- | --- |
+| Yambda 人口、时间窗口与共享数据 | `yambda500m_scale_population_v1.yaml`、`yambda500m_streaming_windows_v1.yaml`、`yambda500m_unified_scales_v1.yaml` |
+| Medium / Large / Max 的训练与 Full-only | [统一训练配置](../unified_training_2026_09/README.md)及其 `frozen_parent` 合同 |
+| 18个选定权重和训练窗口 | [模型清单](../../docs/unified_training_2026_09/model_versions.md) |
+| 15条 Reuse 边、四种局部重算、当前 Q/H | [配置索引](../README.md)中的各独立计划与封存记录 |
+| RecFlow 六层 A–F 六模型链 | [当前配置](../recflow/window_6l_expanded_u4096_seed17.json)；[协议](../../docs/recflow/plan.md) |
 
-当前入口由 [scripts/README.md](../../scripts/README.md)指定。
-本阶段开发见 [design/plan.md](../../docs/design/plan.md)，技术定义见
-[experimental_design.md](../../docs/experimental_design.md)。六层原型已运行共享Translator校准与开发评价，尚未达标或确认。
-用户已撤销笼统 target-KV fitting 禁令，小规模共享校准与连续原型按计划记录配置；
-正式人口评价和长训练再落实相应协议、资源、canary 与明确启动。旧禁止拟合条款只解释其原实验。
-旧合同存在不等于授权启动，也不表示其历史结果文件仍在工作区。
-结果保留边界见 [结果索引](../../results/README.md)。
+旧 Medium / Large 训练合同仍解释当前选定前缀及共享数据的来源；其中 D7 或旧方法字段
+不代表活动实验。Small PRO合同和理论运算记录仅因原 Large 合同的哈希依赖保留。
+旧 Large canonical与endpoint sweep已被本轮选定链替代，不再提供启动入口。
+论文附录引用的10k用户／7144教师历史结果继续按原配置解释。
+
+当前 Design 尚未实现和验证。旧六层原型不等于当前方法；历史合同中的拟合限制只约束原实验。
+长训练和正式评价仍需对应资源检查与用户启动，旧合同存在不构成启动授权。
+具体保留与恢复边界见[结果索引](../../results/README.md)。

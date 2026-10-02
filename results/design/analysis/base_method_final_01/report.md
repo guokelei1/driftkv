@@ -1,6 +1,10 @@
-# 基础方法定稿：观察—设计—证据闭环
+# 历史 native C 原型：质量、机制与成本记录
 
-完整方法的唯一叙述源是[论文main.tex](../../../../../paper/main.tex)，本报告索引证据与本轮小型补充，不维护平行Design稿。主方法仍为冻结native C，256×16；两项消融和全部四边均保留。
+历史六层原型报告。文中的“当前”“冻结方案”均指本次旧实验；完整现行 Design
+尚未实现或验证，保留接口见[Design 计划](../../../../docs/design/plan.md)。
+旧实验启动器已退役，以下数值、消融和失败结论保留。
+
+本报告汇总旧 native C（256×16）原型、两项消融和全部四条边。它不定义目前论文中的方法，也不证明现行 Design 已实现。
 
 ## 1. 设计依据表
 
@@ -10,7 +14,7 @@
 | query条件视图 | 本报告统一公共q的常量/仿射对照；历史时间常量失效 | 任意query都线性、每层常量都无用 |
 | 发布共享、用户状态条件化 | [冻结decoder覆盖](../mechanism_decoder_closure192_report_01/report.md)与[实际跨UID质量](../native_base_quality4091_01_report/report.md) | 当前摘要充分、源条件不可替代 |
 | native响应输入 | [同容量输入诊断](../mechanism_native_input192_report_01/report.md)和真实反馈fidelity | native在基础AUC上必然胜摘要 |
-| native写入、评分修正 | [普通KV/写入canary](../../native_base_quality_canary_02/summary.json) | 连续版本债已解决、评分修正改善后代KV |
+| native写入、评分修正 | 原普通KV/写入canary（原路径已移除） | 连续版本债已解决、评分修正改善后代KV |
 | 增量摘要、dirty刷新 | 实際加减维护与[62639刷新计数](../native_flops_01/population_counts.json) | FLOPs少等于低延迟 |
 
 ## 2. 逐发布FLOPs归属
@@ -32,7 +36,7 @@
 | no_source | M4 | 18.0610 | 14.42% | 14.63% |
 | no_source | M5 | 18.3995 | 14.70% | 14.92% |
 
-逐边比例以该边同30000用户Exact依赖闭包为分母；四边K和用户费用与原账本求和一致。论文只陈述满足此归属规则的逐边结果，不以四边总比例替代“每次发布<20%”。详细3万/10万/100万见per_release_flops.json。
+逐边比例以该边同30000用户Exact依赖闭包为分母；四边K和用户费用与原账本求和一致。原报告只支持满足此归属规则的逐边结果，不以四边总比例替代“每次发布<20%”。详细3万/10万/100万见per_release_flops.json。
 
 ## 3. 同公共query的常量与仿射
 
@@ -55,8 +59,11 @@
 
 统一对照支持的是表示是否需要保留query变化能力，不证明每层query项不可替代，也不把教师拟合的结果视为可部署质量。完整场景/UID和不利层均在representation_states.parquet与representation.json。
 
-## 4. 主文图表与完成边界
+## 4. 历史报告范围
 
-论文Design章节包含实际函数式、输入/共享/用户维度、损失量纲、A64准备依赖、评分/native写入算法与FLOPs。基础质量表保留Reuse/Exact/native/摘要/无源状态四边及四边等权汇总；主文图为常量/仿射机制图、方法流程图和K+Ua/Ue规模图。源数据与生成器见figures/README.md。
+本报告当时对应旧 native C 的机制、基础质量与条件 FLOPs 分析，已不对应目前
+论文的 Design。原质量表仍保留 Reuse/Exact/native/摘要/无源状态全部四边及等权汇总；
+图表的现行来源统一见[图表索引](../../../../figures/README.md)。
 
-质量人群4091与FLOPs外推3万/10万/100万在图注分开；相对Exact−0.0473pp不等于质量等价。当前设计冻结为第一项基础方法，不宣称已完成整篇论文、实际时间优势、独立确认、多seed/架构或持续多次迁移。未编译论文，不自动启动第二设计。
+4091 用户质量与 3万/10万/100万用户 FLOPs 外推是不同证据；相对 Exact −0.0473pp
+不等于质量等价。本组不建立实际时间优势、独立确认、多 seed/架构或持续多次迁移。

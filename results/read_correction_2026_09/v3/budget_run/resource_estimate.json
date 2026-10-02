@@ -1,0 +1,586 @@
+{
+  "status": "prospective_estimate",
+  "updated_at": "2026-09-28T14:00:21.183617+00:00",
+  "scope": "15 edges, C512 plus16 independent validation, uniform Q128, shared60/75/90 training prefixes, threeH variants in one rolling pass; all fourGPUs",
+  "central_hours": 6.083737341050552,
+  "planning_range_hours": [
+    4,
+    9
+  ],
+  "range_interpretation": "planning allowance, not a statistical confidence interval; assumes all4GPUs available and no errors/restarts",
+  "measured_canary": {
+    "scale": "medium",
+    "edge": "v0_to_v1",
+    "observations": [
+      {
+        "epoch": 2,
+        "log_mtime_utc": "2026-09-28T13:57:19.721007+00:00"
+      },
+      {
+        "epoch": 4,
+        "log_mtime_utc": "2026-09-28T13:58:13.462679+00:00"
+      }
+    ],
+    "seconds_per_epoch_over_two_intervals": 26.870836,
+    "epoch_analytic_flops": 2028927987968,
+    "one_epoch_resource_prediction_seconds": 20.410283596856914,
+    "observed_to_resource_prediction_ratio": 1.316534181040874,
+    "schedule": [
+      {
+        "target": 60,
+        "epoch": 19,
+        "cost_percent": 61.209589964885744
+      },
+      {
+        "target": 75,
+        "epoch": 26,
+        "cost_percent": 74.39546423329759
+      },
+      {
+        "target": 90,
+        "epoch": 34,
+        "cost_percent": 89.36254116983953
+      }
+    ],
+    "log_path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/budget_run/canary/calibration.log",
+    "timing_method": "file modification time sampled when the last complete JSON line was the stated epoch; no source instrumentation added"
+  },
+  "formula": {
+    "reference_work": "current analytic fitter ledger for C128/Q128/1epoch with actual training histories,16 validation histories bounded at1024; excludes cache generation and inherited fit",
+    "fit": "resource fit_seconds * target_new_fit_FLOPs/reference_fit_FLOPs * observed Medium C512 epoch timing correction",
+    "target_new_fit_FLOPs": "0.90 * full_minus_reuse_flops - inherited_H512_fit - fullpanel_H_inference - new_parent_teacher_capture; near-upper endpoint approximation including actual-prefix diagnostics allowance",
+    "capture": "4 * (C128 resource total_seconds - fit_seconds), a conservative linear512/128 load+capture allowance",
+    "evaluation": "historical complete3000-user v1 runtime with3H variants + actual verified probe scoring_seconds/request * fullpanel_requests; the latter deliberately allows the whole probe pass as extra verification overhead",
+    "queue": "greedy assignment of medium,large,max for edge1..5 to earliest free one of4slots"
+  },
+  "assumptions": [
+    "Max is used only for resource timings, history/cost metadata and request counts; no quality metric is read for configuration decisions.",
+    "Q64 versusQ128 calibration queries do not alter the deployed H structure; Q64 pilot evaluation measures the same H serving operator.",
+    "Medium observed speed was31% slower than the normalized one-epoch resource estimate; apply this measured correction to all scales provisionally.",
+    "Other scales have different small-history group overhead and throughput, so4\u20139hour planning range remains broad until full-scale first edges finish.",
+    "GPU admission waiting for outside jobs, retries and restart recapture are not included.",
+    "Models/history are loaded once per edge and all three correction budgets share one rolling evaluation; inherited v1 fit is charged scientifically but not rerun.",
+    "Canary calibration may be reused for Medium edge1; this15-edge estimate includes it and is therefore conservative for subsequent queue launch."
+  ],
+  "reference_resources": {
+    "medium": {
+      "resource": {
+        "status": "passed",
+        "role": "resource_and_numerical_only_no_quality_selection",
+        "scale": "medium",
+        "gpu": 0,
+        "train_batch": 32,
+        "queries_per_user": 128,
+        "history_length": 1024,
+        "full_history_training_users": 114,
+        "train_users": 128,
+        "epochs": 1,
+        "optimizer_steps": 18,
+        "fit_seconds": 11.612848799675703,
+        "total_seconds": 41.338110242038965,
+        "foldback_max_abs_logit_error": 2.384185791015625e-07,
+        "peak_allocated_gib": 20.5299973487854,
+        "peak_reserved_gib": 21.302734375,
+        "gpu_total_gib": 44.423828125,
+        "memory_fraction_limit": 0.7,
+        "script_sha256": "67b015926d5fa4fad7bd29197de951f4de03212ac9aa939e529946fd68cf2d22",
+        "base_weights_sha256": "603d497cce633ae17fbe8a6ab6f21b5f29bd33f665b7d1b55a0521516c52e09e"
+      },
+      "fit_work_flops_estimate": 1154400125696,
+      "fit_seconds_per_analytic_flop": 1.0059639237022947e-11,
+      "cache_and_load_seconds_estimate": 118.90104576945305
+    },
+    "large": {
+      "resource": {
+        "status": "passed",
+        "role": "resource_and_numerical_only_no_quality_selection",
+        "scale": "large",
+        "gpu": 2,
+        "train_batch": 8,
+        "queries_per_user": 128,
+        "history_length": 1024,
+        "full_history_training_users": 111,
+        "train_users": 128,
+        "epochs": 1,
+        "optimizer_steps": 31,
+        "fit_seconds": 26.4513268629089,
+        "total_seconds": 66.00031729228795,
+        "foldback_max_abs_logit_error": 7.152557373046875e-07,
+        "peak_allocated_gib": 16.277357578277588,
+        "peak_reserved_gib": 16.64453125,
+        "gpu_total_gib": 44.423828125,
+        "memory_fraction_limit": 0.7,
+        "script_sha256": "67b015926d5fa4fad7bd29197de951f4de03212ac9aa939e529946fd68cf2d22",
+        "base_weights_sha256": "27a1adf2d33a61ae786ce30dbcc29cd22f69ad36d4bbd6230a398fab35890669"
+      },
+      "fit_work_flops_estimate": 3474756060544,
+      "fit_seconds_per_analytic_flop": 7.61242700265058e-12,
+      "cache_and_load_seconds_estimate": 158.19596171751618
+    },
+    "max": {
+      "resource": {
+        "status": "passed",
+        "role": "resource_and_numerical_only_no_quality_selection",
+        "scale": "max",
+        "gpu": 1,
+        "train_batch": 4,
+        "queries_per_user": 128,
+        "history_length": 1024,
+        "full_history_training_users": 111,
+        "train_users": 128,
+        "epochs": 1,
+        "optimizer_steps": 44,
+        "fit_seconds": 51.22996858879924,
+        "total_seconds": 126.60892418771982,
+        "foldback_max_abs_logit_error": 7.152557373046875e-07,
+        "peak_allocated_gib": 15.144142150878906,
+        "peak_reserved_gib": 15.619140625,
+        "gpu_total_gib": 44.423828125,
+        "memory_fraction_limit": 0.7,
+        "script_sha256": "67b015926d5fa4fad7bd29197de951f4de03212ac9aa939e529946fd68cf2d22",
+        "base_weights_sha256": "df3f94f72ac42f273507d96ec2c385dc691ac79328426094073ec627cc7e0e28"
+      },
+      "fit_work_flops_estimate": 5469401235072,
+      "fit_seconds_per_analytic_flop": 9.36665027613847e-12,
+      "cache_and_load_seconds_estimate": 301.51582239568233
+    }
+  },
+  "verified_probe_seconds_per_request": {
+    "medium": 0.009174190146554044,
+    "large": 0.013185316789039126,
+    "max": 0.02224207360533968
+  },
+  "per_edge": [
+    {
+      "scale": "medium",
+      "edge": "v0_to_v1",
+      "fit_through_90_percent_seconds_estimate": 972.8779479819068,
+      "capture_and_model_load_seconds_estimate": 118.90104576945305,
+      "prior_three_H_evaluation_seconds": 512.2540658982471,
+      "additional_verify_allowance_seconds": 238.6573824724569,
+      "total_seconds_estimate": 1842.6904421220638,
+      "requests": 26014
+    },
+    {
+      "scale": "medium",
+      "edge": "v1_to_v2",
+      "fit_through_90_percent_seconds_estimate": 1001.5817790811215,
+      "capture_and_model_load_seconds_estimate": 118.90104576945305,
+      "prior_three_H_evaluation_seconds": 493.194630401209,
+      "additional_verify_allowance_seconds": 238.5381180005517,
+      "total_seconds_estimate": 1852.2155732523354,
+      "requests": 26001
+    },
+    {
+      "scale": "medium",
+      "edge": "v2_to_v3",
+      "fit_through_90_percent_seconds_estimate": 1086.4113246015177,
+      "capture_and_model_load_seconds_estimate": 118.90104576945305,
+      "prior_three_H_evaluation_seconds": 496.7692378098145,
+      "additional_verify_allowance_seconds": 250.57465547283059,
+      "total_seconds_estimate": 1952.6562636536157,
+      "requests": 27313
+    },
+    {
+      "scale": "medium",
+      "edge": "v3_to_v4",
+      "fit_through_90_percent_seconds_estimate": 904.279021005814,
+      "capture_and_model_load_seconds_estimate": 118.90104576945305,
+      "prior_three_H_evaluation_seconds": 506.4567147968337,
+      "additional_verify_allowance_seconds": 221.60256299001293,
+      "total_seconds_estimate": 1751.2393445621137,
+      "requests": 24155
+    },
+    {
+      "scale": "medium",
+      "edge": "v4_to_v5",
+      "fit_through_90_percent_seconds_estimate": 1240.4014145766298,
+      "capture_and_model_load_seconds_estimate": 118.90104576945305,
+      "prior_three_H_evaluation_seconds": 560.4066960513592,
+      "additional_verify_allowance_seconds": 273.94131777610374,
+      "total_seconds_estimate": 2193.6504741735457,
+      "requests": 29860
+    },
+    {
+      "scale": "large",
+      "edge": "v0_to_v1",
+      "fit_through_90_percent_seconds_estimate": 2499.6819316462047,
+      "capture_and_model_load_seconds_estimate": 158.19596171751618,
+      "prior_three_H_evaluation_seconds": 602.2630021041259,
+      "additional_verify_allowance_seconds": 309.19567870296754,
+      "total_seconds_estimate": 3569.3365741708144,
+      "requests": 23450
+    },
+    {
+      "scale": "large",
+      "edge": "v1_to_v2",
+      "fit_through_90_percent_seconds_estimate": 2880.691130598669,
+      "capture_and_model_load_seconds_estimate": 158.19596171751618,
+      "prior_three_H_evaluation_seconds": 624.170612259768,
+      "additional_verify_allowance_seconds": 342.4886035952913,
+      "total_seconds_estimate": 4005.5463081712446,
+      "requests": 25975
+    },
+    {
+      "scale": "large",
+      "edge": "v2_to_v3",
+      "fit_through_90_percent_seconds_estimate": 3124.192825980019,
+      "capture_and_model_load_seconds_estimate": 158.19596171751618,
+      "prior_three_H_evaluation_seconds": 657.900884530507,
+      "additional_verify_allowance_seconds": 363.29503348839506,
+      "total_seconds_estimate": 4303.584705716437,
+      "requests": 27553
+    },
+    {
+      "scale": "large",
+      "edge": "v3_to_v4",
+      "fit_through_90_percent_seconds_estimate": 3374.566125312848,
+      "capture_and_model_load_seconds_estimate": 158.19596171751618,
+      "prior_three_H_evaluation_seconds": 668.903830902651,
+      "additional_verify_allowance_seconds": 389.57336984895005,
+      "total_seconds_estimate": 4591.239287781965,
+      "requests": 29546
+    },
+    {
+      "scale": "large",
+      "edge": "v4_to_v5",
+      "fit_through_90_percent_seconds_estimate": 2562.00356274993,
+      "capture_and_model_load_seconds_estimate": 158.19596171751618,
+      "prior_three_H_evaluation_seconds": 657.0471445349976,
+      "additional_verify_allowance_seconds": 314.86536492225434,
+      "total_seconds_estimate": 3692.112033924698,
+      "requests": 23880
+    },
+    {
+      "scale": "max",
+      "edge": "v0_to_v1",
+      "fit_through_90_percent_seconds_estimate": 5314.416049804469,
+      "capture_and_model_load_seconds_estimate": 301.51582239568233,
+      "prior_three_H_evaluation_seconds": 1406.1907964646816,
+      "additional_verify_allowance_seconds": 547.733304605095,
+      "total_seconds_estimate": 7569.855973269929,
+      "requests": 24626
+    },
+    {
+      "scale": "max",
+      "edge": "v1_to_v2",
+      "fit_through_90_percent_seconds_estimate": 5742.325774422016,
+      "capture_and_model_load_seconds_estimate": 301.51582239568233,
+      "prior_three_H_evaluation_seconds": 1365.058096301742,
+      "additional_verify_allowance_seconds": 581.9193717365021,
+      "total_seconds_estimate": 7990.819064855943,
+      "requests": 26163
+    },
+    {
+      "scale": "max",
+      "edge": "v2_to_v3",
+      "fit_through_90_percent_seconds_estimate": 5225.288910007486,
+      "capture_and_model_load_seconds_estimate": 301.51582239568233,
+      "prior_three_H_evaluation_seconds": 1356.9068316947669,
+      "additional_verify_allowance_seconds": 559.1657304382395,
+      "total_seconds_estimate": 7442.877294536175,
+      "requests": 25140
+    },
+    {
+      "scale": "max",
+      "edge": "v3_to_v4",
+      "fit_through_90_percent_seconds_estimate": 8000.392331017938,
+      "capture_and_model_load_seconds_estimate": 301.51582239568233,
+      "prior_three_H_evaluation_seconds": 1504.394269575365,
+      "additional_verify_allowance_seconds": 745.3763706621434,
+      "total_seconds_estimate": 10551.678793651128,
+      "requests": 33512
+    },
+    {
+      "scale": "max",
+      "edge": "v4_to_v5",
+      "fit_through_90_percent_seconds_estimate": 6192.740324706632,
+      "capture_and_model_load_seconds_estimate": 301.51582239568233,
+      "prior_three_H_evaluation_seconds": 1493.3284169742838,
+      "additional_verify_allowance_seconds": 622.7558188759057,
+      "total_seconds_estimate": 8610.340382952503,
+      "requests": 27999
+    }
+  ],
+  "queue_schedule": [
+    {
+      "gpu_slot": 0,
+      "scale": "medium",
+      "edge": "v0_to_v1",
+      "start_seconds_estimate": 0,
+      "end_seconds_estimate": 1842.6904421220638
+    },
+    {
+      "gpu_slot": 1,
+      "scale": "large",
+      "edge": "v0_to_v1",
+      "start_seconds_estimate": 0,
+      "end_seconds_estimate": 3569.3365741708144
+    },
+    {
+      "gpu_slot": 2,
+      "scale": "max",
+      "edge": "v0_to_v1",
+      "start_seconds_estimate": 0,
+      "end_seconds_estimate": 7569.855973269929
+    },
+    {
+      "gpu_slot": 3,
+      "scale": "medium",
+      "edge": "v1_to_v2",
+      "start_seconds_estimate": 0,
+      "end_seconds_estimate": 1852.2155732523354
+    },
+    {
+      "gpu_slot": 0,
+      "scale": "large",
+      "edge": "v1_to_v2",
+      "start_seconds_estimate": 1842.6904421220638,
+      "end_seconds_estimate": 5848.236750293308
+    },
+    {
+      "gpu_slot": 3,
+      "scale": "max",
+      "edge": "v1_to_v2",
+      "start_seconds_estimate": 1852.2155732523354,
+      "end_seconds_estimate": 9843.034638108278
+    },
+    {
+      "gpu_slot": 1,
+      "scale": "medium",
+      "edge": "v2_to_v3",
+      "start_seconds_estimate": 3569.3365741708144,
+      "end_seconds_estimate": 5521.99283782443
+    },
+    {
+      "gpu_slot": 1,
+      "scale": "large",
+      "edge": "v2_to_v3",
+      "start_seconds_estimate": 5521.99283782443,
+      "end_seconds_estimate": 9825.577543540869
+    },
+    {
+      "gpu_slot": 0,
+      "scale": "max",
+      "edge": "v2_to_v3",
+      "start_seconds_estimate": 5848.236750293308,
+      "end_seconds_estimate": 13291.114044829483
+    },
+    {
+      "gpu_slot": 2,
+      "scale": "medium",
+      "edge": "v3_to_v4",
+      "start_seconds_estimate": 7569.855973269929,
+      "end_seconds_estimate": 9321.095317832041
+    },
+    {
+      "gpu_slot": 2,
+      "scale": "large",
+      "edge": "v3_to_v4",
+      "start_seconds_estimate": 9321.095317832041,
+      "end_seconds_estimate": 13912.334605614007
+    },
+    {
+      "gpu_slot": 1,
+      "scale": "max",
+      "edge": "v3_to_v4",
+      "start_seconds_estimate": 9825.577543540869,
+      "end_seconds_estimate": 20377.256337191997
+    },
+    {
+      "gpu_slot": 3,
+      "scale": "medium",
+      "edge": "v4_to_v5",
+      "start_seconds_estimate": 9843.034638108278,
+      "end_seconds_estimate": 12036.685112281824
+    },
+    {
+      "gpu_slot": 3,
+      "scale": "large",
+      "edge": "v4_to_v5",
+      "start_seconds_estimate": 12036.685112281824,
+      "end_seconds_estimate": 15728.797146206522
+    },
+    {
+      "gpu_slot": 0,
+      "scale": "max",
+      "edge": "v4_to_v5",
+      "start_seconds_estimate": 13291.114044829483,
+      "end_seconds_estimate": 21901.454427781988
+    }
+  ],
+  "sources": [
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/cost_planning/h512_joint_budget_prediction.json",
+      "sha256": "bc421ce9cf14d9e9e6d2e2bc38c853386c3a547ffcc6e564f07d543c2e5f5db4"
+    },
+    {
+      "path": "/home/gkl/work/evokv/configs/read_correction_2026_09/v3/plan.json",
+      "sha256": "26c9f542ec494173893ac91d9ac2757926b50ecef44521c18f2e9a76019f3c49"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/resources/medium_q128_b32.json",
+      "sha256": "a51cbbe870fb1211b4980c975b75c611970feafbe5773785cdc10d3b7423cf0a"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/history_conditioned/development/v1/medium/v0_to_v1/calibration_c128.json",
+      "sha256": "589a5011554a9fcfb344f0f203ebd46df01e6afdbb1cd0bcea712fd1dd904688"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/resources/large_q128_b8.json",
+      "sha256": "34ab8b9efe501e000c9893328c09e2a6f5c630336238f0d165256350720122ad"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/history_conditioned/development/v1/large/v0_to_v1/calibration_c128.json",
+      "sha256": "a45f63121133dbf8832c4d959bc200f3b6172494e9dc50dc63fd248a7abb9f94"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/resources/max_q128_b4.json",
+      "sha256": "b25ec3ddcbbb20a8d71804be90a0e658e43f44b4591968078abd56ea3505c42c"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/history_conditioned/development/v1/max/v0_to_v1/calibration_c128.json",
+      "sha256": "862218960aa7f44f22d3acf9329e39e3b4d05c5170e86c659590bfa8efe5aec3"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/pilot_c128_q64_e12_uniform_known/evaluation/medium/v0_to_v1/summary.json",
+      "sha256": "cf5a1756c6b5437d1be32800d1ba7f54840633acfd6662cfdc42fd5eebce7dfe"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/pilot_c128_q64_e12_uniform_known/evaluation/medium/v3_to_v4/summary.json",
+      "sha256": "bc8d7630fadd393f962dae8c74893cefa2e8205047ccccbdd713bdcb8ddeb0c1"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/pilot_c128_q64_e12_uniform_known/evaluation/large/v1_to_v2/summary.json",
+      "sha256": "7cc3f37952940300c78ba815750db8a3901d50ef82097291a0916f6550291a35"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v3/pilot_c128_q64_e12_uniform_known/evaluation/large/v0_to_v1/summary.json",
+      "sha256": "2ea8768119a61071273e872b3ac7b90032db6b850f852f92bba34c81ecaf7a33"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/v2/probes/query_initial_max_eval/summary.json",
+      "sha256": "0a3da0c5b41842bb2c9f2a7496dcbea1e026b1d7f664ef6b5eb29a099923e725"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v0_to_v1/rank0/complete.json",
+      "sha256": "706eeca968be73330c940752f84b0733f380c813e6970e94ee15f2c9787de472"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v0_to_v1/summary.json",
+      "sha256": "c2d7efd2937317df6a649914fb18b57d0c0f4a82ab3f5703e4c78dc56fd43662"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v1_to_v2/rank0/complete.json",
+      "sha256": "8f34faf3661d6952a6439019eaa0a06078338a8f5391127a7fc8139bc047a836"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v1_to_v2/summary.json",
+      "sha256": "2ec3856cae97cef1b3ba9abfd5ee47a366357d27856473f4e1505eb5ec5f6de1"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v2_to_v3/rank0/complete.json",
+      "sha256": "cc7f1c28dca8fc5ce403d9b69fce22ca58f9a1780c61e22681f609d901cfa7ce"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v2_to_v3/summary.json",
+      "sha256": "9ba254158e5f6964c5ed6fa11f253a27b19d77f2aaea65ce950af569190f9b1f"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v3_to_v4/rank0/complete.json",
+      "sha256": "c95fa3869024e86d21494b69f0ed346f9f79f9b6ebc613cae55092a63bf8c4a6"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v3_to_v4/summary.json",
+      "sha256": "a4d61cee25a50c18b6f771705dc72acca0455f2d40f815e2546bd8c08e332fdb"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v4_to_v5/rank0/complete.json",
+      "sha256": "82b9d71020a89d01c63602c713d507b68e878fc31119e468e7c50778fe5fe7f1"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/medium/v4_to_v5/summary.json",
+      "sha256": "ce301eff55a31e11a92c07e92b91cdf44786b81c3dd99de4b199e854fb869c7e"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v0_to_v1/rank0/complete.json",
+      "sha256": "1e2b8c78e596c63b1ed39c391a2bbae16fc19730bbdb3564384c3ed5162b27ec"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v0_to_v1/summary.json",
+      "sha256": "96d7f08f9d818d4d9bb2f8e6a8e54b574248e5c602ab49e8c06dfb5a233e8386"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v1_to_v2/rank0/complete.json",
+      "sha256": "a4c3284b293e8053b4aeb46d22e1ffba71f87685e063a81eb6bab391f3cf5eb2"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v1_to_v2/summary.json",
+      "sha256": "a903245b97a5f5956da2854d458b871b99e86b9e0891625c2937450196bccf14"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v2_to_v3/rank0/complete.json",
+      "sha256": "7b7d8757c970e9aa1fd6071112e306f4517f078d3d2f2760d45493be06e7ba22"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v2_to_v3/summary.json",
+      "sha256": "253d657d394e6c16a32cd46ccb20f2bc1316f7cc85555a8f5b01082c7edec97f"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v3_to_v4/rank0/complete.json",
+      "sha256": "432165d51d913014fa3486319cc477dc8c612cd91cac83479467ec0eec3b4ca5"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v3_to_v4/summary.json",
+      "sha256": "74c12da4299f3cda03e39b2bfcca5e9de4d8fddb04ed3e9bd951ab7e9aeffb7f"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v4_to_v5/rank0/complete.json",
+      "sha256": "2addb74fd01d127e4f3c08479e1b80b435b4d824a9003ae62c180ec4bd1c7474"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/large/v4_to_v5/summary.json",
+      "sha256": "906d9dc9ec040efca9b63e239d392169f6daae961bf1c5ed80e106c5ac5c2cc1"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v0_to_v1/rank0/complete.json",
+      "sha256": "66ea72b2e473b385eb230542e0bfdb2350b2566a1ed97ae845b12b9892439c13"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v0_to_v1/summary.json",
+      "sha256": "16c43a18b979d3795e1105a182da8c2c1037c428c88b47a8e04444ce54a34141"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v1_to_v2/rank0/complete.json",
+      "sha256": "ae5472727c611da1c32d06fd66fee3746623782214aff7137a8ea2df94a9d9aa"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v1_to_v2/summary.json",
+      "sha256": "2ff26ec9b131dea7e210874efaf7444c628b93aad99dc9fdcfedb94f4ff15877"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v2_to_v3/rank0/complete.json",
+      "sha256": "d9b6bb0a7c20d5585efc92b3c7b9d661e297b9fe801c6d29210d3b91e06912b2"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v2_to_v3/summary.json",
+      "sha256": "7a3de4711e48e024ffcc8a5157b6ca41a35345a02e65b4c737dc1e3e6318638b"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v3_to_v4/rank0/complete.json",
+      "sha256": "abaf8e51bbe86d3184cec580681cd937e4418ef6e74936c1bd1e44d363efee36"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v3_to_v4/summary.json",
+      "sha256": "dddb4c8e2da1804266a82f2fe9f141a2bfb48d5edd01b23b59dd48bc0e9ce4f5"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v4_to_v5/rank0/complete.json",
+      "sha256": "0628a9f8ff21a043d2457525e295438fb75f50c15e784b90033c3d334d6eb628"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/read_correction_2026_09/runtime/development/v1/max/v4_to_v5/summary.json",
+      "sha256": "cbab229868736c7348083a7b4f8d3a5fdc1660a9be5c697c2a875d0dc54e3bf4"
+    }
+  ]
+}

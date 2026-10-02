@@ -26,10 +26,10 @@ Card-hours linearly extrapolate the per-user mean to 10,000,000 users.
 | 16L, context 4K, H512 | 3.283 | 368.509 | 112.24x |
 | 24L, context 8K, H512 | 10.466 | 2176.388 | 207.95x |
 
-The 4K/16L point now exceeds 100x without changing its Recompute operation:
+The 4K/16L point exceeds 100x without changing its Recompute operation:
 the mean Recompute batch time is 2.1226 seconds (132.66 ms/user) and the
 append-only Reuse time is 18.91 ms (1.18 ms/user). The new 24L/8K point is
-the strongest current motivation result: 4.7010 seconds Recompute and 22.61
+the largest ratio among this report's configurations: 4.7010 seconds Recompute and 22.61
 ms Reuse per six-user batch, or 783.50 ms and 3.77 ms per user respectively.
 Its 10M user Recompute estimate is 2176.4 A40 card-hours. This record does not
 tune a measurement to a target ratio: the methodological correction removes an

@@ -1,21 +1,33 @@
-# 本轮统一训练结果
+# Yambda 三规模训练结果
 
-2026-09-23：Medium/Large工作链已保留；Max已完成V1–V5的逐版开发训练与评测，
-V5两个端点均已评价。各规模的checkpoint选择与准入结果见规模索引。
+Medium、Large、Max 各 V0–V5，共 **18 个选定模型**，训练和 Full 评价已完成。
+权重统一保存在各规模的 `seed17/checkpoints/v0..v5/checkpoint_100.pt`。
+各版数据窗口、epoch、batch 与相对 AUC 提升统一见
+[模型版本清单](../../docs/unified_training_2026_09/model_versions.md)。
 
-计划入口：[Yambda 三档训练计划](../../docs/unified_training_2026_09/plan.md)。Medium 最终 V0–V5 已固定。
-
-| 规模 | 当前状态 | 入口 |
+| 规模 | 最终选择 | 结果入口 |
 | --- | --- | --- |
-| Medium：6L/H192，30,000 用户 | V0–V5已固定；四条新训练边均通过E14准入和相对AUC >1%目标 | [模型链及结果](medium/README.md) |
-| Large：10L/H320，79,681 用户 | V0–V5工作链已整理；V4为2 epochs，V5暂定1 epoch | [版本链、选择状态及结果](large/README.md) |
-| Max：16L/H320，200,000 用户 | V0–V5已有端点与评测；用户选定通过准入的V5@2 | [版本选择、运行及结果](max/README.md) |
+| Medium：6L/H192，30,000 用户 | V0/V1 历史复用；V2 两轮，V3–V5 各一轮 | [模型与 Full](medium/README.md) |
+| Large：10L/H320，79,681 用户 | V0–V3 历史复用；V4 两轮，V5 一轮 | [模型、Full 与原准入](large/README.md) |
+| Max：16L/H320，200,000 用户 | V0–V2 一轮；V3–V5 两轮 | [数据、模型与 Full](max/README.md) |
 
-2026-09-23按[三规模版本清单](../../docs/unified_training_2026_09/model_versions.md)整理权重：
-各规模仅保留选定的六个实体 checkpoint，Max 统一置于 `max/seed17/checkpoints/v0..v5/`；
-清单外的8个实体权重和5份优化器恢复目录已删除。运行日志与状态文件已校验归档至
-`nogit/archives/yambda_unified_training_20260923_logs.tar.gz`。原合同、原始分数、封存、
-adjudication、汇总和失败结果仍保留；历史记录中“备选权重保留”的描述以本次清理状态为准。
-另据论文第三章所用图表核对，旧 Medium D14 Motivation 六版路径保留；其余34份
-与第三章无直接关系的旧 Medium/Large 实体权重已删除，6份同哈希旧副本改为选定权重的符号链接。
-旧目录301份运行日志/状态文件归档至`nogit/archives/yambda_historical_training_20260923_logs.tar.gz`。
+Large V5@1 的原四项准入未全部通过；用户选定该端点用于当前实验。
+其余端点选择和历史比较保持原记录，不把模型清单等同于自动服务推广。
+
+## 训练代码与证据
+
+- [训练设置](../../docs/unified_training_2026_09/plan.md)、
+  [关键训练记录](../../docs/unified_training_2026_09/records.md)、
+  [执行配置](../../configs/unified_training_2026_09/README.md)。
+- 原运行目录保存合同、配置、训练结果、Full 原始评分、封存和 adjudication；
+  选定权重的旧入口通过相对符号链接兼容。
+- 清单外权重和优化器恢复 payload 已删除，保留的分支评测不表示其权重仍存在。
+  Max V3 的训练来源 V2@2 也已删除，精确重放该历史训练需先重建此端点。
+- 论文仍引用的历史 Medium D14 V2–V5 实体权重另行保留；
+  它们与当前 Medium 同名版本不同，按目录和哈希区分。
+- 日志归档和历史资产的可用范围见[结果总索引](../README.md)。
+
+## 后续评价
+
+选定模型的 [15 条相邻 Full/Reuse 边](../unified_reuse_2026_09/README.md)已经完成，
+是当前 Motivation 的模型输入；其余实验入口见[文档地图](../../docs/README.md)。

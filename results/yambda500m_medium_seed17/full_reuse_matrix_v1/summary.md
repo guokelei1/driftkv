@@ -1,6 +1,8 @@
 # Medium D7/D14: Old Full / New Full / adjacent one-hop Reuse
 
-Training/Full-only used GPU2/3 world size 2. Completed Reuse artifacts are preserved; remaining D14 Reuse uses GPU0/1/2/3 world size 4 after its raw-only runtime canary.
+Historical matrix. Training/Full-only used GPU2/3 with world size 2; D14 Reuse later completed on GPU0/1/2/3. The table below preserves the original Full-only matrix and admission status, including the locked D7 rows. D7 weights and raw result directories have since been removed; their historical summaries remain.
+
+Current selected models and their completed 15 adjacent evaluations are indexed in [the model list](../../../docs/unified_training_2026_09/model_versions.md) and [Full/Reuse results](../../unified_reuse_2026_09/README.md). The retained older D14 models/results support the paper's original producer-age observations. For historical recovery ratios, use the matched three-path results in [the historical summary](medium_scale_experiment_summary.md), rather than combining Full-only and rolling-cache scores from different executions.
 
 Status: **medium_full_then_reuse_matrix_complete** (32/32 Full-only cells).
 

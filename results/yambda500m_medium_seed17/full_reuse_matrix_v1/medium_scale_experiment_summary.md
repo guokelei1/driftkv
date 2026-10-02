@@ -1,7 +1,10 @@
-# Yambda-500M Medium 全轮实验总结（专家讨论稿）
+# Yambda-500M Medium 历史 D7/D14 实验总结
 
-更新时间：2026-08-29  
-状态：**本轮 Medium seed17 训练、Full-only、D7/D14 adjacent one-hop Reuse 以及 D14 v5 扩展均已完成并封存；Medium PRO 尚未启动。**
+原始结果记录于2026-08-29。以下表格和判定描述历史 D7/D14 实验，保留其全部结果。
+当前选定模型见[18模型清单](../../../docs/unified_training_2026_09/model_versions.md)，
+当前相邻评价见[15边 Full/Reuse](../../unified_reuse_2026_09/README.md)。
+历史 D14 模型和原始评价仍用于论文的 producer-age 观察；D7 权重、raw 和分支目录已删除，
+本页保留其历史汇总。后续 direct long-age triangle 已完成；早期 PRO/Insight 建议已被当前论文 Design 替代。
 
 ## 1. 一句话结论
 
@@ -23,9 +26,10 @@
 | 原始 D14 Reuse | 4 edges × E3/E7/E14 | 12/12 完成 |
 | D7 forced-Reuse diagnostic | 10 edges × E3/E7 | 20/20 完成 |
 | D14 v5 Full + Reuse | E3、E7、E14 | 3+3 完成 |
-| D14 direct long-age Reuse | 10 个非相邻 E14 格 | 合同、脚本与 raw-only canary 已完成；正式队列待启动 |
+| D14 direct long-age Reuse | 10 个非相邻 E14 格 | 已完成，见[完整三角结果](D14/direct_long_age_reuse_v1/summary.md) |
 
-最终共保留 16 个正式 checkpoint：共享 v0、D7 v1…v10、D14 v1…v4，以及独立扩展的 D14 v5。
+当时共训练16个 checkpoint：共享 v0、D7 v1…v10、D14 v1…v4，以及 D14 v5。
+当前只保留历史 D14 V0–V5 入口，其中 V0/V1 指向统一目录的相同权重；D7权重已删除。
 
 ## 3. 冻结实验设置
 
@@ -220,7 +224,7 @@ v5 是本轮很重要的新增证据：
 
 四卡评测使用 GPU0/1/2/3，每 rank 14 个互不重叠的物理 CPU 核，共 56 核。Reuse 的 cohort32/query256 已接近安全显存上限：原 D14 正式矩阵最坏 rank 的 peak reserved 达 44,950 MiB，而 A40 总显存为 46,068 MiB，因此没有继续扩大 batch。
 
-## 11. 本轮可以得出的结论
+## 11. 原实验结论与当时边界
 
 ### 11.1 已支持
 
@@ -238,7 +242,9 @@ v5 是本轮很重要的新增证据：
 - 当前 wall-clock 是研究 evaluator 的执行记录，不等价于 serving GPU compute/I/O/state-write 收益。
 - D7 forced diagnostic 仍不形成正式 release qualification；v5 E14 按统一口径报告。
 
-## 12. 建议的下一阶段
+## 12. 当时的下一阶段建议（已停止使用）
+
+以下保留当时的研究决定供解释历史结果，当前 Design 见[论文设计入口](../../../docs/paper_design.md)，不按此处启动任务。
 
 1. 冻结本轮全部 Medium 结果，不再按这些 edge 调 release recipe、probe、carrier 或 scale。
 2. 以 D14 为主环境，只复核 Small 已发现的三个核心 Insight gate：candidate-shared signed correction、AV 形成边界、跨真实请求 persistence。
@@ -258,8 +264,10 @@ v5 是本轮很重要的新增证据：
 - D7 forced diagnostic 合同：[`configs/contracts/yambda500m_medium_hstu_native_d7_forced_reuse_diagnostic_v1.yaml`](../../../configs/contracts/yambda500m_medium_hstu_native_d7_forced_reuse_diagnostic_v1.yaml)
 - D14 v5 合同：[`configs/contracts/yambda500m_medium_hstu_native_d14_v5_extension_v1.yaml`](../../../configs/contracts/yambda500m_medium_hstu_native_d14_v5_extension_v1.yaml)
 - 原始矩阵 summary：[`summary.md`](summary.md)
-- D7 forced diagnostic summary：[`D7/forced_reuse_diagnostic_v1/summary.md`](D7/forced_reuse_diagnostic_v1/summary.md)
+- D7 forced diagnostic：分支目录已删除，历史20格结果保留在本页第5节。
 - D14 v5 summary：[`D14/v5_extension_v1/summary.md`](D14/v5_extension_v1/summary.md)
 - 训练与评价定义：[实验设计](../../../docs/experimental_design.md)（原Medium导航已合并）。
 
-所有原始分数均先于 label join 封存；各目录内的 `raw.seal.json`、`adjudication.json`、checkpoint seal 和合同 hash 是最终可审计依据。本讨论稿不替代这些 seal。
+原实验分数均先于 label join 封存。当前保留的 D14 目录中，`raw.seal.json`、
+`adjudication.json`、checkpoint seal 和合同 hash 是对应结果的依据；D7 已删除的 raw 不再可复核。
+本页不替代原 seal。

@@ -1,0 +1,352 @@
+#!/usr/bin/env python3
+"""Fit Design1 shared read correction on frozen, pre-release Medium users.
+
+PCA and ridge see fitting UIDs only. Each layer's targets use the queries
+produced by the already corrected lower layers. Validation never selects
+weights; it reports same-query response error after the complete fit.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+import gc
+import json
+from math import ceil
+from pathlib import Path
+import resource
+import sys
+import time
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path[:0] = [str(ROOT / "scripts"), str(ROOT / "src")]
+
+import torch
+
+from design.shared_read_probe import fit_layer
+from evaluate_yambda500m_foundation_raw import load_histories, load_model, sha256_file
+from hstu_kvcache.adaptation.reader import history_read, score
+from hstu_kvcache.design_one import ProducerSummary, SharedReadAdapter, SummaryProjection
+from read_correction_2026_09.calibrate import capture, groups, stacked
+from read_correction_2026_09.cost import CostModel, eager_read, teacher_history_read
+from read_correction_2026_09.v2.calibrate import mixed_candidates
+from selective_recompute_2026_09.calibrate import snapshot
+
+DEFAULT_CONFIG = ROOT / "configs/design/medium_v0_v5_development.json"
+PRODUCERS = (4, 5)
+DAY = 86400
+
+
+def checked_json(record):
+    path = ROOT / record["path"]
+    if sha256_file(path) != record["sha256"]:
+        raise RuntimeError(f"frozen input changed: {path}")
+    return json.loads(path.read_text())
+
+
+def inputs(path, fit_users=None, validation_users=None):
+    """Bind the requested prefix of the frozen reservation, including canaries."""
+    config = json.loads(path.read_text())
+    stage = config["stages"]["design1"]
+    if stage["edges"] != ["v4_to_v5"]:
+        raise ValueError("this first prototype implements frozen Medium V4 -> V5")
+    users = checked_json(config["users"])
+    train = users[stage["fit_group"]]
+    validation = users[stage["validation_group"]]
+    for value, group in ((fit_users, train), (validation_users, validation)):
+        if value is not None and not 1 <= value <= len(group):
+            raise ValueError("canary counts must select a nonempty frozen UID prefix")
+    train = train[:fit_users]
+    validation = validation[:validation_users]
+    evaluation = set(users[stage["evaluation_group"]])
+    if set(train) & (set(validation) | evaluation) or set(validation) & evaluation:
+        raise RuntimeError("fitting, validation and evaluation users overlap")
+    if len(train) < 2:
+        raise ValueError("PCA calibration requires at least two fitting users")
+    manifest = checked_json(config["model"]["manifest"])
+    versions = {entry["version"]: entry for entry in config["model"]["versions"]}
+    admitted = {entry["version"]: entry for entry in manifest["versions"]}
+    for name in ("v4", "v5"):
+        record = versions[name]
+        seal = checked_json(record["seal"])
+        checked_json(record["full_only_admission"])
+        if not record["full_only_gates_pass"] or any(
+            record[key] != admitted[name][key] for key in ("checkpoint", "checkpoint_sha256")
+        ) or seal["checkpoint_sha256"] != record["checkpoint_sha256"]:
+            raise RuntimeError(f"frozen checkpoint binding differs: {name}")
+    checked_json(config["data"]["dataset"])
+    return config, stage, versions, train, validation
+
+
+def source_hashes():
+    paths = [Path(__file__), ROOT / "scripts/design/shared_read_probe.py",
+             ROOT / "scripts/design/diagnose_native_input.py",
+             ROOT / "scripts/evaluate_yambda500m_foundation_raw.py",
+             ROOT / "scripts/read_correction_2026_09/calibrate.py",
+             ROOT / "scripts/read_correction_2026_09/v2/calibrate.py",
+             ROOT / "scripts/read_correction_2026_09/cost.py",
+             ROOT / "scripts/selective_recompute_2026_09/calibrate.py",
+             ROOT / "scripts/selective_recompute_2026_09/cost.py",
+             ROOT / "scripts/selective_recompute_2026_09/evaluate.py",
+             ROOT / "src/hstu_kvcache/adaptation/reader.py",
+             ROOT / "src/hstu_kvcache/data/yambda_history.py",
+             ROOT / "src/hstu_kvcache/data/oov.py",
+             ROOT / "src/hstu_kvcache/training/foundation.py",
+             *sorted((ROOT / "src/hstu_kvcache/models").glob("*.py")),
+             *sorted((ROOT / "src/hstu_kvcache/design_one").glob("*.py"))]
+    return {str(path.relative_to(ROOT)): sha256_file(path) for path in paths}
+
+
+def timed(function, timings, name, device):
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    start = time.perf_counter()
+    result = function()
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    timings[name] += time.perf_counter() - start
+    return result
+
+
+def ridge_flops(users, queries, heads, dim, latent, read_dim):
+    """Executed factorized normal equations; LU and statistics are estimates."""
+    s, q, h, d, r, a = users, queries, heads, dim, latent, read_dim
+    j, p = d + 1, latent * (dim + 1) + read_dim
+    gram = (2*s*h*q*j*j + s*r*r + 2*r*r*s*h*j*j
+            + 2*s*h*q*j*d + 2*s*r*h*j*d
+            + 2*s*h*q*j*a + 2*s*r*h*j*a
+            + 2*s*q*a*a + 2*s*q*a*h*d)
+    solve = ceil(h * ((2/3)*p**3 + 2*p*p*d))
+    checks_and_prediction = 4*h*p*p*d + 2*s*h*q*r*j*d + 2*s*q*a*h*d
+    statistics = 12*s*q*(h*d+a) + 6*s*r + 3*h*p*p + 8*s*h*q*d
+    return int(gram + solve + checks_and_prediction + statistics)
+
+
+def projection_flops(users, features, rank):
+    """Gram PCA estimate, including standardization, eigensolve and whitening."""
+    return int(8*users*features + 2*users*users*features + 9*users**3
+               + 2*features*users*rank + 2*users*features*rank)
+
+
+@torch.no_grad()
+def collect_layer(current, rows, uids, features, projection, parameters, layer,
+                  *, batch_size, device, max_length, costs):
+    device_parameters = [{key: value.to(device=device, dtype=torch.float32)
+                          for key, value in layer.items()} for layer in parameters]
+    adapter = SharedReadAdapter(projection.to(device), device_parameters, producer_ids=PRODUCERS,
+                               target=5, max_length=max_length)
+    collected = {}
+    cost_model = CostModel(current.cfg.hidden_size, len(current.blocks), current.cfg.num_heads, "torch")
+    costs["shared_response_preparation_flops"] += adapter.estimate_flops()["shared_response_preparation"]
+    for selected in groups(uids, rows, batch_size):
+        cache = stacked(rows, selected, "parent", device)
+        counts = torch.full((len(selected),), cache.seq_len, device=device)
+        source_features = torch.stack([features[uid] for uid in selected]).to(device)
+        view = adapter.prepare_features(source_features, counts)
+        candidates = torch.stack([rows[uid]["candidates"] for uid in selected]).to(device)
+        delta = torch.tensor([rows[uid]["query_delta"] for uid in selected], device=device)
+        _, trace = score(current, cache, candidates, delta, trace=True, history_override=view)
+        query, native = trace.queries[layer], trace.history_heads[layer]
+        teacher_k = torch.cat([rows[uid]["teacher"].k[layer] for uid in selected]).to(device)
+        teacher_v = torch.cat([rows[uid]["teacher"].v[layer] for uid in selected]).to(device)
+        teacher = history_read(current.blocks[layer].attn, query, teacher_k, teacher_v)
+        wanted = (teacher-native)/counts[:, None, None, None]
+        observed = native.transpose(1, 2).flatten(2)/counts[:, None, None]
+        prediction = (view(layer, query, native)-native)/counts[:, None, None, None]
+        if not all(torch.isfinite(value).all() for value in (query, wanted, observed, prediction)):
+            raise RuntimeError(f"nonfinite calibration tensors at layer {layer}")
+        for index, uid in enumerate(selected):
+            collected[uid] = tuple(value[index].cpu() for value in (query, wanted, observed, prediction))
+        n, q, b = cache.seq_len, candidates.shape[1], len(selected)
+        costs["query_trace_flops"] += eager_read(cost_model, n, queries=q, batch=b)
+        costs["teacher_same_query_flops"] += teacher_history_read(cost_model, n, queries=q, batch=b)
+        overhead = adapter.estimate_flops(batch=b, candidates=q)
+        costs["corrected_prefix_flops"] += overhead["candidate_reads"]
+        if layer < len(parameters):
+            # The second call to this fitted layer above extracts its residual.
+            costs["diagnostic_correction_flops"] += overhead["candidate_reads"]//len(parameters)
+        costs["summary_publication_flops_estimate"] += overhead["summary_projection"]+overhead["view_generation"]
+        costs["normalization_and_metrics_flops_estimate"] += 8*wanted.numel() + observed.numel()
+    return tuple(torch.stack([collected[uid][index] for uid in uids]) for index in range(4))
+
+
+@torch.no_grad()
+def fit(current, rows, train, validation, *, batch_size, device, max_length,
+        rank=32, timings=None, costs=None):
+    timings = defaultdict(float) if timings is None else timings
+    costs = defaultdict(int) if costs is None else costs
+    def summaries():
+        result = {}
+        for uid in train+validation:
+            cache = rows[uid]["parent"]
+            summary = ProducerSummary.from_cache(cache, 4, producer_ids=PRODUCERS, max_length=max_length)
+            result[uid] = summary.features()[0].cpu()
+            costs["source_summary_flops_estimate"] += summary.estimate_flops("scan", length=cache.seq_len)
+            costs["source_summary_flops_estimate"] += summary.estimate_flops("features")
+        return result
+    features = timed(summaries, timings, "source_summary", device)
+    matrix = torch.stack([features[uid] for uid in train])
+    projection = timed(lambda: SummaryProjection.fit(matrix, rank=rank), timings, "source_pca", device)
+    fitted_rank = projection.projection.shape[-1]
+    costs["source_pca_flops_estimate"] += projection_flops(len(train), matrix.shape[-1], fitted_rank)
+    latent = projection.encode_features(matrix).cpu().double()
+    costs["source_pca_encode_flops"] += len(train)*(2*matrix.shape[-1]*fitted_rank + 2*matrix.shape[-1])
+    counts = torch.tensor([rows[uid]["parent"].seq_len for uid in train])
+    parameters, layer_records = [], []
+    for layer, block in enumerate(current.blocks):
+        query, wanted, observed, _ = timed(lambda: collect_layer(
+            current, rows, train, features, projection, parameters, layer,
+            batch_size=batch_size, device=device, max_length=max_length, costs=costs),
+            timings, "fitting_teacher_and_query_reads", device)
+        p, record = timed(lambda: fit_layer(latent, query, wanted, observed, counts),
+                          timings, "shared_ridge_fit", device)
+        parameters.append({key: value.detach().cpu() for key, value in p.items()})
+        costs["ridge_fit_flops_estimate"] += ridge_flops(
+            len(train), query.shape[2], block.attn.num_heads, block.attn.head_dim,
+            latent.shape[-1], observed.shape[-1])
+        layer_records.append({"layer": layer, **record,
+                              "target_rate_mse": float(wanted.double().square().mean())})
+        print(json.dumps({"status": "layer_fitted", **layer_records[-1]}), flush=True)
+    # Reporting on separate users occurs only after all parameters are fixed.
+    validation_records = []
+    validation_counts = torch.tensor([rows[uid]["parent"].seq_len for uid in validation], dtype=torch.double)
+    for layer in range(len(current.blocks)):
+        _, wanted, _, predicted = timed(lambda: collect_layer(
+            current, rows, validation, features, projection, parameters, layer,
+            batch_size=batch_size, device=device, max_length=max_length, costs=costs),
+            timings, "validation_teacher_and_query_reads", device)
+        error = float((predicted.double()-wanted.double()).square().mean())
+        baseline = float(wanted.double().square().mean())
+        aggregate_error = float(((predicted.double()-wanted.double()).square().mean((1, 2, 3))
+                                 * validation_counts.square()).mean())
+        aggregate_baseline = float((wanted.double().square().mean((1, 2, 3))*validation_counts.square()).mean())
+        validation_records.append({"layer": layer, "rate_mse": error, "uncorrected_rate_mse": baseline,
+                                   "relative_rate_mse": error/max(baseline, 1e-30),
+                                   "aggregate_response_mse": aggregate_error,
+                                   "uncorrected_aggregate_response_mse": aggregate_baseline,
+                                   "relative_aggregate_response_mse": aggregate_error/max(aggregate_baseline, 1e-30)})
+    adapter = SharedReadAdapter(projection, parameters, producer_ids=PRODUCERS,
+                                target=5, max_length=max_length)
+    costs["shared_response_preparation_flops"] += adapter.estimate_flops()["shared_response_preparation"]
+    return adapter, {"layers": layer_records, "validation": validation_records,
+                     "projection": projection.diagnostics}
+
+
+def run(args):
+    started = time.perf_counter()
+    config, stage, versions, train, validation = inputs(args.config, args.fit_users, args.validation_users)
+    if (args.output / "calibration.pt").exists() or (args.output / "calibration.json").exists():
+        raise FileExistsError("calibration output already exists; choose a new output directory")
+    torch.set_num_threads(args.threads)
+    device = torch.device(f"cuda:{args.gpu}" if args.gpu is not None else "cpu")
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.cuda.set_per_process_memory_fraction(.70, device)
+        torch.cuda.reset_peak_memory_stats(device)
+    timings, costs = defaultdict(float), defaultdict(int)
+    parent, pp = timed(lambda: load_model(ROOT/versions["v4"]["checkpoint"], device),
+                       timings, "model_load", device)
+    model_config = pp["config"]
+    del pp
+    current, cp = timed(lambda: load_model(ROOT/versions["v5"]["checkpoint"], device),
+                        timings, "model_load", device)
+    if cp["config"] != model_config:
+        raise RuntimeError("parent and current architectures differ")
+    expected = {"num_layers": 6, "hidden_size": 192, "num_heads": 6, "max_seq_len": 1024,
+                "activation": "elu_plus1", "block_variant": "legacy", "relative_position_bias": False,
+                "gating": "silu_gate", "causal_diagonal": "inclusive"}
+    if any(model_config[key] != value for key, value in expected.items()):
+        raise RuntimeError("checkpoint architecture differs from the frozen Medium read operator")
+    parent.requires_grad_(False)
+    current.requires_grad_(False)
+    dataset_path = ROOT/config["data"]["dataset"]["path"]
+    dataset = json.loads(dataset_path.read_text())
+    known = int(cp.get("known_vocab_size", dataset["foundation_items"]))
+    del cp
+    cutover = stage["days_half_open"][0]*DAY
+    max_length = model_config["max_seq_len"]
+    uids = train+validation
+    history = timed(lambda: load_histories(
+        uids, dataset_path=dataset_path, known_vocab_size=known,
+        oov_buckets=model_config["num_items"]-known, start_timestamp=cutover,
+        end_timestamp=cutover+1, max_history=max_length, threads=args.history_threads),
+        timings, "history_io", device)
+    histories = {uid: snapshot(history, uid, cutover, max_length) for uid in uids}
+    del history
+    rows = timed(lambda: capture(parent, current, histories, uids, cutover=cutover, known=known,
+        queries=stage["calibration_queries_per_user"], device=device, batch_size=args.batch_size,
+        history_length=max_length, attention_backend=args.attention_backend),
+        timings, "parent_and_teacher_cache_capture", device)
+    for uid in uids:
+        rows[uid]["candidates"] = torch.from_numpy(mixed_candidates(
+            uid, histories[uid][1], known, stage["calibration_queries_per_user"], seed=17))
+    latest_history_timestamp = max(int(histories[uid][0][-1]) for uid in uids)
+    del parent, histories
+    gc.collect()
+    sparse = CostModel.for_scale("medium", args.attention_backend)
+    dense = CostModel.for_scale("medium", "torch")
+    one_capture = sum((sparse if rows[batch[0]]["parent"].seq_len == max_length else dense).full_cache(
+        rows[batch[0]]["parent"].seq_len, batch=len(batch)) for batch in groups(uids, rows, args.batch_size))
+    costs["parent_cache_capture_flops"] = one_capture
+    costs["teacher_cache_capture_flops"] = one_capture
+    adapter, diagnostics = fit(current, rows, train, validation, batch_size=args.batch_size,
+        device=device, max_length=max_length, rank=args.rank, timings=timings, costs=costs)
+    cache_bytes = sum(cache.k.nbytes+cache.v.nbytes for uid in uids for cache in (
+        rows[uid]["parent"], rows[uid]["teacher"]))
+    total_flops = sum(costs.values())
+    metadata = {
+        "status": "complete", "kind": "design_one_shared_read_v1", "scale": "medium", "edge": "v4_to_v5",
+        "role": "development_canary" if len(train) != 256 or len(validation) != 16 else "development_calibration",
+        "configuration": {"path": str(args.config), "sha256": sha256_file(args.config)},
+        "users_file_sha256": config["users"]["sha256"], "uids": train, "fit_uids": train,
+        "users": len(train), "budget": len(train), "validation_uids": validation,
+        "evaluation_users_excluded": config["users"]["groups"][stage["evaluation_group"]]["count"],
+        "queries_per_user": stage["calibration_queries_per_user"], "cutover": cutover,
+        "latest_history_timestamp": latest_history_timestamp, "history_length": max_length,
+        "history_length_histogram": dict(Counter(rows[uid]["parent"].seq_len for uid in uids)),
+        "candidate_rule": "8 most recent unique known items; remaining uniform known catalog without replacement; SeedSequence([17,uid]); no feedback labels",
+        "history_tie_order": "timestamp_mapped_item_behavior, aligned Parent and Current Full histories",
+        "cache_state": "pure V4 at cutover; no post-release or mixed-producer fitting scenes",
+        "summary": "producer-wise compact K/V means, counts, fractions and native write count; no influence sketch",
+        "fitting": "shared aggregate-response ridge .01; fit-only requested PCA rank bounded by fit sample rank; lower fitted layers frozen before next actual-query capture",
+        "rank_requested": args.rank, "teacher": "Current Full cache on strictly pre-release history; same actual corrected-branch q at each fitted layer",
+        "validation_rule": "held-out fitting-reservation UIDs, diagnostics only after all parameters fixed; no tuning or checkpoint selection",
+        "checkpoint_hashes": {name: versions[name]["checkpoint_sha256"] for name in ("v4", "v5")},
+        "checkpoint_verification": "sealed manifest and seal bindings checked; weight payload hashes inherited, not rehashed",
+        "model_config": model_config, "execution_sources": source_hashes(), "diagnostics": diagnostics,
+        "cost": {**dict(costs), "calibration_flops": total_flops,
+                 "teacher_flops": costs["teacher_cache_capture_flops"]+costs["teacher_same_query_flops"],
+                 "scope": "includes Parent capture, all Current Full teachers, fit and validation reads, source summary/PCA/publication, ridge and diagnostics",
+                 "convention": "multiply-add=2; analytical executed-shape cache/read costs; PCA eigensolve, ridge LU/statistics and summary publication estimates; no FP64 multiplier; CPU/GPU time reported separately"},
+        "timings_seconds": dict(timings), "elapsed_seconds": time.perf_counter()-started,
+        "paired_cache_bytes": cache_bytes,
+        "cpu_peak_rss_gib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1<<20),
+        "peak_gpu_allocated_gib": torch.cuda.max_memory_allocated(device)/(1<<30) if device.type == "cuda" else 0,
+        "settings": {"batch_size": args.batch_size, "attention_backend": args.attention_backend,
+                     "torch_threads": args.threads, "history_threads": args.history_threads,
+                     "device": str(device), "gpu_memory_fraction": .70},
+    }
+    args.output.mkdir(parents=True, exist_ok=True)
+    torch.save({"kind": metadata["kind"], "adapter": adapter.state_dict(), "metadata": metadata},
+               args.output / "calibration.pt")
+    metadata["weights_sha256"] = sha256_file(args.output / "calibration.pt")
+    (args.output / "calibration.json").write_text(json.dumps(metadata, indent=2)+"\n")
+    print(json.dumps({"status": "calibration_complete", "output": str(args.output),
+                      "elapsed_seconds": metadata["elapsed_seconds"], "calibration_flops": total_flops}), flush=True)
+    return metadata
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--gpu", type=int, choices=range(4))
+    parser.add_argument("--fit-users", type=int, help="first frozen fitting UIDs for a small canary")
+    parser.add_argument("--validation-users", type=int, help="first frozen validation UIDs for a small canary")
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--rank", type=int, default=32, choices=(0, 32))
+    parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--history-threads", type=int, default=8)
+    parser.add_argument("--attention-backend", choices=("torch", "triton"), default="triton")
+    run(parser.parse_args())

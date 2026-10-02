@@ -1,0 +1,40 @@
+{
+  "role": "prospective development estimate",
+  "models": {
+    "kv_view": {
+      "seconds": 12.407487596385181,
+      "peak_gpu_gib": 2.1597518920898438,
+      "estimated_full_calibration_flops": 38121663029570.664,
+      "estimated_full_calibration_cost_pct": 9.446863388321818,
+      "canary_timings": {
+        "model_load": 3.725672183558345,
+        "history_io": 1.5159640749916434,
+        "parent_and_teacher_capture": 0.8311965465545654,
+        "expanded_history_io": 1.5183812640607357,
+        "rolling_scene_capture": 0.6062056683003902,
+        "fitting_teacher_and_query_reads": 0.3636731216683984,
+        "network_fit": 1.0198824414983392,
+        "held_out_validation": 0.05962609965354204
+      }
+    },
+    "kv_context": {
+      "seconds": 10.224663705565035,
+      "peak_gpu_gib": 2.1597518920898438,
+      "estimated_full_calibration_flops": 38177030988098.664,
+      "estimated_full_calibration_cost_pct": 9.46058402637212,
+      "canary_timings": {
+        "model_load": 3.7528268760070205,
+        "history_io": 1.5007149083539844,
+        "parent_and_teacher_capture": 0.8311007544398308,
+        "expanded_history_io": 1.498115187510848,
+        "rolling_scene_capture": 0.5991084771230817,
+        "fitting_teacher_and_query_reads": 0.36139587964862585,
+        "network_fit": 1.0236265491694212,
+        "held_out_validation": 0.05615189205855131
+      }
+    }
+  },
+  "fitting": "Each fit:256users,four scenes/user,32epochs,batch8. Canary4fit/2val,2epochs. Prior full KV92.7s with half the token training work suggests3\u20136min; direct small-canary step scaling gives a conservative10\u201320min, monitor directly. Parallel GPU0/1. Evaluation four2500user shards,3\u20136min,batch128,70%cap. Cost estimate scales exact canary training/nontraining ledger; service adds prior KV32~1.1%.",
+  "target_recovery_pct": 80,
+  "max_extra_cost_pct": 15
+}

@@ -1,5 +1,9 @@
 # Ten-layer, five-edge AUC comparison
 
+历史开发记录；以下设置和结果仅指本次实验。旧执行入口及预览图已退役，
+原始评分、配置、失败和封存来源继续保留。当前三规模 Motivation 见
+[实验索引](../../../docs/motivation_observations.md)。
+
 This user-authorized development diagnostic repeats the five Medium methods on
 the frozen Large 10-layer, 320-wide, 10-head models. The main settings are fixed
 in [the prospective configuration](../../../configs/insight/large_unified_auc_10k_20260920.json).
@@ -42,7 +46,7 @@ The 512-teacher extraction used all four GPUs, peaking at 8.56 GiB per worker;
 the complete in-GPU 256-teacher reference peaked at 24.10 GiB.
 
 The task completed successfully (exit status 0), after running in detached tmux `evokv_large_auc_10k`, via
-`scripts/design/launch_large_auc.sh`. `running_phase.txt`, the per-phase logs,
+the now-retired `scripts/design/launch_large_auc.sh`. `running_phase.txt`, the per-phase logs,
 and `exit_status.txt` retain its state. It started at 2026-09-20 11:47 UTC.
 `run_large_auc_parallel.py` distributes the first four independent baseline
 calibrations across GPU 0–3, then queues the fifth. Each subsequent edge uses
@@ -55,9 +59,9 @@ in `serial_baseline_attempt/`; it produced no evaluation scores. The post-canary
 [resource estimate](resource_estimate.json) is 60–120 minutes for the main
 five-edge run. This timing estimate does not enter figure coordinates.
 
-The renderer is `figures/src/large_unified_auc.py`; output is
-`figures/out/large_unified_auc_10k/`. It checks every raw-score AUC and source
-identity before writing the figure, cost ledger and mean table. All five edges
+The retired renderer `figures/src/large_unified_auc.py` checked every raw-score
+AUC and source identity before writing the former five-panel preview.
+Its derived images are no longer present. All five edges
 completed with 10,000 snapshots and 41 score paths each, totaling 263,445 real
 feedback requests. Initial calibration took 645.61 seconds and the main
 calibration/evaluation took 7,158.08 seconds: 130.06 minutes combined. Maximum
@@ -91,6 +95,6 @@ fitter exactly, recorded in `analysis/ridge_default_reference.json`.
 The background handoff and subsequent completion review are complete.
 `exit_status.txt` is 0, `diagnostic/summary.json` is completed, and `render.log`
 records successful verification. The combined PNG/PDF and five individual
-panels have been generated, and the combined figure has been inspected. The
-final rendering uses five distinct gray shades and a red mean. The paper and
-six-layer figures remain as they were.
+panels were generated and inspected at completion, then retired. Their recorded
+display used five gray release curves and a red mean; the numerical results
+and original completion logs remain.

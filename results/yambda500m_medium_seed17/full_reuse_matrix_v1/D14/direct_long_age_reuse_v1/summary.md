@@ -1,5 +1,8 @@
 # Medium D14/E14 direct long-age Reuse triangle
 
+Historical D14 model triangle retained for the paper's producer-age observations.
+Its 15 cells include non-adjacent producers and differ from the [current three-scale 15 adjacent edges](../../../../unified_reuse_2026_09/README.md).
+
 Status: **medium_D14_E14_direct_long_age_triangle_complete**. New non-adjacent cells: 10/10; full triangle including frozen adjacent cells: 15/15.
 
 Every row is reported as E14. Each comparison uses only New and Reuse produced in the same run. Old is not recomputed for new cells; cross-run Current drift is recorded in JSON and never gates execution.

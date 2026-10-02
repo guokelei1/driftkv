@@ -1,80 +1,43 @@
-# 适配探索与对比脚本
+# Design 可复用历史接口
 
-本目录包含已完成的AUC/功能诊断、公共原语与历史native适配流水线。
-当前Design尚未实现和验证；接口计划见[适配计划](../../docs/design/plan.md)，
-方案变化见[决策记录](../../docs/design/iterations.md)。结果和运行预算在各实验目录维护。
+当前论文 Design 尚未实现和验证。本目录保留native读取服务和共享拟合的最小依赖，
+作为后续实现起点；当前Motivation实验在
+[四重算](../selective_recompute_2026_09/README.md)与
+[Q/H](../../results/read_correction_2026_09/motivation_final/README.md)的独立目录。
 
-## 统一 AUC 诊断入口
+## 保留的10文件闭包
 
-| 用途 | 输入准备与执行 | 设置、结果 |
-| --- | --- | --- |
-| 6L四边、原四预算 | `prepare_unified_auc_inputs.py`；`run_unified_auc_parallel.py`；核心 `run_unified_auc.py` | [原始结果](../../results/insight/unified_auc_10k_20260920/README.md) |
-| 6L九档教师预算 | `prepare_expanded_auc_inputs.py`；`run_expanded_auc.py` | [扩展结果](../../results/insight/unified_auc_10k_teachers7144_20260920/README.md) |
-| 10L五边 | `prepare_large_auc_inputs.py`；`run_large_auc_parallel.py`；`run_large_auc.py` | [配置](../../configs/insight/large_unified_auc_10k_20260920.json)、[结果](../../results/insight/large_unified_auc_10k_20260920/README.md) |
-| 16L两边 | `prepare_max_auc_inputs.py`；`run_max_auc.py` | [配置](../../configs/insight/max_unified_auc_10k_20260921.json)、[结果](../../results/insight/max_unified_auc_10k_20260921/README.md) |
+| 文件 | 保留职责 |
+| --- | --- |
+| `native_service.py` | 历史 `NativeRelease` 读取与视图接口 |
+| `query_read_probe.py`、`shared_read_probe.py` | 共享query/response拟合及摘要条件化数值函数 |
+| `data.py`、`run.py` | 历史场景、模型绑定与共享执行函数 |
+| `diagnose_query_holdout.py` | 成对历史、候选与读取参考 |
+| `diagnose_summary_objective.py` | 源投影、共享拟合及层安装 |
+| `diagnose_decoder_closure.py`、`diagnose_native_input.py` | native接口仍调用的输入和拟合函数 |
+| `../insight_two/common.py` | 固定历史数据接口与公共统计 |
 
-`launch_large_auc.sh`、`launch_max_auc.sh`保留主诊断和退出状态记录，
-旧自动出图步骤已移除。以上运行已完成，路径不是待执行队列；不要覆盖既有结果。
-保留图表、ledger与显示口径见[图表索引](../../figures/README.md)。
+模块名中的 `run` 或 `diagnose` 沿用历史命名；保留理由是上述函数依赖，
+不把它们列为待启动实验。旧query-affine训练已退休，既有接口也不实现当前论文的
+完整影响sketch、支持策略或运行时。
 
-公共依赖包括 `competitor_data.py`、`competitor_models.py`、
-`unified_auc_baselines.py`、`expanded_read_calibration.py`、
-`large_auc_primitives.py`、`max_auc_models.py`；它们仍会导入旧probe中的公共函数。
-`unified_auc_cost.py`、`large_auc_cost.py`、`max_auc_cost.py`提供理论成本。
-`check_large_expanded_auc.py`核对校准一致性，`probe_large_auc_ridge.py`是独立pilot；
-不要因文件名历史化而删除调用依赖。
+模型侧另保留 [adaptation/](../../src/hstu_kvcache/adaptation/) 的7个模块：
+`__init__.py`、`reader.py`、`summary.py`、`functional_summary.py`、
+`translator.py`、`state.py`、`inference.py`。
+其中原生读取被当前Q/H使用，状态与摘要接口保留追加/淘汰等数值参考。
 
-## 六层共享读取修正：已完成的概率保真度诊断
+## 退休分支与保留证据
 
-`run_query_read_probe.py`为执行入口，`query_read_probe.py`实现
-共享 `b+Aq` 与 `b+Aq+Tr`，`analyze_query_read_probe.py`读取元数据分析费用。
-[配置](../../configs/insight/query_read_6l_2560_20260920.json)和
-[完整结果](../../results/insight/query_read_6l_2560_20260920/README.md)维护UID划分、指标及成本。
+旧6L/10L/16L的10k AUC队列、preview、旧competitor功能探针、Insight局部替换/oracle/
+持续性队列及不再使用的native报告入口已退出活动源码树。对应结果、封存哈希、
+失败记录和必要源码证据仍保留；原队列不能按当前源码树直接续跑。
 
-必须传入 `--config` 和新 `--output`；可用 `--canary`、`--pilot`、
-`--calibration-from`、`--device`、`--batch-size`、`--threads`。
-扩大评价从pilot参数原样复用，校验来源hash；分batch释放缓存。
-该诊断是静态概率保真度，不是推荐AUC、摘要必要性或连续状态结论。
+- 论文附录仍描述的[原10k AUC](../../results/insight/unified_auc_10k_20260920/README.md)
+  与[7144校准用户扩展](../../results/insight/unified_auc_10k_teachers7144_20260920/README.md)。
+- 历史[六层native质量](../../results/design/analysis/native_base_quality4091_01_report/report.md)
+  与[FLOPs](../../results/design/analysis/native_flops_01/report.md)。
+- 论文3.1旧Medium质量与成本表，以及其余历史结果见[结果索引](../../results/README.md)。
 
-前序[摘要诊断](../../results/insight/shared_read_6l_20260920/README.md)、
-[item/response诊断](../../results/insight/user_information_6l_20260920/README.md)
-及source_snapshot保留。相关runner中的公共函数仍被AUC流程引用；
-历史表格生成器已清理，不能因改图重跑实验。
-
-## 独立 Motivation 2 功能指标接口
-
-`run_insight1_competitors.py`是单边入口，`competitor_probe.py`统一执行
-LR/TR/KT并评分。方法公式与限制见[baselines](../../src/hstu_kvcache/baselines/README.md)。
-`--scale medium|large`选择本轮模型链，`--edge-index 0..4`选择边；
-`--describe`仅查看元数据，不加载权重或用户历史：
-
-```bash
-PYTHONPATH=src:scripts python scripts/design/run_insight1_competitors.py --scale medium --edge-index 1 --describe
-```
-
-实际评价需提供新 `--output` 和 `--uids` JSON，键为 `evaluation`、`fit`、
-可选 `selection`；组内唯一、组间互斥，来自所选规模人口。KT拟合在CPU，
-`--device`控制模型、缓存和评分。`selection`省略时源层排名标为in-sample。
-`--layer-intervals`使用从0开始、两端包含的层号，`--tail-lengths`、`--map-ks`、
-`--ridge`、`--batch-size`按该次协议显式选择，具体可用参数以CLI为准。
-
-64候选bank来自全部评价UID的发布前历史，使用各自词表的recent/old-only/novel规则；
-`--max-users`、offset和batch不能改变bank。Full-only准入按所选边核验：
-Large V5@1的原失败不因开发诊断变成已准入，也不自动换V5@2。
-
-输出原始分数、指标及配置/来源hash。概率缺口恢复用均值之比，
-不是逐用户比值均值；K/V更新比例不是FLOPs。这个接口不同于上面的真实反馈AUC实验，
-且不建立完整连续迁移。数据、公式和入口检查见[测试索引](../../tests/README.md)。
-
-## 历史适配原型与清理范围
-
-`data.py`、`run.py`、`diagnose_query_holdout.py`、
-`diagnose_summary_objective.py`、`diagnose_decoder_closure.py`保留场景和共享执行原语。
-`diagnose_native_input.py`、`diagnose_native_coverage.py`、`fit_native_ablation.py`、
-`native_service.py`保留旧native C/消融路径；`evaluate_native_base.py`、
-`run_native_base.py`及相关report/audit读取历史结果。
-旧query-affine拟合已退休，runner只保留通过 `--evaluation-from`读取既有权重的评价路径。
-
-`docs/design/expert_route_2026-09-07.md`仍由历史runner纳入hash，不能只按文档长度删除。
-2026-09-22删除的四个无调用诊断入口及源码快照见
-[清理记录](../../results/README.md#2026-09-22-入口清理)；旧结果、合同和哈希未改。
+[适配计划](../../docs/design/plan.md)维护下一步；
+[决策记录](../../docs/design/iterations.md)保留当时的实验选择；
+`docs/design/expert_route_2026-09-07.md` 提供历史机制报告导航；原运行所用文档以封存源码快照为准。

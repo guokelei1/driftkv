@@ -15,10 +15,11 @@
 
 ## E14 父子质量
 
-各行在该行的同一未来窗口比较父子模型；不同窗口的绝对AUC不能直接比较。下表只写相对提升。
+各行在该行的同一未来窗口比较父子模型；不同窗口的绝对AUC不能直接比较。
 
 | 版本边 | E14 窗口 | Parent AUC | Current AUC | 相对提升 |
 | --- | --- | ---: | ---: | ---: |
+| v0 → v1（历史 Full） | [231,245) | 0.635498 | 0.659177 | +3.726% |
 | [v1 → v2](seed17/v2_2epoch_4gpu_b32_cpu14/README.md) | [245,259) | 0.639586 | 0.646865 | +1.138% |
 | [v2 → v3](seed17/v3_1epoch_4gpu_b32_cpu14/README.md) | [259,273) | 0.643808 | 0.659057 | +2.369% |
 | [v3 → v4](seed17/v4_1epoch_4gpu_b32_cpu14/README.md) | [273,287) | 0.640726 | 0.660556 | +3.095% |
@@ -29,8 +30,8 @@
 ## 训练与文件约定
 
 - V2–V5：4卡，每卡8/global32，CPU history14/Arrow14/IO4/Torch4、独立绑核；fresh AdamW、LR=5e-5、weight decay=1e-4、用户等权BCE。V2为2 epochs，其余为1 epoch。
-- 主指标为 pooled request ROC-AUC，真实like/dislike反馈，仅Full-only E14；原始分数、封存、adjudication和配置保留，最终训练日志按统一清理记录归档。
+- 训练评价主指标为 pooled request ROC-AUC，真实 like/dislike 反馈，仅 Full-only E14；原始分数、封存、adjudication 和配置保留。
 - V2–V5实体checkpoint已移入统一目录；原运行目录的`checkpoint`为相对符号链接，原合同和payload内路径仍有效。原seal内容不变。
 - 本轮被替代的任务、失败记录和探针payload按用户要求删除，无本地备份；最终运行的轻量canary通过证明和预算随配置保留，其引用的探针payload已清理。
-- 本链为单seed开发选择结果，不构成独立最终评价或已验证的缓存适配结果；尚未执行Reuse。固定模型链不修改历史服务推广标记。
-- 其他规模及历史模型原件未改动。
+- 五条相邻边的 [Reuse 评价](../../unified_reuse_2026_09/README.md)已完成。本链是单 seed 开发选择结果，不构成跨训练种子的重复证据；固定模型清单不修改历史服务推广标记。
+- 历史 D14 V2–V5 是另一组保留的论文证据模型，不能与本页同名版本混用；当前模型以统一目录和哈希为准。
