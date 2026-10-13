@@ -6,23 +6,27 @@ Max V0–V5 训练和 Full 评价已完成，当前选定 epoch 为 **1、1、1�
 也已完成；[三规模版本清单](../../../docs/unified_training_2026_09/model_versions.md)
 汇总各版窗口、batch、哈希和相对 AUC 提升。
 
+2026-10-07保留选定模型封存、Full准入与最终训练结果，清理重复执行/探针JSON。
+随后清理已完成评价的原始评分和旧运行状态，唯一的20,000用户评价名单仍保留。
+以下历史探针的数值与失败解释仍在本文；历史路径不表示该文件仍保留。
+
 ## 选定模型与原运行
 
 | 版本 | Epoch | 训练初始化 | 权重 | 原结果 |
 | --- | ---: | --- | --- | --- |
-| V0 | 1 | 全新初始化 | [V0](seed17/checkpoints/v0/checkpoint_100.pt) | [训练与封存](seed17/v0_1epoch_4gpu_b80_cpu14/checkpoint/train_result.json) |
-| V1 | 1 | V0 | [V1](seed17/checkpoints/v1/checkpoint_100.pt) | [两个端点](seed17/v1_epochs12_4gpu_b80_cpu14/README.md) |
-| V2 | 1 | V1@1 | [V2](seed17/checkpoints/v2/checkpoint_100.pt) | [epoch1](seed17/v2_1epoch_4gpu_b80_cpu14/README.md) |
-| V3 | 2 | V2@2 | [V3](seed17/checkpoints/v3/checkpoint_100.pt) | [两个端点](seed17/v3_epochs12_4gpu_b80_cpu14/README.md) |
-| V4 | 2 | V3@2 | [V4](seed17/checkpoints/v4/checkpoint_100.pt) | [两个端点](seed17/v4_epochs12_4gpu_b80_cpu14/README.md) |
-| V5 | 2 | V4@2 | [V5](seed17/checkpoints/v5/checkpoint_100.pt) | [两个端点](seed17/v5_epochs12_4gpu_b80_cpu14/README.md) |
+| V0 | 1 | 全新初始化 | [V0](seed17/checkpoints/v0/checkpoint_100.pt) | 训练与封存（历史路径：`seed17/v0_1epoch_4gpu_b80_cpu14/checkpoint/train_result.json`） |
+| V1 | 1 | V0 | [V1](seed17/checkpoints/v1/checkpoint_100.pt) | [两个端点](seed17/v1_epochs12_4gpu_b80_cpu14/summary.json) |
+| V2 | 1 | V1@1 | [V2](seed17/checkpoints/v2/checkpoint_100.pt) | [epoch1](seed17/v2_1epoch_4gpu_b80_cpu14/summary.json) |
+| V3 | 2 | V2@2 | [V3](seed17/checkpoints/v3/checkpoint_100.pt) | [两个端点](seed17/v3_epochs12_4gpu_b80_cpu14/summary.json) |
+| V4 | 2 | V3@2 | [V4](seed17/checkpoints/v4/checkpoint_100.pt) | [两个端点](seed17/v4_epochs12_4gpu_b80_cpu14/summary.json) |
+| V5 | 2 | V4@2 | [V5](seed17/checkpoints/v5/checkpoint_100.pt) | [两个端点](seed17/v5_epochs12_4gpu_b80_cpu14/summary.json) |
 
 所选 V2@1 与 V3@2 在同一 E14 [259,273)、92,594 用户、893,856 请求上的
 Full AUC 为 0.6961794233 → 0.7086984472，相对提升 **1.7982468%**。
 [选择记录](seed17/selected_v2_v3_checkpoints.json)绑定精确端点和指标来源。
 
-保留的比较分支包括 [V2 追加 epoch2](seed17/v2_epoch2_from_epoch1_4gpu_b80_cpu14/README.md)
-和 [V3 from V2@1](seed17/v3_from_v2e1_epochs12_4gpu_b80_cpu14/README.md)。
+保留的比较分支包括 [V2 追加 epoch2](seed17/v2_epoch2_from_epoch1_4gpu_b80_cpu14/summary.json)
+和 [V3 from V2@1](seed17/v3_from_v2e1_epochs12_4gpu_b80_cpu14/summary.json)。
 前者从 V2@1 权重重置 AdamW/RNG 后再训一轮；后者的两个 V3 端点均未选用。
 所有分支的原指标、准入和封存保留，未选中实体权重及优化器恢复 payload 已删除。
 重放当前 V3 的原始训练需要先重建 V2@2；该历史来源的配置与结果仍在。
@@ -80,16 +84,16 @@ V0 已完成 165,632 步，端到端 180,518.85 秒（约50小时9分），无�
 训练步时间中位数约1.023秒、78.17请求/秒；数据加载、保存和校验计入端到端耗时。
 
 训练时采用第500步首次、随后每4000步滚动保存最近两份模型/AdamW/RNG恢复点。
-[恢复探针](preparation/recovery_probe/summary.json)中每份约13.66 GB，
+恢复探针（历史路径：`preparation/recovery_probe/summary.json`）中每份约13.66 GB，
 写盘校验约17秒；合成对照存在1.86e-9参数差异及优化器差异，严格断言失败保留。
-[实际训练入口对照](preparation/recovery_integration/summary.json)从第8步恢复至第12步，
+实际训练入口对照（历史路径：`preparation/recovery_integration/summary.json`）从第8步恢复至第12步，
 与连续12步的最终权重逐位一致。
 恢复后释放未使用缓存使探针 reserved 从40,968降至36,672 MiB，
-见[最终恢复检查](preparation/recovery_integration_cache_release/summary.json)。
+见最终恢复检查（历史路径：`preparation/recovery_integration_cache_release/summary.json`）。
 这些是已完成检查，恢复 payload 已删除，不能直接从旧恢复点续跑。
 
 V2 起使用 auto 后端，在支持条件下采用 Triton。
-[后端对照](seed17/v2_1epoch_4gpu_b80_cpu14/backend_parity.json)
+后端对照（历史路径：`seed17/v2_1epoch_4gpu_b80_cpu14/backend_parity.json`）
 和后续各运行数值记录保留；通过的 BF16 训练/FP32 推理检查不等于所有 dtype
 或完整训练轨迹逐位一致。Max V2 追加分支的停止、恢复及额外 FP32 反向失败详见
 [关键记录](../../../docs/unified_training_2026_09/records.md)。
@@ -104,19 +108,18 @@ Full pooled ROC-AUC **0.6535090485**，log loss **0.2818309273**，
 Brier **0.0764522825**；耗时616.75秒，四卡峰值reserved21,316 MiB，退出码0。
 这是该窗口的抽样质量结果。后续 V0→V1 完整配对评测采用另一个窗口 [231,245)，
 V0 AUC 为0.656376，不能与前一个窗口混算更新收益。
-[摘要](seed17/v0_e14_users10pct/summary.json)、
-[原始分数封存](seed17/v0_e14_users10pct/evaluate/raw/raw.seal.json)
-和[指标输出](seed17/v0_e14_users10pct/evaluate/adjudication.json)均保留。
+[摘要](seed17/v0_e14_users10pct/summary.json)与唯一的原20,000用户名单保留。
+该次原始评分、分数seal与重复adjudication已清理，不能据此逐请求重分析。
 
 ## 配置与数据入口
 
 - [数据配置](../../../configs/unified_training_2026_09/max_data_preparation.yaml)、
   [数据元信息](../../../data/processed/yambda5b_max_200k_v1/scales/max/dataset.json)、
   [请求清单](../../../data/manifests/yambda5b_max_200k_hstu_native_v1/manifest.json)。
-- [数据审计](preparation/data_audit.json)、[资源选择](preparation/resource_selection.json)、
-  [原始预算](preparation/training_budget.json)。
+- 数据审计（历史路径：`preparation/data_audit.json`）、资源选择（历史路径：`preparation/resource_selection.json`）、
+  原始预算（历史路径：`preparation/training_budget.json`）。
 - [V0 合同](../../../configs/contracts/yambda5b_max_v0_prepared_v1.yaml)、
   [V0 执行配置](../../../configs/unified_training_2026_09/max_v0_prepared_execution.yaml)、
-  [V0 入口](../../../scripts/unified_training/run_max_v0.py)。
+  V0 入口（历史路径：`../../../scripts/unified_training/run_max_v0.py`）。
 - [V1–V5 执行配置](../../../configs/unified_training_2026_09/README.md)引用各次冻结合同。
   训练已结束；保存的入口不代表新的启动授权。

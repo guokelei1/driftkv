@@ -1,0 +1,285 @@
+{
+  "status": "complete",
+  "role": "frozen_parameter_primary_benchmark_ablation",
+  "users": 10000,
+  "requests": 90296,
+  "reference": {
+    "summary": {
+      "path": "/home/gkl/work/evokv/results/design_one_2026_10/round20_compact_training/evaluation_10k/summary.json",
+      "sha256": "6e3fa5d7ca91409797a4407a06fc13f53825b8722a2b0fb6935cc207da9ccf6d"
+    },
+    "scores": {
+      "path": "/home/gkl/work/evokv/results/design_one_2026_10/round20_compact_training/evaluation_10k/Compact_Training_E64_E100.parquet",
+      "sha256": "4422d5c9b29534597a6ed6e5885770c164c7d45f3701085064e185fcdc5c17c9",
+      "rows": 90296
+    }
+  },
+  "item_only_summary": {
+    "path": "/home/gkl/work/evokv/results/design_two_2026_10/confirmation/primary10k_ablation/evaluation_10k/summary.json",
+    "sha256": "325c48862fa9c133d73c2f3b6d24bf14f8b01939a23647d062f64773f0a736f9"
+  },
+  "item_only_scores": {
+    "path": "/home/gkl/work/evokv/results/design_two_2026_10/confirmation/primary10k_ablation/evaluation_10k/Compact_Item_Only.parquet",
+    "sha256": "1d99f2a9d7e43bc8c240662970e529a3336935d816737efa3f5abff460f9c498",
+    "rows": 90296
+  },
+  "metrics": {
+    "item_only": {
+      "log_loss": 0.34467824540042313,
+      "Brier": 0.10023080283689954,
+      "ROC_AUC": 0.6681563582321587,
+      "dislike_PR_AUC": 0.20187636279907392,
+      "dislike_only_log_loss": 2.1342065834272756
+    },
+    "complete": {
+      "log_loss": 0.34452028827757575,
+      "Brier": 0.10021241987228022,
+      "ROC_AUC": 0.6701930527099647,
+      "dislike_PR_AUC": 0.20251786486163958,
+      "dislike_only_log_loss": 2.14250231548961
+    },
+    "reuse": {
+      "log_loss": 0.3483303914942026,
+      "Brier": 0.10097596265620207,
+      "ROC_AUC": 0.6464684253813416,
+      "dislike_PR_AUC": 0.18972584158719322,
+      "dislike_only_log_loss": 2.1289450230581974
+    },
+    "full": {
+      "log_loss": 0.3436576193751961,
+      "Brier": 0.10004053461562568,
+      "ROC_AUC": 0.6743860570068372,
+      "dislike_PR_AUC": 0.20498705345592227,
+      "dislike_only_log_loss": 2.13285431325264
+    }
+  },
+  "recovery_percent": {
+    "item_only": 77.68543242404104,
+    "complete": 84.98080226460435
+  },
+  "paired_auc": [
+    {
+      "primary": "item_only",
+      "comparator": "reuse",
+      "auc_difference": 0.02168793285081705,
+      "percentile_95_interval": [
+        0.015115726574400199,
+        0.02870495738494737
+      ]
+    },
+    {
+      "primary": "complete",
+      "comparator": "item_only",
+      "auc_difference": 0.002036694477805967,
+      "percentile_95_interval": [
+        0.0011943472613877182,
+        0.0029674762663657065
+      ]
+    }
+  ],
+  "bootstrap": {
+    "comparisons": [
+      {
+        "primary": "item_only",
+        "comparator": "complete",
+        "primary_auc": 0.6681563582321587,
+        "comparator_auc": 0.6701930527099647,
+        "auc_difference": -0.002036694477805967,
+        "bootstrap_mean_auc_difference": -0.0020209746726277044,
+        "percentile_95_interval": [
+          -0.0029674762663657065,
+          -0.0011943472613877182
+        ]
+      },
+      {
+        "primary": "item_only",
+        "comparator": "reuse",
+        "primary_auc": 0.6681563582321587,
+        "comparator_auc": 0.6464684253813416,
+        "auc_difference": 0.02168793285081705,
+        "bootstrap_mean_auc_difference": 0.02149256646748299,
+        "percentile_95_interval": [
+          0.015115726574400199,
+          0.02870495738494737
+        ]
+      },
+      {
+        "primary": "item_only",
+        "comparator": "full",
+        "primary_auc": 0.6681563582321587,
+        "comparator_auc": 0.6743860570068372,
+        "auc_difference": -0.006229698774678494,
+        "bootstrap_mean_auc_difference": -0.006205357280431864,
+        "percentile_95_interval": [
+          -0.010069519459731497,
+          -0.0027546113684651014
+        ]
+      }
+    ],
+    "repetitions": 1000,
+    "seed": 17,
+    "valid_draws": 1000,
+    "single_class_draws": 0,
+    "draws_sha256": "cffdfa64e3ad58682df3207e452435fa8bad7cafd1c25bbea906309e650600e0",
+    "draw_column_order": [
+      "item_only",
+      "complete",
+      "reuse",
+      "full"
+    ]
+  },
+  "paired_log_loss": {
+    "item_only_minus_reuse": {
+      "difference": -0.0036521460937794514,
+      "percentile_95_interval": [
+        -0.004986157440640136,
+        -0.002432238484793652
+      ]
+    },
+    "complete_minus_item_only": {
+      "difference": -0.00015795712284738528,
+      "percentile_95_interval": [
+        -0.00035102971342999806,
+        4.4540319962627496e-05
+      ]
+    }
+  },
+  "costs": {
+    "complete": {
+      "tag": "Compact_Training_E64_E100",
+      "method": "item_response_read_view",
+      "variant": "design_one_item_response_v1",
+      "execution_mode": "compact_hidden",
+      "calibration_users": 256,
+      "users": 10000,
+      "requests": 90296,
+      "full_auc": 0.6743860570068372,
+      "reuse_auc": 0.6464684253813416,
+      "baseline_auc": 0.6701930527099647,
+      "auc_difference_from_reuse": 0.023724627328623016,
+      "metrics": {
+        "log_loss": 0.34452028827757575,
+        "Brier": 0.10021241987228022,
+        "ROC_AUC": 0.6701930527099647,
+        "dislike_PR_AUC": 0.20251786486163958,
+        "dislike_only_log_loss": 2.14250231548961
+      },
+      "full_history_flops": 443732341621726,
+      "reuse_append_flops": 40194559158432,
+      "full_minus_reuse_flops": 403537782463294,
+      "common_eager_query_flops": 631265049876,
+      "initial_parent_cache_flops": 48230559646232,
+      "reuse_steady_flops": 40825824208308,
+      "reuse_with_initial_cache_flops": 89056383854540,
+      "full_history_plus_query_flops": 444363606671602,
+      "correction_flops": 7276639677720,
+      "calibration_flops": 34937985410680,
+      "extra_flops": 42214625088400,
+      "method_steady_including_calibration_flops": 83040449296708,
+      "relative_flops_percent": 10.46113323781271,
+      "extra_over_reuse_steady_percent": 103.4017705876698,
+      "extra_over_reuse_with_initial_cache_percent": 47.40213251567809,
+      "method_over_reuse_steady_percent": 203.4017705876698,
+      "method_over_full_history_plus_query_percent": 18.687500067501563,
+      "method_with_initial_cache_including_calibration_flops": 131271008942940,
+      "summary_initial_flops": 0,
+      "summary_update_flops": 0,
+      "view_flops": 0,
+      "read_flops": 1445847793944,
+      "view_initial_flops": 4403933902848,
+      "view_update_flops": 1426857381888,
+      "context_update_flops": 0,
+      "execution_setup_flops": 599040,
+      "extra_history_read_flops": 1284857971992,
+      "response_flops": 160989821952,
+      "item_lookup_bytes": 9950155776,
+      "persistent_extra_peak_bytes": 201326592,
+      "native_kv_peak_bytes": 1207959552,
+      "persistent_extra_to_native_ratio_peak": 0.16666666666666666,
+      "shared_projection_bytes": 599040,
+      "auc_gap": 0.027917631625495543,
+      "recovery_percent": 84.98080226460435
+    },
+    "item_only_same_fit_cost": {
+      "tag": "Compact_Item_Only",
+      "method": "item_response_read_view",
+      "variant": "design_one_item_response_v1",
+      "execution_mode": "compact_hidden",
+      "calibration_users": 256,
+      "users": 10000,
+      "requests": 90296,
+      "full_auc": 0.6743860570068372,
+      "reuse_auc": 0.6464684253813416,
+      "baseline_auc": 0.6681563582321587,
+      "auc_difference_from_reuse": 0.02168793285081705,
+      "metrics": {
+        "log_loss": 0.34467824540042313,
+        "Brier": 0.10023080283689954,
+        "ROC_AUC": 0.6681563582321587,
+        "dislike_PR_AUC": 0.20187636279907392,
+        "dislike_only_log_loss": 2.1342065834272756
+      },
+      "full_history_flops": 443732341621726,
+      "reuse_append_flops": 40194559158432,
+      "full_minus_reuse_flops": 403537782463294,
+      "common_eager_query_flops": 631265049876,
+      "initial_parent_cache_flops": 48230559646232,
+      "reuse_steady_flops": 40825824208308,
+      "reuse_with_initial_cache_flops": 89056383854540,
+      "full_history_plus_query_flops": 444363606671602,
+      "correction_flops": 7115649855768,
+      "calibration_flops": 34937985410680,
+      "extra_flops": 42053635266448,
+      "method_steady_including_calibration_flops": 82879459474756,
+      "relative_flops_percent": 10.421238628448185,
+      "extra_over_reuse_steady_percent": 103.007437282528,
+      "extra_over_reuse_with_initial_cache_percent": 47.22135959970729,
+      "method_over_reuse_steady_percent": 203.007437282528,
+      "method_over_full_history_plus_query_percent": 18.651270767996625,
+      "method_with_initial_cache_including_calibration_flops": 131110019120988,
+      "summary_initial_flops": 0,
+      "summary_update_flops": 0,
+      "view_flops": 0,
+      "read_flops": 1284857971992,
+      "view_initial_flops": 4403933902848,
+      "view_update_flops": 1426857381888,
+      "context_update_flops": 0,
+      "execution_setup_flops": 599040,
+      "extra_history_read_flops": 1284857971992,
+      "response_flops": 0,
+      "item_lookup_bytes": 9950155776,
+      "persistent_extra_peak_bytes": 201326592,
+      "native_kv_peak_bytes": 1207959552,
+      "persistent_extra_to_native_ratio_peak": 0.16666666666666666,
+      "shared_projection_bytes": 599040,
+      "auc_gap": 0.027917631625495543,
+      "recovery_percent": 77.68543242404104
+    },
+    "response_calibration_flops": 4706044140620,
+    "response_serving_flops": 160989821952,
+    "response_calibration_plus_serving_percent_of_original_gap": 1.2060912692889438,
+    "scope": "Both frozen-parameter controls retain all already-paid Round20 fitting. Item-only omits Response serving only. Separately list the original two-stage calibration split; no fees are rewritten or new calibration performed."
+  },
+  "controls": {
+    "requests": 23419,
+    "reuse_max_abs_logit_error": 9.5367431640625e-07,
+    "full_max_abs_logit_error": 9.5367431640625e-07,
+    "identity_max_abs_logit_error": 9.5367431640625e-07
+  },
+  "original_request_control_columns_exact": true,
+  "resources": {
+    "max_shard_scoring_seconds": 72.46289128344506,
+    "shard_elapsed_seconds": [
+      81.81967944744974,
+      77.02205550856888,
+      77.41612171381712,
+      76.1111152684316
+    ],
+    "peak_allocated_gib": 12.510114669799805
+  },
+  "source": {
+    "path": "/home/gkl/work/evokv/scripts/design_two/confirmation/primary_ablation.py",
+    "sha256": "66b1d61e13f2a427f44b61602eb285744d5d5889a32522125d63fcd4c7288c80"
+  },
+  "scope": "Original fixed primary Medium V4-to-V5 10k development benchmark. Same Item tensors, real cache trajectory, users and requests; no fitting or endpoint selection. Complete scores are reused from Round20 with bound hashes. UID intervals are descriptive within this previously explored panel, not seed replication or independent confirmation. The separate 512-user negative confirmation is unaffected."
+}

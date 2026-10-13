@@ -29,7 +29,7 @@ from hstu_kvcache.evaluation.binary_metrics import binary_metrics
 from hstu_kvcache.read_correction_v4.token_read import TokenReadCorrection, score_token_corrected
 from hstu_kvcache.read_correction_v4.nonlinear import NonlinearTokenReadCorrection
 from hstu_kvcache.training import collate_foundation_batch
-from read_correction_v3.evaluate import cost_record
+from read_correction_2026_09.cost import cost_record
 from read_correction_v4.common import PANEL_ROOT, edge_name, sources, sha256, write_json
 from read_correction_v4.cost import CostModel, correction_forward as affine_cost, normalize_metrics
 from read_correction_v4.cost_nonlinear import correction_forward as nonlinear_cost

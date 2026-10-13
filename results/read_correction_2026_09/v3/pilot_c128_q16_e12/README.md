@@ -39,5 +39,5 @@ Max 未参与本轮方法选择。四卡并行，最长探针约 179 秒。
 后续完整预算实验已经完成。原拟合参数、错误、评分和来源哈希保留；
 旧 v3 队列与专属测试已退休，本页不是待执行计划。
 
-汇总数据：[matched_comparison.json](matched_comparison.json)。
-本次设置与源码哈希：[launch.json](launch.json)。
+汇总数据：matched_comparison.json（历史路径：`matched_comparison.json`）。
+本次设置与源码哈希：launch.json（历史路径：`launch.json`）。

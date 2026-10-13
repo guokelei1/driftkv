@@ -2,8 +2,8 @@
 
 首次尝试于 2026-09-21 03:27 Asia/Shanghai 在 `evokv_max_auc_10k` 中启动，
 已因初始校准显存不足而结束；没有产生完整评价分数。
-[失败摘要](diagnostic/summary.json)记录 `status=failed`、68.312 秒及原错误，
-[原配置](diagnostic/configuration.json)和[资源估计](resource_estimate.json)继续保留。
+失败摘要（历史路径：`diagnostic/summary.json`）记录 `status=failed`、68.312 秒及原错误，
+原配置（历史路径：`diagnostic/configuration.json`）和资源估计（历史路径：`resource_estimate.json`）继续保留。
 
 两条边完成了小型共享拟合，随后 32 用户 DroidSpeak profiling 的八候选块
 展开为 256 份完整缓存并触发 OOM；先前八用户 canary 没覆盖该分配规模。

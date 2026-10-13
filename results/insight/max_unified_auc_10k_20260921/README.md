@@ -66,7 +66,7 @@ matched the original fitter in selected layers and every parameter. Both
 128-teacher read rules matched the original fitter in parameters and logits.
 The batch64 check ran all method families in 5.82 seconds on 205 requests,
 peaking at 23.35 GiB GPU memory; the original-fit comparison peaked at
-23.49 GiB. The [updated resource estimate](resource_estimate.json) is
+23.49 GiB. The updated resource estimate（历史路径：`resource_estimate.json`） is
 100–140 minutes for the complete two-edge run.
 
 Status: completed, exit code 0, at 2026-09-20 21:27:23 UTC

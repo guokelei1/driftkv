@@ -6,7 +6,7 @@
 
 This user-authorized development diagnostic repeats the five Medium methods on
 the frozen Large 10-layer, 320-wide, 10-head models. The main settings are fixed
-in [the prospective configuration](../../../configs/insight/large_unified_auc_10k_20260920.json).
+in the prospective configuration（历史路径：`../../../configs/insight/large_unified_auc_10k_20260920.json`）.
 The existing six-layer results and paper assets are preserved.
 
 The 10,000 evaluation users, 7,144 ordered teachers, 1,024-event release
@@ -56,7 +56,7 @@ baseline logs are in `initial_parallel/<edge>/runtime.log`; later stages use
 82.16 seconds and matched the original GPU0 rules, Translator parameters and
 selected intervals exactly. The stopped serial-baseline attempt is retained
 in `serial_baseline_attempt/`; it produced no evaluation scores. The post-canary
-[resource estimate](resource_estimate.json) is 60–120 minutes for the main
+resource estimate（历史路径：`resource_estimate.json`） is 60–120 minutes for the main
 five-edge run. This timing estimate does not enter figure coordinates.
 
 The retired renderer `figures/src/large_unified_auc.py` checked every raw-score

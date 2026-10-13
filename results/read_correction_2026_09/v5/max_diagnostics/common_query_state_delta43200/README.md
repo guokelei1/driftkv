@@ -1,6 +1,6 @@
 # Common-query cache-state diagnostic: both fixed time inputs
 
-All three cases completed at both predefined query deltas, 0 and 43,200 seconds. This is the final mechanism probe; no further fitting or time selection was performed. Complete scalar comparisons, source paths and hashes are in [time_comparison.json](time_comparison.json). Per-user, append-bucket, teacher-alignment and resource summaries remain in each case's `summary.json` and in the original `../common_query_state/` directory.
+All three cases completed at both predefined query deltas, 0 and 43,200 seconds. This is the final mechanism probe; no further fitting or time selection was performed. Complete scalar comparisons, source paths and hashes are in time_comparison.json（历史路径：`time_comparison.json`）. Per-user, append-bucket, teacher-alignment and resource summaries remain in each case's `summary.json` and in the original `../common_query_state/` directory.
 
 ## Construction and scope
 

@@ -1,9 +1,11 @@
 # Read-correction exploration — September 2026
 
-This directory now retains shared fitting, reading, data and cost utilities.
+This directory now retains shared fitting, reading, data and cost utilities; the v1 fitting CLIs have retired.
 The v1/v2/v3 and Max-diagnostic runners and the independent v4 queue are retired.
-Current execution uses `scripts/read_correction_v5/`,
-`scripts/read_correction_motivation/` and the v4 calibration/evaluation modules.
+Retained numerical implementations include `scripts/read_correction_v5/` and
+the shared v4 token-alignment/nonlinear fitting and evaluation modules.
+The completed Motivation launchers and calibration-only queues have retired;
+new measurements require new inputs.
 Current Motivation selects nonlinear Q-v5 `cross_phi_joint8` C128/256/512
 (45 points) plus nonlinear H-v4 `map_all` C64/128/256 (45 points); see
 [the final results](../../results/read_correction_2026_09/motivation_final/README.md).

@@ -1,0 +1,3161 @@
+{
+  "status": "complete",
+  "role": "continuous_development_baseline_and_formation_diagnostic",
+  "aggregation_source_sha256": "da389a0831d7c0977083e66a31c3cfeece31f96cf531ff6b1e7749cf9a439435",
+  "users": 256,
+  "requests": 4240,
+  "inputs": {
+    "panel_sha256": "02ea25a775a7d982c45b711c32214379731153fe63574c3138bfd7b00883830b",
+    "calibrations": {
+      "v3": {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v3",
+        "metadata_sha256": "40cfac14405d5e04ae285fac25b7b7468425c16617d30cf6a78918ad6c700ad2",
+        "weights_sha256": "638fc9112e235efafa05c2741fcb5f2ade1e6171dcee49ae96cae2b6415b92ca",
+        "calibration_flops": 32443303922100,
+        "role": "development_calibration",
+        "settings": {
+          "item_width": 64,
+          "response_width": 256,
+          "item_epochs": 64,
+          "response_epochs": 100,
+          "compact_training": true,
+          "seed": 17,
+          "batch_size": 8
+        }
+      },
+      "v4": {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v4",
+        "metadata_sha256": "367fb1bf10a4f0df48324766b7670e5d3e58759efc3faeda28d72bc218017b56",
+        "weights_sha256": "a58870d000d0b9571ad3554cb8623b1c73b9aa4bb1714d4bc4eaaf52c853e6dd",
+        "calibration_flops": 33496821848644,
+        "role": "development_calibration",
+        "settings": {
+          "item_width": 64,
+          "response_width": 256,
+          "item_epochs": 64,
+          "response_epochs": 100,
+          "compact_training": true,
+          "seed": 17,
+          "batch_size": 8
+        }
+      },
+      "v5": {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v5",
+        "metadata_sha256": "800c09b24fe69f42b64667c86419f9b91cc3f41596c4b39d01710c4fce28fc1c",
+        "weights_sha256": "d25018f04913a4d2a742731db63197c8be637d45a35ac1881eccc5b0002247a1",
+        "calibration_flops": 34551710176754,
+        "role": "development_calibration",
+        "settings": {
+          "item_width": 64,
+          "response_width": 256,
+          "item_epochs": 64,
+          "response_epochs": 100,
+          "compact_training": true,
+          "seed": 17,
+          "batch_size": 8
+        }
+      }
+    },
+    "learned_calibrations": {
+      "v3": {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round2_learned_strength/calibration/v3",
+        "metadata_sha256": "f59900fc24b46df75f2c9b70dd975666f4a0bbfd46343e75659be8d89214384d",
+        "weights_sha256": "fb0d1799e0ae0ea77c3b9eba498261718a6bbbaf91400d07cb1d186b794739ff",
+        "role": "development_calibration",
+        "settings": {
+          "append_targets": [
+            0,
+            256,
+            768,
+            1024
+          ],
+          "queries_per_scene": 16,
+          "seed": 17,
+          "ridge": 0.001,
+          "gain_bounds": [
+            0.0,
+            2.0
+          ],
+          "batch_size": 8,
+          "layers": 6,
+          "coefficients_per_layer": 3,
+          "features": {
+            "constant": [
+              "1",
+              "0",
+              "0"
+            ],
+            "local": [
+              "1",
+              "old_fraction",
+              "appends/(retained_length+appends)"
+            ],
+            "formation": [
+              "1",
+              "old_fraction",
+              "layer_mean_formation_trace"
+            ]
+          }
+        },
+        "cost_by_mode": {
+          "constant": {
+            "components": {
+              "source_trajectory_flops": 8860817409744,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1340175322234,
+              "compact_scene_encoding_flops": 480080603136,
+              "shared_compact_setup_flops": 149760,
+              "native_query_forward_flops": 702968344272,
+              "compact_and_response_read_flops": 941019541248,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 90091747584,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7168097712,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 32443303922100
+            },
+            "calibration_flops": 44865932219070,
+            "new_teacher_flops": 1437435167530,
+            "item_lookup_bytes": 819250176,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          },
+          "local": {
+            "components": {
+              "source_trajectory_flops": 8860817409744,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1340175322234,
+              "compact_scene_encoding_flops": 480080603136,
+              "shared_compact_setup_flops": 149760,
+              "local_feature_flops": 19584,
+              "native_query_forward_flops": 702968344272,
+              "compact_and_response_read_flops": 941019541248,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 90091747584,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7168097712,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 32443303922100
+            },
+            "calibration_flops": 44865932238654,
+            "new_teacher_flops": 1437435167530,
+            "item_lookup_bytes": 819250176,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          },
+          "formation": {
+            "components": {
+              "source_trajectory_flops": 8860817409744,
+              "formation_trace_flops": 1134334742630,
+              "formation_mean_flops": 6400392,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1340175322234,
+              "compact_scene_encoding_flops": 480080603136,
+              "shared_compact_setup_flops": 149760,
+              "native_query_forward_flops": 702968344272,
+              "compact_and_response_read_flops": 941019541248,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 90091747584,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7168097712,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 32443303922100
+            },
+            "calibration_flops": 46000273362092,
+            "new_teacher_flops": 1437435167530,
+            "item_lookup_bytes": 819250176,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          }
+        },
+        "execution_sources": {
+          "scripts/design_one/calibrate.py": "882dc4fdd10b4e4914ae385e32f43524f053231bafb5e93ddd6eb752fdc2b345",
+          "scripts/design/shared_read_probe.py": "4673ce2b59770e4ba6b1abd9f336925015f5fe15c60ddb7e8e226620d23e38d7",
+          "scripts/design/diagnose_native_input.py": "fa56bb1b731e71b6c89899852d75fae067603496dd388fa1d38f99342c925b55",
+          "scripts/evaluate_yambda500m_foundation_raw.py": "d398d5d0dab42f1bcdde299457d63d5e5d2ad2b29bff98e6c3e1379129fcc851",
+          "scripts/read_correction_2026_09/calibrate.py": "7f4fc5e844e90685a5857281c97c421cbd9b662c03d7fdd8e5a7c260f5eeeb1d",
+          "scripts/read_correction_2026_09/v2/calibrate.py": "c15844b56600588ba2b968be7d8fd71647b56865f5531b1bf1ed05a7031e4ed6",
+          "scripts/read_correction_2026_09/cost.py": "02591a168a81c68ad2d7a3603d195229d090dcafe19c9b0ce9b5195f766b887a",
+          "scripts/read_correction_v5/history_conditioned/capture.py": "9310a369a4533ee1fbe2bd39c40f1ff7f64bde16e8ffd3fd5bae61d8220509d2",
+          "scripts/selective_recompute_2026_09/calibrate.py": "4b0680694224c801e8edb4fa79b6029c465d12f767490765ca99b46bdb8ef0d3",
+          "scripts/selective_recompute_2026_09/cost.py": "c8dbca999615dbd86daed256f4fc8dc6216aa902aa35abe247196a6a767f6a75",
+          "scripts/selective_recompute_2026_09/evaluate.py": "2493cce6265800226e71e60fd1ea6de2c8f9655c4c3788681f09d72462d63bed",
+          "src/hstu_kvcache/adaptation/reader.py": "f5cfcb9e6303053c002d4720761df28b72d69a539e2b1bae61cb3d46e028b153",
+          "src/hstu_kvcache/data/yambda_history.py": "23a046f5bcfdc595a2ae68fd2949ea004cfd7439a583d5dff53f493cd71fcde8",
+          "src/hstu_kvcache/data/oov.py": "4d8a369fcedd1667ce0b314462a542820aaeb80c32fb0ac6411911eaa744b82e",
+          "src/hstu_kvcache/training/foundation.py": "001a24880e2b00862f63ea50924fae50cb0c2aec86e8f2b86948af7f763de655",
+          "src/hstu_kvcache/models/__init__.py": "d3963c0c951206de278a16e0ffbabaf7c54a459325cac34eed59b18ef1e554fa",
+          "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+          "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895",
+          "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+          "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+          "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+          "src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+          "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+          "src/hstu_kvcache/models/state_transition.py": "b3eaca9f73245bc358f1fd7bc278972d8d06435eac9f6c23d98168e218267749",
+          "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+          "src/hstu_kvcache/design_one/__init__.py": "48c03daeec53985c8fde779f0d4966906da1f9255916df938e7f3749226c1317",
+          "src/hstu_kvcache/design_one/adapter.py": "01faa99e977db51f3f2f25a63b6bb64da876be9d3cab2f9f44fe61cc015fd517",
+          "src/hstu_kvcache/design_one/affine.py": "22f908741c0687dff35e1009007b6969608112c967e107fa796cef1cb63faeb0",
+          "src/hstu_kvcache/design_one/compact.py": "f81e4c4efd43dc07bf5633faf22ccb300bd8b4266c0b06ca2da5e07e58d73286",
+          "src/hstu_kvcache/design_one/composite.py": "46db43c2c96cff341f355d93e0b6d6e9b0a206b92343f8a917974037354b83ba",
+          "src/hstu_kvcache/design_one/item_kv.py": "4a01111779c5472a3ddef1adc80aa36312274e989798f7fe1e4385794daade5e",
+          "src/hstu_kvcache/design_one/nonlinear.py": "5efcb52119a57c975394de7395cebf14b7ac8f8817ef87ef99cdaa0b316fea06",
+          "src/hstu_kvcache/design_one/producer_scaled_item.py": "01db2bf1afbf77abbfd8c3801e2bfbf57bbfab495263004625418fa3fa16fe42",
+          "src/hstu_kvcache/design_one/summary.py": "d0772edd53b275107a171fc42bec95a3fd634c215b615b0f3f661d54f8264abd",
+          "scripts/design_one/calibrate_nonlinear.py": "b3bdafd0d2ef2e42b1aa11cc875420cf15e9f5986e381b0ecf5d2e3272d704ac",
+          "scripts/design_one/prepare_history.py": "3efe00b59e8e15970bb413192fd104d583d421b1c9e2e72978260991e7cb59d8",
+          "scripts/design_two/common.py": "678dd5abac126c3d009b041863707e4c7655b9a6587505793772d27e193d1bb1",
+          "scripts/design_two/prepare.py": "6b11ac1f1344c8778cf8fcb5a919aca8f57350de75876d3de52e7e33b8728e77",
+          "src/hstu_kvcache/design_two/replay.py": "31d316e8be9105c4829749037b1e7b5175609a27c1da28c13d894256830ea211",
+          "scripts/design_two/calibrate_gates.py": "4c968923530c22574ddb05f479a47e45221e042741f87908e7a60516884e6b0c",
+          "scripts/design_two/prepare_calibration_history.py": "678721f6f2cd2946637c263cb1a3aa7092e4dc827bec54a3e0f6a631be7fd31e",
+          "src/hstu_kvcache/design_two/influence.py": "d19201e1cab3df4436c664b1fd504ea18e258edd129fdfec7a269db8ca0a3345",
+          "src/hstu_kvcache/design_two/learned_strength.py": "6ea09cf7c74362161cd7a21ebc0a3fa0edab08a480626cdb434ff957aedf4d85"
+        },
+        "base_calibration": {
+          "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v3",
+          "metadata_sha256": "40cfac14405d5e04ae285fac25b7b7468425c16617d30cf6a78918ad6c700ad2",
+          "weights_sha256": "638fc9112e235efafa05c2741fcb5f2ade1e6171dcee49ae96cae2b6415b92ca"
+        }
+      },
+      "v4": {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round2_learned_strength/calibration/v4",
+        "metadata_sha256": "0e083fca821a54c2e43a3a8f879f36c3a9407a7cd26e3a081e23145c29a5724b",
+        "weights_sha256": "25461951a10e0a56bbe09224c9692b91493e9de8a4a473007f3d17f047cd7c3e",
+        "role": "development_calibration",
+        "settings": {
+          "append_targets": [
+            0,
+            256,
+            768,
+            1024
+          ],
+          "queries_per_scene": 16,
+          "seed": 17,
+          "ridge": 0.001,
+          "gain_bounds": [
+            0.0,
+            2.0
+          ],
+          "batch_size": 8,
+          "layers": 6,
+          "coefficients_per_layer": 3,
+          "features": {
+            "constant": [
+              "1",
+              "0",
+              "0"
+            ],
+            "local": [
+              "1",
+              "old_fraction",
+              "appends/(retained_length+appends)"
+            ],
+            "formation": [
+              "1",
+              "old_fraction",
+              "layer_mean_formation_trace"
+            ]
+          }
+        },
+        "cost_by_mode": {
+          "constant": {
+            "components": {
+              "source_trajectory_flops": 10906851832388,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1336280517858,
+              "compact_scene_encoding_flops": 485862819840,
+              "shared_compact_setup_flops": 149760,
+              "native_query_forward_flops": 708503493744,
+              "compact_and_response_read_flops": 950701974528,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 91248940800,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7261964976,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 33496821848644
+            },
+            "calibration_flops": 47983840623818,
+            "new_teacher_flops": 1434791423634,
+            "item_lookup_bytes": 829117440,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          },
+          "local": {
+            "components": {
+              "source_trajectory_flops": 10906851832388,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1336280517858,
+              "compact_scene_encoding_flops": 485862819840,
+              "shared_compact_setup_flops": 149760,
+              "local_feature_flops": 19584,
+              "native_query_forward_flops": 708503493744,
+              "compact_and_response_read_flops": 950701974528,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 91248940800,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7261964976,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 33496821848644
+            },
+            "calibration_flops": 47983840643402,
+            "new_teacher_flops": 1434791423634,
+            "item_lookup_bytes": 829117440,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          },
+          "formation": {
+            "components": {
+              "source_trajectory_flops": 10906851832388,
+              "formation_trace_flops": 1156586589050,
+              "formation_mean_flops": 6477480,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1336280517858,
+              "compact_scene_encoding_flops": 485862819840,
+              "shared_compact_setup_flops": 149760,
+              "native_query_forward_flops": 708503493744,
+              "compact_and_response_read_flops": 950701974528,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 91248940800,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7261964976,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 33496821848644
+            },
+            "calibration_flops": 49140433690348,
+            "new_teacher_flops": 1434791423634,
+            "item_lookup_bytes": 829117440,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          }
+        },
+        "execution_sources": {
+          "scripts/design_one/calibrate.py": "882dc4fdd10b4e4914ae385e32f43524f053231bafb5e93ddd6eb752fdc2b345",
+          "scripts/design/shared_read_probe.py": "4673ce2b59770e4ba6b1abd9f336925015f5fe15c60ddb7e8e226620d23e38d7",
+          "scripts/design/diagnose_native_input.py": "fa56bb1b731e71b6c89899852d75fae067603496dd388fa1d38f99342c925b55",
+          "scripts/evaluate_yambda500m_foundation_raw.py": "d398d5d0dab42f1bcdde299457d63d5e5d2ad2b29bff98e6c3e1379129fcc851",
+          "scripts/read_correction_2026_09/calibrate.py": "7f4fc5e844e90685a5857281c97c421cbd9b662c03d7fdd8e5a7c260f5eeeb1d",
+          "scripts/read_correction_2026_09/v2/calibrate.py": "c15844b56600588ba2b968be7d8fd71647b56865f5531b1bf1ed05a7031e4ed6",
+          "scripts/read_correction_2026_09/cost.py": "02591a168a81c68ad2d7a3603d195229d090dcafe19c9b0ce9b5195f766b887a",
+          "scripts/read_correction_v5/history_conditioned/capture.py": "9310a369a4533ee1fbe2bd39c40f1ff7f64bde16e8ffd3fd5bae61d8220509d2",
+          "scripts/selective_recompute_2026_09/calibrate.py": "4b0680694224c801e8edb4fa79b6029c465d12f767490765ca99b46bdb8ef0d3",
+          "scripts/selective_recompute_2026_09/cost.py": "c8dbca999615dbd86daed256f4fc8dc6216aa902aa35abe247196a6a767f6a75",
+          "scripts/selective_recompute_2026_09/evaluate.py": "2493cce6265800226e71e60fd1ea6de2c8f9655c4c3788681f09d72462d63bed",
+          "src/hstu_kvcache/adaptation/reader.py": "f5cfcb9e6303053c002d4720761df28b72d69a539e2b1bae61cb3d46e028b153",
+          "src/hstu_kvcache/data/yambda_history.py": "23a046f5bcfdc595a2ae68fd2949ea004cfd7439a583d5dff53f493cd71fcde8",
+          "src/hstu_kvcache/data/oov.py": "4d8a369fcedd1667ce0b314462a542820aaeb80c32fb0ac6411911eaa744b82e",
+          "src/hstu_kvcache/training/foundation.py": "001a24880e2b00862f63ea50924fae50cb0c2aec86e8f2b86948af7f763de655",
+          "src/hstu_kvcache/models/__init__.py": "d3963c0c951206de278a16e0ffbabaf7c54a459325cac34eed59b18ef1e554fa",
+          "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+          "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895",
+          "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+          "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+          "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+          "src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+          "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+          "src/hstu_kvcache/models/state_transition.py": "b3eaca9f73245bc358f1fd7bc278972d8d06435eac9f6c23d98168e218267749",
+          "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+          "src/hstu_kvcache/design_one/__init__.py": "48c03daeec53985c8fde779f0d4966906da1f9255916df938e7f3749226c1317",
+          "src/hstu_kvcache/design_one/adapter.py": "01faa99e977db51f3f2f25a63b6bb64da876be9d3cab2f9f44fe61cc015fd517",
+          "src/hstu_kvcache/design_one/affine.py": "22f908741c0687dff35e1009007b6969608112c967e107fa796cef1cb63faeb0",
+          "src/hstu_kvcache/design_one/compact.py": "f81e4c4efd43dc07bf5633faf22ccb300bd8b4266c0b06ca2da5e07e58d73286",
+          "src/hstu_kvcache/design_one/composite.py": "46db43c2c96cff341f355d93e0b6d6e9b0a206b92343f8a917974037354b83ba",
+          "src/hstu_kvcache/design_one/item_kv.py": "4a01111779c5472a3ddef1adc80aa36312274e989798f7fe1e4385794daade5e",
+          "src/hstu_kvcache/design_one/nonlinear.py": "5efcb52119a57c975394de7395cebf14b7ac8f8817ef87ef99cdaa0b316fea06",
+          "src/hstu_kvcache/design_one/producer_scaled_item.py": "01db2bf1afbf77abbfd8c3801e2bfbf57bbfab495263004625418fa3fa16fe42",
+          "src/hstu_kvcache/design_one/summary.py": "d0772edd53b275107a171fc42bec95a3fd634c215b615b0f3f661d54f8264abd",
+          "scripts/design_one/calibrate_nonlinear.py": "b3bdafd0d2ef2e42b1aa11cc875420cf15e9f5986e381b0ecf5d2e3272d704ac",
+          "scripts/design_one/prepare_history.py": "3efe00b59e8e15970bb413192fd104d583d421b1c9e2e72978260991e7cb59d8",
+          "scripts/design_two/common.py": "678dd5abac126c3d009b041863707e4c7655b9a6587505793772d27e193d1bb1",
+          "scripts/design_two/prepare.py": "6b11ac1f1344c8778cf8fcb5a919aca8f57350de75876d3de52e7e33b8728e77",
+          "src/hstu_kvcache/design_two/replay.py": "31d316e8be9105c4829749037b1e7b5175609a27c1da28c13d894256830ea211",
+          "scripts/design_two/calibrate_gates.py": "4c968923530c22574ddb05f479a47e45221e042741f87908e7a60516884e6b0c",
+          "scripts/design_two/prepare_calibration_history.py": "678721f6f2cd2946637c263cb1a3aa7092e4dc827bec54a3e0f6a631be7fd31e",
+          "src/hstu_kvcache/design_two/influence.py": "d19201e1cab3df4436c664b1fd504ea18e258edd129fdfec7a269db8ca0a3345",
+          "src/hstu_kvcache/design_two/learned_strength.py": "6ea09cf7c74362161cd7a21ebc0a3fa0edab08a480626cdb434ff957aedf4d85"
+        },
+        "base_calibration": {
+          "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v4",
+          "metadata_sha256": "367fb1bf10a4f0df48324766b7670e5d3e58759efc3faeda28d72bc218017b56",
+          "weights_sha256": "a58870d000d0b9571ad3554cb8623b1c73b9aa4bb1714d4bc4eaaf52c853e6dd"
+        }
+      },
+      "v5": {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round2_learned_strength/calibration/v5",
+        "metadata_sha256": "2bc8e03681632dbf34f74fd4f79405bf16af0fb501545f6a412bb72f7566948c",
+        "weights_sha256": "a585b1c96519f7aabf5321ac91a4ab2f105af704d9ac2cb5a6ef27485cf1fbd8",
+        "role": "development_calibration",
+        "settings": {
+          "append_targets": [
+            0,
+            256,
+            768,
+            1024
+          ],
+          "queries_per_scene": 16,
+          "seed": 17,
+          "ridge": 0.001,
+          "gain_bounds": [
+            0.0,
+            2.0
+          ],
+          "batch_size": 8,
+          "layers": 6,
+          "coefficients_per_layer": 3,
+          "features": {
+            "constant": [
+              "1",
+              "0",
+              "0"
+            ],
+            "local": [
+              "1",
+              "old_fraction",
+              "appends/(retained_length+appends)"
+            ],
+            "formation": [
+              "1",
+              "old_fraction",
+              "layer_mean_formation_trace"
+            ]
+          }
+        },
+        "cost_by_mode": {
+          "constant": {
+            "components": {
+              "source_trajectory_flops": 14174741252864,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1338443623732,
+              "compact_scene_encoding_flops": 488366886912,
+              "shared_compact_setup_flops": 149760,
+              "native_query_forward_flops": 710869491360,
+              "compact_and_response_read_flops": 954848828928,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 91770794496,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7312973184,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 34551710176754
+            },
+            "calibration_flops": 52318371259270,
+            "new_teacher_flops": 1437527391412,
+            "item_lookup_bytes": 833390592,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          },
+          "local": {
+            "components": {
+              "source_trajectory_flops": 14174741252864,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1338443623732,
+              "compact_scene_encoding_flops": 488366886912,
+              "shared_compact_setup_flops": 149760,
+              "local_feature_flops": 19584,
+              "native_query_forward_flops": 710869491360,
+              "compact_and_response_read_flops": 954848828928,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 91770794496,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7312973184,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 34551710176754
+            },
+            "calibration_flops": 52318371278854,
+            "new_teacher_flops": 1437527391412,
+            "item_lookup_bytes": 833390592,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          },
+          "formation": {
+            "components": {
+              "source_trajectory_flops": 14174741252864,
+              "formation_trace_flops": 1171529381210,
+              "formation_mean_flops": 6510864,
+              "old_fraction_flops": 1088,
+              "teacher_cache_capture_flops": 1338443623732,
+              "compact_scene_encoding_flops": 488366886912,
+              "shared_compact_setup_flops": 149760,
+              "native_query_forward_flops": 710869491360,
+              "compact_and_response_read_flops": 954848828928,
+              "gain_evaluation_flops": 110208,
+              "gain_blend_flops": 145096704,
+              "same_query_teacher_flops": 91770794496,
+              "fit_read_residual_flops": 37748736,
+              "ridge_fit_flops_estimate": 75651456,
+              "fit_diagnostic_flops_estimate": 37847040,
+              "validation_teacher_full_query_flops": 7312973184,
+              "validation_response_metric_flops": 10616832,
+              "validation_logit_metric_flops": 9216,
+              "inherited_d1_calibration_flops": 34551710176754
+            },
+            "calibration_flops": 53489907151344,
+            "new_teacher_flops": 1437527391412,
+            "item_lookup_bytes": 833390592,
+            "scope": "Standalone method cost: inherited D1 fitting, own complete scene/teacher captures, actual-query layerwise fitting, all validation controls and metrics. Formation alone additionally pays fixed-trace propagation and reduction. No shared offline credit."
+          }
+        },
+        "execution_sources": {
+          "scripts/design_one/calibrate.py": "882dc4fdd10b4e4914ae385e32f43524f053231bafb5e93ddd6eb752fdc2b345",
+          "scripts/design/shared_read_probe.py": "4673ce2b59770e4ba6b1abd9f336925015f5fe15c60ddb7e8e226620d23e38d7",
+          "scripts/design/diagnose_native_input.py": "fa56bb1b731e71b6c89899852d75fae067603496dd388fa1d38f99342c925b55",
+          "scripts/evaluate_yambda500m_foundation_raw.py": "d398d5d0dab42f1bcdde299457d63d5e5d2ad2b29bff98e6c3e1379129fcc851",
+          "scripts/read_correction_2026_09/calibrate.py": "7f4fc5e844e90685a5857281c97c421cbd9b662c03d7fdd8e5a7c260f5eeeb1d",
+          "scripts/read_correction_2026_09/v2/calibrate.py": "c15844b56600588ba2b968be7d8fd71647b56865f5531b1bf1ed05a7031e4ed6",
+          "scripts/read_correction_2026_09/cost.py": "02591a168a81c68ad2d7a3603d195229d090dcafe19c9b0ce9b5195f766b887a",
+          "scripts/read_correction_v5/history_conditioned/capture.py": "9310a369a4533ee1fbe2bd39c40f1ff7f64bde16e8ffd3fd5bae61d8220509d2",
+          "scripts/selective_recompute_2026_09/calibrate.py": "4b0680694224c801e8edb4fa79b6029c465d12f767490765ca99b46bdb8ef0d3",
+          "scripts/selective_recompute_2026_09/cost.py": "c8dbca999615dbd86daed256f4fc8dc6216aa902aa35abe247196a6a767f6a75",
+          "scripts/selective_recompute_2026_09/evaluate.py": "2493cce6265800226e71e60fd1ea6de2c8f9655c4c3788681f09d72462d63bed",
+          "src/hstu_kvcache/adaptation/reader.py": "f5cfcb9e6303053c002d4720761df28b72d69a539e2b1bae61cb3d46e028b153",
+          "src/hstu_kvcache/data/yambda_history.py": "23a046f5bcfdc595a2ae68fd2949ea004cfd7439a583d5dff53f493cd71fcde8",
+          "src/hstu_kvcache/data/oov.py": "4d8a369fcedd1667ce0b314462a542820aaeb80c32fb0ac6411911eaa744b82e",
+          "src/hstu_kvcache/training/foundation.py": "001a24880e2b00862f63ea50924fae50cb0c2aec86e8f2b86948af7f763de655",
+          "src/hstu_kvcache/models/__init__.py": "d3963c0c951206de278a16e0ffbabaf7c54a459325cac34eed59b18ef1e554fa",
+          "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+          "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895",
+          "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+          "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+          "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+          "src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+          "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+          "src/hstu_kvcache/models/state_transition.py": "b3eaca9f73245bc358f1fd7bc278972d8d06435eac9f6c23d98168e218267749",
+          "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+          "src/hstu_kvcache/design_one/__init__.py": "48c03daeec53985c8fde779f0d4966906da1f9255916df938e7f3749226c1317",
+          "src/hstu_kvcache/design_one/adapter.py": "01faa99e977db51f3f2f25a63b6bb64da876be9d3cab2f9f44fe61cc015fd517",
+          "src/hstu_kvcache/design_one/affine.py": "22f908741c0687dff35e1009007b6969608112c967e107fa796cef1cb63faeb0",
+          "src/hstu_kvcache/design_one/compact.py": "f81e4c4efd43dc07bf5633faf22ccb300bd8b4266c0b06ca2da5e07e58d73286",
+          "src/hstu_kvcache/design_one/composite.py": "46db43c2c96cff341f355d93e0b6d6e9b0a206b92343f8a917974037354b83ba",
+          "src/hstu_kvcache/design_one/item_kv.py": "4a01111779c5472a3ddef1adc80aa36312274e989798f7fe1e4385794daade5e",
+          "src/hstu_kvcache/design_one/nonlinear.py": "5efcb52119a57c975394de7395cebf14b7ac8f8817ef87ef99cdaa0b316fea06",
+          "src/hstu_kvcache/design_one/producer_scaled_item.py": "01db2bf1afbf77abbfd8c3801e2bfbf57bbfab495263004625418fa3fa16fe42",
+          "src/hstu_kvcache/design_one/summary.py": "d0772edd53b275107a171fc42bec95a3fd634c215b615b0f3f661d54f8264abd",
+          "scripts/design_one/calibrate_nonlinear.py": "b3bdafd0d2ef2e42b1aa11cc875420cf15e9f5986e381b0ecf5d2e3272d704ac",
+          "scripts/design_one/prepare_history.py": "3efe00b59e8e15970bb413192fd104d583d421b1c9e2e72978260991e7cb59d8",
+          "scripts/design_two/common.py": "678dd5abac126c3d009b041863707e4c7655b9a6587505793772d27e193d1bb1",
+          "scripts/design_two/prepare.py": "6b11ac1f1344c8778cf8fcb5a919aca8f57350de75876d3de52e7e33b8728e77",
+          "src/hstu_kvcache/design_two/replay.py": "31d316e8be9105c4829749037b1e7b5175609a27c1da28c13d894256830ea211",
+          "scripts/design_two/calibrate_gates.py": "4c968923530c22574ddb05f479a47e45221e042741f87908e7a60516884e6b0c",
+          "scripts/design_two/prepare_calibration_history.py": "678721f6f2cd2946637c263cb1a3aa7092e4dc827bec54a3e0f6a631be7fd31e",
+          "src/hstu_kvcache/design_two/influence.py": "d19201e1cab3df4436c664b1fd504ea18e258edd129fdfec7a269db8ca0a3345",
+          "src/hstu_kvcache/design_two/learned_strength.py": "6ea09cf7c74362161cd7a21ebc0a3fa0edab08a480626cdb434ff957aedf4d85"
+        },
+        "base_calibration": {
+          "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v5",
+          "metadata_sha256": "800c09b24fe69f42b64667c86419f9b91cc3f41596c4b39d01710c4fce28fc1c",
+          "weights_sha256": "d25018f04913a4d2a742731db63197c8be637d45a35ac1881eccc5b0002247a1"
+        }
+      }
+    },
+    "group": "pilot",
+    "max_users": 0,
+    "num_shards": 3,
+    "formation_trace": true,
+    "fresh": true,
+    "state_gates": true,
+    "query_batch": 32,
+    "append_band_size": 32,
+    "attention_backend": "triton",
+    "execution_sources": {
+      "scripts/design_one/calibrate.py": "882dc4fdd10b4e4914ae385e32f43524f053231bafb5e93ddd6eb752fdc2b345",
+      "scripts/design/shared_read_probe.py": "4673ce2b59770e4ba6b1abd9f336925015f5fe15c60ddb7e8e226620d23e38d7",
+      "scripts/design/diagnose_native_input.py": "fa56bb1b731e71b6c89899852d75fae067603496dd388fa1d38f99342c925b55",
+      "scripts/evaluate_yambda500m_foundation_raw.py": "d398d5d0dab42f1bcdde299457d63d5e5d2ad2b29bff98e6c3e1379129fcc851",
+      "scripts/read_correction_2026_09/calibrate.py": "7f4fc5e844e90685a5857281c97c421cbd9b662c03d7fdd8e5a7c260f5eeeb1d",
+      "scripts/read_correction_2026_09/v2/calibrate.py": "c15844b56600588ba2b968be7d8fd71647b56865f5531b1bf1ed05a7031e4ed6",
+      "scripts/read_correction_2026_09/cost.py": "02591a168a81c68ad2d7a3603d195229d090dcafe19c9b0ce9b5195f766b887a",
+      "scripts/read_correction_v5/history_conditioned/capture.py": "9310a369a4533ee1fbe2bd39c40f1ff7f64bde16e8ffd3fd5bae61d8220509d2",
+      "scripts/selective_recompute_2026_09/calibrate.py": "4b0680694224c801e8edb4fa79b6029c465d12f767490765ca99b46bdb8ef0d3",
+      "scripts/selective_recompute_2026_09/cost.py": "c8dbca999615dbd86daed256f4fc8dc6216aa902aa35abe247196a6a767f6a75",
+      "scripts/selective_recompute_2026_09/evaluate.py": "2493cce6265800226e71e60fd1ea6de2c8f9655c4c3788681f09d72462d63bed",
+      "src/hstu_kvcache/adaptation/reader.py": "f5cfcb9e6303053c002d4720761df28b72d69a539e2b1bae61cb3d46e028b153",
+      "src/hstu_kvcache/data/yambda_history.py": "23a046f5bcfdc595a2ae68fd2949ea004cfd7439a583d5dff53f493cd71fcde8",
+      "src/hstu_kvcache/data/oov.py": "4d8a369fcedd1667ce0b314462a542820aaeb80c32fb0ac6411911eaa744b82e",
+      "src/hstu_kvcache/training/foundation.py": "001a24880e2b00862f63ea50924fae50cb0c2aec86e8f2b86948af7f763de655",
+      "src/hstu_kvcache/models/__init__.py": "d3963c0c951206de278a16e0ffbabaf7c54a459325cac34eed59b18ef1e554fa",
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895",
+      "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+      "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+      "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+      "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+      "src/hstu_kvcache/models/state_transition.py": "b3eaca9f73245bc358f1fd7bc278972d8d06435eac9f6c23d98168e218267749",
+      "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+      "src/hstu_kvcache/design_one/__init__.py": "48c03daeec53985c8fde779f0d4966906da1f9255916df938e7f3749226c1317",
+      "src/hstu_kvcache/design_one/adapter.py": "01faa99e977db51f3f2f25a63b6bb64da876be9d3cab2f9f44fe61cc015fd517",
+      "src/hstu_kvcache/design_one/affine.py": "22f908741c0687dff35e1009007b6969608112c967e107fa796cef1cb63faeb0",
+      "src/hstu_kvcache/design_one/compact.py": "f81e4c4efd43dc07bf5633faf22ccb300bd8b4266c0b06ca2da5e07e58d73286",
+      "src/hstu_kvcache/design_one/composite.py": "46db43c2c96cff341f355d93e0b6d6e9b0a206b92343f8a917974037354b83ba",
+      "src/hstu_kvcache/design_one/item_kv.py": "4a01111779c5472a3ddef1adc80aa36312274e989798f7fe1e4385794daade5e",
+      "src/hstu_kvcache/design_one/nonlinear.py": "5efcb52119a57c975394de7395cebf14b7ac8f8817ef87ef99cdaa0b316fea06",
+      "src/hstu_kvcache/design_one/producer_scaled_item.py": "01db2bf1afbf77abbfd8c3801e2bfbf57bbfab495263004625418fa3fa16fe42",
+      "src/hstu_kvcache/design_one/summary.py": "d0772edd53b275107a171fc42bec95a3fd634c215b615b0f3f661d54f8264abd",
+      "scripts/design_one/calibrate_nonlinear.py": "b3bdafd0d2ef2e42b1aa11cc875420cf15e9f5986e381b0ecf5d2e3272d704ac",
+      "scripts/design_one/prepare_history.py": "3efe00b59e8e15970bb413192fd104d583d421b1c9e2e72978260991e7cb59d8",
+      "scripts/design_two/common.py": "678dd5abac126c3d009b041863707e4c7655b9a6587505793772d27e193d1bb1",
+      "scripts/design_two/prepare.py": "6b11ac1f1344c8778cf8fcb5a919aca8f57350de75876d3de52e7e33b8728e77",
+      "src/hstu_kvcache/design_two/replay.py": "31d316e8be9105c4829749037b1e7b5175609a27c1da28c13d894256830ea211",
+      "scripts/design_two/benchmark.py": "da389a0831d7c0977083e66a31c3cfeece31f96cf531ff6b1e7749cf9a439435",
+      "src/hstu_kvcache/design_two/influence.py": "d19201e1cab3df4436c664b1fd504ea18e258edd129fdfec7a269db8ca0a3345",
+      "src/hstu_kvcache/design_two/correction.py": "ac425a8b82ebcf4ad66d360869665e6d9b936cb4b63a9a56c99ae2c646813c57",
+      "src/hstu_kvcache/design_two/learned_strength.py": "6ea09cf7c74362161cd7a21ebc0a3fa0edab08a480626cdb434ff957aedf4d85"
+    },
+    "shard_index": 0,
+    "uids": [
+      3220,
+      6770,
+      13880,
+      30370,
+      37150,
+      42430,
+      54690,
+      82230,
+      94980,
+      102210,
+      109740,
+      123410,
+      131820,
+      142120,
+      161640,
+      178720,
+      187320,
+      197170,
+      202490,
+      211810,
+      223950,
+      242380,
+      248150,
+      261430,
+      279410,
+      286810,
+      304150,
+      323090,
+      332460,
+      348100,
+      352160,
+      361470,
+      373120,
+      384750,
+      392730,
+      410880,
+      411730,
+      420890,
+      432540,
+      446040,
+      479170,
+      486110,
+      491070,
+      497320,
+      507740,
+      516900,
+      522200,
+      533590,
+      537180,
+      554890,
+      571470,
+      572260,
+      583960,
+      589230,
+      600870,
+      605370,
+      629800,
+      636600,
+      644260,
+      655940,
+      666060,
+      676390,
+      691080,
+      701970,
+      710630,
+      715320,
+      734120,
+      740870,
+      766900,
+      771990,
+      779350,
+      811710,
+      833660,
+      836260,
+      842780,
+      849550,
+      860430,
+      895320,
+      903060,
+      916140,
+      925420,
+      933510,
+      954980,
+      966090,
+      982100,
+      993810
+    ]
+  },
+  "metrics": {
+    "pooled": {
+      "requests": 4240,
+      "users": 248,
+      "positive_labels": 3726,
+      "negative_labels": 514,
+      "methods": {
+        "reuse": {
+          "log_loss": 0.3762248910769421,
+          "Brier": 0.10810479361657184,
+          "ROC_AUC": 0.5419802168378269,
+          "dislike_PR_AUC": 0.13688108363606796,
+          "dislike_only_log_loss": 2.1515829147664367
+        },
+        "exact": {
+          "log_loss": 0.3652716170331262,
+          "Brier": 0.10555755640231639,
+          "ROC_AUC": 0.595664914336318,
+          "dislike_PR_AUC": 0.16569102308532746,
+          "dislike_only_log_loss": 2.2018477768777887
+        },
+        "d1": {
+          "log_loss": 0.36850060669213297,
+          "Brier": 0.10670308239405715,
+          "ROC_AUC": 0.5882504057093805,
+          "dislike_PR_AUC": 0.1597868606534941,
+          "dislike_only_log_loss": 2.2045450559688824
+        },
+        "fresh": {
+          "log_loss": 0.3652357789974832,
+          "Brier": 0.10552490183888442,
+          "ROC_AUC": 0.5951892370575053,
+          "dislike_PR_AUC": 0.16638868086981254,
+          "dislike_only_log_loss": 2.198545458681049
+        },
+        "local_gate": {
+          "log_loss": 0.3692007865574032,
+          "Brier": 0.10677559761734592,
+          "ROC_AUC": 0.5818650517658018,
+          "dislike_PR_AUC": 0.15586886962992869,
+          "dislike_only_log_loss": 2.1935253393414262
+        },
+        "formation_gate": {
+          "log_loss": 0.3692678914257355,
+          "Brier": 0.10680212748031255,
+          "ROC_AUC": 0.5815783922421265,
+          "dislike_PR_AUC": 0.15602063708622826,
+          "dislike_only_log_loss": 2.1903604565844432
+        },
+        "learned_constant": {
+          "log_loss": 0.3696664718809011,
+          "Brier": 0.106823875893243,
+          "ROC_AUC": 0.5788052615859529,
+          "dislike_PR_AUC": 0.15649906708736583,
+          "dislike_only_log_loss": 2.1902705164117173
+        },
+        "learned_local": {
+          "log_loss": 0.3685168893075815,
+          "Brier": 0.10668135023019337,
+          "ROC_AUC": 0.5869037847411501,
+          "dislike_PR_AUC": 0.15875229115412504,
+          "dislike_only_log_loss": 2.196923718931191
+        },
+        "learned_formation": {
+          "log_loss": 0.3686519091541613,
+          "Brier": 0.10671297532098613,
+          "ROC_AUC": 0.5863372536242327,
+          "dislike_PR_AUC": 0.1581838694069146,
+          "dislike_only_log_loss": 2.196405877863067
+        }
+      },
+      "recovery": {
+        "exact": {
+          "auc_gap": 0.05368469749849103,
+          "positive_gap": true,
+          "recovery_percent": 86.18878568302281,
+          "signed_gap_ratio_percent": 86.18878568302281
+        },
+        "fresh": {
+          "auc_gap": 0.05320902021967833,
+          "positive_gap": true,
+          "recovery_percent": 86.95929502276647,
+          "signed_gap_ratio_percent": 86.95929502276647
+        }
+      },
+      "recovery_by_method": {
+        "d1": {
+          "exact": {
+            "auc_gap": 0.05368469749849103,
+            "positive_gap": true,
+            "recovery_percent": 86.18878568302281,
+            "signed_gap_ratio_percent": 86.18878568302281
+          },
+          "fresh": {
+            "auc_gap": 0.05320902021967833,
+            "positive_gap": true,
+            "recovery_percent": 86.95929502276647,
+            "signed_gap_ratio_percent": 86.95929502276647
+          }
+        },
+        "local_gate": {
+          "exact": {
+            "auc_gap": 0.05368469749849103,
+            "positive_gap": true,
+            "recovery_percent": 74.29460681807136,
+            "signed_gap_ratio_percent": 74.29460681807136
+          },
+          "fresh": {
+            "auc_gap": 0.05320902021967833,
+            "positive_gap": true,
+            "recovery_percent": 74.95878473857759,
+            "signed_gap_ratio_percent": 74.95878473857759
+          }
+        },
+        "formation_gate": {
+          "exact": {
+            "auc_gap": 0.05368469749849103,
+            "positive_gap": true,
+            "recovery_percent": 73.76063803919651,
+            "signed_gap_ratio_percent": 73.76063803919651
+          },
+          "fresh": {
+            "auc_gap": 0.05320902021967833,
+            "positive_gap": true,
+            "recovery_percent": 74.42004239284024,
+            "signed_gap_ratio_percent": 74.42004239284024
+          }
+        },
+        "learned_constant": {
+          "exact": {
+            "auc_gap": 0.05368469749849103,
+            "positive_gap": true,
+            "recovery_percent": 68.59504936050176,
+            "signed_gap_ratio_percent": 68.59504936050176
+          },
+          "fresh": {
+            "auc_gap": 0.05320902021967833,
+            "positive_gap": true,
+            "recovery_percent": 69.20827445438837,
+            "signed_gap_ratio_percent": 69.20827445438837
+          }
+        },
+        "learned_local": {
+          "exact": {
+            "auc_gap": 0.05368469749849103,
+            "positive_gap": true,
+            "recovery_percent": 83.68039682925644,
+            "signed_gap_ratio_percent": 83.68039682925644
+          },
+          "fresh": {
+            "auc_gap": 0.05320902021967833,
+            "positive_gap": true,
+            "recovery_percent": 84.4284817082745,
+            "signed_gap_ratio_percent": 84.4284817082745
+          }
+        },
+        "learned_formation": {
+          "exact": {
+            "auc_gap": 0.05368469749849103,
+            "positive_gap": true,
+            "recovery_percent": 82.62510334095218,
+            "signed_gap_ratio_percent": 82.62510334095218
+          },
+          "fresh": {
+            "auc_gap": 0.05320902021967833,
+            "positive_gap": true,
+            "recovery_percent": 83.36375412152617,
+            "signed_gap_ratio_percent": 83.36375412152617
+          }
+        }
+      },
+      "formation_diagnostic": {
+        "trace_mean": 0.8650439661064291,
+        "trace_current_row_mean": 0.613386719891737,
+        "inherited_row_fraction": 0.6986058582672394
+      }
+    },
+    "edges": {
+      "v2_to_v3": {
+        "requests": 1507,
+        "users": 182,
+        "positive_labels": 1272,
+        "negative_labels": 235,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.46152961922652386,
+            "Brier": 0.13658972708650285,
+            "ROC_AUC": 0.47096547571256525,
+            "dislike_PR_AUC": 0.1576283508525029,
+            "dislike_only_log_loss": 2.281524733326412
+          },
+          "exact": {
+            "log_loss": 0.4572960641976205,
+            "Brier": 0.13574784807330093,
+            "ROC_AUC": 0.4878027565903921,
+            "dislike_PR_AUC": 0.1658622588506474,
+            "dislike_only_log_loss": 2.289411029006622
+          },
+          "d1": {
+            "log_loss": 0.4590682293329165,
+            "Brier": 0.1361265265730798,
+            "ROC_AUC": 0.48365114411882776,
+            "dislike_PR_AUC": 0.1609750643704026,
+            "dislike_only_log_loss": 2.310811962926145
+          },
+          "fresh": {
+            "log_loss": 0.4570186150411108,
+            "Brier": 0.1356668344028742,
+            "ROC_AUC": 0.48789308176100626,
+            "dislike_PR_AUC": 0.16784145487292743,
+            "dislike_only_log_loss": 2.2864422306099295
+          },
+          "local_gate": {
+            "log_loss": 0.4587740198424827,
+            "Brier": 0.13601753104983694,
+            "ROC_AUC": 0.4818546768366118,
+            "dislike_PR_AUC": 0.16294417489603533,
+            "dislike_only_log_loss": 2.298340498085232
+          },
+          "formation_gate": {
+            "log_loss": 0.45890644617422705,
+            "Brier": 0.13605482417459014,
+            "ROC_AUC": 0.481058477184531,
+            "dislike_PR_AUC": 0.16248645964359978,
+            "dislike_only_log_loss": 2.2988605036781453
+          },
+          "learned_constant": {
+            "log_loss": 0.4602395424572544,
+            "Brier": 0.136338190074811,
+            "ROC_AUC": 0.47633145992238723,
+            "dislike_PR_AUC": 0.15936289133908202,
+            "dislike_only_log_loss": 2.2963402148685006
+          },
+          "learned_local": {
+            "log_loss": 0.4588272818287005,
+            "Brier": 0.13603099079782197,
+            "ROC_AUC": 0.4817141710156564,
+            "dislike_PR_AUC": 0.1628196790262176,
+            "dislike_only_log_loss": 2.298424362811208
+          },
+          "learned_formation": {
+            "log_loss": 0.45882787614103737,
+            "Brier": 0.1360286923089825,
+            "ROC_AUC": 0.4816171550916633,
+            "dislike_PR_AUC": 0.1628582610613206,
+            "dislike_only_log_loss": 2.2987140524027447
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.01683728087782682,
+            "positive_gap": true,
+            "recovery_percent": 75.34273792966408,
+            "signed_gap_ratio_percent": 75.34273792966408
+          },
+          "fresh": {
+            "auc_gap": 0.016927606048441013,
+            "positive_gap": true,
+            "recovery_percent": 74.94071146245055,
+            "signed_gap_ratio_percent": 74.94071146245055
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.01683728087782682,
+              "positive_gap": true,
+              "recovery_percent": 75.34273792966408,
+              "signed_gap_ratio_percent": 75.34273792966408
+            },
+            "fresh": {
+              "auc_gap": 0.016927606048441013,
+              "positive_gap": true,
+              "recovery_percent": 74.94071146245055,
+              "signed_gap_ratio_percent": 74.94071146245055
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.01683728087782682,
+              "positive_gap": true,
+              "recovery_percent": 64.67315716272608,
+              "signed_gap_ratio_percent": 64.67315716272608
+            },
+            "fresh": {
+              "auc_gap": 0.016927606048441013,
+              "positive_gap": true,
+              "recovery_percent": 64.32806324110686,
+              "signed_gap_ratio_percent": 64.32806324110686
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.01683728087782682,
+              "positive_gap": true,
+              "recovery_percent": 59.94436717663424,
+              "signed_gap_ratio_percent": 59.94436717663424
+            },
+            "fresh": {
+              "auc_gap": 0.016927606048441013,
+              "positive_gap": true,
+              "recovery_percent": 59.62450592885385,
+              "signed_gap_ratio_percent": 59.62450592885385
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.01683728087782682,
+              "positive_gap": true,
+              "recovery_percent": 31.86966024239995,
+              "signed_gap_ratio_percent": 31.86966024239995
+            },
+            "fresh": {
+              "auc_gap": 0.016927606048441013,
+              "positive_gap": true,
+              "recovery_percent": 31.69960474308283,
+              "signed_gap_ratio_percent": 31.69960474308283
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.01683728087782682,
+              "positive_gap": true,
+              "recovery_percent": 63.838664812239365,
+              "signed_gap_ratio_percent": 63.838664812239365
+            },
+            "fresh": {
+              "auc_gap": 0.016927606048441013,
+              "positive_gap": true,
+              "recovery_percent": 63.498023715415236,
+              "signed_gap_ratio_percent": 63.498023715415236
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.01683728087782682,
+              "positive_gap": true,
+              "recovery_percent": 63.262467713093486,
+              "signed_gap_ratio_percent": 63.262467713093486
+            },
+            "fresh": {
+              "auc_gap": 0.016927606048441013,
+              "positive_gap": true,
+              "recovery_percent": 62.92490118577072,
+              "signed_gap_ratio_percent": 62.92490118577072
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.8542085841993968,
+          "trace_current_row_mean": 0.6078433294851713,
+          "inherited_row_fraction": 0.6790629828271332
+        }
+      },
+      "v3_to_v4": {
+        "requests": 1268,
+        "users": 195,
+        "positive_labels": 1112,
+        "negative_labels": 156,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.3659917863576836,
+            "Brier": 0.10620674563629798,
+            "ROC_AUC": 0.611193737317838,
+            "dislike_PR_AUC": 0.18008443205977864,
+            "dislike_only_log_loss": 2.0263725079665185
+          },
+          "exact": {
+            "log_loss": 0.3560636480712996,
+            "Brier": 0.10398961182702456,
+            "ROC_AUC": 0.6637901217487548,
+            "dislike_PR_AUC": 0.23084169797939724,
+            "dislike_only_log_loss": 2.1365763282873447
+          },
+          "d1": {
+            "log_loss": 0.35905357198839566,
+            "Brier": 0.1045978651436913,
+            "ROC_AUC": 0.6474935436266371,
+            "dislike_PR_AUC": 0.213197624092468,
+            "dislike_only_log_loss": 2.137443340332359
+          },
+          "fresh": {
+            "log_loss": 0.35653217710525276,
+            "Brier": 0.10405957106784984,
+            "ROC_AUC": 0.6615130972145361,
+            "dislike_PR_AUC": 0.22907128124733467,
+            "dislike_only_log_loss": 2.135947890963987
+          },
+          "local_gate": {
+            "log_loss": 0.35911352013825454,
+            "Brier": 0.10462151060633638,
+            "ROC_AUC": 0.646507793764988,
+            "dislike_PR_AUC": 0.21156446871238424,
+            "dislike_only_log_loss": 2.11205466067416
+          },
+          "formation_gate": {
+            "log_loss": 0.3592574854212062,
+            "Brier": 0.10462565616566774,
+            "ROC_AUC": 0.645896744143147,
+            "dislike_PR_AUC": 0.21147832610220108,
+            "dislike_only_log_loss": 2.1090089588787144
+          },
+          "learned_constant": {
+            "log_loss": 0.3600322315569307,
+            "Brier": 0.10476995886645554,
+            "ROC_AUC": 0.6397286017339974,
+            "dislike_PR_AUC": 0.2097547672593951,
+            "dislike_only_log_loss": 2.1110078372049403
+          },
+          "learned_local": {
+            "log_loss": 0.3589145917767766,
+            "Brier": 0.10457901322713335,
+            "ROC_AUC": 0.648133416343848,
+            "dislike_PR_AUC": 0.21257895337739585,
+            "dislike_only_log_loss": 2.1215181892019563
+          },
+          "learned_formation": {
+            "log_loss": 0.35895059724349593,
+            "Brier": 0.10458857547017025,
+            "ROC_AUC": 0.6482487087253275,
+            "dislike_PR_AUC": 0.212368225146951,
+            "dislike_only_log_loss": 2.1193274793171955
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.052596384430916854,
+            "positive_gap": true,
+            "recovery_percent": 69.01578255151249,
+            "signed_gap_ratio_percent": 69.01578255151249
+          },
+          "fresh": {
+            "auc_gap": 0.05031935989669811,
+            "positive_gap": true,
+            "recovery_percent": 72.13884751976164,
+            "signed_gap_ratio_percent": 72.13884751976164
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.052596384430916854,
+              "positive_gap": true,
+              "recovery_percent": 69.01578255151249,
+              "signed_gap_ratio_percent": 69.01578255151249
+            },
+            "fresh": {
+              "auc_gap": 0.05031935989669811,
+              "positive_gap": true,
+              "recovery_percent": 72.13884751976164,
+              "signed_gap_ratio_percent": 72.13884751976164
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.052596384430916854,
+              "positive_gap": true,
+              "recovery_percent": 67.1416045594038,
+              "signed_gap_ratio_percent": 67.1416045594038
+            },
+            "fresh": {
+              "auc_gap": 0.05031935989669811,
+              "positive_gap": true,
+              "recovery_percent": 70.17986023599494,
+              "signed_gap_ratio_percent": 70.17986023599494
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.052596384430916854,
+              "positive_gap": true,
+              "recovery_percent": 65.97983340640072,
+              "signed_gap_ratio_percent": 65.97983340640072
+            },
+            "fresh": {
+              "auc_gap": 0.05031935989669811,
+              "positive_gap": true,
+              "recovery_percent": 68.96551724137927,
+              "signed_gap_ratio_percent": 68.96551724137927
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.052596384430916854,
+              "positive_gap": true,
+              "recovery_percent": 54.252520824199856,
+              "signed_gap_ratio_percent": 54.252520824199856
+            },
+            "fresh": {
+              "auc_gap": 0.05031935989669811,
+              "positive_gap": true,
+              "recovery_percent": 56.70752663535332,
+              "signed_gap_ratio_percent": 56.70752663535332
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.052596384430916854,
+              "positive_gap": true,
+              "recovery_percent": 70.23235423060068,
+              "signed_gap_ratio_percent": 70.23235423060068
+            },
+            "fresh": {
+              "auc_gap": 0.05031935989669811,
+              "positive_gap": true,
+              "recovery_percent": 73.41047084431207,
+              "signed_gap_ratio_percent": 73.41047084431207
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.052596384430916854,
+              "positive_gap": true,
+              "recovery_percent": 70.45155633494092,
+              "signed_gap_ratio_percent": 70.45155633494092
+            },
+            "fresh": {
+              "auc_gap": 0.05031935989669811,
+              "positive_gap": true,
+              "recovery_percent": 73.63959216405091,
+              "signed_gap_ratio_percent": 73.63959216405091
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.8934747090780585,
+          "trace_current_row_mean": 0.6242497032627654,
+          "inherited_row_fraction": 0.7557989004200537
+        }
+      },
+      "v4_to_v5": {
+        "requests": 1465,
+        "users": 200,
+        "positive_labels": 1342,
+        "negative_labels": 123,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.29733161562479216,
+            "Brier": 0.08044604283145317,
+            "ROC_AUC": 0.5805071910629688,
+            "dislike_PR_AUC": 0.09957892799360375,
+            "dislike_only_log_loss": 2.0621235334590624
+          },
+          "exact": {
+            "log_loss": 0.27857869059401563,
+            "Brier": 0.07585884252743333,
+            "ROC_AUC": 0.6656670665067307,
+            "dislike_PR_AUC": 0.13635198051277606,
+            "dislike_only_log_loss": 2.117335433217898
+          },
+          "d1": {
+            "log_loss": 0.2835131887294558,
+            "Brier": 0.07825822580407546,
+            "ROC_AUC": 0.665697357420668,
+            "dislike_PR_AUC": 0.1352910749764379,
+            "dislike_only_log_loss": 2.0866194015326283
+          },
+          "fresh": {
+            "log_loss": 0.27835484608390065,
+            "Brier": 0.07578711825099317,
+            "ROC_AUC": 0.6676299177298778,
+            "dislike_PR_AUC": 0.13807378420309707,
+            "dislike_only_log_loss": 2.110004638848324
+          },
+          "local_gate": {
+            "log_loss": 0.2857904051641374,
+            "Brier": 0.0785597536905173,
+            "ROC_AUC": 0.6520058643209383,
+            "dislike_PR_AUC": 0.12403755936079248,
+            "dislike_only_log_loss": 2.096597400864186
+          },
+          "formation_gate": {
+            "log_loss": 0.2857237909532212,
+            "Brier": 0.07859458598454001,
+            "ROC_AUC": 0.6533871299964863,
+            "dislike_PR_AUC": 0.12535745627294909,
+            "dislike_only_log_loss": 2.0862411279265056
+          },
+          "learned_constant": {
+            "log_loss": 0.28483548169129697,
+            "Brier": 0.07824114232214645,
+            "ROC_AUC": 0.6554832612409581,
+            "dislike_PR_AUC": 0.1298030884376097,
+            "dislike_only_log_loss": 2.0881453035573525
+          },
+          "learned_local": {
+            "log_loss": 0.28392846046098347,
+            "Brier": 0.07830992018545875,
+            "ROC_AUC": 0.6633467824991216,
+            "dislike_PR_AUC": 0.13069413772957983,
+            "dislike_only_log_loss": 2.0986360061340896
+          },
+          "learned_formation": {
+            "log_loss": 0.2842874594978483,
+            "Brier": 0.0783955374438011,
+            "ROC_AUC": 0.6618382949850363,
+            "dislike_PR_AUC": 0.1294870626688784,
+            "dislike_only_log_loss": 2.098697009215358
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.08515987544376191,
+            "positive_gap": true,
+            "recovery_percent": 100.03556946716925,
+            "signed_gap_ratio_percent": 100.03556946716925
+          },
+          "fresh": {
+            "auc_gap": 0.08712272666690901,
+            "positive_gap": true,
+            "recovery_percent": 97.78179542451835,
+            "signed_gap_ratio_percent": 97.78179542451835
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.08515987544376191,
+              "positive_gap": true,
+              "recovery_percent": 100.03556946716925,
+              "signed_gap_ratio_percent": 100.03556946716925
+            },
+            "fresh": {
+              "auc_gap": 0.08712272666690901,
+              "positive_gap": true,
+              "recovery_percent": 97.78179542451835,
+              "signed_gap_ratio_percent": 97.78179542451835
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.08515987544376191,
+              "positive_gap": true,
+              "recovery_percent": 83.95817030660879,
+              "signed_gap_ratio_percent": 83.95817030660879
+            },
+            "fresh": {
+              "auc_gap": 0.08712272666690901,
+              "positive_gap": true,
+              "recovery_percent": 82.06661567345802,
+              "signed_gap_ratio_percent": 82.06661567345802
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.08515987544376191,
+              "positive_gap": true,
+              "recovery_percent": 85.58013800953262,
+              "signed_gap_ratio_percent": 85.58013800953262
+            },
+            "fresh": {
+              "auc_gap": 0.08712272666690901,
+              "positive_gap": true,
+              "recovery_percent": 83.65204088728183,
+              "signed_gap_ratio_percent": 83.65204088728183
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.08515987544376191,
+              "positive_gap": true,
+              "recovery_percent": 88.04154513765374,
+              "signed_gap_ratio_percent": 88.04154513765374
+            },
+            "fresh": {
+              "auc_gap": 0.08712272666690901,
+              "positive_gap": true,
+              "recovery_percent": 86.05799318545294,
+              "signed_gap_ratio_percent": 86.05799318545294
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.08515987544376191,
+              "positive_gap": true,
+              "recovery_percent": 97.27537881482534,
+              "signed_gap_ratio_percent": 97.27537881482534
+            },
+            "fresh": {
+              "auc_gap": 0.08712272666690901,
+              "positive_gap": true,
+              "recovery_percent": 95.08379111327446,
+              "signed_gap_ratio_percent": 95.08379111327446
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.08515987544376191,
+              "positive_gap": true,
+              "recovery_percent": 95.50401934979013,
+              "signed_gap_ratio_percent": 95.50401934979013
+            },
+            "fresh": {
+              "auc_gap": 0.08712272666690901,
+              "positive_gap": true,
+              "recovery_percent": 93.35233989291426,
+              "signed_gap_ratio_percent": 93.35233989291426
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.8515823541240888,
+          "trace_current_row_mean": 0.6097284051786245,
+          "inherited_row_fraction": 0.6692067701023735
+        }
+      }
+    },
+    "weeks": {
+      "v2_to_v3/week1": {
+        "requests": 790,
+        "users": 133,
+        "positive_labels": 635,
+        "negative_labels": 155,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.5658469046522523,
+            "Brier": 0.17130014608286004,
+            "ROC_AUC": 0.4108813817627635,
+            "dislike_PR_AUC": 0.17443033405377123,
+            "dislike_only_log_loss": 2.3763460501938494
+          },
+          "exact": {
+            "log_loss": 0.5603591445589301,
+            "Brier": 0.17033330812299,
+            "ROC_AUC": 0.42816357632715263,
+            "dislike_PR_AUC": 0.18130109728223276,
+            "dislike_only_log_loss": 2.374910499744856
+          },
+          "d1": {
+            "log_loss": 0.5622619077668761,
+            "Brier": 0.17062344012758268,
+            "ROC_AUC": 0.4250241300482601,
+            "dislike_PR_AUC": 0.17972182595404315,
+            "dislike_only_log_loss": 2.3918675737079016
+          },
+          "fresh": {
+            "log_loss": 0.5609190315893114,
+            "Brier": 0.17045957527755654,
+            "ROC_AUC": 0.42535941071882144,
+            "dislike_PR_AUC": 0.1800516945154976,
+            "dislike_only_log_loss": 2.3775678985054394
+          },
+          "local_gate": {
+            "log_loss": 0.5625961547976819,
+            "Brier": 0.17070821852537854,
+            "ROC_AUC": 0.4218745237490475,
+            "dislike_PR_AUC": 0.17814462215796384,
+            "dislike_only_log_loss": 2.386432511134054
+          },
+          "formation_gate": {
+            "log_loss": 0.5626195164708481,
+            "Brier": 0.17072051160728474,
+            "ROC_AUC": 0.42130556261112523,
+            "dislike_PR_AUC": 0.1778446573525626,
+            "dislike_only_log_loss": 2.3863117717029914
+          },
+          "learned_constant": {
+            "log_loss": 0.5640590625441726,
+            "Brier": 0.17095260377373145,
+            "ROC_AUC": 0.416245872491745,
+            "dislike_PR_AUC": 0.17787202797080254,
+            "dislike_only_log_loss": 2.384403732061259
+          },
+          "learned_local": {
+            "log_loss": 0.562606103562353,
+            "Brier": 0.1707099243883201,
+            "ROC_AUC": 0.42197612395224793,
+            "dislike_PR_AUC": 0.1780776203487978,
+            "dislike_only_log_loss": 2.3864258652767623
+          },
+          "learned_formation": {
+            "log_loss": 0.5626612358430336,
+            "Brier": 0.1707194020113038,
+            "ROC_AUC": 0.4216103632207264,
+            "dislike_PR_AUC": 0.17807009767663415,
+            "dislike_only_log_loss": 2.386757060420161
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.01728219456438912,
+            "positive_gap": true,
+            "recovery_percent": 81.83421516754876,
+            "signed_gap_ratio_percent": 81.83421516754876
+          },
+          "fresh": {
+            "auc_gap": 0.014478028956057931,
+            "positive_gap": true,
+            "recovery_percent": 97.68421052631592,
+            "signed_gap_ratio_percent": 97.68421052631592
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.01728219456438912,
+              "positive_gap": true,
+              "recovery_percent": 81.83421516754876,
+              "signed_gap_ratio_percent": 81.83421516754876
+            },
+            "fresh": {
+              "auc_gap": 0.014478028956057931,
+              "positive_gap": true,
+              "recovery_percent": 97.68421052631592,
+              "signed_gap_ratio_percent": 97.68421052631592
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.01728219456438912,
+              "positive_gap": true,
+              "recovery_percent": 63.60964138741926,
+              "signed_gap_ratio_percent": 63.60964138741926
+            },
+            "fresh": {
+              "auc_gap": 0.014478028956057931,
+              "positive_gap": true,
+              "recovery_percent": 75.92982456140348,
+              "signed_gap_ratio_percent": 75.92982456140348
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.01728219456438912,
+              "positive_gap": true,
+              "recovery_percent": 60.31746031746048,
+              "signed_gap_ratio_percent": 60.31746031746048
+            },
+            "fresh": {
+              "auc_gap": 0.014478028956057931,
+              "positive_gap": true,
+              "recovery_percent": 72.00000000000006,
+              "signed_gap_ratio_percent": 72.00000000000006
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.01728219456438912,
+              "positive_gap": true,
+              "recovery_percent": 31.040564373897887,
+              "signed_gap_ratio_percent": 31.040564373897887
+            },
+            "fresh": {
+              "auc_gap": 0.014478028956057931,
+              "positive_gap": true,
+              "recovery_percent": 37.05263157894751,
+              "signed_gap_ratio_percent": 37.05263157894751
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.01728219456438912,
+              "positive_gap": true,
+              "recovery_percent": 64.1975308641978,
+              "signed_gap_ratio_percent": 64.1975308641978
+            },
+            "fresh": {
+              "auc_gap": 0.014478028956057931,
+              "positive_gap": true,
+              "recovery_percent": 76.6315789473686,
+              "signed_gap_ratio_percent": 76.6315789473686
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.01728219456438912,
+              "positive_gap": true,
+              "recovery_percent": 62.08112874779545,
+              "signed_gap_ratio_percent": 62.08112874779545
+            },
+            "fresh": {
+              "auc_gap": 0.014478028956057931,
+              "positive_gap": true,
+              "recovery_percent": 74.10526315789464,
+              "signed_gap_ratio_percent": 74.10526315789464
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.8972027865203122,
+          "trace_current_row_mean": 0.6265570044939973,
+          "inherited_row_fraction": 0.7641070794255288
+        }
+      },
+      "v2_to_v3/week2": {
+        "requests": 717,
+        "users": 137,
+        "positive_labels": 637,
+        "negative_labels": 80,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.3465914665259305,
+            "Brier": 0.09834533237643008,
+            "ROC_AUC": 0.5955259026687598,
+            "dislike_PR_AUC": 0.15992451844232874,
+            "dislike_only_log_loss": 2.0978084318957526
+          },
+          "exact": {
+            "log_loss": 0.34373981107985946,
+            "Brier": 0.09764113476890153,
+            "ROC_AUC": 0.6065345368916798,
+            "dislike_PR_AUC": 0.17613409956001017,
+            "dislike_only_log_loss": 2.123755804451292
+          },
+          "d1": {
+            "log_loss": 0.3453680815465454,
+            "Brier": 0.09811737495793715,
+            "ROC_AUC": 0.5985086342229199,
+            "dislike_PR_AUC": 0.16278915403059913,
+            "dislike_only_log_loss": 2.1537667170364934
+          },
+          "fresh": {
+            "log_loss": 0.3425397739350041,
+            "Brier": 0.09733173636800797,
+            "ROC_AUC": 0.6121664050235479,
+            "dislike_PR_AUC": 0.1825198064993785,
+            "dislike_only_log_loss": 2.109886249062378
+          },
+          "local_gate": {
+            "log_loss": 0.34438143042183106,
+            "Brier": 0.09779487678808256,
+            "ROC_AUC": 0.6031004709576138,
+            "dislike_PR_AUC": 0.1725471518489433,
+            "dislike_only_log_loss": 2.1276622228031408
+          },
+          "formation_gate": {
+            "log_loss": 0.3446340256242541,
+            "Brier": 0.09785971528779973,
+            "ROC_AUC": 0.6021978021978022,
+            "dislike_PR_AUC": 0.17149495570701184,
+            "dislike_only_log_loss": 2.129423671880006
+          },
+          "learned_constant": {
+            "log_loss": 0.345849834132756,
+            "Brier": 0.09819957526010085,
+            "ROC_AUC": 0.59776295133438,
+            "dislike_PR_AUC": 0.16156123712144638,
+            "dislike_only_log_loss": 2.125717150307531
+          },
+          "learned_local": {
+            "log_loss": 0.3444824154833932,
+            "Brier": 0.09782128712070409,
+            "ROC_AUC": 0.6027080062794349,
+            "dislike_PR_AUC": 0.17215370275214423,
+            "dislike_only_log_loss": 2.1279214517841956
+          },
+          "learned_formation": {
+            "log_loss": 0.3444229191472059,
+            "Brier": 0.09780601355747089,
+            "ROC_AUC": 0.6029827315541602,
+            "dislike_PR_AUC": 0.17232919626806775,
+            "dislike_only_log_loss": 2.1281307243690017
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.011008634222919977,
+            "positive_gap": true,
+            "recovery_percent": 27.094474153297057,
+            "signed_gap_ratio_percent": 27.094474153297057
+          },
+          "fresh": {
+            "auc_gap": 0.01664050235478809,
+            "positive_gap": true,
+            "recovery_percent": 17.924528301886422,
+            "signed_gap_ratio_percent": 17.924528301886422
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.011008634222919977,
+              "positive_gap": true,
+              "recovery_percent": 27.094474153297057,
+              "signed_gap_ratio_percent": 27.094474153297057
+            },
+            "fresh": {
+              "auc_gap": 0.01664050235478809,
+              "positive_gap": true,
+              "recovery_percent": 17.924528301886422,
+              "signed_gap_ratio_percent": 17.924528301886422
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.011008634222919977,
+              "positive_gap": true,
+              "recovery_percent": 68.80570409982096,
+              "signed_gap_ratio_percent": 68.80570409982096
+            },
+            "fresh": {
+              "auc_gap": 0.01664050235478809,
+              "positive_gap": true,
+              "recovery_percent": 45.518867924527896,
+              "signed_gap_ratio_percent": 45.518867924527896
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.011008634222919977,
+              "positive_gap": true,
+              "recovery_percent": 60.606060606060026,
+              "signed_gap_ratio_percent": 60.606060606060026
+            },
+            "fresh": {
+              "auc_gap": 0.01664050235478809,
+              "positive_gap": true,
+              "recovery_percent": 40.09433962264122,
+              "signed_gap_ratio_percent": 40.09433962264122
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.011008634222919977,
+              "positive_gap": true,
+              "recovery_percent": 20.32085561497355,
+              "signed_gap_ratio_percent": 20.32085561497355
+            },
+            "fresh": {
+              "auc_gap": 0.01664050235478809,
+              "positive_gap": true,
+              "recovery_percent": 13.443396226415317,
+              "signed_gap_ratio_percent": 13.443396226415317
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.011008634222919977,
+              "positive_gap": true,
+              "recovery_percent": 65.24064171122991,
+              "signed_gap_ratio_percent": 65.24064171122991
+            },
+            "fresh": {
+              "auc_gap": 0.01664050235478809,
+              "positive_gap": true,
+              "recovery_percent": 43.16037735849065,
+              "signed_gap_ratio_percent": 43.16037735849065
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.011008634222919977,
+              "positive_gap": true,
+              "recovery_percent": 67.73618538324415,
+              "signed_gap_ratio_percent": 67.73618538324415
+            },
+            "fresh": {
+              "auc_gap": 0.01664050235478809,
+              "positive_gap": true,
+              "recovery_percent": 44.81132075471705,
+              "signed_gap_ratio_percent": 44.81132075471705
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.8068370084204247,
+          "trace_current_row_mean": 0.5875614694197396,
+          "inherited_row_fraction": 0.5853602822514951
+        }
+      },
+      "v3_to_v4/week1": {
+        "requests": 689,
+        "users": 153,
+        "positive_labels": 614,
+        "negative_labels": 75,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.33782291486991034,
+            "Brier": 0.09618279046907668,
+            "ROC_AUC": 0.6196091205211727,
+            "dislike_PR_AUC": 0.15557461782454415,
+            "dislike_only_log_loss": 1.9731967513416797
+          },
+          "exact": {
+            "log_loss": 0.3265841419744416,
+            "Brier": 0.09320608224504426,
+            "ROC_AUC": 0.6654505971769815,
+            "dislike_PR_AUC": 0.2065028469293108,
+            "dislike_only_log_loss": 2.115296950254542
+          },
+          "d1": {
+            "log_loss": 0.3298979278530784,
+            "Brier": 0.09394378380411725,
+            "ROC_AUC": 0.6474701411509229,
+            "dislike_PR_AUC": 0.1924335682209353,
+            "dislike_only_log_loss": 2.1000063750513283
+          },
+          "fresh": {
+            "log_loss": 0.3269302456138272,
+            "Brier": 0.093273642271867,
+            "ROC_AUC": 0.6647774158523344,
+            "dislike_PR_AUC": 0.20573237758260016,
+            "dislike_only_log_loss": 2.1135948645524896
+          },
+          "local_gate": {
+            "log_loss": 0.3289239592247937,
+            "Brier": 0.09377296439353601,
+            "ROC_AUC": 0.6542888165038002,
+            "dislike_PR_AUC": 0.19460735655678799,
+            "dislike_only_log_loss": 2.0753153826194732
+          },
+          "formation_gate": {
+            "log_loss": 0.3287672183674254,
+            "Brier": 0.09373078965993242,
+            "ROC_AUC": 0.6548968512486428,
+            "dislike_PR_AUC": 0.19482876409458894,
+            "dislike_only_log_loss": 2.0703463213770514
+          },
+          "learned_constant": {
+            "log_loss": 0.33143325827638226,
+            "Brier": 0.09433913966211663,
+            "ROC_AUC": 0.6410206297502714,
+            "dislike_PR_AUC": 0.1858055540874812,
+            "dislike_only_log_loss": 2.0727565330489446
+          },
+          "learned_local": {
+            "log_loss": 0.328950489210044,
+            "Brier": 0.09376067717272343,
+            "ROC_AUC": 0.6537459283387622,
+            "dislike_PR_AUC": 0.19497184811895907,
+            "dislike_only_log_loss": 2.0855595897375503
+          },
+          "learned_formation": {
+            "log_loss": 0.3286252654255096,
+            "Brier": 0.09369715316856575,
+            "ROC_AUC": 0.6554180238870793,
+            "dislike_PR_AUC": 0.19531291625295297,
+            "dislike_only_log_loss": 2.081963223207198
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.045841476655808844,
+            "positive_gap": true,
+            "recovery_percent": 60.776882993841845,
+            "signed_gap_ratio_percent": 60.776882993841845
+          },
+          "fresh": {
+            "auc_gap": 0.045168295331161734,
+            "positive_gap": true,
+            "recovery_percent": 61.682692307692356,
+            "signed_gap_ratio_percent": 61.682692307692356
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.045841476655808844,
+              "positive_gap": true,
+              "recovery_percent": 60.776882993841845,
+              "signed_gap_ratio_percent": 60.776882993841845
+            },
+            "fresh": {
+              "auc_gap": 0.045168295331161734,
+              "positive_gap": true,
+              "recovery_percent": 61.682692307692356,
+              "signed_gap_ratio_percent": 61.682692307692356
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.045841476655808844,
+              "positive_gap": true,
+              "recovery_percent": 75.6513500710564,
+              "signed_gap_ratio_percent": 75.6513500710564
+            },
+            "fresh": {
+              "auc_gap": 0.045168295331161734,
+              "positive_gap": true,
+              "recovery_percent": 76.77884615384616,
+              "signed_gap_ratio_percent": 76.77884615384616
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.045841476655808844,
+              "positive_gap": true,
+              "recovery_percent": 76.97773567029857,
+              "signed_gap_ratio_percent": 76.97773567029857
+            },
+            "fresh": {
+              "auc_gap": 0.045168295331161734,
+              "positive_gap": true,
+              "recovery_percent": 78.12500000000011,
+              "signed_gap_ratio_percent": 78.12500000000011
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.045841476655808844,
+              "positive_gap": true,
+              "recovery_percent": 46.707721459024064,
+              "signed_gap_ratio_percent": 46.707721459024064
+            },
+            "fresh": {
+              "auc_gap": 0.045168295331161734,
+              "positive_gap": true,
+              "recovery_percent": 47.40384615384605,
+              "signed_gap_ratio_percent": 47.40384615384605
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.045841476655808844,
+              "positive_gap": true,
+              "recovery_percent": 74.46707721459026,
+              "signed_gap_ratio_percent": 74.46707721459026
+            },
+            "fresh": {
+              "auc_gap": 0.045168295331161734,
+              "positive_gap": true,
+              "recovery_percent": 75.57692307692308,
+              "signed_gap_ratio_percent": 75.57692307692308
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.045841476655808844,
+              "positive_gap": true,
+              "recovery_percent": 78.11463761250594,
+              "signed_gap_ratio_percent": 78.11463761250594
+            },
+            "fresh": {
+              "auc_gap": 0.045168295331161734,
+              "positive_gap": true,
+              "recovery_percent": 79.27884615384615,
+              "signed_gap_ratio_percent": 79.27884615384615
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.9533165509019085,
+          "trace_current_row_mean": 0.650430016030853,
+          "inherited_row_fraction": 0.8718926320047792
+        }
+      },
+      "v3_to_v4/week2": {
+        "requests": 579,
+        "users": 146,
+        "positive_labels": 498,
+        "negative_labels": 81,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.39951225691912706,
+            "Brier": 0.11813507915998621,
+            "ROC_AUC": 0.6064752838514552,
+            "dislike_PR_AUC": 0.23635738948571305,
+            "dislike_only_log_loss": 2.0756093196561842
+          },
+          "exact": {
+            "log_loss": 0.3911437511813776,
+            "Brier": 0.11682182578554687,
+            "ROC_AUC": 0.6653279785809906,
+            "dislike_PR_AUC": 0.2779053761869652,
+            "dislike_only_log_loss": 2.156279456095495
+          },
+          "d1": {
+            "log_loss": 0.39374828495771114,
+            "Brier": 0.11727603792947112,
+            "ROC_AUC": 0.6521146313649661,
+            "dislike_PR_AUC": 0.25936500275961727,
+            "dislike_only_log_loss": 2.172107197074055
+          },
+          "fresh": {
+            "log_loss": 0.3917579643204379,
+            "Brier": 0.116894640049598,
+            "ROC_AUC": 0.6608656849620705,
+            "dislike_PR_AUC": 0.27760681974717055,
+            "dislike_only_log_loss": 2.156645137641299
+          },
+          "local_gate": {
+            "log_loss": 0.39503857621662164,
+            "Brier": 0.11753109323262213,
+            "ROC_AUC": 0.6421736328028163,
+            "dislike_PR_AUC": 0.24846489793021062,
+            "dislike_only_log_loss": 2.1460725107247955
+          },
+          "formation_gate": {
+            "log_loss": 0.3955403766130111,
+            "Brier": 0.11759035914054099,
+            "ROC_AUC": 0.6394218850711488,
+            "dislike_PR_AUC": 0.2471592955213087,
+            "dislike_only_log_loss": 2.144807697306181
+          },
+          "learned_constant": {
+            "log_loss": 0.39406451582342095,
+            "Brier": 0.11718245356730096,
+            "ROC_AUC": 0.6427686052853389,
+            "dislike_PR_AUC": 0.2652535396695606,
+            "dislike_only_log_loss": 2.146425711423455
+          },
+          "learned_local": {
+            "log_loss": 0.39457135631646356,
+            "Brier": 0.11745264628669884,
+            "ROC_AUC": 0.6457434676979523,
+            "dislike_PR_AUC": 0.25007640368491724,
+            "dislike_only_log_loss": 2.154813188706036
+          },
+          "learned_formation": {
+            "log_loss": 0.3950372183533276,
+            "Brier": 0.11754917990161325,
+            "ROC_AUC": 0.643908969210174,
+            "dislike_PR_AUC": 0.24748097831142404,
+            "dislike_only_log_loss": 2.1539240127523773
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.05885269472953536,
+            "positive_gap": true,
+            "recovery_percent": 77.54844144903127,
+            "signed_gap_ratio_percent": 77.54844144903127
+          },
+          "fresh": {
+            "auc_gap": 0.05439040111061533,
+            "positive_gap": true,
+            "recovery_percent": 83.9106654512306,
+            "signed_gap_ratio_percent": 83.9106654512306
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.05885269472953536,
+              "positive_gap": true,
+              "recovery_percent": 77.54844144903127,
+              "signed_gap_ratio_percent": 77.54844144903127
+            },
+            "fresh": {
+              "auc_gap": 0.05439040111061533,
+              "positive_gap": true,
+              "recovery_percent": 83.9106654512306,
+              "signed_gap_ratio_percent": 83.9106654512306
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.05885269472953536,
+              "positive_gap": true,
+              "recovery_percent": 60.65711878685776,
+              "signed_gap_ratio_percent": 60.65711878685776
+            },
+            "fresh": {
+              "auc_gap": 0.05439040111061533,
+              "positive_gap": true,
+              "recovery_percent": 65.63354603463996,
+              "signed_gap_ratio_percent": 65.63354603463996
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.05885269472953536,
+              "positive_gap": true,
+              "recovery_percent": 55.98146588037079,
+              "signed_gap_ratio_percent": 55.98146588037079
+            },
+            "fresh": {
+              "auc_gap": 0.05439040111061533,
+              "positive_gap": true,
+              "recovery_percent": 60.57429352780312,
+              "signed_gap_ratio_percent": 60.57429352780312
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.05885269472953536,
+              "positive_gap": true,
+              "recovery_percent": 61.668070766638586,
+              "signed_gap_ratio_percent": 61.668070766638586
+            },
+            "fresh": {
+              "auc_gap": 0.05439040111061533,
+              "positive_gap": true,
+              "recovery_percent": 66.72743846855049,
+              "signed_gap_ratio_percent": 66.72743846855049
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.05885269472953536,
+              "positive_gap": true,
+              "recovery_percent": 66.72283066554347,
+              "signed_gap_ratio_percent": 66.72283066554347
+            },
+            "fresh": {
+              "auc_gap": 0.05439040111061533,
+              "positive_gap": true,
+              "recovery_percent": 72.1969006381039,
+              "signed_gap_ratio_percent": 72.1969006381039
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.05885269472953536,
+              "positive_gap": true,
+              "recovery_percent": 63.6057287278855,
+              "signed_gap_ratio_percent": 63.6057287278855
+            },
+            "fresh": {
+              "auc_gap": 0.05439040111061533,
+              "positive_gap": true,
+              "recovery_percent": 68.824065633546,
+              "signed_gap_ratio_percent": 68.824065633546
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.8222639508455323,
+          "trace_current_row_mean": 0.5938043135445907,
+          "inherited_row_fraction": 0.6176493649073145
+        }
+      },
+      "v4_to_v5/week1": {
+        "requests": 791,
+        "users": 158,
+        "positive_labels": 722,
+        "negative_labels": 69,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.30800519581538754,
+            "Brier": 0.08434435250280033,
+            "ROC_AUC": 0.5729655947649444,
+            "dislike_PR_AUC": 0.09939485187536783,
+            "dislike_only_log_loss": 1.9829845530014343
+          },
+          "exact": {
+            "log_loss": 0.28120263054635786,
+            "Brier": 0.07764795405991011,
+            "ROC_AUC": 0.7105664619213938,
+            "dislike_PR_AUC": 0.1565259473230895,
+            "dislike_only_log_loss": 2.043539609488892
+          },
+          "d1": {
+            "log_loss": 0.28856241723552745,
+            "Brier": 0.08099280594829793,
+            "ROC_AUC": 0.7002890521498254,
+            "dislike_PR_AUC": 0.14780862896470642,
+            "dislike_only_log_loss": 2.009788028634284
+          },
+          "fresh": {
+            "log_loss": 0.2809421834249193,
+            "Brier": 0.07756141769717782,
+            "ROC_AUC": 0.7131157412983259,
+            "dislike_PR_AUC": 0.1580979182718129,
+            "dislike_only_log_loss": 2.0363576109071433
+          },
+          "local_gate": {
+            "log_loss": 0.29263827804376463,
+            "Brier": 0.08186666079621463,
+            "ROC_AUC": 0.6768637841743947,
+            "dislike_PR_AUC": 0.1316231979290859,
+            "dislike_only_log_loss": 2.0294559092925617
+          },
+          "formation_gate": {
+            "log_loss": 0.2929535715960326,
+            "Brier": 0.08200366917361483,
+            "ROC_AUC": 0.6774659761531976,
+            "dislike_PR_AUC": 0.13197281096166227,
+            "dislike_only_log_loss": 2.025936852708379
+          },
+          "learned_constant": {
+            "log_loss": 0.29036499175329483,
+            "Brier": 0.08101528063111263,
+            "ROC_AUC": 0.6863984905054398,
+            "dislike_PR_AUC": 0.13869739156018884,
+            "dislike_only_log_loss": 2.0096243427476823
+          },
+          "learned_local": {
+            "log_loss": 0.2899248037767726,
+            "Brier": 0.08141500455633531,
+            "ROC_AUC": 0.6946685936809989,
+            "dislike_PR_AUC": 0.1407689542330994,
+            "dislike_only_log_loss": 2.027931386373711
+          },
+          "learned_formation": {
+            "log_loss": 0.29047645416526763,
+            "Brier": 0.08158356505195473,
+            "ROC_AUC": 0.6923200449636677,
+            "dislike_PR_AUC": 0.139304040444398,
+            "dislike_only_log_loss": 2.02933094362813
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.13760086715644948,
+            "positive_gap": true,
+            "recovery_percent": 92.53099927060545,
+            "signed_gap_ratio_percent": 92.53099927060545
+          },
+          "fresh": {
+            "auc_gap": 0.14015014653338154,
+            "positive_gap": true,
+            "recovery_percent": 90.84789458607852,
+            "signed_gap_ratio_percent": 90.84789458607852
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.13760086715644948,
+              "positive_gap": true,
+              "recovery_percent": 92.53099927060545,
+              "signed_gap_ratio_percent": 92.53099927060545
+            },
+            "fresh": {
+              "auc_gap": 0.14015014653338154,
+              "positive_gap": true,
+              "recovery_percent": 90.84789458607852,
+              "signed_gap_ratio_percent": 90.84789458607852
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.13760086715644948,
+              "positive_gap": true,
+              "recovery_percent": 75.50692924872355,
+              "signed_gap_ratio_percent": 75.50692924872355
+            },
+            "fresh": {
+              "auc_gap": 0.14015014653338154,
+              "positive_gap": true,
+              "recovery_percent": 74.13348610713261,
+              "signed_gap_ratio_percent": 74.13348610713261
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.13760086715644948,
+              "positive_gap": true,
+              "recovery_percent": 75.94456601021152,
+              "signed_gap_ratio_percent": 75.94456601021152
+            },
+            "fresh": {
+              "auc_gap": 0.14015014653338154,
+              "positive_gap": true,
+              "recovery_percent": 74.56316241764536,
+              "signed_gap_ratio_percent": 74.56316241764536
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.13760086715644948,
+              "positive_gap": true,
+              "recovery_percent": 82.43617797228302,
+              "signed_gap_ratio_percent": 82.43617797228302
+            },
+            "fresh": {
+              "auc_gap": 0.14015014653338154,
+              "positive_gap": true,
+              "recovery_percent": 80.93669435691778,
+              "signed_gap_ratio_percent": 80.93669435691778
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.13760086715644948,
+              "positive_gap": true,
+              "recovery_percent": 88.44638949671779,
+              "signed_gap_ratio_percent": 88.44638949671779
+            },
+            "fresh": {
+              "auc_gap": 0.14015014653338154,
+              "positive_gap": true,
+              "recovery_percent": 86.83758235462622,
+              "signed_gap_ratio_percent": 86.83758235462622
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.13760086715644948,
+              "positive_gap": true,
+              "recovery_percent": 86.73960612691467,
+              "signed_gap_ratio_percent": 86.73960612691467
+            },
+            "fresh": {
+              "auc_gap": 0.14015014653338154,
+              "positive_gap": true,
+              "recovery_percent": 85.16184474362646,
+              "signed_gap_ratio_percent": 85.16184474362646
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.9353338028628063,
+          "trace_current_row_mean": 0.6436256715295844,
+          "inherited_row_fraction": 0.8315380980415792
+        }
+      },
+      "v4_to_v5/week2": {
+        "requests": 674,
+        "users": 134,
+        "positive_labels": 620,
+        "negative_labels": 54,
+        "methods": {
+          "reuse": {
+            "log_loss": 0.2848052032646127,
+            "Brier": 0.0758710236177505,
+            "ROC_AUC": 0.5788829151732378,
+            "dislike_PR_AUC": 0.11399387550387169,
+            "dislike_only_log_loss": 2.163245564043809
+          },
+          "exact": {
+            "log_loss": 0.2754992595816971,
+            "Brier": 0.07375915822151474,
+            "ROC_AUC": 0.6132019115890084,
+            "dislike_PR_AUC": 0.12527280346361683,
+            "dislike_only_log_loss": 2.2116300968716294
+          },
+          "d1": {
+            "log_loss": 0.27758746209992674,
+            "Brier": 0.07504894851315562,
+            "ROC_AUC": 0.6223118279569892,
+            "dislike_PR_AUC": 0.13284014983508088,
+            "dislike_only_log_loss": 2.1847928224582898
+          },
+          "fresh": {
+            "log_loss": 0.27531837154866967,
+            "Brier": 0.07370481726889812,
+            "ROC_AUC": 0.614426523297491,
+            "dislike_PR_AUC": 0.12644460773458213,
+            "dislike_only_log_loss": 2.204109174550942
+          },
+          "local_gate": {
+            "log_loss": 0.2777538065769191,
+            "Brier": 0.07467879891216928,
+            "ROC_AUC": 0.6164277180406212,
+            "dislike_PR_AUC": 0.12659512537091985,
+            "dislike_only_log_loss": 2.182389306761261
+          },
+          "formation_gate": {
+            "log_loss": 0.2772389890415539,
+            "Brier": 0.07459371832495815,
+            "ROC_AUC": 0.6183691756272401,
+            "dislike_PR_AUC": 0.12925360326117546,
+            "dislike_only_log_loss": 2.163296590705223
+          },
+          "learned_constant": {
+            "log_loss": 0.2783461011882698,
+            "Brier": 0.07498543994470988,
+            "ROC_AUC": 0.6146953405017921,
+            "dislike_PR_AUC": 0.13330122490479834,
+            "dislike_only_log_loss": 2.1884776423697088
+          },
+          "learned_local": {
+            "log_loss": 0.276891208884145,
+            "Brier": 0.0746658226522787,
+            "ROC_AUC": 0.6233273596176822,
+            "dislike_PR_AUC": 0.13145019745460587,
+            "dislike_only_log_loss": 2.1889807980501295
+          },
+          "learned_formation": {
+            "log_loss": 0.27702411412406686,
+            "Brier": 0.07465409851494427,
+            "ROC_AUC": 0.6217144563918757,
+            "dislike_PR_AUC": 0.13046976657344486,
+            "dislike_only_log_loss": 2.187331426354593
+          }
+        },
+        "recovery": {
+          "exact": {
+            "auc_gap": 0.03431899641577063,
+            "positive_gap": true,
+            "recovery_percent": 126.54482158398599,
+            "signed_gap_ratio_percent": 126.54482158398599
+          },
+          "fresh": {
+            "auc_gap": 0.03554360812425328,
+            "positive_gap": true,
+            "recovery_percent": 122.18487394957985,
+            "signed_gap_ratio_percent": 122.18487394957985
+          }
+        },
+        "recovery_by_method": {
+          "d1": {
+            "exact": {
+              "auc_gap": 0.03431899641577063,
+              "positive_gap": true,
+              "recovery_percent": 126.54482158398599,
+              "signed_gap_ratio_percent": 126.54482158398599
+            },
+            "fresh": {
+              "auc_gap": 0.03554360812425328,
+              "positive_gap": true,
+              "recovery_percent": 122.18487394957985,
+              "signed_gap_ratio_percent": 122.18487394957985
+            }
+          },
+          "local_gate": {
+            "exact": {
+              "auc_gap": 0.03431899641577063,
+              "positive_gap": true,
+              "recovery_percent": 109.39947780678837,
+              "signed_gap_ratio_percent": 109.39947780678837
+            },
+            "fresh": {
+              "auc_gap": 0.03554360812425328,
+              "positive_gap": true,
+              "recovery_percent": 105.63025210084028,
+              "signed_gap_ratio_percent": 105.63025210084028
+            }
+          },
+          "formation_gate": {
+            "exact": {
+              "auc_gap": 0.03431899641577063,
+              "positive_gap": true,
+              "recovery_percent": 115.05657093124448,
+              "signed_gap_ratio_percent": 115.05657093124448
+            },
+            "fresh": {
+              "auc_gap": 0.03554360812425328,
+              "positive_gap": true,
+              "recovery_percent": 111.09243697478993,
+              "signed_gap_ratio_percent": 111.09243697478993
+            }
+          },
+          "learned_constant": {
+            "exact": {
+              "auc_gap": 0.03431899641577063,
+              "positive_gap": true,
+              "recovery_percent": 104.35161009573527,
+              "signed_gap_ratio_percent": 104.35161009573527
+            },
+            "fresh": {
+              "auc_gap": 0.03554360812425328,
+              "positive_gap": true,
+              "recovery_percent": 100.75630252100834,
+              "signed_gap_ratio_percent": 100.75630252100834
+            }
+          },
+          "learned_local": {
+            "exact": {
+              "auc_gap": 0.03431899641577063,
+              "positive_gap": true,
+              "recovery_percent": 129.50391644908592,
+              "signed_gap_ratio_percent": 129.50391644908592
+            },
+            "fresh": {
+              "auc_gap": 0.03554360812425328,
+              "positive_gap": true,
+              "recovery_percent": 125.04201680672257,
+              "signed_gap_ratio_percent": 125.04201680672257
+            }
+          },
+          "learned_formation": {
+            "exact": {
+              "auc_gap": 0.03431899641577063,
+              "positive_gap": true,
+              "recovery_percent": 124.80417754569176,
+              "signed_gap_ratio_percent": 124.80417754569176
+            },
+            "fresh": {
+              "auc_gap": 0.03554360812425328,
+              "positive_gap": true,
+              "recovery_percent": 120.50420168067222,
+              "signed_gap_ratio_percent": 120.50420168067222
+            }
+          }
+        },
+        "formation_diagnostic": {
+          "trace_mean": 0.7532924491503118,
+          "trace_current_row_mean": 0.5709527488632089,
+          "inherited_row_fraction": 0.47869626505799423
+        }
+      }
+    }
+  },
+  "costs_by_release": {
+    "v3": {
+      "components": {
+        "initial_encode_flops": 110994438144,
+        "item_lookup_bytes": 268948992,
+        "append_encode_flops": 46609671168,
+        "setup_flops": 449280,
+        "fresh_executed_snapshot_history_flops": 5880787259608,
+        "local_gate_reduction_flops": 1188,
+        "formation_gate_reduction_flops": 7186296,
+        "learned_constant_feature_flops": 0,
+        "learned_constant_gain_flops": 49896,
+        "learned_local_feature_flops": 4752,
+        "learned_local_gain_flops": 49896,
+        "learned_formation_feature_flops": 7187484,
+        "learned_formation_gain_flops": 49896,
+        "extra_history_read_flops": 21843291384,
+        "response_flops": 2686848384,
+        "fresh_per_request_history_flops": 7475127582246,
+        "gate_blend_flops_per_policy": 5208192,
+        "learned_blend_flops_per_policy": 5208192
+      },
+      "calibration_flops": 32443303922100,
+      "d1_serving_added_flops": 182134698360,
+      "d1_total_added_flops": 32625438620460,
+      "exact_minus_reuse_history_flops": 1227715866392,
+      "fresh_per_request_minus_reuse_online_history_flops": 6308061927102,
+      "d1_added_percent_of_exact_gap": 2657.409545120512,
+      "d1_added_percent_of_fresh_gap": 517.2022563743049,
+      "formation_trace_extra_flops": 230510388780,
+      "formation_trace_components": {
+        "trace_qk_flops": 207776544000,
+        "trace_weight_flops": 12986034000,
+        "trace_aggregate_flops": 6493017000,
+        "trace_normalization_flops": 3252722460,
+        "trace_residual_flops": 2071320
+      },
+      "memory": {
+        "trace_peak_bytes": 24576,
+        "producer_tags_peak_bytes": 8192,
+        "d1_state_peak_bytes": 1572864,
+        "native_kv_peak_bytes": 9437184,
+        "gate_strength_bytes_per_policy": 24,
+        "learned_gain_temporary_bytes_per_policy": 24,
+        "learned_local_counter_bytes": 8,
+        "learned_shared_coefficient_bytes_per_policy": 72,
+        "d1_extra_to_native_percent": 16.666666666666668,
+        "trace_extra_to_native_percent": 0.2604166666666667,
+        "shared_projection_bytes_per_worker": 599040,
+        "scope": "maximum retained per-user state; shared projections are separate from user K/V"
+      },
+      "policies": {
+        "d1": {
+          "calibration_flops": 32443303922100,
+          "serving_added_flops": 182134698360,
+          "total_added_flops": 32625438620460,
+          "added_percent_of_exact_gap": 2657.409545120512,
+          "added_percent_of_fresh_gap": 517.2022563743049,
+          "extra_state_peak_bytes": 1572864,
+          "extra_state_to_native_percent": 16.666666666666668
+        },
+        "local_gate": {
+          "calibration_flops": 32443303922100,
+          "serving_added_flops": 182139907740,
+          "total_added_flops": 32625443829840,
+          "added_percent_of_exact_gap": 2657.409969435302,
+          "added_percent_of_fresh_gap": 517.2023389571973,
+          "extra_state_peak_bytes": 1581080,
+          "extra_state_to_native_percent": 16.753726535373264
+        },
+        "formation_gate": {
+          "calibration_flops": 32443303922100,
+          "serving_added_flops": 412657481628,
+          "total_added_flops": 32855961403728,
+          "added_percent_of_exact_gap": 2676.186103245924,
+          "added_percent_of_fresh_gap": 520.8566717229808,
+          "extra_state_peak_bytes": 1597464,
+          "extra_state_to_native_percent": 16.927337646484375
+        },
+        "learned_constant": {
+          "calibration_flops": 44865932219070,
+          "inherited_d1_calibration_flops": 32443303922100,
+          "incremental_calibration_flops": 12422628296970,
+          "calibration_components": {
+            "source_trajectory_flops": 8860817409744,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1340175322234,
+            "compact_scene_encoding_flops": 480080603136,
+            "shared_compact_setup_flops": 149760,
+            "native_query_forward_flops": 702968344272,
+            "compact_and_response_read_flops": 941019541248,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 90091747584,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7168097712,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 32443303922100
+          },
+          "serving_added_flops": 182139956448,
+          "total_added_flops": 45048072175518,
+          "serving_components": {
+            "inherited_d1_serving_flops": 182134698360,
+            "feature_flops": 0,
+            "gain_flops": 49896,
+            "blend_flops": 5208192,
+            "formation_propagation_flops": 0
+          },
+          "added_percent_of_exact_gap": 3669.2587762920143,
+          "added_percent_of_fresh_gap": 714.1349069826528,
+          "extra_state_peak_bytes": 1572864,
+          "extra_state_to_native_percent": 16.666666666666668,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 0,
+          "formation_trace_bytes": 0,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        },
+        "learned_local": {
+          "calibration_flops": 44865932238654,
+          "inherited_d1_calibration_flops": 32443303922100,
+          "incremental_calibration_flops": 12422628316554,
+          "calibration_components": {
+            "source_trajectory_flops": 8860817409744,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1340175322234,
+            "compact_scene_encoding_flops": 480080603136,
+            "shared_compact_setup_flops": 149760,
+            "local_feature_flops": 19584,
+            "native_query_forward_flops": 702968344272,
+            "compact_and_response_read_flops": 941019541248,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 90091747584,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7168097712,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 32443303922100
+          },
+          "serving_added_flops": 182139961200,
+          "total_added_flops": 45048072199854,
+          "serving_components": {
+            "inherited_d1_serving_flops": 182134698360,
+            "feature_flops": 4752,
+            "gain_flops": 49896,
+            "blend_flops": 5208192,
+            "formation_propagation_flops": 0
+          },
+          "added_percent_of_exact_gap": 3669.2587782742316,
+          "added_percent_of_fresh_gap": 714.1349073684448,
+          "extra_state_peak_bytes": 1581064,
+          "extra_state_to_native_percent": 16.753556993272568,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 8200,
+          "formation_trace_bytes": 0,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        },
+        "learned_formation": {
+          "calibration_flops": 46000273362092,
+          "inherited_d1_calibration_flops": 32443303922100,
+          "incremental_calibration_flops": 13556969439992,
+          "calibration_components": {
+            "source_trajectory_flops": 8860817409744,
+            "formation_trace_flops": 1134334742630,
+            "formation_mean_flops": 6400392,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1340175322234,
+            "compact_scene_encoding_flops": 480080603136,
+            "shared_compact_setup_flops": 149760,
+            "native_query_forward_flops": 702968344272,
+            "compact_and_response_read_flops": 941019541248,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 90091747584,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7168097712,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 32443303922100
+          },
+          "serving_added_flops": 412657532712,
+          "total_added_flops": 46412930894804,
+          "serving_components": {
+            "inherited_d1_serving_flops": 182134698360,
+            "feature_flops": 7187484,
+            "gain_flops": 49896,
+            "blend_flops": 5208192,
+            "formation_propagation_flops": 230510388780
+          },
+          "added_percent_of_exact_gap": 3780.4293456923297,
+          "added_percent_of_fresh_gap": 735.7716431951178,
+          "extra_state_peak_bytes": 1605632,
+          "extra_state_to_native_percent": 17.01388888888889,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 8192,
+          "formation_trace_bytes": 24576,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        }
+      }
+    },
+    "v4": {
+      "components": {
+        "fresh_executed_snapshot_history_flops": 5513987382492,
+        "local_gate_reduction_flops": 1106,
+        "formation_gate_reduction_flops": 6744780,
+        "learned_constant_feature_flops": 0,
+        "learned_constant_gain_flops": 46452,
+        "learned_local_feature_flops": 4424,
+        "learned_local_gain_flops": 46452,
+        "learned_formation_feature_flops": 6745886,
+        "learned_formation_gain_flops": 46452,
+        "extra_history_read_flops": 18493104816,
+        "response_flops": 2260732416,
+        "fresh_per_request_history_flops": 6325930519356,
+        "gate_blend_flops_per_policy": 4382208,
+        "learned_blend_flops_per_policy": 4382208,
+        "initial_encode_flops": 111942689280,
+        "item_lookup_bytes": 271401216,
+        "append_encode_flops": 47098423296,
+        "setup_flops": 449280
+      },
+      "calibration_flops": 33496821848644,
+      "d1_serving_added_flops": 179795399088,
+      "d1_total_added_flops": 33676617247732,
+      "exact_minus_reuse_history_flops": 1227018177394,
+      "fresh_per_request_minus_reuse_online_history_flops": 5174801876604,
+      "d1_added_percent_of_exact_gap": 2744.5899228042417,
+      "d1_added_percent_of_fresh_gap": 650.7808038021451,
+      "formation_trace_extra_flops": 233642010180,
+      "formation_trace_components": {
+        "trace_qk_flops": 210599335680,
+        "trace_weight_flops": 13162458480,
+        "trace_aggregate_flops": 6581229240,
+        "trace_normalization_flops": 3296893740,
+        "trace_residual_flops": 2093040
+      },
+      "memory": {
+        "trace_peak_bytes": 24576,
+        "producer_tags_peak_bytes": 8192,
+        "gate_strength_bytes_per_policy": 24,
+        "learned_gain_temporary_bytes_per_policy": 24,
+        "learned_local_counter_bytes": 8,
+        "learned_shared_coefficient_bytes_per_policy": 72,
+        "d1_state_peak_bytes": 1572864,
+        "native_kv_peak_bytes": 9437184,
+        "d1_extra_to_native_percent": 16.666666666666668,
+        "trace_extra_to_native_percent": 0.2604166666666667,
+        "shared_projection_bytes_per_worker": 599040,
+        "scope": "maximum retained per-user state; shared projections are separate from user K/V"
+      },
+      "policies": {
+        "d1": {
+          "calibration_flops": 33496821848644,
+          "serving_added_flops": 179795399088,
+          "total_added_flops": 33676617247732,
+          "added_percent_of_exact_gap": 2744.5899228042417,
+          "added_percent_of_fresh_gap": 650.7808038021451,
+          "extra_state_peak_bytes": 1572864,
+          "extra_state_to_native_percent": 16.666666666666668
+        },
+        "local_gate": {
+          "calibration_flops": 33496821848644,
+          "serving_added_flops": 179799782402,
+          "total_added_flops": 33676621631046,
+          "added_percent_of_exact_gap": 2744.5902800372546,
+          "added_percent_of_fresh_gap": 650.7808885071078,
+          "extra_state_peak_bytes": 1581080,
+          "extra_state_to_native_percent": 16.753726535373264
+        },
+        "formation_gate": {
+          "calibration_flops": 33496821848644,
+          "serving_added_flops": 413448536256,
+          "total_added_flops": 33910270384900,
+          "added_percent_of_exact_gap": 2763.6322761672736,
+          "added_percent_of_fresh_gap": 655.2960131326583,
+          "extra_state_peak_bytes": 1597464,
+          "extra_state_to_native_percent": 16.927337646484375
+        },
+        "learned_constant": {
+          "calibration_flops": 47983840623818,
+          "inherited_d1_calibration_flops": 33496821848644,
+          "incremental_calibration_flops": 14487018775174,
+          "calibration_components": {
+            "source_trajectory_flops": 10906851832388,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1336280517858,
+            "compact_scene_encoding_flops": 485862819840,
+            "shared_compact_setup_flops": 149760,
+            "native_query_forward_flops": 708503493744,
+            "compact_and_response_read_flops": 950701974528,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 91248940800,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7261964976,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 33496821848644
+          },
+          "serving_added_flops": 179799827748,
+          "total_added_flops": 48163640451566,
+          "serving_components": {
+            "inherited_d1_serving_flops": 179795399088,
+            "feature_flops": 0,
+            "gain_flops": 46452,
+            "blend_flops": 4382208,
+            "formation_propagation_flops": 0
+          },
+          "added_percent_of_exact_gap": 3925.2589194610177,
+          "added_percent_of_fresh_gap": 930.7339990989901,
+          "extra_state_peak_bytes": 1572864,
+          "extra_state_to_native_percent": 16.666666666666668,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 0,
+          "formation_trace_bytes": 0,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        },
+        "learned_local": {
+          "calibration_flops": 47983840643402,
+          "inherited_d1_calibration_flops": 33496821848644,
+          "incremental_calibration_flops": 14487018794758,
+          "calibration_components": {
+            "source_trajectory_flops": 10906851832388,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1336280517858,
+            "compact_scene_encoding_flops": 485862819840,
+            "shared_compact_setup_flops": 149760,
+            "local_feature_flops": 19584,
+            "native_query_forward_flops": 708503493744,
+            "compact_and_response_read_flops": 950701974528,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 91248940800,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7261964976,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 33496821848644
+          },
+          "serving_added_flops": 179799832172,
+          "total_added_flops": 48163640475574,
+          "serving_components": {
+            "inherited_d1_serving_flops": 179795399088,
+            "feature_flops": 4424,
+            "gain_flops": 46452,
+            "blend_flops": 4382208,
+            "formation_propagation_flops": 0
+          },
+          "added_percent_of_exact_gap": 3925.258921417631,
+          "added_percent_of_fresh_gap": 930.7339995629306,
+          "extra_state_peak_bytes": 1581064,
+          "extra_state_to_native_percent": 16.753556993272568,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 8200,
+          "formation_trace_bytes": 0,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        },
+        "learned_formation": {
+          "calibration_flops": 49140433690348,
+          "inherited_d1_calibration_flops": 33496821848644,
+          "incremental_calibration_flops": 15643611841704,
+          "calibration_components": {
+            "source_trajectory_flops": 10906851832388,
+            "formation_trace_flops": 1156586589050,
+            "formation_mean_flops": 6477480,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1336280517858,
+            "compact_scene_encoding_flops": 485862819840,
+            "shared_compact_setup_flops": 149760,
+            "native_query_forward_flops": 708503493744,
+            "compact_and_response_read_flops": 950701974528,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 91248940800,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7261964976,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 33496821848644
+          },
+          "serving_added_flops": 413448583814,
+          "total_added_flops": 49553882274162,
+          "serving_components": {
+            "inherited_d1_serving_flops": 179795399088,
+            "feature_flops": 6745886,
+            "gain_flops": 46452,
+            "blend_flops": 4382208,
+            "formation_propagation_flops": 233642010180
+          },
+          "added_percent_of_exact_gap": 4038.5613829623053,
+          "added_percent_of_fresh_gap": 957.5996039230411,
+          "extra_state_peak_bytes": 1605632,
+          "extra_state_to_native_percent": 17.01388888888889,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 8192,
+          "formation_trace_bytes": 24576,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        }
+      }
+    },
+    "v5": {
+      "components": {
+        "initial_encode_flops": 112540803072,
+        "item_lookup_bytes": 273762816,
+        "append_encode_flops": 47884207104,
+        "setup_flops": 449280,
+        "fresh_executed_snapshot_history_flops": 5570059410370,
+        "local_gate_reduction_flops": 1132,
+        "formation_gate_reduction_flops": 6803562,
+        "learned_constant_feature_flops": 0,
+        "learned_constant_gain_flops": 47544,
+        "learned_local_feature_flops": 4528,
+        "learned_local_gain_flops": 47544,
+        "learned_formation_feature_flops": 6804694,
+        "learned_formation_gain_flops": 47544,
+        "extra_history_read_flops": 20915690400,
+        "response_flops": 2611966080,
+        "fresh_per_request_history_flops": 7150010410968,
+        "gate_blend_flops_per_policy": 5063040,
+        "learned_blend_flops_per_policy": 5063040
+      },
+      "calibration_flops": 34551710176754,
+      "d1_serving_added_flops": 183953115936,
+      "d1_total_added_flops": 34735663292690,
+      "exact_minus_reuse_history_flops": 1229099531968,
+      "fresh_per_request_minus_reuse_online_history_flops": 5979102821664,
+      "d1_added_percent_of_exact_gap": 2826.1066243408472,
+      "d1_added_percent_of_fresh_gap": 580.9510946497317,
+      "formation_trace_extra_flops": 236423772240,
+      "formation_trace_components": {
+        "trace_qk_flops": 213106713600,
+        "trace_weight_flops": 13319169600,
+        "trace_aggregate_flops": 6659584800,
+        "trace_normalization_flops": 3336176280,
+        "trace_residual_flops": 2127960
+      },
+      "memory": {
+        "trace_peak_bytes": 24576,
+        "producer_tags_peak_bytes": 8192,
+        "d1_state_peak_bytes": 1572864,
+        "native_kv_peak_bytes": 9437184,
+        "gate_strength_bytes_per_policy": 24,
+        "learned_gain_temporary_bytes_per_policy": 24,
+        "learned_local_counter_bytes": 8,
+        "learned_shared_coefficient_bytes_per_policy": 72,
+        "d1_extra_to_native_percent": 16.666666666666668,
+        "trace_extra_to_native_percent": 0.2604166666666667,
+        "shared_projection_bytes_per_worker": 599040,
+        "scope": "maximum retained per-user state; shared projections are separate from user K/V"
+      },
+      "policies": {
+        "d1": {
+          "calibration_flops": 34551710176754,
+          "serving_added_flops": 183953115936,
+          "total_added_flops": 34735663292690,
+          "added_percent_of_exact_gap": 2826.1066243408472,
+          "added_percent_of_fresh_gap": 580.9510946497317,
+          "extra_state_peak_bytes": 1572864,
+          "extra_state_to_native_percent": 16.666666666666668
+        },
+        "local_gate": {
+          "calibration_flops": 34551710176754,
+          "serving_added_flops": 183958180108,
+          "total_added_flops": 34735668356862,
+          "added_percent_of_exact_gap": 2826.107036363785,
+          "added_percent_of_fresh_gap": 580.9511793475893,
+          "extra_state_peak_bytes": 1581080,
+          "extra_state_to_native_percent": 16.753726535373264
+        },
+        "formation_gate": {
+          "calibration_flops": 34551710176754,
+          "serving_added_flops": 420388754778,
+          "total_added_flops": 34972098931532,
+          "added_percent_of_exact_gap": 2845.3431168048405,
+          "added_percent_of_fresh_gap": 584.9054611474163,
+          "extra_state_peak_bytes": 1597464,
+          "extra_state_to_native_percent": 16.927337646484375
+        },
+        "learned_constant": {
+          "calibration_flops": 52318371259270,
+          "inherited_d1_calibration_flops": 34551710176754,
+          "incremental_calibration_flops": 17766661082516,
+          "calibration_components": {
+            "source_trajectory_flops": 14174741252864,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1338443623732,
+            "compact_scene_encoding_flops": 488366886912,
+            "shared_compact_setup_flops": 149760,
+            "native_query_forward_flops": 710869491360,
+            "compact_and_response_read_flops": 954848828928,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 91770794496,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7312973184,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 34551710176754
+          },
+          "serving_added_flops": 183958226520,
+          "total_added_flops": 52502329485790,
+          "serving_components": {
+            "inherited_d1_serving_flops": 183953115936,
+            "feature_flops": 0,
+            "gain_flops": 47544,
+            "blend_flops": 5063040,
+            "formation_propagation_flops": 0
+          },
+          "added_percent_of_exact_gap": 4271.609265176819,
+          "added_percent_of_fresh_gap": 878.0971167707477,
+          "extra_state_peak_bytes": 1572864,
+          "extra_state_to_native_percent": 16.666666666666668,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 0,
+          "formation_trace_bytes": 0,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        },
+        "learned_local": {
+          "calibration_flops": 52318371278854,
+          "inherited_d1_calibration_flops": 34551710176754,
+          "incremental_calibration_flops": 17766661102100,
+          "calibration_components": {
+            "source_trajectory_flops": 14174741252864,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1338443623732,
+            "compact_scene_encoding_flops": 488366886912,
+            "shared_compact_setup_flops": 149760,
+            "local_feature_flops": 19584,
+            "native_query_forward_flops": 710869491360,
+            "compact_and_response_read_flops": 954848828928,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 91770794496,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7312973184,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 34551710176754
+          },
+          "serving_added_flops": 183958231048,
+          "total_added_flops": 52502329509902,
+          "serving_components": {
+            "inherited_d1_serving_flops": 183953115936,
+            "feature_flops": 4528,
+            "gain_flops": 47544,
+            "blend_flops": 5063040,
+            "formation_propagation_flops": 0
+          },
+          "added_percent_of_exact_gap": 4271.6092671385795,
+          "added_percent_of_fresh_gap": 878.0971171740189,
+          "extra_state_peak_bytes": 1581064,
+          "extra_state_to_native_percent": 16.753556993272568,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 8200,
+          "formation_trace_bytes": 0,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        },
+        "learned_formation": {
+          "calibration_flops": 53489907151344,
+          "inherited_d1_calibration_flops": 34551710176754,
+          "incremental_calibration_flops": 18938196974590,
+          "calibration_components": {
+            "source_trajectory_flops": 14174741252864,
+            "formation_trace_flops": 1171529381210,
+            "formation_mean_flops": 6510864,
+            "old_fraction_flops": 1088,
+            "teacher_cache_capture_flops": 1338443623732,
+            "compact_scene_encoding_flops": 488366886912,
+            "shared_compact_setup_flops": 149760,
+            "native_query_forward_flops": 710869491360,
+            "compact_and_response_read_flops": 954848828928,
+            "gain_evaluation_flops": 110208,
+            "gain_blend_flops": 145096704,
+            "same_query_teacher_flops": 91770794496,
+            "fit_read_residual_flops": 37748736,
+            "ridge_fit_flops_estimate": 75651456,
+            "fit_diagnostic_flops_estimate": 37847040,
+            "validation_teacher_full_query_flops": 7312973184,
+            "validation_response_metric_flops": 10616832,
+            "validation_logit_metric_flops": 9216,
+            "inherited_d1_calibration_flops": 34551710176754
+          },
+          "serving_added_flops": 420388803454,
+          "total_added_flops": 53910295954798,
+          "serving_components": {
+            "inherited_d1_serving_flops": 183953115936,
+            "feature_flops": 6804694,
+            "gain_flops": 47544,
+            "blend_flops": 5063040,
+            "formation_propagation_flops": 236423772240
+          },
+          "added_percent_of_exact_gap": 4386.161946419289,
+          "added_percent_of_fresh_gap": 901.6452394741494,
+          "extra_state_peak_bytes": 1605632,
+          "extra_state_to_native_percent": 17.01388888888889,
+          "d1_code_bytes": 1572864,
+          "producer_metadata_bytes": 8192,
+          "formation_trace_bytes": 24576,
+          "temporary_gain_bytes": 24,
+          "shared_coefficient_bytes_per_worker": 72,
+          "shared_projection_bytes_per_worker": 599040
+        }
+      }
+    }
+  },
+  "native_history_flops": {
+    "reuse": {
+      "v2/init": 1227715866392,
+      "v3/append": 1167065655144,
+      "v4/append": 1151128642752,
+      "v5/append": 1170907589304
+    },
+    "exact": {
+      "v2/init": 1227715866392,
+      "v3/rebuild": 1227715866392,
+      "v3/append": 1167065655144,
+      "v4/rebuild": 1227018177394,
+      "v4/append": 1151128642752,
+      "v5/rebuild": 1229099531968,
+      "v5/append": 1170907589304
+    }
+  },
+  "scores": {
+    "path": "/home/gkl/work/evokv/results/design_two_2026_10/round2_learned_strength/pilot256/scores.parquet",
+    "sha256": "6c79b4dda474c113e47e46a0487f5f0a4d640abefe8c4420bbecd353e3a95681"
+  },
+  "user_execution_seconds": 299.10405989922583,
+  "peak_gpu_allocated_gib": 4.433815956115723,
+  "identity_max_abs_logit_error": 4.76837158203125e-07,
+  "notes": [
+    "All three edges and all selected users retained, including users without requests.",
+    "Exact rebuilds once per release, then appends; Fresh reconstructs the retained raw prefix at query time.",
+    "Fresh candidates at the same timestamp share execution; canonical per-request history costs are separately recorded.",
+    "Initial V2 construction is common. Fresh-minus-Reuse online denominator subtracts native writes, not initial V2 construction.",
+    "FormationTrace never changes native writes. Optional state gates blend actual layer read responses, never output logits.",
+    "Local gates use the inherited-row fraction; formation gates use per-layer mean traces. Both are zero-parameter development controls with the same frozen Design 1 fits.",
+    "Each standalone gate policy is charged full Design 1 calibration, encoding and reads, plus blending; formation also pays actual trace propagation. Shared offline execution gives no serving credit.",
+    "Integer producer tags, floating trace state and gate vectors are reported separately; diagnostic-only metadata is not silently counted as zero storage.",
+    "Calibration counted once per target across shards. Folded projections charged once per scoring worker.",
+    "Optional learned strengths use three coefficients per layer and clip to [0,2]. Constant/local/formation controls have independent complete calibration costs; inherited D1 fitting is not added twice.",
+    "Learned formation replaces the local append feature; it does not establish incremental information beyond all local features or a learned influence propagator. Its calibration teacher is terminal Fresh.",
+    "Learned policy storage separates persistent D1 codes/producer metadata/formation traces, temporary gain vectors and shared coefficients.",
+    "The single-edge Design 1 15% target is not asserted under the different release-Exact denominator."
+  ]
+}

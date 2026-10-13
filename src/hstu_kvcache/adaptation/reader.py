@@ -47,8 +47,21 @@ class ReadResult:
 
 
 def read_embedded(model, cache, x, source=None, translated=None, *, trace=False, response_delta=None,
-                  response_time_delta=None, time_features=None, response_query_delta=None, history_override=None):
+                  response_time_delta=None, time_features=None, response_query_delta=None, history_override=None,
+                  skip_native_read=False, history_read_fn=None):
     """The six-layer query path stays differentiable with a frozen backbone."""
+    if history_read_fn is not None and (skip_native_read or any(value is not None for value in (
+            source, translated, response_delta, response_time_delta, response_query_delta, history_override))):
+        raise ValueError("a direct history reader cannot be combined with another correction path")
+    if skip_native_read:
+        # Narrow inference probe: only an explicitly declared full replacement
+        # may omit the otherwise discarded native read. Existing defaults and
+        # training/trace/additive paths retain their original computation.
+        if (torch.is_grad_enabled() or model.training or trace
+                or any(value is not None for value in (source, translated, response_delta,
+                        response_time_delta, response_query_delta))
+                or not getattr(history_override, "native_read_independent", False)):
+            raise ValueError("native-read elision requires a declared inference-only replacement")
     kvs, queries, corrections, history_heads = [], [], [], []
     layer_outputs = []
     constant_delta = None
@@ -74,10 +87,16 @@ def read_embedded(model, cache, x, source=None, translated=None, *, trace=False,
         residual = x
         x_norm = block.norm(x)
         q, k_new, v_new = block.attn._project(x_norm)
-        heads = history_read(block.attn, q, cache.k[layer], cache.v[layer])
+        if history_read_fn is not None:
+            # A direct reader computes native and auxiliary aggregates together.
+            # It replaces this read during both fitting and inference; no unused
+            # native attention is executed before it.
+            heads = history_read_fn(layer, block.attn, q, cache.k[layer], cache.v[layer])
+        else:
+            heads = None if skip_native_read else history_read(block.attn, q, cache.k[layer], cache.v[layer])
         if trace:
             history_heads.append(heads)
-        delta = torch.zeros_like(heads)
+        delta = torch.zeros_like(q if skip_native_read else heads)
         if constant_delta is not None:
             value = constant_delta[:, :, layer].expand(-1, x.shape[1], -1)
             delta = value.reshape(x.shape[0], x.shape[1], block.attn.num_heads, block.attn.head_dim).transpose(1, 2)
@@ -118,13 +137,15 @@ def read_embedded(model, cache, x, source=None, translated=None, *, trace=False,
 
 
 def score(model, cache, candidates, query_delta, source=None, translated=None, *, trace=False, response_delta=None,
-          response_time_delta=None, response_query_delta=None, history_override=None):
+          response_time_delta=None, response_query_delta=None, history_override=None, skip_native_read=False,
+          history_read_fn=None):
     x = model.embed_query_tokens(candidates, query_delta)
     temporal = response_time_delta is not None or (translated is not None and translated.temporal_coefficients is not None)
     phi = model.temporal_enc.features(query_delta) if temporal else None
     result = read_embedded(model, cache, x, source, translated, trace=trace,response_delta=response_delta,
                            response_time_delta=response_time_delta,time_features=phi,response_query_delta=response_query_delta,
-                           history_override=history_override)
+                           history_override=history_override, skip_native_read=skip_native_read,
+                           history_read_fn=history_read_fn)
     return model.cc_score_head(result.hidden).squeeze(-1), result
 
 

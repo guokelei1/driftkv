@@ -62,14 +62,12 @@ uniform-known query、最多 128 历史位置、ridge 0.01、6 轮非线性拟�
 预约名单前 C 人拟合、其后 16 人验证，均与评价面板分离；不同 C 的验证组随之变化。
 每点计入完整教师、拟合、验证及推理费用。
 
-- 入口：`scripts/read_correction_motivation/calibrate.py`，
+- 原入口：`scripts/read_correction_motivation/calibrate.py`（已退休），
   包装原 v4 fitter；评测复用
   `scripts/read_correction_v4/evaluate_full.py --variants map_all`。
-- 计划及完成记录：`plan.json`、`canary.pass.json`、`complete.json`、
-  `driver.exit`；阶段记录在 `runtime/c*/<scale>/<edge>/`。
-- 拟合参数：`calibration/c{64,256}/<scale>/<edge>/`；
-  完整评分：`evaluation/c{64,256}/<scale>/<edge>/`；
-  小样本检查在 `canary/`，不混入正式曲线。
+- 原执行设置和正负结论保留在关键结果及计划中；重复canary、运行状态和逐阶段记录已清理。
+- 原拟合参数与逐rank评分分片已清理，当前90点的逐边汇总与匹配合并评分保留。
+  历史小样本检查不混入正式曲线。
 - 四卡每卡一项任务，70% 分配上限；每 256 用户一个评分分片。
   全量 Full/Reuse/identity 最大偏差为 1.19e−6 / 1.55e−6 / 1.43e−6，
   峰值 allocated/reserved 为 18.45/30.15 GiB。

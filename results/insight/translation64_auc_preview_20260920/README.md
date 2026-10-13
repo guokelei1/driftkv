@@ -6,7 +6,7 @@
 
 The supplemental run completed in **176.56 s (2 min 57 s)**. It adds independent 64-teacher KV translation fits with 1–4 source layers on V0→V1, V2→V3, V3→V4 and V4→V5, alongside the existing 256-teacher results. The paper and its assets remain unchanged.
 
-The [configuration](../../../configs/insight/translation64_auc_preview_20260920.json) was fixed before these scores (SHA-256 `1867fa127c6501a5b47f4b5804d51e60733770da2b8a3e8c759b4984c8f5cc74`). The frozen six-layer Medium models, seed 17, 10,000 evaluation users, release snapshots and real-feedback requests are unchanged. Histories contain 1,024 events strictly before cutover; V0→V1, V2→V3 and V3→V4 use their original 14-day windows, and V4→V5 uses the original manifest's 13 complete days [287,300).
+The configuration（历史路径：`../../../configs/insight/translation64_auc_preview_20260920.json`） was fixed before these scores (SHA-256 `1867fa127c6501a5b47f4b5804d51e60733770da2b8a3e8c759b4984c8f5cc74`). The frozen six-layer Medium models, seed 17, 10,000 evaluation users, release snapshots and real-feedback requests are unchanged. Histories contain 1,024 events strictly before cutover; V0→V1, V2→V3 and V3→V4 use their original 14-day windows, and V4→V5 uses the original manifest's 13 complete days [287,300).
 
 ## Calibration and evaluation
 
@@ -60,8 +60,8 @@ The combined PDF/PNG and derived preview ledger have been removed. All 32 measur
 
 ## Execution and sources
 
-The [canary](canary/summary.json) completed in 41.01 s on 96 separate pilot users and 473 requests. Calibration took 11.29 s with peak GPU allocation 5.60 GiB. Reuse and all four translation paths matched the unchanged reference evaluator exactly on raw logits; no labels were read.
+The canary（历史路径：`canary/summary.json`） completed in 41.01 s on 96 separate pilot users and 473 requests. Calibration took 11.29 s with peak GPU allocation 5.60 GiB. Reuse and all four translation paths matched the unchanged reference evaluator exactly on raw logits; no labels were read.
 
-The full run used GPUs 0–3 with serial edges and batch size 64. The prospective estimate was 3–6 minutes; measured completion was 176.56 s. Individual edges took 43.05, 40.16, 40.06 and 42.78 s. Calibration took 10.35–11.36 s per edge, peaking at 5.60 GiB on its GPU; evaluation workers peaked at 3.45 GiB per GPU. Reuse logits matched the retained scores exactly on all four full cohorts. The [runtime log](diagnostic.runtime.log), [summary](diagnostic/summary.json), saved rules and raw scores preserve the complete run.
+The full run used GPUs 0–3 with serial edges and batch size 64. The prospective estimate was 3–6 minutes; measured completion was 176.56 s. Individual edges took 43.05, 40.16, 40.06 and 42.78 s. Calibration took 10.35–11.36 s per edge, peaking at 5.60 GiB on its GPU; evaluation workers peaked at 3.45 GiB per GPU. Reuse logits matched the retained scores exactly on all four full cohorts. The runtime log（历史路径：`diagnostic.runtime.log`）, [summary](diagnostic/summary.json), saved rules and raw scores preserve the complete run.
 
 The configuration records exact source hashes and prepared-array locations. The first three edges reuse `results/insight/unified_auc_10k_20260920/prepared`; V4→V5 reuses `results/insight/unified_auc_v4_v5_preview_20260920/prepared`. Existing 256-teacher scores come from the two linked result records above.

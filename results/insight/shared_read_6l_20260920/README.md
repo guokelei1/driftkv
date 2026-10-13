@@ -25,5 +25,5 @@ PCA32条件；每用户教师参照使用32anchor、32留出候选。故本组�
 LU错误停止（没有质量结果），单线程同方程修复后的canary2及其较差质量结果也保留。
 
 `source_snapshot/`保留这次执行的runner、原表生成器和原表，匹配原configuration中的
-执行源hash。随后runner增加了用户信息探针，旧结果的执行版本以快照为准；公共原语的现存范围见 [Design 接口](../../../scripts/design/README.md)。
+执行源hash。随后runner增加了用户信息探针，旧结果的执行版本以快照为准；公共原语的现存范围见 Design 接口（历史路径：`../../../scripts/design/README.md`）。
 历史封存的512用户oracle诊断继续保留。

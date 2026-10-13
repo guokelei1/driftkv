@@ -11,7 +11,7 @@ canary 结果在下文与原始记录中保留。
 
 ## 设置与冻结过程
 
-- [固定配置](../../../configs/insight/query_read_6l_2560_20260920.json)：当前 consolidated
+- 固定配置（历史路径：`../../../configs/insight/query_read_6l_2560_20260920.json`）：当前 consolidated
   Medium 的 V1→V2、V2→V3，cutover day245／259；seed17、6L/H192/6 heads、
   context1024，实际为 legacy ELU+1。两条边均已有 Full-only 准入，权重与映射 hash 经核验。
 - 256 校准、128 pilot、2560 评价 UID，三组互斥。评价组从既有 development 原顺序中
@@ -86,7 +86,7 @@ MAE=0.007189815、6/8改善。canary 核准的是数值、数据与资源执行�
 
 ## 检查、成本与运行资源
 
-[canary](canary/canary.pass.json)的 FP64 正规方程残差为6.32e-16量级，
+canary（历史路径：`canary/canary.pass.json`）的 FP64 正规方程残差为6.32e-16量级，
 FP32 callback 与参考计算通过既定容差；真实 native／Exact replacement 端点检查通过。
 完整2560评价两边端点最大误差不超过2.38419e-7。
 单 A40、FP32读取／FP64求解、TF32关闭、Torch backend，求解器单CPU线程。
@@ -102,7 +102,7 @@ FP32 callback 与参考计算通过既定容差；真实 native／Exact replacem
 最后一列为 `(K+2560*C_extra)/(2560*C_rebuild)`，每人读取一次32候选。
 它计兼容性新增算术，不是端到端时间比；普通原生读取仍需执行，多次请求继续累计修正。
 共享服务不用评价用户教师；评价中的 Exact 仅用于测量。完整分项和近似见
-[cost.json](analysis/cost.json)。
+cost.json（历史路径：`analysis/cost.json`）。
 
 初始预算10分钟、约10GiB；canary 后的保留估计约210秒，pilot峰值8.74GiB。
 扩大运行实测读史268.62秒，两边执行30.95／30.37秒，三项合计329.94秒；
@@ -113,13 +113,13 @@ FP32 callback 与参考计算通过既定容差；真实 native／Exact replacem
 
 - [diagnostic/summary.json](diagnostic/summary.json)、[metrics.csv](diagnostic/metrics.csv)、
   [per_user.csv](diagnostic/per_user.csv)：全部汇总、未裁剪逐用户结果与计时。
-- [configuration.json](diagnostic/configuration.json)：固定输入、执行设置及依赖 hash。
+- configuration.json（历史路径：`diagnostic/configuration.json`）：固定输入、执行设置及依赖 hash。
   两份 NPZ 保存 UID、候选、query deltas 与 Reuse／Exact／两种共享规则的原始 logits。
-- [pilot/summary.json](pilot/summary.json)及两份 `*_rules.pt`：原始校准及128人结果；
-  [canary/summary.json](canary/summary.json)保留32/8探针全部结果。
+- pilot/summary.json（历史路径：`pilot/summary.json`）及两份 `*_rules.pt`：原始校准及128人结果；
+  canary/summary.json（历史路径：`canary/summary.json`）保留32/8探针全部结果。
 - 原实验入口 `run_query_read_probe.py` 和成本分析入口已退役；保留的
-  [query_read_probe.py](../../../scripts/design/query_read_probe.py)是共享数值接口。
-- [原表生成器及快照](source_snapshot/README.md)保留，按原 raw 重算 U/P；
+  query_read_probe.py（历史路径：`../../../scripts/design/query_read_probe.py`）是共享数值接口。
+- 原表生成器及快照（历史路径：`source_snapshot/README.md`）保留，按原 raw 重算 U/P；
   当前图表入口统一见[图表索引](../../../figures/README.md)。
 
 [旧128人 item／response 实验](../user_information_6l_20260920/README.md)及

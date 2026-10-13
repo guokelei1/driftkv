@@ -6,7 +6,7 @@
 
 2026-09-20 完成并保留。随后完成
 [256 校准／2560 评价的查询与响应诊断](../query_read_6l_2560_20260920/README.md)，
-本组全部原始结果、失败、成本记录及[原表快照](source_snapshot/README.md)保持原样。
+本组全部原始结果、失败、成本记录及原表快照（历史路径：`source_snapshot/README.md`）保持原样。
 当时的论文表展示两种共享探针在两条预选发布边上的对照；
 每用户教师参照已经执行，其全部结果继续保留在本记录和 raw 中，不进入论文主表。
 读取响应差的存在由同查询下的定义说明，不用近 99% 的教师诊断代替可服务性证据。
@@ -17,7 +17,7 @@
 
 ## 固定协议与实现
 
-- [预先固定的配置](../../../configs/insight/user_information_6l_20260920.json)：
+- 预先固定的配置（历史路径：`../../../configs/insight/user_information_6l_20260920.json`）：
   当前 consolidated Medium 链 V1→V2、V2→V3，cutover 为 day245／259；
   seed17、6L/H192/6heads/context1024，实际算子为 legacy ELU+1。
   模型由当前链清单解析，核验权重／映射 hash，并要求既有 Full-only admission 解锁 Reuse。
@@ -76,7 +76,7 @@ Exact 的概率 MAE 为 0。最小逐用户 Reuse MAE 分别为 `7.95687e-5`、`
 
 ## 成本口径
 
-[成本分解](analysis/cost.md)和[机器可读记录](analysis/cost.json)按保留执行器的张量形状
+[成本分解](analysis/cost.md)和机器可读记录（历史路径：`analysis/cost.json`）按保留执行器的张量形状
 估算标量运算，每个乘加计 2，特殊函数计 1。它不是 GPU profiler 或人口性能测量。
 六层、1024 历史、每用户一次 32 候选读取下：
 
@@ -97,33 +97,33 @@ Exact 的概率 MAE 为 0。最小逐用户 Reuse MAE 分别为 `7.95687e-5`、`
 
 ## 检查、资源与证据
 
-[32/8 canary](canary/canary.pass.json)通过 CPU 正规方程与实际读取 callback 对照，
+32/8 canary（历史路径：`canary/canary.pass.json`）通过 CPU 正规方程与实际读取 callback 对照，
 同 item 跨用户修正一致性及候选分支对 native 输入的独立性检查。完整运行两条边的
 native reader／Exact replacement 与模型原生端点最大差不超过 `2.38419e-7`。
 CPU ridge 使用单线程，避免当前 PyTorch 2.12.1／MKL 多线程 LU 的已复现问题；
 模型为 FP32、求解为 FP64，TF32 关闭，`EVOKV_ATTENTION_BACKEND=torch`。
 
-[资源估计](resource_estimate.json)在完整运行前固定为单 A40、5 分钟、约 10 GiB。
+资源估计（历史路径：`resource_estimate.json`）在完整运行前固定为单 A40、5 分钟、约 10 GiB。
 实际记录 history 载入 43.33 秒，两边分别 13.08／12.35 秒，峰值 9.87 GiB；
 这是小诊断的运行开销，不作服务性能比较。没有 backbone 训练或长作业。
 
-- [configuration.json](diagnostic/configuration.json)：完整设置与执行依赖 hash；
+- configuration.json（历史路径：`diagnostic/configuration.json`）：完整设置与执行依赖 hash；
   [summary.json](diagnostic/summary.json)：所有方法、端点检查、计时和模型来源。
 - [metrics.csv](diagnostic/metrics.csv)、[per_user.csv](diagnostic/per_user.csv)：所有汇总及未裁剪 UID 结果。
 - `diagnostic/v1_to_v2.npz`、`diagnostic/v2_to_v3.npz`：UID、候选、delta、全部原始 logits，
   包括 Reuse／Exact／每用户教师及两个共享分支；本地 raw 按存储规则保留。
 - `canary/` 保留全部早期结果与 `runtime.log`；`diagnostic/runtime.log` 保留完整执行日志。
-- [历史表生成器与原表](source_snapshot/README.md)只读并独立重算 raw 中的 U/P。
+- 历史表生成器与原表（历史路径：`source_snapshot/README.md`）只读并独立重算 raw 中的 U/P。
   当时的表展示两个共享分支、两条边，不显示已执行的每用户教师行。
 
 ## 保留证据与旧实验边界
 
-旧诊断和成本分析启动器已退役。保留的[原表生成器](source_snapshot/shared_read_insight.py)
+旧诊断和成本分析启动器已退役。保留的原表生成器（历史路径：`source_snapshot/shared_read_insight.py`）
 可只读本组 raw 重算原表；它生成的是本组历史表，不是当前 Q-v5/H-v4 图。
 
 前一[摘要诊断](../shared_read_6l_20260920/diagnostic/summary.json)及其
-[旧表／源码快照](../shared_read_6l_20260920/source_snapshot/README.md)完整保留。
+旧表／源码快照（历史路径：`../shared_read_6l_20260920/source_snapshot/README.md`）完整保留。
 按当时对研究问题的澄清，该组 Insight 不展示摘要，不把该分支当择优候选，也不抹掉其混合结果。
 历史逐用户 95.34%／99.46% 和动态 93.39% 等结果见
-[历史 Insight 2](../../../scripts/insight_two/README.md)；它们不进入本次正文论证，
+历史 Insight 2（历史路径：`../../../scripts/insight_two/README.md`）；它们不进入本次正文论证，
 原 raw、analysis_v2、失败结果与 invalidation 均维持原范围。

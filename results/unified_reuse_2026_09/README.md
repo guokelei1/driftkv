@@ -5,6 +5,11 @@ Parent/Current Full 使用现有封存分数；新 GPU 任务只计算 Current �
 Reuse 分数。每条边采用原 E14 请求集、1024 条发布前历史、发布后按时间追加与淘汰；
 不跨版本复用，也不以 Reuse 与 Full 的差值方向作为中断条件。
 
+**2026-10-07保留范围：** 15条边的原始最终`summary.json`及本文保留；
+已完成的评分分片、请求分片、探针输出和退出状态已按用户要求删除。
+下文描述原执行方式与指标，旧分片路径/哈希只记录来源，不再支持逐请求重分析或原断点续跑。
+当前Design使用单独冻结的校准/质量面板；Motivation图读取已保留的总表与Q/H合并评分。
+
 代码在 [`scripts/unified_reuse_2026_09/`](../../scripts/unified_reuse_2026_09/)，
 固定计划在 [`configs/unified_reuse_2026_09/adjacent_e14.json`](../../configs/unified_reuse_2026_09/adjacent_e14.json)。
 `--prepare` 只核对现有 Full 原始分数封存、权重及请求身份，生成四卡请求分片；
@@ -24,7 +29,7 @@ Reuse 分数。每条边采用原 E14 请求集、1024 条发布前历史、发�
 15 条边全部完成，退出码为 0，无失败记录。四卡串行队列从 2026-09-23
 12:04:55 至 2026-09-25 08:46:15（北京时间），实际耗时约 44 小时 41 分钟。
 每条边的 `summary.json` 保存 Full 和 Reuse 的完整指标及输入／执行源码哈希；
-`status.json`、`runtime.log`、`exit_status.txt` 保存运行状态。
+`status.json`、`runtime.log`、`exit_status.txt` 曾记录运行状态，已清理。
 
 下表 AUC 均在各边原 E14 的同一批请求上计算。更新收益 = Current Full −
 Parent Full；Reuse 损失 = Current Full − Current Reuse；单位 pp 为 AUC 百分点。

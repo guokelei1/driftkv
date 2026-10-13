@@ -1,0 +1,168 @@
+{
+  "role": "representative_medium_population_development_probe",
+  "date": "2026-10-04",
+  "status": "prepared",
+  "purpose": "Check transfer of unchanged D1/D2/D3 on an eligibility-only sample of the actual Medium population; service accounting remains the entire fixed30k workload.",
+  "primary_method": "task_causal_exit",
+  "panel": "results/design_system_2026_10/phase2/representative4096/panel",
+  "calibration_dir": "results/design_two_2026_10/round1_continuous_baseline/calibration",
+  "strengths_dir": "results/design_two_2026_10/release_calibration/round1/calibration",
+  "calibration_panel": "results/design_two_2026_10/benchmark_panel/binding.json",
+  "canary_reference": "results/design_two_2026_10/round1_continuous_baseline/development4096",
+  "users": 4096,
+  "query_batch": 32,
+  "gpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "memory_fraction": 0.7,
+  "benchmark": {
+    "role": "eligible_medium_population_development_probe_not_blind_final",
+    "evaluation_users": 4096,
+    "model_chain": [
+      "v2",
+      "v3",
+      "v4",
+      "v5"
+    ],
+    "days": [
+      259,
+      301
+    ],
+    "requests_by_release": {
+      "v3": 18063,
+      "v4": 16964,
+      "v5": 16704
+    },
+    "requests": 51731,
+    "user_selection": "First4096 SHA256(namespace/uid), then UID, after current three-release D1/D2 fitting and validation exclusions. No request availability, future activity, label, score or Full/Reuse gap filter; retain all idle users.",
+    "quality_scope": "Representative development probe of the eligible fixed Medium population, with possible prior development overlap; not blind final qualification."
+  },
+  "service_cost_scenario": {
+    "role": "first_real_population_scenario_not_universal_final_scale",
+    "population_path": "data/manifests/yambda500m_scale_v1/medium_users.parquet",
+    "resident_users": 30000,
+    "model_chain": [
+      "v2",
+      "v3",
+      "v4",
+      "v5"
+    ],
+    "days": [
+      259,
+      301
+    ],
+    "history_cap": 1024,
+    "query_batch": 32,
+    "append_band": 32,
+    "shared_preparation_replicas": 4,
+    "workload": "All retained actual requests and chronological history writes, including idle users and request-free intervals.",
+    "measurement": "Analytic operator FLOPs from complete real event shapes; validate against existing executed user ledgers before population counting. No multiplication of a selected cohort.",
+    "quality_inference": "This CPU ledger does not score or establish quality on all 30000 users."
+  },
+  "acceptance": {
+    "quality_aggregation": "release_equal_gap_recovery",
+    "recovery_percent_min": 80,
+    "compute_percent_min": 10,
+    "compute_percent_max": 20,
+    "persistent_extra_percent_max": 20,
+    "scope": "The complete method is assessed at an explicitly named scenario. Passing the development scenario is not completion of the paper claim.",
+    "individual_module_gain_required": false,
+    "per_edge_gain_required": false
+  },
+  "controls": [
+    "reuse",
+    "fresh",
+    "exact",
+    "first_request_rebuild",
+    "d1",
+    "read_causal_exit"
+  ],
+  "fitting": "No refitting, endpoint reselection or changed user roles in this regression. Frozen task strengths epoch4/4/4 and read0/0/4 retain their complete historical preparation costs.",
+  "analysis": "Report all edge AUCs, log losses and gaps; equal-release mean differences define primary recovery. Pooled AUC is descriptive. Sum complete absolute costs before division; preserve panel diagnostics and population-ledger scope.",
+  "resource_estimate": "Expected25-40min on four GPUs: the prior8-user209-request canary spent8.65s on the original four controls and9.21s on the integrated method. Actual request count, inactive users and the new canary refine this estimate. Use tmux; unchanged weights, no refitting or population-based reselection.",
+  "execution_order": [
+    "Freeze eligible population sample before attaching labels",
+    "Eight-user matched numerical/resource canary",
+    "Evaluate all4096 selected users with unchanged weights; retain all edges and idle users"
+  ],
+  "not_claimed": [
+    "10000 is the final or only service population",
+    "Development recovery transfers to all users or another dataset",
+    "Analytic population costs are GPU execution time or tail latency",
+    "Independent large AUC improvements from all three modules",
+    "The OSDI evidence package is complete"
+  ],
+  "source_parent_configuration": {
+    "path": "/home/gkl/work/evokv/results/design_system_2026_10/phase2/configuration.json",
+    "sha256": "54b9011322d415088e04ef254eb06a1d1c98b3116e6eb438ab59f4504707e6dc"
+  },
+  "service_cost_configuration": {
+    "path": "/home/gkl/work/evokv/results/design_system_2026_10/phase2/configuration.json",
+    "sha256": "54b9011322d415088e04ef254eb06a1d1c98b3116e6eb438ab59f4504707e6dc"
+  },
+  "selection": {
+    "namespace": "design_system_population_probe_2026_10_04",
+    "population": {
+      "path": "/home/gkl/work/evokv/data/manifests/yambda500m_scale_v1/medium_users.parquet",
+      "sha256": "62ab1d94f89f77361cd24442589d2d99aa756a44db83358a46a43289b0c78e5c"
+    },
+    "population_users": 30000,
+    "eligible_users": 28720,
+    "excluded_population_users": 1280,
+    "users": 4096,
+    "rule": "First4096 SHA256(namespace/uid), then UID, after current three-release D1/D2 fitting and validation exclusions. No request availability, future activity, label, score or Full/Reuse gap filter; retain all idle users.",
+    "exclusion_sources": [
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v3/calibration.json",
+        "sha256": "40cfac14405d5e04ae285fac25b7b7468425c16617d30cf6a78918ad6c700ad2"
+      },
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/release_calibration/round1/calibration/v3/strengths.json",
+        "sha256": "060624590a0c3eb83f027b967e24273f6040b74dea9e17ec8be78ad4d7fd1937"
+      },
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v4/calibration.json",
+        "sha256": "367fb1bf10a4f0df48324766b7670e5d3e58759efc3faeda28d72bc218017b56"
+      },
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/release_calibration/round1/calibration/v4/strengths.json",
+        "sha256": "2cec73c3c17657decfedb230c8642f0fa50744b8e927c1f88f95647c7059bd6f"
+      },
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/round1_continuous_baseline/calibration/v5/calibration.json",
+        "sha256": "800c09b24fe69f42b64667c86419f9b91cc3f41596c4b39d01710c4fce28fc1c"
+      },
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/release_calibration/round1/calibration/v5/strengths.json",
+        "sha256": "c537dbe7d402ee9eaa1b7cc1f051510e1e074a7d4b5170d290189916ebc94c61"
+      }
+    ],
+    "excluded_roles": {
+      "results/design_two_2026_10/round1_continuous_baseline/calibration/v3/calibration.json:fit": 256,
+      "results/design_two_2026_10/round1_continuous_baseline/calibration/v3/calibration.json:validation": 16,
+      "results/design_two_2026_10/release_calibration/round1/calibration/v3/strengths.json:fit": 1024,
+      "results/design_two_2026_10/release_calibration/round1/calibration/v3/strengths.json:validation": 256,
+      "results/design_two_2026_10/round1_continuous_baseline/calibration/v4/calibration.json:fit": 256,
+      "results/design_two_2026_10/round1_continuous_baseline/calibration/v4/calibration.json:validation": 16,
+      "results/design_two_2026_10/release_calibration/round1/calibration/v4/strengths.json:fit": 1024,
+      "results/design_two_2026_10/release_calibration/round1/calibration/v4/strengths.json:validation": 256,
+      "results/design_two_2026_10/round1_continuous_baseline/calibration/v5/calibration.json:fit": 256,
+      "results/design_two_2026_10/round1_continuous_baseline/calibration/v5/calibration.json:validation": 16,
+      "results/design_two_2026_10/release_calibration/round1/calibration/v5/strengths.json:fit": 1024,
+      "results/design_two_2026_10/release_calibration/round1/calibration/v5/strengths.json:validation": 256
+    },
+    "overlap_with_earlier_roles": {
+      "old_development4096": 587,
+      "primary10k": 1418,
+      "historical_confirmation512": 77,
+      "historical_single_edge_d1_fit": 11,
+      "historical_single_edge_d1_validation": 1
+    },
+    "canary_rule": "First eight probe-order UIDs also present in the historical4096 panel; numerical comparison only.",
+    "evaluation_role": "Representative development probe of the eligible fixed Medium population, with possible prior development overlap; not blind final qualification.",
+    "prior_failure": "The frozen512 transfer failure remains separate and unchanged; this cohort does not replace or retune it."
+  }
+}

@@ -1,9 +1,4 @@
-"""Compact source summaries and personalized candidate-read correction."""
+"""Compact native-cache codes and shared Key/Value read correction.
 
-from .adapter import CompatibilityView, SharedReadAdapter, SummaryProjection
-from .summary import ProducerSummary
-
-__all__ = [
-    "CompatibilityView", "ProducerSummary", "SharedReadAdapter",
-    "SummaryProjection",
-]
+Import implementations from their modules; historical summary adapters retired.
+"""

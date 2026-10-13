@@ -1,28 +1,13 @@
-# 相邻版本 Reuse 入口
+# 相邻版本 Reuse 的保留范围
 
-Medium、Large、Max 各五条边，共 15 条，已于 2026-09-25 全部完成。
-[结果与口径](../../results/unified_reuse_2026_09/README.md)、
-[固定计划](../../configs/unified_reuse_2026_09/adjacent_e14.json)
-和[模型版本清单](../../docs/unified_training_2026_09/model_versions.md)是使用入口。
+Medium、Large、Max各五条边，共15条，已于2026-09-25完成。
+最终指标与口径见[结果索引](../../results/unified_reuse_2026_09/README.md)，
+必要设置见[固定计划](../../configs/unified_reuse_2026_09/adjacent_e14.json)和
+[模型版本清单](../../docs/unified_training_2026_09/model_versions.md)。
 
-## 执行阶段
+本目录只保留`common.py`，为当前Design及Motivation提供哈希、JSON读写、
+固定模型/窗口和公共路径工具。原准备、探针、逐边队列与adjudication入口已删除；
+原评分/请求分片和运行状态也已清理。15条边的原始最终summary保留，
+历史来源哈希说明当时执行，不表示旧队列可以续跑。
 
-从仓库根目录运行：
-
-```bash
-python scripts/unified_reuse_2026_09/run.py --prepare
-python scripts/unified_reuse_2026_09/run.py --probe
-```
-
-`--prepare` 不占 GPU，核对既有 Full 分数、权重与请求身份并生成四卡分片。
-`--probe` 在各规模 V4→V5 的小样本上检查数值、吞吐和显存。
-已有记录位于 `results/unified_reuse_2026_09/<scale>/` 和 `probes/`。
-
-正式入口是 `bash scripts/unified_reuse_2026_09/run_in_tmux.sh`：
-逐边串行、每边 GPU 0–3 并行，只计算 Current 读取上一版缓存的 Reuse，
-Parent/Current Full 使用已有封存结果。原始分数每 128 用户一片封存；
-恢复时校验模型、请求、计划和源码绑定，跳过已完成分片。
-输出包括 `status.json`、各边 `summary.json`、`runtime.log` 和退出码。
-
-这是已完成实验的可复用入口；查看结果不需要重新执行准备、探针或正式队列。
-新的长评测需要明确启动授权。
+新测量需要新的完整输入与实验设置；本目录没有等待执行的任务。

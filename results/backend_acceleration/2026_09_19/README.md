@@ -68,7 +68,7 @@ FP32 点积采用 TF32x3；BF16 保留各阶段舍入。位置偏置梯度以 FP
   缓存谱系、三种 competitor 原语检查通过；未运行全量 suite。
 - 六层 fullgraph+dynamic 编译 prefix 检查通过；首次调用47.23秒，K/V 最大误差
   约1.04e-6／1.07e-6。默认旧 g++ 的 C++20 失败属于环境，不吞掉编译失败。
-- [两卡 FSDP canary](fsdp/canary.pass.json)：六层 BF16 参数（含 bias）、FP32
+- 两卡 FSDP canary（历史路径：`fsdp/canary.pass.json`）：六层 BF16 参数（含 bias）、FP32
   梯度归约，一次 AdamW 更新。它验证训练接线与数值范围，不建立长期训练等价性。
 
 检查还发现旧 `forward_one_with_cache_new_kv` 专用公式仅适用于 legacy/inclusive：

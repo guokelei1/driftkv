@@ -1,122 +1,126 @@
-# 模型与实验结果
+# 结果索引与保留范围
 
-## 当前结果入口
+## 当前Design证据
 
-| 主线 | 结果与来源 |
+| 证据 | 入口 |
 | --- | --- |
-| Yambda 数据与三规模 18 个选定模型 | [统一训练](unified_training_2026_09/README.md)、[版本清单](../docs/unified_training_2026_09/model_versions.md)、[数据审计](data_audit/yambda500m_scale_v1/) |
-| 15 条相邻边 Full/Recompute 与 Reuse | [完整对照](unified_reuse_2026_09/README.md) |
-| 四种局部重算，每种 15 条边 | [用户面板、预算曲线与成本](selective_recompute_2026_09/README.md) |
-| 非线性 Q-v5 / H-v4，90 个当前实测点 | [当前结果](read_correction_2026_09/motivation_final/README.md)、[图表](../figures/README.md) |
-| Design 1：固定 Medium 一万人开发 | [当前目标与实施顺序](../docs/design/plan.md)、[全部迭代](../docs/design/iterations.md)、[当前紧凑读修正](design_one_2026_10/round20_compact_training/evaluation_10k/summary.json)、[首批参照](design_one_2026_10/rank8_10k/summary.json)、[匹配Q/H](design_one_2026_10/benchmark_10k/summary.json) |
-| RecFlow 4096 用户 A–F 六模型链 | [数据处理、模型与随机对照](recflow/README.md) |
-| 论文重算成本表 | [测量报告](release_cost_random_weight_v1/report.md) |
-| HSTU 后端数值与性能 | [六层验证](backend_acceleration/2026_09_19/README.md)、[Max 剖析](backend_acceleration/max_profile_2026_09_19/README.md) |
+| 最新继承flag范围候选：84.8066%／18.4375% | [配置](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_support_lazy/configuration.json)、[完整结果](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_support_lazy/development4096/summary.json)、[配对区间](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_support_lazy/development4096/paired_original.json) |
+| 未门控匹配控制：76.1364%／18.4295% | [结果](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_lazy/development4096/summary.json)、[原校准费用](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_lazy/calibration_summary.json) |
+| 同局部权重local-only：63.9851%／12.8870% | [结果](design_system_2026_10/framework_review_2026_10_05/local_only/development4096/summary.json)、[joint配对](design_system_2026_10/framework_review_2026_10_05/local_only/paired_joint.json) |
+| 用户组成敏感性 | [cohort_stability.json](design_system_2026_10/framework_review_2026_10_05/cohort_stability.json) |
+| V5教师输出与候选相对误差 | [机制分析](design_system_2026_10/framework_review_2026_10_05/joint_composition_v5/analysis.json)、[请求对分解](design_system_2026_10/framework_review_2026_10_05/score_pair_structure.json) |
+| eager/lazy事件账 | [lifecycle_cost.json](design_system_2026_10/framework_review_2026_10_05/lifecycle_cost.json) |
+| 固定30k一次重建账 | [原生事件与成本](design_system_2026_10/phase2/population_cost/summary_complete.json)、[按需编码账](design_system_2026_10/lightweight_read/lazy_codes/population_cost/summary.json) |
 
-以上训练与 Motivation 评测已完成。Design 1 第二十轮达到质量、计算与存储共同目标：
-紧凑Item64＋Response256恢复84.98%、新增FLOPs10.46%、额外持久状态16.67%，AUC0.670193。
-校准占8.66%、服务新增计算占1.80%；当前无待启动任务。第十八轮完整K/V参照为
-83.65%/13.46%/100%额外状态，旧rank8参照为59.45%/0.753%。
-完整 Design 的持续适配尚未验证。历史原型结果见
-[设计记录](../docs/design/iterations.md)，保留接口见[实现边界](../docs/design/plan.md)。
-当前实验的全部预算、负结果、失败和 invalidation 随原始记录保留。
+质量样本固定4096用户/51,731请求，成本人口固定30k。最新候选恢复区间为
+[51.635%,102.364%]；相对原控制的平均AUC增益区间跨零，V5回退。
+这仍是开发证据，不是独立确认。额外要求重构校准source-KV时成本为21.9382%。
 
-### Design 1 本地保留范围
+## 必要运行资产
 
-`design_one_2026_10/`的首批五轮保留17组一万人正式逐请求分数、全部summary、校准元数据、
-launch与shard来源/控制记录，以及bootstrap、裁决和精确执行源快照。
-固定请求面板和四份有界历史包继续供下一轮使用，全部正负结果均可从最终分数重算。
+- Yambda三规模V0–V5共18个选定基础模型，见[模型清单](../docs/unified_training_2026_09/model_versions.md)。
+- RecFlow六层A–F共6个选定模型，以及两条数据轨道的原始/当前处理数据。
+- `design_two_2026_10/benchmark_panel/`：当前校准角色、历史与请求。
+- `design_system_2026_10/phase2/representative4096/panel/`：当前质量面板；同级merged分数保留作为匹配参照。
+- `lightweight_read/fullitem8_local_kv32_joint16_lazy/calibration/`：当前联合及局部起点权重、元数据。
+- 当前门控、未门控和local-only的合并分数；当前方法实现见[脚本索引](../scripts/README.md)。
+- Motivation的15条Full/Reuse最终汇总、局部重算总表及90个Q/H点的匹配合并分数，支持现有图生成器的哈希检查。
+- Max早期20,000用户评价名单：保留唯一的历史成员记录，不保留该次原始评分。
 
-首批可直接加载的校准权重保留四份：`calibration_rank8_c256`、`calibration_rank0_c256`、
-`calibration_pure_mean8_no_response_c256`、`calibration_pure_rank0_no_response_c256`。
-其余16份已结束搜索/小样本/无效校准的权重已删除，元数据和原哈希仍在；
-重做这些旧配置需要重新校准，历史configuration不是当前待运行队列。
+这些资产的文件身份、大小和修改时间在精简前后核对一致。
 
-第六轮新产物单独位于`round6_nonlinear/`：两份正式校准、两组完整一万人分数、
-资源canary与执行源归档均保留。第七轮`round7_logit_refinement/`保留联合logit校准、
-三个完整评价点及其canary/来源。新增两轮共5个完整点，无配置达到80%恢复目标。
-第八轮`round8_rolling_context/`保留普通与context KV32的两份滚动校准、
-两组完整评分和95份源码归档；恢复分别42.94%/42.04%，费用10.435%/10.452%，
-未改善。第九轮完整维度映射另存`round9_affine_kv/`，最新执行状态见迭代记录。
-第九轮完整仿射40.73%/9.396%，第十轮`round10_capacity_queries/`宽64的两个点为
-60.11%/10.076%与59.13%/13.135%。第十一轮`round11_item_features/`保留新增Current
-物品embedding后的完整校准与一万人评分，恢复77.63%/费用11.836%。
-第十二轮`round12_item_refinement/`的响应/联合精炼分别77.87%/13.809%、78.95%/13.987%；
-第十三轮`round13_item_duration/`联合训练延长至12轮后76.90%/14.677%，未改善。
-第十四轮`round14_mixed_refinement/`真实混合状态精炼为48.97%/14.776%，未改善。
-第十五轮`round15_producer_scale/`的学习缩放60.06%/14.7796%、固定第0层对照69.49%/11.8381%，
-均未改善。第十六轮`round16_recent_queries/`仅调整校准query分布，结果78.03%/11.836%。
-第十七轮`round17_relative_logits/`相对logit目标为78.38%/13.987%，未改善。
-第十八轮冻结Item视图后补充响应残差，恢复83.65%/费用13.465%，结果已固定在
-`round18_item_response/`：校准权重、完整逐请求分数、分项成本、控制和100份执行源均保留。
-第十一轮校准是其冻结来源依赖，继续保留；此结果仅覆盖固定Medium V4→V5开发点。
-第十九轮`round19_compact_hidden/`保留紧凑等价执行、六个完整点和四个较短Item训练
-未达80%的结果，含原始分数、校准、费用、存储与执行源。第二十轮
-`round20_compact_training/`是当前选定入口：fresh64轮紧凑Item校准、100轮Response校准、
-完整一万人分数、控制、127份执行源与全部费用保留。其`item_calibration/`与
-`calibration/`是当前必要权重，`evaluation_10k/final_check.json`核对固定对照、费用和源码。
+## Motivation与模型链
 
-2026-10-01按用户要求删除1218份冗余产物（208.71 MiB）：已核对一致的unit与shard
-分数副本、已汇入shard记录的unit明细、重复inputs、完成日志、被全量结果替代的canary
-分数以及上述旧权重。完成目录作为只读结果使用；已删分片不再提供原地断点续跑。
-旧记录里的这些载荷路径与哈希描述原运行，不表示载荷仍在磁盘。
-小样本数值控制、费用与时间汇总仍保留；canary逐行分数和单位级进度不再保留。
-
-已结束的reference诊断脚本保存在`source_snapshots/reference_probe_v1.py`，
-无调用的旧state包装器精确源在`source_before_producer_mass.tar.gz`中；
-源码快照用于恢复历史来源，不作为活动执行入口。
-
-## 本地资产与必要历史依赖
-
-- **权重**：18 个 Yambda 选定模型和 RecFlow A@epoch3、B–F@epoch1 六端点。
-  论文旧 Medium D14 producer 对照还保留四份额外实体权重；旧 V0/V1 与
-  Large V0–V3 的别名指向对应选定权重。
-- **数据**：Yambda-500M/5B 和 RecFlow 的原始数据、处理存储、映射、请求面板与时间窗。
-  旧命名的中间清单只要仍被当前链路使用，就继续保留。
-- **Max 对照**：所选 V2@epoch1 的同窗口 Parent Full 位于
-  `v3_from_v2e1_epochs12_4gpu_b80_cpu14`。对应 V2→V3 的更新收益为
-  1.252 个 AUC 百分点，Reuse 损失占 50.3%，详见当前对照表。
-- **论文旧证据**：3.1 的 Medium D14 对照与成本表、附录引用的
-  [10k 用户实验](insight/unified_auc_10k_20260920/README.md)及
-  [7144 教师扩展](insight/unified_auc_10k_teachers7144_20260920/README.md)继续保留。
-  这些旧实验不作为当前 15 边的方法入口。
-- **历史合同**：Small 的 theoretical-compute 记录仍是 Large 原合同的哈希依赖。
-  Insight 2 的有效历史口径为 `analysis_v2`，原 analysis 与 invalidation 同样保留。
-
-## 保留范围与恢复限制
-
-旧 RecFlow 分支及中间权重、旧 Large sweep/canonical、Yambda D7、KuaiRand
-和 Small 请求清单已退出。上层历史 summary 中出现旧路径，不表示该 raw 或权重仍在；
-现存内容以以上索引为准。精确退出路径保存在已有的
-[机器清单](history/repository_cleanup_2026_09_30.json)，不另设整理文档。
-
-所选 Max V3@epoch2 的实际训练父端点为 V2@epoch2，该旧父权重已删除，
-配置和结果仍在；重放那次训练需先恢复或重新生成父权重。
-
-RecFlow 原运行的 22 份执行源可由 19 份当前匹配文件与 3 份
-[精确源码副本](recflow/source_snapshots/expanded_u4096_seed17_launch_2026_09_18/README.md)恢复。
-旧 Design 活动源码在 Git 基线中保留，具体来源及已缺失的历史执行哈希见
-[来源记录](history/retired_design_sources_2026_09_30.json)。
-历史代码不作为当前已验证的执行队列。
-
-Insight 2 functional-boundary 的原 research-plan 文本已缺失，历史合同记录的
-哈希也与当时后改文本不符；原合同、raw、analysis_v2 保留，不能跳过该限制重跑。
-
-### 历史源码与文档快照
-
-| 本地记录 | 可用性与范围 |
+| 内容 | 入口 |
 | --- | --- |
-| [2026-09-22 源码快照](history/cleanup_sources_2026-09-22.tar.gz) | 存在，6 个旧入口的当时工作区源码；不是更早运行哈希的替代证明 |
-| [2026-09-22 文档快照](history/docs_before_cleanup_2026-09-22.tar.gz) | 存在，10 份旧文档、原技术草稿和预算；只作历史参考 |
-| `history/cleanup_2026-09-05.tar.gz` | 本地缺失；历史 SHA-256 为 `7161e3bdcb69fc8e83b7d773ae7c6ce02cdf2cab8e786883556efd9fc9b95da6` |
-| `history/cleanup_results_2026-09-05.tar.gz` | 本地缺失；历史 SHA-256 为 `ef782d6b63be72e5dfe82c49868e7a485d012f5168df2fa233c319d24f582093` |
+| 18模型训练结果 | [Medium](unified_training_2026_09/medium/README.md)、[Large](unified_training_2026_09/large/README.md)、[Max](unified_training_2026_09/max/README.md) |
+| 15条相邻Full/Reuse边 | [汇总](unified_reuse_2026_09/README.md) |
+| 四种局部重算 | [完整结果](selective_recompute_2026_09/README.md)、[summary](selective_recompute_2026_09/summary.json) |
+| 当前Q-v5/H-v4的90点 | [结果](read_correction_2026_09/motivation_final/README.md)、[图与点表](../figures/out/read_correction_2026_09/motivation_final/README.md) |
+| RecFlow六模型链 | [结果](recflow/README.md) |
 
-9 月 22 日两个现存包的 SHA-256 分别为
-`a0453c5f328f535f644f8ed77ab1b4eb68f8224328b53f4d659610c351377466`、
-`9426c6f9f0be0790f5f7045f4e7ac36ff1bcb73cd7161d063e5237a0f95d69d8`。
-旧 9 月 5 日源码包对应 Git 基线 `d39a3382cc0953880088bc2aa6307ad0f2a565a4`。
-上述包均不包含已删模型或逐请求 raw；不能据此声称这些载荷可恢复。
-更早的 checkpoint-cleanup 说明也已缺失，不补写其内容。
+## 已结束探索的关键证据
 
-Git 保存源码、配置和紧凑证据；权重、原始评分、大型数据与恢复包按
-[.gitignore](../.gitignore)留在本地。只克隆仓库不足以重评或生成依赖 raw 的图。
+失败和不利结果继续保留原路径，不将其改写为成功。
+
+| 探索 | 保留结果 |
+| --- | --- |
+| 平衡整体/相对教师误差：72.3082%／18.5421%，不采用 | [summary](design_system_2026_10/lightweight_read/fullitem8_score_modes_joint16_lazy/development4096/summary.json)、[配对差异](design_system_2026_10/lightweight_read/fullitem8_score_modes_joint16_lazy/development4096/paired_original.json) |
+| Key辅助监督：65.6239%／19.2861%，不采用 | [summary](design_system_2026_10/lightweight_read/fullitem8_key_aux32_joint16_lazy/development4096/summary.json) |
+| rank12与匹配rank8容量控制，均未改善 | [evaluation_summary](design_system_2026_10/lightweight_read/value_capacity_pair/evaluation_summary.json) |
+| 旧Item64/Response与rank/query/decoder等探索 | [历史迭代](../docs/design/iterations.md)、`design_one_2026_10/`各轮最终summary及关键区间；设置和费用见汇总与历史记录 |
+| 旧formation、任务强度与交互协调 | `design_two_2026_10/`最终summary、analysis及用户角色绑定；[历史说明](../docs/design/exploration_history.md) |
+| 512用户独立确认的不利结果 | `design_two_2026_10/confirmation/`的summary、analysis及角色选择记录 |
+| Fresh口径的纠正与完整成本失败 | [once_rebuild_reassessment](design_system_2026_10/phase2/once_rebuild_reassessment.json) |
+| 更早Insight、随机权重成本及原型 | `insight/`、`design/`、`release_cost_random_weight_v1/`等目录的分支最终汇总；重复逐边、逐worker报告已清理 |
+
+## 2026-10-07评分分片与运行状态清理
+
+用户进一步授权删除已整理、不再使用的原始评分/请求文件及旧运行状态。
+`results/`的Parquet从**5,868份减至98份**，删除5,770份；296份`.exit`/`.txt`状态文件全部删除。
+该轮共删除6,066个文件，释放约519MB实际磁盘占用；随后继续清理重复说明与源码副本。
+结果目录当前共**680个普通文件**：
+
+| 内容 | 文件数 |
+| --- | ---: |
+| JSON关键汇总与必要元数据 | 411 |
+| 保留的Parquet | 98 |
+| 结果说明Markdown | 70 |
+| CSV分析表 | 69 |
+| 24个基础模型与6个校准检查点 | 30 |
+| 校准/质量历史NPZ | 2 |
+
+98份Parquet包括：90份Motivation Q/H合并评分，7份当前校准/质量面板、
+用户特征与匹配合并分数，以及1份唯一的历史Max用户名单。
+删除内容是Full/Reuse的逐rank评分分片、旧请求分片和探针，以及已完成训练评价的原始输出。
+15条Full/Reuse边的原始最终汇总、模型准入、全部局部重算和Q/H点、正负结论继续保留。
+没有将已删分片另行打包或合并成新文件。
+
+原始/处理数据、30份权重、当前历史包和全部保留JSON与评分未改写。
+清理后当前面板、校准、匹配对照、完整成本和90点Motivation读取检查通过。
+已删Full/Reuse分片的路径和哈希仍是原运行记录，不能再据此执行逐请求重分析或历史续跑。
+
+## 2026-10-07代码与文档再精简
+
+进一步删除30份退休代码、3份旧启动器、5份分支专用测试、22份重复或过时文档，
+以及85份执行源码复制和107份Python缓存，共252份文件；全仓从1594份减至1342份。
+22份文档中20份位于结果目录，主要为重复的逐模型说明和已空的源码归档说明。
+
+旧producer-summary、Item/Response、query-compensation及已完成队列退出；
+当前校准、Q/H数值实现和RecFlow子进程调用链仍需要的函数保留。
+7份旧校准文件和历史汇总/状态文件收紧为共享函数，保留函数的AST与原文一致；
+生命周期检查改为直接使用当前full-item KV方案。文档中的旧“当前选择”和待执行描述已更新。
+
+411份结果JSON逐一哈希不变；数据、30份权重、98份保留Parquet与2份历史包未改写。
+原执行源码哈希仍留在结果记录中，85份源码副本已删除，不承诺逐份历史重跑。
+CPU检查176通过、7项CUDA检查跳过；当前校准/评测入口、冻结面板、完整成本与Motivation来源检查通过。
+
+## 2026-10-07 JSON结果文件再精简
+
+上次统计的1006份只包含名称带summary/analysis/report的JSON；加上过程元数据，
+`results/`实际共有12,036份JSON。按用户要求进一步收紧后，当前共保留**411份JSON**：
+其中**199份summary/analysis/report**，其余212份是必要配置、输入与用户角色绑定、
+选定模型封存、校准元数据、成本或区间分析。删除11,625份JSON，释放约1.38GB磁盘占用。
+
+保留单位是完整结论和必要依赖，不是每次运行、每个分片都留一份：
+
+- 当前方法及匹配对照保留配置、最终质量/成本、区间、原校准和冻结输入。
+- Motivation保留局部重算总表、15条Full/Reuse边和90个Q/H点所需的逐边汇总；匹配原始分数不动。
+- 已结束分支保留最终聚合结果和独有的不利结论；用户角色名单仍用于后续排除，不能因清理改变划分。
+- 删除已被最终汇总代替的分片/逐用户/逐epoch报告、旧canary和pilot重复结果、运行状态、日志元数据及重复来源清单。
+
+没有新建大JSON或压缩包来存放已删文件。保留的411份JSON内容与清理前逐一哈希相同；
+清理后当前4096用户/51,731请求面板、三次发布校准、匹配控制和完整成本仍可读取，
+Motivation的90点来源与原始评分哈希检查通过。
+
+## 2026-10-05精简
+
+按用户授权清理三类内容：证实不work的专用分支、已有明确结论的实验中间产物，以及确定不再使用的旧资产。
+删除约26.3GB实际磁盘占用（24.49GiB），包括旧候选权重/历史包/原始输出、逐用户断点、
+日志、旧执行源码复制、旧预览图、过时launcher和分支测试；源码依赖按当前入口保留。
+当时保留约1006份summary/analysis/report JSON及相关设置；2026-10-07已按上面的范围再次精简。
+
+历史JSON中的路径与哈希是当时来源记录，不表示文件当前仍在。
+只有“必要运行资产”明确保留的原始评分和权重可用于当前重分析/执行；
+其余旧实验保留结论，不能据此声称仍可完整复跑。
+精简没有重新训练模型、重新打分、重新选择用户或改变任何实验指标。

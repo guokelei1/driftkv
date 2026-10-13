@@ -10,7 +10,7 @@
 旧分支/中间/canary权重与旧探索入口已退役；全部旧结果、失败、随机对照、
 训练与谱系记录继续保留，旧权重不能再作为现存复评输入。
 原始数据、预处理数据及固定面板依赖链保留；
-原执行源见[封存源码](../../results/recflow/source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json)。
+原执行源见封存源码（历史路径：`../../results/recflow/source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json`）。
 
 ## 当前设置与范围
 

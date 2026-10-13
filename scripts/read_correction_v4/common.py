@@ -31,8 +31,4 @@ def sources():
     for folder in (ROOT / "scripts/read_correction_v4", ROOT / "src/hstu_kvcache/read_correction_v4"):
         for path in sorted(folder.rglob("*.py")):
             result[str(path.relative_to(ROOT))] = sha256(path)
-    # The fixed Full-minus-Reuse cost arithmetic is shared with the v3 evaluator.
-    for name in ("evaluate.py", "common.py"):
-        path = ROOT / "scripts/read_correction_v3" / name
-        result[str(path.relative_to(ROOT))] = sha256(path)
     return result

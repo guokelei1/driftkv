@@ -51,4 +51,4 @@
 
 ³ V2/V3 选用端点的同窗口 AUC 比较，见[选定清单](../../results/unified_training_2026_09/max/seed17/selected_v2_v3_checkpoints.json)。
 ⁴ 用户已选定通过原四项准入的 V5 第 2 轮端点；第 1 轮 AUC 相对 V4 为 −0.150%。
-[Max V5 两轮结果与封存](../../results/unified_training_2026_09/max/seed17/v5_epochs12_4gpu_b80_cpu14/README.md)。
+[Max V5 两轮结果与封存](../../results/unified_training_2026_09/max/seed17/v5_epochs12_4gpu_b80_cpu14/summary.json)。

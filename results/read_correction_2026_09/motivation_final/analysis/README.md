@@ -4,7 +4,7 @@
 当前选择已改为非线性Q-v5 C128/256/512 45点＋原H-v4 C64/128/256 45点，
 见[当前结果](../README.md)。本目录CSV与核验摘要继续保留；原 `compare.py`
 读取旧最终CSV入口，现已退出执行入口，不用于重新分析当前90点。
-其[原始源码快照](inputs/compare_at_record.py)与
+其原始源码快照（历史路径：`inputs/compare_at_record.py`）与
 [Q-v2/H-v4输入快照](inputs/q_v2_h_v4_points.csv)按原内容保留，
 对应 `comparison.json` 中的原脚本哈希与原输入路径记录。
 
@@ -48,8 +48,8 @@
 - [minimum_points.csv](minimum_points.csv)：六方法最低预算的全 15 边均值。
 - [means.csv](means.csv)：全部方法、全部实际预算的总体和分规模均值；各规模层数预算不同，非 15 边的总体组明确标为 `complete_scope=False`，未用于总体方法对比。
 - [query_vs_recompute.csv](query_vs_recompute.csv)：68 组固定预算、全 15 边配对比较，保留不利结果。
-- [all_measurements.csv](all_measurements.csv)：400 个原始测量点；[consistency.csv](consistency.csv) 与 [comparison.json](comparison.json) 保存核验结果和来源哈希。
-- 原 `compare.py` 分析入口已退休；[绑定源码快照](inputs/compare_at_record.py)、
+- [all_measurements.csv](all_measurements.csv)：400 个原始测量点；[consistency.csv](consistency.csv) 与 comparison.json（历史路径：`comparison.json`） 保存核验结果和来源哈希。
+- 原 `compare.py` 分析入口已退休；绑定源码快照（历史路径：`inputs/compare_at_record.py`）、
   [原Q-v2/H-v4输入](inputs/q_v2_h_v4_points.csv)、生成的CSV及 `comparison.json` 原样保留。
 
 以上是按 Full/Reuse 表现选定的用户面板上的开发观察，包含此前方法探索；不是总体用户估计、独立训练种子重复或置信区间分析。此次核验使用保存的 UID/来源记录和 AUC 摘要，未重新从所有预测计算 AUC。若后续坚持“同成本胜过全部四法”的更强论断，需要另行设计并实测共同预算政策；当前限定结论不依赖该实验。

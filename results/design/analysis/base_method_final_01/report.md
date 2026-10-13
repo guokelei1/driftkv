@@ -15,7 +15,7 @@
 | 发布共享、用户状态条件化 | [冻结decoder覆盖](../mechanism_decoder_closure192_report_01/report.md)与[实际跨UID质量](../native_base_quality4091_01_report/report.md) | 当前摘要充分、源条件不可替代 |
 | native响应输入 | [同容量输入诊断](../mechanism_native_input192_report_01/report.md)和真实反馈fidelity | native在基础AUC上必然胜摘要 |
 | native写入、评分修正 | 原普通KV/写入canary（原路径已移除） | 连续版本债已解决、评分修正改善后代KV |
-| 增量摘要、dirty刷新 | 实際加减维护与[62639刷新计数](../native_flops_01/population_counts.json) | FLOPs少等于低延迟 |
+| 增量摘要、dirty刷新 | 实际加减维护与62639刷新计数（历史路径：`../native_flops_01/population_counts.json`） | FLOPs少等于低延迟 |
 
 ## 2. 逐发布FLOPs归属
 

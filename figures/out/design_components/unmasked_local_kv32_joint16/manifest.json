@@ -1,0 +1,70 @@
+{
+  "kind": "mechanism schematic; no measured values",
+  "primary_figure": "system_architecture",
+  "figures": {
+    "system_architecture": {
+      "size_inches": [
+        7.0,
+        3.8
+      ],
+      "caption": "Selected local-KV design architecture; no measured values. (2, upper band) A fixed small pre-release population supplies reconstructed target histories and reference reads and scores. Local read alignment initializes the entry mapping. Final-score alignment jointly fits encoders and key/value projections through the frozen recommender. Separate validation users select a checkpoint. Fitted shared parameters move from preparation to serving. (1, online path) A new query reads the retained native cache and aligned narrow entry codes. A projected query scores the codes to adjust attention. The resulting weights aggregate native values and the same codes; a shared projection decodes the aggregated code into a value residual, without another history scan or persistent expanded output. This path runs at each reading layer. Scores and future feedback are not fed back into online correction. (3, lower band) A release binds the new mapping. The first read initializes codes from then-retained state; subsequent native writes append and evict matching rows. All-layer causal clearance or an explicit rebuild retires codes. Clearance means independence from inherited state, not equality to a fresh reconstruction of every later prefix. Native K/V remains a single unchanged cache.",
+      "smallest_font_pt": 7.8,
+      "text_outside_canvas": [],
+      "outputs": [
+        "figures/out/design_components/system_architecture.pdf",
+        "figures/out/design_components/system_architecture.svg",
+        "figures/out/design_components/system_architecture.png"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "path": "figures/src/design_components/schematics.py",
+      "sha256": "b1a72736f967e0390095db1ec9d7931b5fa6a8381bce0e8b518ea680fcc34d83"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight.py",
+      "sha256": "b054e2096cc75e226ad5c39e86e653c144d11d7a1d5767cbd4f57d99a3d44317"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_fullitem.py",
+      "sha256": "fb21b78ef7803e98cea4bf17cd008254b5b08b47ed309b3a8e17179867e4302d"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_fullitem_kv.py",
+      "sha256": "2715b45b5f762b337f2c88ad769620fb21003b0b4216f84a9beeee0a244581d0"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_kv_kernel.py",
+      "sha256": "82ef1b2c79392c62b12f82d4b0d65a8a22efb32a43df733e3aaed32f2dbb8a1c"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_kv_runtime_kernel.py",
+      "sha256": "e959ff175d8cffc8b46c3d502bd75b08ff243706ccbed6261b13bdbc4a4366f5"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_kv_dispatch.py",
+      "sha256": "233a9a3781bae2e71104431ff115bd7e5a0a4b21e3e91ce69ba865f5bcb95782"
+    },
+    {
+      "path": "src/hstu_kvcache/design_two/joint_kv_refinement.py",
+      "sha256": "dd758cfec81fb934c6fa7730b2ad86c8a5ebd3a76c482fe0251b4d84c46ec83e"
+    },
+    {
+      "path": "src/hstu_kvcache/design_two/joint_local_kv_refinement.py",
+      "sha256": "6c018e63b2e25091d900e197c0c0eca88856d85900c9f7848e589a85dc6c0a3d"
+    },
+    {
+      "path": "scripts/design_system/calibrate_lightweight_local_kv.py",
+      "sha256": "6389886e165ee14e995a7900f10fb26177f39d2b2ebea066675853b94c523a4f"
+    },
+    {
+      "path": "scripts/design_system/lightweight_lazy.py",
+      "sha256": "2f2dc03c6e66273141f45d5cb83ea8e3ab3c342c26d1f110cd0b2cce1cda371a"
+    },
+    {
+      "path": "docs/design/plan.md",
+      "sha256": "4e3b0c37f9caf81fa342861b02a9e42d08be2fb99d7c5b211b445439e8714190"
+    }
+  ]
+}

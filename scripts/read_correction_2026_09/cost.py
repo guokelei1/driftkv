@@ -74,3 +74,35 @@ def normalize_metrics(*, full_auc, reuse_auc, baseline_auc, extra_flops, full_mi
     return normalized_point(full_auc=full_auc, reuse_auc=reuse_auc,
                             baseline_auc=baseline_auc, extra_flops=extra_flops,
                             full_minus_reuse_flops=full_minus_reuse_flops)
+
+
+def cost_record(scale, hist, inference, calibration, *, history_length=1024):
+    """Expose denominators without choosing a new normalization convention.
+
+    The canonical eager query read is common to all policies. Parent cache
+    initialization is shown separately because steady serving inherits it.
+    Calibration is charged once, including the inherited v1 fit.
+    """
+    cost, dense = CostModel.for_scale(scale), CostModel.for_scale(scale, "torch")
+    result = cost.workload_denominator(hist["full_history_hist"], hist["append_prefix_hist"],
+        append_new_kv_only=False, torch_full_history_hist=hist["torch_full_history_hist"],
+        torch_append_prefix_hist=hist["torch_append_prefix_hist"],
+        band_append_hist=hist["band_append_hist"], torch_band_append_hist=hist["torch_band_append_hist"])
+    query = sum(int(count)*eager_read(cost, int(n)) for n, count in hist["full_history_hist"].items())
+    initial = sum(int(count)*(cost if int(n) == history_length else dense).full_cache(int(n))
+                  for n, count in hist["initial_history_hist"].items())
+    steady_reuse = result["reuse_append_flops"] + query
+    steady_full = result["full_history_flops"] + query
+    extra = int(inference) + int(calibration)
+    ratio = lambda n, d: 100*n/d if d else None
+    return {**result, "common_eager_query_flops": query,
+        "initial_parent_cache_flops": initial, "reuse_steady_flops": steady_reuse,
+        "reuse_with_initial_cache_flops": steady_reuse + initial,
+        "full_history_plus_query_flops": steady_full,
+        "correction_flops": int(inference), "calibration_flops": int(calibration),
+        "extra_flops": extra, "method_steady_including_calibration_flops": steady_reuse + extra,
+        "relative_flops_percent": ratio(extra, result["full_minus_reuse_flops"]),
+        "extra_over_reuse_steady_percent": ratio(extra, steady_reuse),
+        "extra_over_reuse_with_initial_cache_percent": ratio(extra, steady_reuse + initial),
+        "method_over_reuse_steady_percent": ratio(steady_reuse + extra, steady_reuse),
+        "method_over_full_history_plus_query_percent": ratio(steady_reuse + extra, steady_full)}

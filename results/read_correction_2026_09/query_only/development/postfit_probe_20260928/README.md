@@ -23,9 +23,9 @@
 
 | 规模/边 | 用户/请求 | Full AUC | Reuse AUC | 全部结果 |
 | --- | --- | --- | --- | --- |
-| Medium V3→V4 | 128 / 1,737 | 0.661198 | 0.456020 | [summary](medium/v3_to_v4/summary.json) |
-| Large V1→V2 | 128 / 1,426 | 0.649002 | 0.581729 | [summary](large/v1_to_v2/summary.json) |
-| Max V0→V1 | 128 / 795 | 0.503689 | 0.484885 | [summary](max/v0_to_v1/summary.json) |
+| Medium V3→V4 | 128 / 1,737 | 0.661198 | 0.456020 | summary（历史路径：`medium/v3_to_v4/summary.json`） |
+| Large V1→V2 | 128 / 1,426 | 0.649002 | 0.581729 | summary（历史路径：`large/v1_to_v2/summary.json`） |
+| Max V0→V1 | 128 / 795 | 0.503689 | 0.484885 | summary（历史路径：`max/v0_to_v1/summary.json`） |
 
 ## 定位结果
 

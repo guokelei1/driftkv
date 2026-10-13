@@ -1,0 +1,67 @@
+{
+  "role": "prospective_development_regression_and_real_population_cost_audit",
+  "date": "2026-10-04",
+  "status": "prepared",
+  "purpose": "Restore a fixed cost protocol and validate the complete read path before expanding the paper's evidence; this is not final population qualification.",
+  "primary_method": "task_causal_exit",
+  "panel": "results/design_system_2026_10/phase2/benchmark_panel",
+  "calibration_dir": "results/design_two_2026_10/round1_continuous_baseline/calibration",
+  "strengths_dir": "results/design_two_2026_10/release_calibration/round1/calibration",
+  "calibration_panel": "results/design_two_2026_10/benchmark_panel/binding.json",
+  "canary_reference": "results/design_two_2026_10/round1_continuous_baseline/development4096",
+  "users": 10000,
+  "query_batch": 32,
+  "gpus": [0, 1, 2, 3],
+  "memory_fraction": 0.7,
+  "benchmark": {
+    "role": "unchanged_primary10k_development_regression_not_final_deployment",
+    "evaluation_users": 10000,
+    "model_chain": ["v2", "v3", "v4", "v5"],
+    "days": [259, 301],
+    "requests_by_release": {"v3": 80515, "v4": 83383, "v5": 90296},
+    "requests": 254194,
+    "user_selection": "Original 2026-10-01 primary10k identities and order, unchanged; no outcome-based additions or removals.",
+    "quality_scope": "Previously explored development cohort containing historical Motivation users; not an independent final population."
+  },
+  "service_cost_scenario": {
+    "role": "first_real_population_scenario_not_universal_final_scale",
+    "population_path": "data/manifests/yambda500m_scale_v1/medium_users.parquet",
+    "resident_users": 30000,
+    "model_chain": ["v2", "v3", "v4", "v5"],
+    "days": [259, 301],
+    "history_cap": 1024,
+    "query_batch": 32,
+    "append_band": 32,
+    "shared_preparation_replicas": 4,
+    "workload": "All retained actual requests and chronological history writes, including idle users and request-free intervals.",
+    "measurement": "Analytic operator FLOPs from complete real event shapes; validate against existing executed user ledgers before population counting. No multiplication of a selected cohort.",
+    "quality_inference": "This CPU ledger does not score or establish quality on all 30000 users."
+  },
+  "acceptance": {
+    "quality_aggregation": "release_equal_gap_recovery",
+    "recovery_percent_min": 80,
+    "compute_percent_min": 10,
+    "compute_percent_max": 20,
+    "persistent_extra_percent_max": 20,
+    "scope": "The complete method is assessed at an explicitly named scenario. Passing the development scenario is not completion of the paper claim.",
+    "individual_module_gain_required": false,
+    "per_edge_gain_required": false
+  },
+  "controls": ["reuse", "fresh", "exact", "first_request_rebuild", "d1", "read_causal_exit"],
+  "fitting": "No refitting, endpoint reselection or changed user roles in this regression. Frozen task strengths epoch4/4/4 and read0/0/4 retain their complete historical preparation costs.",
+  "analysis": "Report all edge AUCs, log losses and gaps; equal-release mean differences define primary recovery. Pooled AUC is descriptive. Sum complete absolute costs before division; preserve panel diagnostics and population-ledger scope.",
+  "resource_estimate": "Old4096 lifecycle replay was16.45min/84935requests on4GPUs;254194requests imply about49min for that portion alone, plus missing-control replay. Measure an8-user canary before any full launch.",
+  "execution_order": [
+    "Freeze scope and inspect paper claims before population scoring",
+    "Verify complete-population CPU cost accounting against executed ledgers",
+    "Eight-user three-release numerical/resource canary",
+    "Decide the next quality/transfer or serving experiment from the concrete remaining risk"
+  ],
+  "not_claimed": [
+    "10000 is the final or only service population",
+    "Development recovery transfers to all users or another dataset",
+    "Analytic population costs are GPU execution time or tail latency",
+    "Independent large AUC improvements from all three modules",
+    "The OSDI evidence package is complete"
+  ]
+}

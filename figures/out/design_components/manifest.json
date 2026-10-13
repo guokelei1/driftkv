@@ -1,0 +1,50 @@
+{
+  "kind": "mechanism schematic; no measured values",
+  "primary_figure": "system_architecture",
+  "figures": {
+    "system_architecture": {
+      "size_inches": [
+        7.7,
+        5.4
+      ],
+      "caption": "Integrated reading-view architecture. Only one native serving cache is kept; stacked outlines denote its layers, not corrected copies. Offline, sampled histories reconstructed by Current supply read and final-score targets for local initialization and joint alignment of the shared encoder and Key/Value projections. A release publishes those parameters. At first read and appends, head-local native K/V and the complete Current item embedding form row codes, gated by existing inherited-support flags. Codes are stored with their native rows. An incoming query and its Key projection select history weights from native K and codes. One traversal aggregates native values and the same codes with the same weights. The narrow aggregate is expanded once by the Value projection and added to the native aggregate inside the Current query path. Native event writes remain unchanged. Aligned appends and evictions maintain the KV/code/flag record; propagated lower-layer ancestry scopes the codes. All-layer clearance or an explicit reconstruction removes the codes and restores native reads. Clearing ancestry does not imply equality to Fresh. All glyph dimensions, weights and token examples are schematic; no measured values.",
+      "smallest_font_pt": 9.0,
+      "text_outside_canvas": [],
+      "outputs": [
+        "figures/out/design_components/system_architecture.pdf",
+        "figures/out/design_components/system_architecture.svg",
+        "figures/out/design_components/system_architecture.png"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "path": "figures/src/design_components/schematics.py",
+      "sha256": "50785b2c3462a9b40ba97bb172107a391ad3d0aba2230338adb4eb59c53ed30a"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_fullitem.py",
+      "sha256": "fb21b78ef7803e98cea4bf17cd008254b5b08b47ed309b3a8e17179867e4302d"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_fullitem_kv.py",
+      "sha256": "2715b45b5f762b337f2c88ad769620fb21003b0b4216f84a9beeee0a244581d0"
+    },
+    {
+      "path": "src/hstu_kvcache/design_one/lightweight_kv_dispatch.py",
+      "sha256": "233a9a3781bae2e71104431ff115bd7e5a0a4b21e3e91ce69ba865f5bcb95782"
+    },
+    {
+      "path": "src/hstu_kvcache/design_two/joint_local_kv_refinement.py",
+      "sha256": "6c018e63b2e25091d900e197c0c0eca88856d85900c9f7848e589a85dc6c0a3d"
+    },
+    {
+      "path": "scripts/design_system/evaluate_lightweight_support_mask.py",
+      "sha256": "f81da676713bd5655b3c72999e0356fc437497acf1b6eece787cc8469866edf6"
+    },
+    {
+      "path": "src/hstu_kvcache/design_three/lifecycle.py",
+      "sha256": "d783c1a544b44c5cbef4e64203230b5c45005f8df5969cb0bb19d0ef9017ece8"
+    }
+  ]
+}

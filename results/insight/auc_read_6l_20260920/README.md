@@ -5,8 +5,8 @@
 [实验索引](../../../docs/motivation_observations.md)。
 
 本组5872用户、两条边的请求时刻诊断没有完成AUC评价。两次pilot启动失败均保留：
-[首次日志](pilot_attempt_01.log)因未设置包含`src`的`PYTHONPATH`，导入
-`hstu_kvcache`失败；[第二次日志](pilot_attempt_02.log)在50.1秒完成历史加载，
+首次日志（历史路径：`pilot_attempt_01.log`）因未设置包含`src`的`PYTHONPATH`，导入
+`hstu_kvcache`失败；第二次日志（历史路径：`pilot_attempt_02.log`）在50.1秒完成历史加载，
 随后完成V1→V2的两种共享规则拟合，但真实请求的Arrow `uint64 item_idx`未经转换即进入
 GPU embedding，因索引要求`int64`或`int32`而失败。
 [失败summary](pilot/summary.json)记录总耗时56.394秒和完整错误。
@@ -21,7 +21,7 @@ GPU embedding，因索引要求`int64`或`int32`而失败。
 
 2026-09-20 前瞻协议。使用当前固定六层 Medium 的 V1→V2、V2→V3，
 分别评价完整 E14 `[245,259)`、`[259,273)`。配置见
-[auc_read_6l_20260920.json](../../../configs/insight/auc_read_6l_20260920.json)。
+auc_read_6l_20260920.json（历史路径：`../../../configs/insight/auc_read_6l_20260920.json`）。
 
 模型、256校准用户、128 pilot 用户、seed17、ridge=.01与每人16个无标签校准候选
 保持固定。扩大评价采用原 development6000 排除128 pilot后的5872人，与校准及两个
@@ -51,7 +51,7 @@ Current读取Parent缓存，Exact读取Current缓存。同一timestamp的全部�
 其他情况仍报告绝对值与带符号差值。两边、所有方法与失败均保留。
 评分先读取不含标签的fidelity表，保存raw后仅给已评分请求关联quality表中的真实标签。
 
-[历史资源估计](resource_estimate.json)：原计划GPU0单A40、完整执行少于20分钟、
+历史资源估计（历史路径：`resource_estimate.json`）：原计划GPU0单A40、完整执行少于20分钟、
 显存预算12GiB。第二次pilot只测得历史加载50.1秒及失败前总耗时56.394秒，
 未测得完整评分吞吐或整组执行时间。没有本实验的完成AUC结果。
 

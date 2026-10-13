@@ -8,7 +8,7 @@ Max V2 训练完整结束，仅暂缓等待训练的外层调度，在训练与�
 
 - 同一个已保留 Max V1 epoch1，16L/H320/10heads/context1024，完整353万词表；
   四张A40、global80、每卡20，CPU布局和原训练保持一致。
-- [fixture](fixture/configuration.json)复用现有因果历史、训练请求排序、rank分配和用户权重，
+- fixture（历史路径：`fixture/configuration.json`）复用现有因果历史、训练请求排序、rank分配和用户权重，
   取 V2 [231,245) 原训练窗口每rank前12batch，共960请求。它是诊断样本，不代表全epoch。
   全部batch宽度1024，实际长度分组数1–9；没有读取 E14 评价结果。
 - 三个固定设置：原 PyTorch＋默认 AdamW、Triton auto＋默认 AdamW、
@@ -40,7 +40,7 @@ CPU fixture准备已完成，耗时108.9秒、峰值RSS1.83GiB。CPU collate均�
 训练器的step计时不包含它。不要将这段诊断延迟算作正常训练成本。
 
 [完整计时及数值分析](analysis/README.md)、[紧凑分析数据](analysis/summary.json)、
-[原始测量摘要](probe/measurement/summary.json)保留所有三组和四个rank。
+原始测量摘要（历史路径：`probe/measurement/summary.json`）保留所有三组和四个rank。
 
 | 同一Max V1、真实V2 batch、四卡global80 | step中位数 | step均值 | 峰值allocated显存／卡 |
 | --- | ---: | ---: | ---: |
@@ -65,14 +65,14 @@ CPU fixture准备已完成，耗时108.9秒、峰值RSS1.83GiB。CPU collate均�
   GPU工作，rank0合计237.22ms（118.61ms/步），rank3合计57.68ms（28.84ms/步）。
   这是独立profiler范围，不能除以干净计时当作严格墙钟占比。
   详见[归因证据](attribution/summary.json)及
-  [复算脚本](../../../scripts/unified_training/analyze_max_profile_attribution.py)。
+  复算脚本（历史路径：`../../../scripts/unified_training/analyze_max_profile_attribution.py`）。
 - 默认AdamW阶段约43.46ms，fused约15.65ms，直接节省27.81ms，约为原auto整步
   的3.7%。三组短测中auto→fused整步中位数下降9.09%，但其他阶段也有波动，不能
   将全部9.09%归给优化器或承诺它是长期稳定收益。
 - 此fixture的CPU collate中位数0.263ms，H2D不足1ms；它们不是这些已预备batch的
   主瓶颈。这不排除正式运行的一次性数据／模型加载成本。
 
-[启动观察](startup/README.md)另保留了22:50:23的只读快照：V2启动后新增3060个
+启动观察（历史路径：`startup/README.md`）另保留了22:50:23的只读快照：V2启动后新增3060个
 匹配Max H10/BF16/D32的HSTU内核，即1020组前向／两种反向；955个前向是按真实
 context长度分别专门化的单query变体。缓存增长与早期慢步对应，支持编译预热成本。
 缓存写入数不能换算成精确编译秒数；首次新缓存前约30.5分钟仍是未分解启动成本。

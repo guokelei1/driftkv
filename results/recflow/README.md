@@ -21,18 +21,20 @@ under `development/window_6l_expanded_u4096_seed17/`:
 | F | `F/F_epoch1/checkpoint.pt` |
 
 Old branch, intermediate and canary weights and their obsolete entrypoints have
-been retired. Every recorded outcome, raw score, random-policy trial,
-configuration, training/optimizer record and failure explanation is retained.
+been retired. The final4096-user cumulative report and512-user sampled-ranking
+comparison retain the selected setting, metrics, random checks, lineage and
+scope limits. Intermediate, per-phase, random-trial and obsolete probe JSONs
+were removed on2026-10-07; key earlier failures remain described below.
 Historical sections below describe completed experiments;
 their old weight paths identify past inputs and no longer imply local payloads.
 Recomputing old model predictions requires recovering or retraining those models.
-Original RecFlow data, prepared data and the fixed panel dependency chain remain.
-The exact inventory is in the [repository cleanup record](../history/repository_cleanup_2026_09_30.json).
+Original RecFlow data, prepared data, final aggregate metrics and the selected
+six model checkpoints remain. Exit/phase text records were also removed on
+2026-10-07. See the [current retained scope](../README.md).
 
-The [original-source manifest](source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json)
-binds all 22 launch sources: 19 unchanged current files and 3 exact historical
-copies recovered from Git. The frozen config and six per-phase configurations
-remain; these historical copies do not replace active shared modules.
+The original-source manifest（历史路径：`source_snapshots/expanded_u4096_seed17_launch_2026_09_18/manifest.json`）
+recorded22 launch sources. The frozen top-level config remains; source copies
+and per-phase execution records are historical references.
 
 ## Completed 4096-user A–F chain
 
@@ -45,7 +47,7 @@ The4096 initial-only selected development users retain the same1M catalog.
 Uniform1000 NDCG@50 remains primary; each day has6144 sampled requests and
 2253–2353 actual sampled users, with complete full-catalog companion evaluation.
 
-The [focused canary](development/window_6l_expanded_u4096_canary_seed17/canary_check.json)
+The focused canary（历史路径：`development/window_6l_expanded_u4096_canary_seed17/canary_check.json`）
 passed actual four-GPU A→B training with263 requests each and serialized AdamW
 0→3→6, LR1e-3, plus tiny paired/random scoring. Its tiny scoring requests are
 all OOV and provide execution evidence only; the existing known-positive
@@ -82,7 +84,7 @@ This does not admit formal releases or establish cache compatibility.
 
 Progress and outputs:
 
-- [Job progress](development/window_6l_expanded_u4096_seed17/progress.json)
+- Job progress（历史路径：`development/window_6l_expanded_u4096_seed17/progress.json`）
 - [Cumulative report](development/window_6l_expanded_u4096_seed17/chain_summary.json)
 - Pipeline log: `development/window_6l_expanded_u4096_seed17.pipeline.log`
 - Per-phase logs: `development/window_6l_expanded_u4096_seed17/A.log` through `F.log`
@@ -126,8 +128,8 @@ still fails random; do not turn every positive companion into a pass.
 
 ## Learning-rate and NDCG development screen
 
-The [complete comparison](development/window_6l_daily_lr_seed17/lr_comparison/summary.json)
-and [metric grid](development/window_6l_daily_lr_seed17/metric_grid/summary.json)
+The complete comparison（历史路径：`development/window_6l_daily_lr_seed17/lr_comparison/summary.json`）
+and metric grid（历史路径：`development/window_6l_daily_lr_seed17/metric_grid/summary.json`）
 retain all three learning rates, both daily edges, three candidate scopes and
 NDCG@20/50/100:54 cells /27 settings. Same trained A,512 users,1M catalog,
 context1024,seed17,full one-day epochs, inherited AdamW and four-rank global128.
@@ -159,7 +161,7 @@ freezes this choice before comparing C/D on D22 after one complete D21 epoch.
 All outcomes remain, and companion metrics cannot rescue a failed primary.
 D22 is a further chronological development check, not an untouched final set.
 
-That [D22 check](development/window_6l_daily_confirmation_seed17/daily_confirmation/summary.json)
+That D22 check（历史路径：`development/window_6l_daily_confirmation_seed17/daily_confirmation/summary.json`）
 **failed**: NDCG@100 0.0000161960→0.0000439407, **+171.31%**, Top100 hits2/2→4/4.
 Both parent and current fail the matched-random screen. Actual saved AdamW
 steps4166→4200 and LR1e-4 match all4312 requests/34 steps; this is a quality
@@ -171,12 +173,12 @@ The separately declared1e-3 daily probe explicitly makes uniform1000 NDCG@50
 its primary; its completed result is reported above. It is a candidate ranking
 task; all full-generation companions and the failed confirmation remain.
 
-The [parameter movement report](development/window_6l_daily_lr_seed17/parameter_drift/summary.json)
+The parameter movement report（历史路径：`development/window_6l_daily_lr_seed17/parameter_drift/summary.json`）
 checks all194,461,521 unique trainable parameters, excluding buffers, with
 checkpoint hashes and FP64 accumulation. A→first daily B relative L2 is7.12%,
 0.50%,0.10% at the three LRs. This corroborates a smaller actual parameter
 update; it does not establish cache compatibility or quality stability.
-The earlier [cleanup record](development/window_6l_daily_lr_seed17/checkpoint_cleanup.json)
+The earlier cleanup record（历史路径：`development/window_6l_daily_lr_seed17/checkpoint_cleanup.json`）
 removed the completed263-request low-LR canary weight. Its optimizer/loss checks,
 config, raw evaluation and log remain. The later2026-09-30 cleanup also retires
 this old branch's B/C/D weights while retaining every outcome.
@@ -184,17 +186,17 @@ this old branch's B/C/D weights while retaining every outcome.
 ## Completed daily-window development
 
 The latest request first tests shorter updates before expanding training.
-The [daily input audit](development/daily_window_panels_seed17/summary.json)
+The daily input audit（历史路径：`development/daily_window_panels_seed17/summary.json`）
 keeps the original512 users,1M catalog and exact initial A training array;
 full D20/D21 evaluation is exactly the corresponding old full panel's daily
 slices. Fit D19 on6929 known-positive requests, then D20 on5805, each with no
 cap. Compare predeclared1-epoch and3-epoch daily branches from the same completed
 six-layer A, with real optimizer continuation. Every future request and OOV miss
 remains; the separate sampled768-per-day diagnostics have their own denominators.
-The [daily runner canary](development/window_6l_daily_canary_seed17/summary.json)
+The daily runner canary（历史路径：`development/window_6l_daily_canary_seed17/summary.json`）
 passed263 requests/3 steps from A's AdamW step4065. It checks execution/lineage,
 not quality; the prior known-positive resident-evaluation canary still applies.
-The [complete daily report](development/window_6l_daily_seed17/daily_comparison/summary.json)
+The complete daily report（历史路径：`development/window_6l_daily_seed17/daily_comparison/summary.json`）
 passes the declared two-edge screen for **both** settings. All phases exited0;
 the serial four-GPU pipeline took48.77minutes and released its four GPUs.
 
@@ -214,7 +216,7 @@ then4120/4230 in the1/3-epoch C branches; inferred final steps are4166/4368.
 The rerun A's D20 raw metric arrays exactly match the original three-day
 evaluation's D20 slice. Per-phase logs, settings, raw metrics and random draws
 are retained. The earlier
-[checkpoint cleanup record](development/window_6l_daily_seed17/checkpoint_cleanup.json)
+checkpoint cleanup record（历史路径：`development/window_6l_daily_seed17/checkpoint_cleanup.json`）
 covered unused intermediates and the tiny canary. The four old endpoint weights
 were subsequently retired in the2026-09-30 cleanup; their training/evaluation
 records remain.
@@ -227,8 +229,8 @@ admit formal phi releases, prove longer-term stability, or establish a
 same-calendar daily-versus-three-day advantage. Both branches and all outcomes
 remain reported.
 
-The [gain analysis](development/window_6l_full_seed17/update_gain_analysis.json)
-and [initial supervision coverage](development/window_6l_full_seed17/initial_supervision_coverage.json)
+The gain analysis（历史路径：`development/window_6l_full_seed17/update_gain_analysis.json`）
+and initial supervision coverage（历史路径：`development/window_6l_full_seed17/initial_supervision_coverage.json`）
 separate evidence from explanations. Only50.87–53.69% of D19–21 known-positive
 label occurrences appear anywhere in the512-user initial positive pool; using
 the fixed2048-user initial prefix raises that pool coverage to82.41–84.15%.
@@ -241,14 +243,14 @@ training or RecFlow cache/motivation experiment was launched during this screen.
 ## Completed six-layer A/B/C result
 
 All six-layer A/B/C phases completed with exit code 0. The
-[final report](development/window_6l_full_seed17/ABC_final_comparison/summary.json)
+final report（历史路径：`development/window_6l_full_seed17/ABC_final_comparison/summary.json`）
 has `working_flags_met=true` for the full-window checks. The last update raises
 the D25–27 mean by 37.84%, but **C is worse than B on D27**. This remains one
 seed and 512 development users with low absolute NDCG, not formal phi admission,
 final-user validation, or evidence that K/V reuse/adaptation works. All four
 GPUs have been released.
 
-The completed [2L full-window A/B report](development/window_2l_seed17_full_windows/AB_comparison/summary.json)
+The completed 2L full-window A/B report（历史路径：`development/window_2l_seed17_full_windows/AB_comparison/summary.json`）
 passes the declared random checks on all 25,694 positive D22–24 requests:
 
 | Fixed epoch3 model | Free NDCG@50 | Multiple of matched random | Top50 hit requests / users |
@@ -266,14 +268,14 @@ The completed six-layer setting is
 [`window_6l_full_seed17.json`](../../configs/recflow/window_6l_full_seed17.json):
 6L/H192/6 heads, unchanged 512 users/1M catalog/context1024/global batch128,
 three complete shuffle epochs, fixed training-only NLL each epoch and retrieval
-at the epoch3 endpoint. Its [combined manifest](development/full_window_training_seed17/summary.json)
+at the epoch3 endpoint. Its combined manifest（历史路径：`development/full_window_training_seed17/summary.json`）
 copies the original training arrays and known-request hashes byte for byte,
 and uses full future windows with the original 768 diagnostic subsets.
-The [four-GPU resource canary](development/ddp_6l_h192_heads6_c1024_k1m_seed17_gpu0123_retry/summary.json)
+The four-GPU resource canary（历史路径：`development/ddp_6l_h192_heads6_c1024_k1m_seed17_gpu0123_retry/summary.json`）
 passed at 337.03 requests/s (330.66/s including proportional CPU preparation),
 versus 199.53/s on two GPUs. The four-rank pipeline canary completed 263 requests
 including its 7-request tail and passed fixed-NLL/serial 8/4 checks; its all-OOV
-free panel supplies no quality evidence. The [resident-rank parallel canary](development/gloo_resident_6l_parallel_eval_canary_seed17/summary.json)
+free panel supplies no quality evidence. The resident-rank parallel canary（历史路径：`development/gloo_resident_6l_parallel_eval_canary_seed17/summary.json`）
 also passed on eight known-positive requests/four diagnostics, with equal
 serial/parallel outputs and unchanged optimizer state.
 
@@ -284,14 +286,14 @@ original 2L A epochs. Fixed training-only NLL decreased
 17.40990→13.24079→12.52489→12.11270. On all 29,027 D19–21 positive requests,
 NDCG@50=0.0001196062 versus random 0.00000602561 (19.85x), above
 null99=0.0000256533. Top50 hits cover 27 requests/26 users, with 14/4/9 hit
-requests by day. The [A final report](development/window_6l_full_seed17/A_final_comparison/summary.json)
+requests by day. The A final report（历史路径：`development/window_6l_full_seed17/A_final_comparison/summary.json`）
 records this passing base check and all companion/random results.
 
 **Six-layer B completed with exit code 0 in 1828.98 seconds (30.48 minutes).**
 After exact A_epoch3 model/AdamW inheritance, its three epochs each consumed
 17,046 requests/134 steps, matching the original 2L `B_retry` request-order and
 sampled-target hashes. Fixed training-only NLL after the epochs was
-12.07335→10.38078→9.66543. The [A/B final report](development/window_6l_full_seed17/AB_final_comparison/summary.json)
+12.07335→10.38078→9.66543. The A/B final report（历史路径：`development/window_6l_full_seed17/AB_final_comparison/summary.json`）
 records `working_flags_met=true`: full D22–24 NDCG@50 is
 0.0000524797 for A and 0.0004155888 for B, or 14.17x/112.20x matched random.
 Both exceed twice expectation and null99, with B>A every day. Top50 hits cover
@@ -318,7 +320,7 @@ The historical model/optimizer checkpoint paths were (weights retired2026-09-30)
 - `development/window_6l_full_seed17/B/B_epoch3/checkpoint.pt`
 - `development/window_6l_full_seed17/C/C_epoch3/checkpoint.pt`
 
-The earlier [cleanup manifest](development/window_6l_full_seed17/checkpoint_cleanup.json)
+The earlier cleanup manifest（历史路径：`development/window_6l_full_seed17/checkpoint_cleanup.json`）
 records seven deleted payloads: six unevaluated epoch1/2 checkpoints and the
 completed tiny-canary weights, releasing15.37 GiB. The later cleanup also retires
 these old A3/B3/C3 payloads. Their records, including C's verified AdamW step4722,
@@ -373,7 +375,7 @@ the fixed training-only NLL decreased17.407→13.147→12.435→12.084. A separa
 canary measured 437.28/s single-GPU and 788.07/s two-GPU (1.80x), or 754.31/s
 including proportional CPU preparation, with unchanged global batch128.
 Unequal-tail FP32 gradient and AdamW reference comparisons passed. See
-[`ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json`](development/ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json).
+`ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json`（历史路径：`development/ddp_2l_h96_c1024_k1m_seed17_gpu23/summary.json`）.
 These are resource/correctness results, not additional training seeds.
 
 The first B attempt in `development/window_2l_seed17/B` stopped before any
@@ -422,7 +424,7 @@ Original A/B's full D22–24 comparison is complete: A=0.0000337935 and
 B=0.0003984221,9.12x/107.56x the same random expectation, both above
 null99=0.0000238634. A's10 hit requests/10 users are distributed2/6/2 across
 D22/23/24; B's63 hit requests/54 users are distributed31/23/9. B improves
-each day's NDCG@50. The [matched report](development/window_2l_seed17_full_windows/AB_comparison/summary.json)
+each day's NDCG@50. The matched report（历史路径：`development/window_2l_seed17_full_windows/AB_comparison/summary.json`）
 retains both endpoints, all cutoffs, both sampled diagnostics and random
 comparisons. The original3072 panel continues to fail its own check.
 
@@ -430,7 +432,7 @@ Chronological A/B also completed. A on D19–21 gives NDCG@50=0.000500554,
 11 hits/10 users. On D22–24, A=0.0000368012 (one hit,9.49x random,
 below null99) and B=0.0009342337 (12 hits/11 users,240.86x random).
 B improves all days, but the old-parent random-tail failure remains, so no
-chronological C is planned. Its [final report](development/window_chronological_2l_seed17/AB_final_comparison/summary.json)
+chronological C is planned. Its final report（历史路径：`development/window_chronological_2l_seed17/AB_final_comparison/summary.json`）
 is retained alongside the shuffle/full-window result. No six-layer quality
 result follows from either2L experiment.
 

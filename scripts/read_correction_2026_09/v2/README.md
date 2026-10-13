@@ -10,7 +10,7 @@ The user authorized preparation and tmux launch on 2026-09-28. This iteration
 uses independent settings, artifacts and logs from v1. See the
 [experiment record](../../../results/read_correction_2026_09/v2/README.md).
 
-- `calibrate.py`: shared causal cache preparation and calibration dispatch.
+- `calibrate.py`: shared causal cache preparation and mixed-candidate sampling; no v2 CLI.
 - `query_only/fit.py`: query-only final-output distillation.
 - `history_conditioned/fit.py`: H fitting with cached frozen lower-layer states.
 - `aggregate.py`: matched-request AUC and complete cost aggregation.

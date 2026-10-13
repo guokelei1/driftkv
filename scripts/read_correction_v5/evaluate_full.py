@@ -23,7 +23,7 @@ import torch
 from evaluate_yambda500m_foundation_raw import load_histories, load_model
 from hstu_kvcache.evaluation.binary_metrics import binary_metrics
 from read_correction_2026_09.cost import normalize_metrics
-from read_correction_v3.evaluate import cost_record
+from read_correction_2026_09.cost import cost_record
 from read_correction_v4.evaluate_full import HISTOGRAMS, signature, validate_rows, verify_saved_unit
 from read_correction_v5.common import PANEL_ROOT, configuration, edge_name, sha256, sources, write_json
 from read_correction_v5.scoring import load_policies, score_unit

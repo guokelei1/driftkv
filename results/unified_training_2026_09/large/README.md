@@ -29,7 +29,7 @@
 
 - 当前采用V5@1：相对AUC +1.378%，超过1%目标；但用户级平均loss改善的bootstrap置信区间下界未大于零，**原四项准入未全部通过**。这是用户选定的实验端点；历史清单中的 `tentative` 及原 admission 标记保留，不标为自动准入或服务推广。
 - V5在既定E14 [287,301)窗口评价；请求数和有效用户数见运行结果。
-- V5@2的[原评测结果](seed17/v5_epochs12_4gpu_b64_cpu14/README.md)仍保留：AUC=0.716664，相对+6.232%，四项准入通过；它未被选入当前链，实体权重已按清单清理。两个端点的原始指标和封存记录均保留。
+- V5@2的[原评测结果](seed17/v5_epochs12_4gpu_b64_cpu14/summary.json)仍保留：AUC=0.716664，相对+6.232%，四项准入通过；它未被选入当前链，实体权重已按清单清理。两个端点的原始指标和封存记录均保留。
 
 ## 配置、来源和保存方式
 
@@ -37,5 +37,5 @@
 - 本轮V4/V5沿用CPU14、fresh AdamW、LR=5e-5、weight decay=1e-4和用户等权BCE；V5两个epoch间不重置优化器。
 - 六个模型的权重哈希、payload父哈希、训练窗口、epoch和配置已逐个核对。V4/V5实体权重移入统一目录，原路径保留相对符号链接；V5原多端点seal原样复制，选中条目为`v5_e1`。
 - 原[四版本前缀清单](seed17/checkpoints/chain.manifest.json)被训练合同按哈希引用，保持原样；当前完整链另存，避免破坏旧合同。
-- [V4训练评测](seed17/v4_2epoch_4gpu_b64_cpu14/README.md)及[V5双端点训练评测](seed17/v5_epochs12_4gpu_b64_cpu14/README.md)保留合同、配置、原始分数、seal和adjudication。未选中权重及旧 sweep 分支已移除。
+- [V4训练评测](seed17/v4_2epoch_4gpu_b64_cpu14/summary.json)及[V5双端点训练评测](seed17/v5_epochs12_4gpu_b64_cpu14/summary.json)保留合同、必要配置、最终指标、seal和adjudication。原始评分Parquet已于2026-10-07清理，未选中权重及旧sweep分支已移除。
 - 本清单五条相邻边的 [Reuse 评价](../../unified_reuse_2026_09/README.md)已完成。

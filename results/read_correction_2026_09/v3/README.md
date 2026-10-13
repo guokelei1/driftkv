@@ -28,8 +28,8 @@ v3 独立图、调度入口与专属测试已退休，完整评分和预算账�
 - tmux：`evokv_read_correction_v3_20260928`。
 - 四卡 GPU 0/1/2/3；全部 15 条边，每条固定 3,000 用户，H 三个预算端点，共 45 个新点。
   加上直接引用的 v2 Q 60 点，最终汇总为 105 个实测点。
-- [启动依据](budget_run/readiness.json)、[启动记录](budget_run/launch_record.json)、
-  [资源估计](budget_run/resource_estimate.json)；动态状态在 `budget_run/status.json`。
+- 启动依据（历史路径：`budget_run/readiness.json`）、启动记录（历史路径：`budget_run/launch_record.json`）、
+  资源估计（历史路径：`budget_run/resource_estimate.json`）；动态状态在 `budget_run/status.json`。
 - 事前估计约 6 小时，规划范围 4～9 小时，不含外部显卡占用等待或失败重启。
   每两小时及每条边完成时记录进展。所有代码与设置已冻结，原 v2 的 58 项来源哈希不变。
 - 评价每 128 用户留断点；拟合每个预算端点保存真实优化器及随机状态。
@@ -47,11 +47,11 @@ Medium V0→V1，固定 128 名用户、999 条请求。新 H 三档均为 104.2
 小样本本身承担全部校准成本，摊销比例另行保存，不拿它替换完整 3k 横坐标。
 完整评价核对后的实际成本为 60.11%～89.96%，不以小样本投影替代实际成本。
 Full/Reuse/零修正对照误差均低于 10⁻⁶；数值与资源检查通过。
-见 [验证结果](budget_run/canary/medium/v0_to_v1/summary.json)。
+见 验证结果（历史路径：`budget_run/canary/medium/v0_to_v1/summary.json`）。
 
 ## 预算分档候选
 
-候选比较的全部数据见 [candidate_comparison.json](candidate_comparison.json)。
+候选比较的全部数据见 candidate_comparison.json（历史路径：`candidate_comparison.json`）。
 C128、12 轮的同用户比较中，每人 64 个均匀目录 query 在四条开发边均优于
 64 个近期历史混合 query，因此本轮固定为均匀目录候选。它只在一条边超过旧 v1，
 不能据此宣称全面修复；Q16、Q64 的全部结果均保留。
