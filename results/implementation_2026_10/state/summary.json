@@ -1,0 +1,33 @@
+{
+  "kind": "implementation_inplace_state_summary_v1",
+  "selected_row_chunk": 128,
+  "cpu_tests": 9,
+  "cpu_test_log": "/home/gkl/work/evokv/results/implementation_2026_10/state/cpu_tests.log",
+  "final_current_source_gpu_evidence": "/home/gkl/work/evokv/results/implementation_2026_10/state/gpu2_final.json",
+  "long_memory_stress_evidence": "/home/gkl/work/evokv/results/implementation_2026_10/state/gpu2.json",
+  "initial_all_chunk_mixed_evidence": "/home/gkl/work/evokv/results/implementation_2026_10/state/gpu2_mixed.json",
+  "final_state_module_hash_matches": true,
+  "same_persistent_code_storage": true,
+  "persistent_extra_features_bytes": 0,
+  "compact_conversion_flops_per_layer_row_excluding_eta": 1536,
+  "legacy_conservative_total_flops_per_6layer_row_including_eta": 93888,
+  "memory_stress_note": "The N8192/N32768 cases repeat retained real rows and are not quality/online workload evidence. They ran before the wrap constructor began reusing already prepared inverse blocks; conversion arithmetic is unchanged. Current constructor and prepared-feature callback are rechecked on N359/N1024 in gpu2_final.json.",
+  "numerical_note": "Near-zero newborn-code roundtrips involve offset cancellation: relative error can be large while absolute differences remain <=8.6e-6 in the N32768 pressure case. Final real mixed-source case at N359 is bitwise equal for tile128; repeated N1024 differs <=2.0e-6. Neither exact-bit equality for all shapes nor unlimited-version stability is claimed.",
+  "limitations": [
+    "No extra persistent per-row state, but original RelaySession append/FIFO may temporarily allocate new tensors.",
+    "Synchronous detached inference conversion only; calibration keeps the old differentiable path.",
+    "Allocated-memory peaks are conversion-only, not full service resident/transition memory or latency.",
+    "Chunking changes memory and launch geometry, not theoretical per-row FLOPs."
+  ],
+  "latest_files": {
+    "scripts/implementation_2026_10/state.py": "2068d032571ba535dc64feefc0c274918daab23f4a2d6f53460795adb0ee6fe4",
+    "scripts/implementation_2026_10/benchmark_state.py": "9a0ba8efb01a30ef1690c9aed8864728aaaa62d88ae72ebdd0e3874dd7a6cba5",
+    "scripts/implementation_2026_10/prepare.py": "5f390c87b72446fafff0dd87148b13fecd2ceb45d0a9472beff4979191295c91",
+    "tests/implementation_2026_10/test_state.py": "e72f3c82c4c63133199676ee92287b5ef05b320bf919a02bacc7f92124c92ef1",
+    "results/implementation_2026_10/state/cpu_tests.log": "7aabb200f2e987a0f5f58b37bcdfca4a50f95225484979d88f7af44142f31990"
+  },
+  "negative_process_evidence": [
+    "gpu2_initial_loader_error.log: capture previous_codes is a tensor rather than a state wrapper; loader corrected.",
+    "gpu2_zero_norm_error.log: relative-only tolerance was ill-conditioned on zero-code output; absolute and relative values retained, elementwise FP32 mixed tolerance used."
+  ]
+}

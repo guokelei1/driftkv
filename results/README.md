@@ -2,6 +2,16 @@
 
 ## 当前Design证据
 
+2026-10-15[Query correction／码接续探索](query_relay_2026_10/README.md)已完成：
+冻结Current item门控A通过主行为任务的开发及用户迁移确认，原反馈任务仍未达联合目标。
+质量、完整计算、全局内存与有限发布边界见[报告](query_relay_2026_10/report.md)。
+相应工程优化与复验独立保存在[Implementation索引](implementation_2026_10/README.md)，不覆盖原质量结论。
+
+2026-10-14新增[Design3状态来源分析](design3_state_2026_10/README.md)：只读历史形状统计与CPU合成结构检查，未训练或启动GPU实验；不构成新机制质量或完整成本验证。
+
+2026-10-14新增[共享紧凑码探索索引](code_structure_2026_10/README.md)。
+CPU 表达空间检查与成本预筛不能代替真实连续回放；当前选定方法的历史结论保持原样。
+
 | 证据 | 入口 |
 | --- | --- |
 | 最新继承flag范围候选：84.8066%／18.4375% | [配置](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_support_lazy/configuration.json)、[完整结果](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_support_lazy/development4096/summary.json)、[配对区间](design_system_2026_10/lightweight_read/fullitem8_local_kv32_joint16_support_lazy/development4096/paired_original.json) |
@@ -11,10 +21,24 @@
 | V5教师输出与候选相对误差 | [机制分析](design_system_2026_10/framework_review_2026_10_05/joint_composition_v5/analysis.json)、[请求对分解](design_system_2026_10/framework_review_2026_10_05/score_pair_structure.json) |
 | eager/lazy事件账 | [lifecycle_cost.json](design_system_2026_10/framework_review_2026_10_05/lifecycle_cost.json) |
 | 固定30k一次重建账 | [原生事件与成本](design_system_2026_10/phase2/population_cost/summary_complete.json)、[按需编码账](design_system_2026_10/lightweight_read/lazy_codes/population_cost/summary.json) |
+| 第4.4节部分刷新：保留96.04%全量码收益、刷新编码节省9.41% | [最终报告](partial_refresh_2026_10/report.md)、[本轮索引](partial_refresh_2026_10/README.md)、[3360质量](partial_refresh_2026_10/benchmark3360/quality/summary.json)、[固定30k完整成本](partial_refresh_2026_10/population_cost_raw/summary.json) |
+| 第二轮等价编码复用：维护节省35.10%／49.94%，收益保留≈100% | [新报告](partial_refresh_2026_10/round2/report.md)、[NoCache质量](partial_refresh_2026_10/round2/nocache3360/quality/summary.json)、[Static4k质量](partial_refresh_2026_10/round2/static4096_3360/quality/summary.json)、[维护及完整成本](partial_refresh_2026_10/round2/factored_cost/summary.json) |
 
 质量样本固定4096用户/51,731请求，成本人口固定30k。最新候选恢复区间为
 [51.635%,102.364%]；相对原控制的平均AUC增益区间跨零，V5回退。
 这仍是开发证据，不是独立确认。额外要求重构校准source-KV时成本为21.9382%。
+
+新增部分刷新证据使用同一冻结Medium版本链及原权重：strict策略在另一组全部3360位
+合格benchmark用户/69,361请求上保留96.04%（UID95%区间93.35%–97.47%）。整体95%
+保留margin尚未确立；短历史和V5损失更明显，纯新1024用户上全量码本身也低于Reuse。
+完整新增成本18.34294%，相对原始全量码仅节省0.51314%；原生输入重构敏感性可超过20%。
+此处的旧保留文件数量是2026-10-07清理时统计，不包含后续新增部分刷新资产。
+
+第二轮按用户澄清以码刷新／维护计算为验收分母：NoCache35.10%／Static4k49.94%节省，
+3360用户69361请求的全量码收益区间约[99.99994,100.00009]%，下界>90。
+完整新增计算只省8.87%／12.61%，完整/Rebuild分别16.80301%／16.11196%；Static4k含原校准
+source重构19.61258%仍在20%内。主要来自编码函数内复用，两个点均全量码；长度/优先刷新
+失败分支和原新用户回归保留，不能称新盲确认或全面迁移成功。
 
 ## 必要运行资产
 

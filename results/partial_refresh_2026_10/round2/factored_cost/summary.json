@@ -1,0 +1,1045 @@
+{
+  "status": "complete",
+  "role": "Exact fixed30k static Current-item factorization maintenance cost",
+  "users": 30000,
+  "active_request_users": 19248,
+  "requests": 393521,
+  "baseline_maintenance_flops": 9389259507456,
+  "baseline_encoder_flops": 9373043169792,
+  "baseline_encoder_support_mask_flops": 16216337664,
+  "cost_convention": {
+    "row_kv_flops": 37440,
+    "unique_item_projection_flops": 110880,
+    "per_release_fold_flops": 221184,
+    "fp32_projection_bytes_per_item": 1152
+  },
+  "policies": {
+    "full_static4096": {
+      "rho_by_release": {
+        "v3": 1.0,
+        "v4": 1.0,
+        "v5": 1.0
+      },
+      "storage_mode": "masked",
+      "static_items_requested": 4096,
+      "by_release": {
+        "v3": {
+          "counts": {
+            "support_token_layers": 57251640,
+            "first_reads": 13807,
+            "first_read_rows": 13513103,
+            "forced_missing_rows": 13513103,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13513103,
+            "first_read_encode_calls": 13807,
+            "unique_items_in_calls": 11784411,
+            "initial_encode_rows": 13513103,
+            "refresh_encode_rows": 0,
+            "corrected_requests": 131783,
+            "corrected_token_query_pairs": 129401152,
+            "corrected_read_batches": 100694,
+            "corrected_token_read_batches": 99589151,
+            "append_encode_rows": 5121275,
+            "append_encode_calls": 326147
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 2441546,
+            "first_read_unique_item_misses": 4785148,
+            "unique_item_hits": 4137899,
+            "unique_item_misses": 7646512,
+            "row_item_hits": 7032918,
+            "append_unique_item_hits": 1696353,
+            "append_unique_item_misses": 2861364
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 505930576320,
+            "refresh_row_kv": 0,
+            "append_row_kv": 191740536000,
+            "first_read_uncached_items": 530577210240,
+            "append_uncached_items": 317268040320,
+            "static_table_preparation": 454164480,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5366700864
+          },
+          "maintenance_flops": 1551337449408,
+          "query_extra_flops": 158738431104,
+          "shared_projection_table_bytes": 4718592,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 111806268
+        },
+        "v4": {
+          "counts": {
+            "support_token_layers": 58154730,
+            "first_reads": 13949,
+            "first_read_rows": 13707482,
+            "forced_missing_rows": 4303150,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13707482,
+            "first_read_encode_calls": 13949,
+            "unique_items_in_calls": 12110545,
+            "initial_encode_rows": 4303150,
+            "refresh_encode_rows": 9404332,
+            "corrected_requests": 133837,
+            "corrected_token_query_pairs": 132132533,
+            "corrected_read_batches": 102837,
+            "corrected_token_read_batches": 101958757,
+            "append_encode_rows": 5296318,
+            "append_encode_calls": 335051,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 2517078,
+            "first_read_unique_item_misses": 4884594,
+            "unique_item_hits": 4271450,
+            "unique_item_misses": 7839095,
+            "row_item_hits": 7258661,
+            "append_unique_item_hits": 1754372,
+            "append_unique_item_misses": 2954501
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 161109936000,
+            "refresh_row_kv": 352098190080,
+            "append_row_kv": 198294145920,
+            "first_read_uncached_items": 541603782720,
+            "append_uncached_items": 327595070880,
+            "static_table_preparation": 454164480,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5473094400
+          },
+          "maintenance_flops": 1586628605664,
+          "query_extra_flops": 162061396596,
+          "shared_projection_table_bytes": 4718592,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 114022800
+        },
+        "v5": {
+          "counts": {
+            "support_token_layers": 57414390,
+            "first_reads": 13994,
+            "first_read_rows": 13663041,
+            "forced_missing_rows": 3314098,
+            "forced_older_rows": 969299,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13663041,
+            "first_read_encode_calls": 13994,
+            "unique_items_in_calls": 11900697,
+            "initial_encode_rows": 3314098,
+            "refresh_encode_rows": 10348943,
+            "corrected_requests": 127901,
+            "corrected_token_query_pairs": 125989489,
+            "corrected_read_batches": 94762,
+            "corrected_token_read_batches": 93666058,
+            "append_encode_rows": 5005509,
+            "append_encode_calls": 312291,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 2518322,
+            "first_read_unique_item_misses": 4919438,
+            "unique_item_hits": 4206881,
+            "unique_item_misses": 7693816,
+            "row_item_hits": 7192952,
+            "append_unique_item_hits": 1688559,
+            "append_unique_item_misses": 2774378
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 124079829120,
+            "refresh_row_kv": 387464425920,
+            "append_row_kv": 187406256960,
+            "first_read_uncached_items": 545467285440,
+            "append_uncached_items": 307623032640,
+            "static_table_preparation": 454164480,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5376542400
+          },
+          "maintenance_flops": 1557871758144,
+          "query_extra_flops": 154537797348,
+          "shared_projection_table_bytes": 4718592,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 112011300
+        }
+      },
+      "baseline_maintenance_flops": 9389259507456,
+      "maintenance_flops": 4695837813216,
+      "maintenance_saving_percent": 49.98713360210099,
+      "encoder_only_saving_percent": 50.07361653220843,
+      "shared_calibration_flops": 27313027944710,
+      "publication_validation_flops": 0,
+      "complete_added_flops": 32484203382974,
+      "complete_percent_of_once_rebuild": 16.109932513550564,
+      "complete_saving_percent_vs_original_masked": 12.624318214227667,
+      "source_reconstruction_sensitivity_percent": 19.61055059145911,
+      "cache_scope": "one release-shared static table; uncached unique items recomputed once per actual encode call and never admitted",
+      "quality_scope": "same encoder function up to floating-point ordering; existing full/strict quality is a reference, new GPU equality/quality evidence separate",
+      "independent_preparation_sensitivity": {
+        "4": {
+          "replicas": 4,
+          "repeated_construction_components": "fixed_normalization_fold + static_table_preparation only",
+          "one_replica_preparation_flops": 1363156992,
+          "extra_independent_preparation_flops": 4089470976,
+          "maintenance_flops": 4699927284192,
+          "maintenance_saving_percent": 49.943578825787135,
+          "encoder_only_saving_percent": 50.029986401610294,
+          "complete_added_flops": 32488292853950,
+          "complete_percent_of_once_rebuild": 16.11196061011993,
+          "complete_saving_percent_vs_original_masked": 12.613318396548333,
+          "source_reconstruction_sensitivity_percent": 19.61257868802847,
+          "shared_memory_payload_by_release": {
+            "v3": {
+              "item_table_payload_bytes_per_replica": 4718592,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 18874368,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v4": {
+              "item_table_payload_bytes_per_replica": 4718592,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 18874368,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v5": {
+              "item_table_payload_bytes_per_replica": 4718592,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 18874368,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            }
+          },
+          "all_three_releases_item_table_payload_bytes_per_replica": 14155776,
+          "all_three_releases_folded_parameter_payload_bytes_per_replica": 888192,
+          "memory_scope": "Logical persistent tensor payload, not loaded-serving peak measurement. CPU ID dictionaries, per-call projection/gather scratch and allocator overhead are separate. A serving Current release needs its own table; the offline user-major model-chain prototype retains three release objects concurrently."
+        }
+      }
+    },
+    "full_static16384": {
+      "rho_by_release": {
+        "v3": 1.0,
+        "v4": 1.0,
+        "v5": 1.0
+      },
+      "storage_mode": "masked",
+      "static_items_requested": 16384,
+      "by_release": {
+        "v3": {
+          "counts": {
+            "support_token_layers": 57251640,
+            "first_reads": 13807,
+            "first_read_rows": 13513103,
+            "forced_missing_rows": 13513103,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13513103,
+            "first_read_encode_calls": 13807,
+            "unique_items_in_calls": 11784411,
+            "initial_encode_rows": 13513103,
+            "refresh_encode_rows": 0,
+            "corrected_requests": 131783,
+            "corrected_token_query_pairs": 129401152,
+            "corrected_read_batches": 100694,
+            "corrected_token_read_batches": 99589151,
+            "append_encode_rows": 5121275,
+            "append_encode_calls": 326147
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 3965736,
+            "first_read_unique_item_misses": 3260958,
+            "unique_item_hits": 6606460,
+            "unique_item_misses": 5177951,
+            "row_item_hits": 10900061,
+            "append_unique_item_hits": 2640724,
+            "append_unique_item_misses": 1916993
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 505930576320,
+            "refresh_row_kv": 0,
+            "append_row_kv": 191740536000,
+            "first_read_uncached_items": 361575023040,
+            "append_uncached_items": 212556183840,
+            "static_table_preparation": 1816657920,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5366700864
+          },
+          "maintenance_flops": 1278985899168,
+          "query_extra_flops": 158738431104,
+          "shared_projection_table_bytes": 18874368,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 111806268
+        },
+        "v4": {
+          "counts": {
+            "support_token_layers": 58154730,
+            "first_reads": 13949,
+            "first_read_rows": 13707482,
+            "forced_missing_rows": 4303150,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13707482,
+            "first_read_encode_calls": 13949,
+            "unique_items_in_calls": 12110545,
+            "initial_encode_rows": 4303150,
+            "refresh_encode_rows": 9404332,
+            "corrected_requests": 133837,
+            "corrected_token_query_pairs": 132132533,
+            "corrected_read_batches": 102837,
+            "corrected_token_read_batches": 101958757,
+            "append_encode_rows": 5296318,
+            "append_encode_calls": 335051,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 4070273,
+            "first_read_unique_item_misses": 3331399,
+            "unique_item_hits": 6779861,
+            "unique_item_misses": 5330684,
+            "row_item_hits": 11140321,
+            "append_unique_item_hits": 2709588,
+            "append_unique_item_misses": 1999285
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 161109936000,
+            "refresh_row_kv": 352098190080,
+            "append_row_kv": 198294145920,
+            "first_read_uncached_items": 369385521120,
+            "append_uncached_items": 221680720800,
+            "static_table_preparation": 1816657920,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5473094400
+          },
+          "maintenance_flops": 1309858487424,
+          "query_extra_flops": 162061396596,
+          "shared_projection_table_bytes": 18874368,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 114022800
+        },
+        "v5": {
+          "counts": {
+            "support_token_layers": 57414390,
+            "first_reads": 13994,
+            "first_read_rows": 13663041,
+            "forced_missing_rows": 3314098,
+            "forced_older_rows": 969299,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13663041,
+            "first_read_encode_calls": 13994,
+            "unique_items_in_calls": 11900697,
+            "initial_encode_rows": 3314098,
+            "refresh_encode_rows": 10348943,
+            "corrected_requests": 127901,
+            "corrected_token_query_pairs": 125989489,
+            "corrected_read_batches": 94762,
+            "corrected_token_read_batches": 93666058,
+            "append_encode_rows": 5005509,
+            "append_encode_calls": 312291,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 4065532,
+            "first_read_unique_item_misses": 3372228,
+            "unique_item_hits": 6651950,
+            "unique_item_misses": 5248747,
+            "row_item_hits": 10958528,
+            "append_unique_item_hits": 2586418,
+            "append_unique_item_misses": 1876519
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 124079829120,
+            "refresh_row_kv": 387464425920,
+            "append_row_kv": 187406256960,
+            "first_read_uncached_items": 373912640640,
+            "append_uncached_items": 208068426720,
+            "static_table_preparation": 1816657920,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5376542400
+          },
+          "maintenance_flops": 1288125000864,
+          "query_extra_flops": 154537797348,
+          "shared_projection_table_bytes": 18874368,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 112011300
+        }
+      },
+      "baseline_maintenance_flops": 9389259507456,
+      "maintenance_flops": 3876969387456,
+      "maintenance_saving_percent": 58.70846487545367,
+      "encoder_only_saving_percent": 58.810036613992516,
+      "shared_calibration_flops": 27313027944710,
+      "publication_validation_flops": 0,
+      "complete_added_flops": 31665334957214,
+      "complete_percent_of_once_rebuild": 15.703830048270925,
+      "complete_saving_percent_vs_original_masked": 14.826902225603588,
+      "source_reconstruction_sensitivity_percent": 19.204448126179468,
+      "cache_scope": "one release-shared static table; uncached unique items recomputed once per actual encode call and never admitted",
+      "quality_scope": "same encoder function up to floating-point ordering; existing full/strict quality is a reference, new GPU equality/quality evidence separate",
+      "independent_preparation_sensitivity": {
+        "4": {
+          "replicas": 4,
+          "repeated_construction_components": "fixed_normalization_fold + static_table_preparation only",
+          "one_replica_preparation_flops": 5450637312,
+          "extra_independent_preparation_flops": 16351911936,
+          "maintenance_flops": 3893321299392,
+          "maintenance_saving_percent": 58.53430937444728,
+          "encoder_only_saving_percent": 58.63557980589096,
+          "complete_added_flops": 31681686869150,
+          "complete_percent_of_once_rebuild": 15.71193947286265,
+          "complete_saving_percent_vs_original_masked": 14.782919018225389,
+          "source_reconstruction_sensitivity_percent": 19.21255755077119,
+          "shared_memory_payload_by_release": {
+            "v3": {
+              "item_table_payload_bytes_per_replica": 18874368,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 75497472,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v4": {
+              "item_table_payload_bytes_per_replica": 18874368,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 75497472,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v5": {
+              "item_table_payload_bytes_per_replica": 18874368,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 75497472,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            }
+          },
+          "all_three_releases_item_table_payload_bytes_per_replica": 56623104,
+          "all_three_releases_folded_parameter_payload_bytes_per_replica": 888192,
+          "memory_scope": "Logical persistent tensor payload, not loaded-serving peak measurement. CPU ID dictionaries, per-call projection/gather scratch and allocator overhead are separate. A serving Current release needs its own table; the offline user-major model-chain prototype retains three release objects concurrently."
+        }
+      }
+    },
+    "full_static32768": {
+      "rho_by_release": {
+        "v3": 1.0,
+        "v4": 1.0,
+        "v5": 1.0
+      },
+      "storage_mode": "masked",
+      "static_items_requested": 32768,
+      "by_release": {
+        "v3": {
+          "counts": {
+            "support_token_layers": 57251640,
+            "first_reads": 13807,
+            "first_read_rows": 13513103,
+            "forced_missing_rows": 13513103,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13513103,
+            "first_read_encode_calls": 13807,
+            "unique_items_in_calls": 11784411,
+            "initial_encode_rows": 13513103,
+            "refresh_encode_rows": 0,
+            "corrected_requests": 131783,
+            "corrected_token_query_pairs": 129401152,
+            "corrected_read_batches": 100694,
+            "corrected_token_read_batches": 99589151,
+            "append_encode_rows": 5121275,
+            "append_encode_calls": 326147
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 4671819,
+            "first_read_unique_item_misses": 2554875,
+            "unique_item_hits": 7746490,
+            "unique_item_misses": 4037921,
+            "row_item_hits": 12626268,
+            "append_unique_item_hits": 3074671,
+            "append_unique_item_misses": 1483046
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 505930576320,
+            "refresh_row_kv": 0,
+            "append_row_kv": 191740536000,
+            "first_read_uncached_items": 283284540000,
+            "append_uncached_items": 164440140480,
+            "static_table_preparation": 3633315840,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5366700864
+          },
+          "maintenance_flops": 1154396030688,
+          "query_extra_flops": 158738431104,
+          "shared_projection_table_bytes": 37748736,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 111806268
+        },
+        "v4": {
+          "counts": {
+            "support_token_layers": 58154730,
+            "first_reads": 13949,
+            "first_read_rows": 13707482,
+            "forced_missing_rows": 4303150,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13707482,
+            "first_read_encode_calls": 13949,
+            "unique_items_in_calls": 12110545,
+            "initial_encode_rows": 4303150,
+            "refresh_encode_rows": 9404332,
+            "corrected_requests": 133837,
+            "corrected_token_query_pairs": 132132533,
+            "corrected_read_batches": 102837,
+            "corrected_token_read_batches": 101958757,
+            "append_encode_rows": 5296318,
+            "append_encode_calls": 335051,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 4801814,
+            "first_read_unique_item_misses": 2599858,
+            "unique_item_hits": 7959572,
+            "unique_item_misses": 4150973,
+            "row_item_hits": 12905696,
+            "append_unique_item_hits": 3157758,
+            "append_unique_item_misses": 1551115
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 161109936000,
+            "refresh_row_kv": 352098190080,
+            "append_row_kv": 198294145920,
+            "first_read_uncached_items": 288272255040,
+            "append_uncached_items": 171987631200,
+            "static_table_preparation": 3633315840,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5473094400
+          },
+          "maintenance_flops": 1180868789664,
+          "query_extra_flops": 162061396596,
+          "shared_projection_table_bytes": 37748736,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 114022800
+        },
+        "v5": {
+          "counts": {
+            "support_token_layers": 57414390,
+            "first_reads": 13994,
+            "first_read_rows": 13663041,
+            "forced_missing_rows": 3314098,
+            "forced_older_rows": 969299,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13663041,
+            "first_read_encode_calls": 13994,
+            "unique_items_in_calls": 11900697,
+            "initial_encode_rows": 3314098,
+            "refresh_encode_rows": 10348943,
+            "corrected_requests": 127901,
+            "corrected_token_query_pairs": 125989489,
+            "corrected_read_batches": 94762,
+            "corrected_token_read_batches": 93666058,
+            "append_encode_rows": 5005509,
+            "append_encode_calls": 312291,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 4814324,
+            "first_read_unique_item_misses": 2623436,
+            "unique_item_hits": 7828277,
+            "unique_item_misses": 4072420,
+            "row_item_hits": 12720231,
+            "append_unique_item_hits": 3013953,
+            "append_unique_item_misses": 1448984
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 124079829120,
+            "refresh_row_kv": 387464425920,
+            "append_row_kv": 187406256960,
+            "first_read_uncached_items": 290886583680,
+            "append_uncached_items": 160663345920,
+            "static_table_preparation": 3633315840,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5376542400
+          },
+          "maintenance_flops": 1159510521024,
+          "query_extra_flops": 154537797348,
+          "shared_projection_table_bytes": 37748736,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 112011300
+        }
+      },
+      "baseline_maintenance_flops": 9389259507456,
+      "maintenance_flops": 3494775341376,
+      "maintenance_saving_percent": 62.779010010312284,
+      "encoder_only_saving_percent": 62.88762421448237,
+      "shared_calibration_flops": 27313027944710,
+      "publication_validation_flops": 0,
+      "complete_added_flops": 31283140911134,
+      "complete_percent_of_once_rebuild": 15.514288066377757,
+      "complete_saving_percent_vs_original_masked": 15.854923906080012,
+      "source_reconstruction_sensitivity_percent": 19.0149061442863,
+      "cache_scope": "one release-shared static table; uncached unique items recomputed once per actual encode call and never admitted",
+      "quality_scope": "same encoder function up to floating-point ordering; existing full/strict quality is a reference, new GPU equality/quality evidence separate",
+      "independent_preparation_sensitivity": {
+        "4": {
+          "replicas": 4,
+          "repeated_construction_components": "fixed_normalization_fold + static_table_preparation only",
+          "one_replica_preparation_flops": 10900611072,
+          "extra_independent_preparation_flops": 32701833216,
+          "maintenance_flops": 3527477174592,
+          "maintenance_saving_percent": 62.43072020971585,
+          "encoder_only_saving_percent": 62.53873183637626,
+          "complete_added_flops": 31315842744350,
+          "complete_percent_of_once_rebuild": 15.530505928332632,
+          "complete_saving_percent_vs_original_masked": 15.766962845769996,
+          "source_reconstruction_sensitivity_percent": 19.031124006241175,
+          "shared_memory_payload_by_release": {
+            "v3": {
+              "item_table_payload_bytes_per_replica": 37748736,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 150994944,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v4": {
+              "item_table_payload_bytes_per_replica": 37748736,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 150994944,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v5": {
+              "item_table_payload_bytes_per_replica": 37748736,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 150994944,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            }
+          },
+          "all_three_releases_item_table_payload_bytes_per_replica": 113246208,
+          "all_three_releases_folded_parameter_payload_bytes_per_replica": 888192,
+          "memory_scope": "Logical persistent tensor payload, not loaded-serving peak measurement. CPU ID dictionaries, per-call projection/gather scratch and allocator overhead are separate. A serving Current release needs its own table; the offline user-major model-chain prototype retains three release objects concurrently."
+        }
+      }
+    },
+    "strict_static16384": {
+      "rho_by_release": {
+        "v3": 0.0,
+        "v4": 0.875,
+        "v5": 0.75
+      },
+      "storage_mode": "raw",
+      "static_items_requested": 16384,
+      "by_release": {
+        "v3": {
+          "counts": {
+            "support_token_layers": 57251640,
+            "first_reads": 13807,
+            "first_read_rows": 13513103,
+            "forced_missing_rows": 13513103,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13513103,
+            "first_read_encode_calls": 13807,
+            "unique_items_in_calls": 11784411,
+            "initial_encode_rows": 13513103,
+            "refresh_encode_rows": 0,
+            "corrected_requests": 131783,
+            "corrected_token_query_pairs": 129401152,
+            "corrected_read_batches": 100694,
+            "corrected_token_read_batches": 99589151,
+            "append_encode_rows": 5121275,
+            "append_encode_calls": 326147
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 3965736,
+            "first_read_unique_item_misses": 3260958,
+            "unique_item_hits": 6606460,
+            "unique_item_misses": 5177951,
+            "row_item_hits": 10900061,
+            "append_unique_item_hits": 2640724,
+            "append_unique_item_misses": 1916993
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 505930576320,
+            "refresh_row_kv": 0,
+            "append_row_kv": 191740536000,
+            "first_read_uncached_items": 361575023040,
+            "append_uncached_items": 212556183840,
+            "static_table_preparation": 1816657920,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 0
+          },
+          "maintenance_flops": 1273619198304,
+          "query_extra_flops": 187420106592,
+          "shared_projection_table_bytes": 18874368,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 597534906
+        },
+        "v4": {
+          "counts": {
+            "support_token_layers": 58154730,
+            "first_reads": 13949,
+            "first_read_rows": 13707482,
+            "forced_missing_rows": 4303150,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 1315569,
+            "first_read_encode_rows": 12391913,
+            "first_read_encode_calls": 13949,
+            "unique_items_in_calls": 11588903,
+            "initial_encode_rows": 4303150,
+            "refresh_encode_rows": 8088763,
+            "corrected_requests": 133837,
+            "corrected_token_query_pairs": 132132533,
+            "corrected_read_batches": 102837,
+            "corrected_token_read_batches": 101958757,
+            "append_encode_rows": 5296318,
+            "append_encode_calls": 335051,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 3801073,
+            "first_read_unique_item_misses": 3078957,
+            "unique_item_hits": 6510661,
+            "unique_item_misses": 5078242,
+            "row_item_hits": 10380387,
+            "append_unique_item_hits": 2709588,
+            "append_unique_item_misses": 1999285
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 161109936000,
+            "refresh_row_kv": 302843286720,
+            "append_row_kv": 198294145920,
+            "first_read_uncached_items": 341394752160,
+            "append_uncached_items": 221680720800,
+            "static_table_preparation": 1816657920,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 0
+          },
+          "maintenance_flops": 1227139720704,
+          "query_extra_flops": 191425518612,
+          "shared_projection_table_bytes": 18874368,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 611752542
+        },
+        "v5": {
+          "counts": {
+            "support_token_layers": 57414390,
+            "first_reads": 13994,
+            "first_read_rows": 13663041,
+            "forced_missing_rows": 3314098,
+            "forced_older_rows": 1042036,
+            "retained_previous_rows": 2529661,
+            "first_read_encode_rows": 11133380,
+            "first_read_encode_calls": 13994,
+            "unique_items_in_calls": 10861095,
+            "initial_encode_rows": 3314098,
+            "refresh_encode_rows": 7819282,
+            "corrected_requests": 127901,
+            "corrected_token_query_pairs": 125989489,
+            "corrected_read_batches": 94762,
+            "corrected_token_read_batches": 93666058,
+            "append_encode_rows": 5005509,
+            "append_encode_calls": 312291,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 3527560,
+            "first_read_unique_item_misses": 2870598,
+            "unique_item_hits": 6113978,
+            "unique_item_misses": 4747117,
+            "row_item_hits": 9491840,
+            "append_unique_item_hits": 2586418,
+            "append_unique_item_misses": 1876519
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 124079829120,
+            "refresh_row_kv": 292753918080,
+            "append_row_kv": 187406256960,
+            "first_read_uncached_items": 318291906240,
+            "append_uncached_items": 208068426720,
+            "static_table_preparation": 1816657920,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 0
+          },
+          "maintenance_flops": 1132417216224,
+          "query_extra_flops": 181513622052,
+          "shared_projection_table_bytes": 18874368,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 561996348
+        }
+      },
+      "baseline_maintenance_flops": 9389259507456,
+      "maintenance_flops": 3633176135232,
+      "maintenance_saving_percent": 61.30497690103358,
+      "encoder_only_saving_percent": 61.23803049428796,
+      "shared_calibration_flops": 27313027944710,
+      "publication_validation_flops": 380513716992,
+      "complete_added_flops": 31887077044190,
+      "complete_percent_of_once_rebuild": 15.81379888495385,
+      "complete_saving_percent_vs_original_masked": 14.230462602267064,
+      "source_reconstruction_sensitivity_percent": 19.314416962862392,
+      "cache_scope": "one release-shared static table; uncached unique items recomputed once per actual encode call and never admitted",
+      "quality_scope": "same encoder function up to floating-point ordering; existing full/strict quality is a reference, new GPU equality/quality evidence separate",
+      "complete_with_all_sources_no_reuse_percent": 21.07900714368137,
+      "independent_preparation_sensitivity": {
+        "4": {
+          "replicas": 4,
+          "repeated_construction_components": "fixed_normalization_fold + static_table_preparation only",
+          "one_replica_preparation_flops": 5450637312,
+          "extra_independent_preparation_flops": 16351911936,
+          "maintenance_flops": 3649528047168,
+          "maintenance_saving_percent": 61.13082140002719,
+          "encoder_only_saving_percent": 61.06357368618641,
+          "complete_added_flops": 31903428956126,
+          "complete_percent_of_once_rebuild": 15.821908309545575,
+          "complete_saving_percent_vs_original_masked": 14.186479394888867,
+          "source_reconstruction_sensitivity_percent": 19.32252638745412,
+          "shared_memory_payload_by_release": {
+            "v3": {
+              "item_table_payload_bytes_per_replica": 18874368,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 75497472,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v4": {
+              "item_table_payload_bytes_per_replica": 18874368,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 75497472,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v5": {
+              "item_table_payload_bytes_per_replica": 18874368,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 75497472,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            }
+          },
+          "all_three_releases_item_table_payload_bytes_per_replica": 56623104,
+          "all_three_releases_folded_parameter_payload_bytes_per_replica": 888192,
+          "memory_scope": "Logical persistent tensor payload, not loaded-serving peak measurement. CPU ID dictionaries, per-call projection/gather scratch and allocator overhead are separate. A serving Current release needs its own table; the offline user-major model-chain prototype retains three release objects concurrently.",
+          "complete_with_all_sources_no_reuse_percent": 21.087116568273096
+        }
+      }
+    },
+    "full_static0": {
+      "rho_by_release": {
+        "v3": 1.0,
+        "v4": 1.0,
+        "v5": 1.0
+      },
+      "storage_mode": "masked",
+      "static_items_requested": 0,
+      "by_release": {
+        "v3": {
+          "counts": {
+            "support_token_layers": 57251640,
+            "first_reads": 13807,
+            "first_read_rows": 13513103,
+            "forced_missing_rows": 13513103,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13513103,
+            "first_read_encode_calls": 13807,
+            "unique_items_in_calls": 11784411,
+            "initial_encode_rows": 13513103,
+            "refresh_encode_rows": 0,
+            "corrected_requests": 131783,
+            "corrected_token_query_pairs": 129401152,
+            "corrected_read_batches": 100694,
+            "corrected_token_read_batches": 99589151,
+            "append_encode_rows": 5121275,
+            "append_encode_calls": 326147
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 0,
+            "first_read_unique_item_misses": 7226694,
+            "append_unique_item_hits": 0,
+            "append_unique_item_misses": 4557717,
+            "unique_item_hits": 0,
+            "unique_item_misses": 11784411,
+            "row_item_hits": 0
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 505930576320,
+            "refresh_row_kv": 0,
+            "append_row_kv": 191740536000,
+            "first_read_uncached_items": 801295830720,
+            "append_uncached_items": 505359660960,
+            "static_table_preparation": 0,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5366700864
+          },
+          "maintenance_flops": 2009693526048,
+          "query_extra_flops": 158738431104,
+          "shared_projection_table_bytes": 0,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 111806268
+        },
+        "v4": {
+          "counts": {
+            "support_token_layers": 58154730,
+            "first_reads": 13949,
+            "first_read_rows": 13707482,
+            "forced_missing_rows": 4303150,
+            "forced_older_rows": 0,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13707482,
+            "first_read_encode_calls": 13949,
+            "unique_items_in_calls": 12110545,
+            "initial_encode_rows": 4303150,
+            "refresh_encode_rows": 9404332,
+            "corrected_requests": 133837,
+            "corrected_token_query_pairs": 132132533,
+            "corrected_read_batches": 102837,
+            "corrected_token_read_batches": 101958757,
+            "append_encode_rows": 5296318,
+            "append_encode_calls": 335051,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 0,
+            "first_read_unique_item_misses": 7401672,
+            "append_unique_item_hits": 0,
+            "append_unique_item_misses": 4708873,
+            "unique_item_hits": 0,
+            "unique_item_misses": 12110545,
+            "row_item_hits": 0
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 161109936000,
+            "refresh_row_kv": 352098190080,
+            "append_row_kv": 198294145920,
+            "first_read_uncached_items": 820697391360,
+            "append_uncached_items": 522119838240,
+            "static_table_preparation": 0,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5473094400
+          },
+          "maintenance_flops": 2059792817184,
+          "query_extra_flops": 162061396596,
+          "shared_projection_table_bytes": 0,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 114022800
+        },
+        "v5": {
+          "counts": {
+            "support_token_layers": 57414390,
+            "first_reads": 13994,
+            "first_read_rows": 13663041,
+            "forced_missing_rows": 3314098,
+            "forced_older_rows": 969299,
+            "retained_previous_rows": 0,
+            "first_read_encode_rows": 13663041,
+            "first_read_encode_calls": 13994,
+            "unique_items_in_calls": 11900697,
+            "initial_encode_rows": 3314098,
+            "refresh_encode_rows": 10348943,
+            "corrected_requests": 127901,
+            "corrected_token_query_pairs": 125989489,
+            "corrected_read_batches": 94762,
+            "corrected_token_read_batches": 93666058,
+            "append_encode_rows": 5005509,
+            "append_encode_calls": 312291,
+            "causal_retirements": 1
+          },
+          "cache_counts": {
+            "first_read_unique_item_hits": 0,
+            "first_read_unique_item_misses": 7437760,
+            "append_unique_item_hits": 0,
+            "append_unique_item_misses": 4462937,
+            "unique_item_hits": 0,
+            "unique_item_misses": 11900697,
+            "row_item_hits": 0
+          },
+          "maintenance_components_flops": {
+            "initial_row_kv": 124079829120,
+            "refresh_row_kv": 387464425920,
+            "append_row_kv": 187406256960,
+            "first_read_uncached_items": 824698828800,
+            "append_uncached_items": 494850454560,
+            "static_table_preparation": 0,
+            "fixed_normalization_fold": 221184,
+            "encoder_support_mask": 5376542400
+          },
+          "maintenance_flops": 2023876558944,
+          "query_extra_flops": 154537797348,
+          "shared_projection_table_bytes": 0,
+          "folded_parameter_bytes": 296064,
+          "flag_transfer_bytes": 112011300
+        }
+      },
+      "baseline_maintenance_flops": 9389259507456,
+      "maintenance_flops": 6093362902176,
+      "maintenance_saving_percent": 35.102838542940816,
+      "encoder_only_saving_percent": 35.16357009751338,
+      "shared_calibration_flops": 27313027944710,
+      "publication_validation_flops": 0,
+      "complete_added_flops": 33881728471934,
+      "complete_percent_of_once_rebuild": 16.803008917601762,
+      "complete_saving_percent_vs_original_masked": 8.865269361436539,
+      "source_reconstruction_sensitivity_percent": 20.303626995510303,
+      "cache_scope": "no persistent item table; projection shared only among equal IDs within each actual encode call",
+      "quality_scope": "same encoder function up to floating-point ordering; existing full/strict quality is a reference, new GPU equality/quality evidence separate",
+      "evidence": "Derived from exact fixed30k full-rho1 encode call counts already present in this summary, without rereading population data.",
+      "independent_preparation_sensitivity": {
+        "4": {
+          "replicas": 4,
+          "repeated_construction_components": "fixed_normalization_fold + static_table_preparation only",
+          "one_replica_preparation_flops": 663552,
+          "extra_independent_preparation_flops": 1990656,
+          "maintenance_flops": 6093364892832,
+          "maintenance_saving_percent": 35.10281734152447,
+          "encoder_only_saving_percent": 35.16354885941638,
+          "complete_added_flops": 33881730462590,
+          "complete_percent_of_once_rebuild": 16.803009904830336,
+          "complete_saving_percent_vs_original_masked": 8.86526400699016,
+          "source_reconstruction_sensitivity_percent": 20.30362798273888,
+          "shared_memory_payload_by_release": {
+            "v3": {
+              "item_table_payload_bytes_per_replica": 0,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 0,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v4": {
+              "item_table_payload_bytes_per_replica": 0,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 0,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            },
+            "v5": {
+              "item_table_payload_bytes_per_replica": 0,
+              "folded_parameter_payload_bytes_per_replica": 296064,
+              "item_table_payload_bytes_all_replicas": 0,
+              "folded_parameter_payload_bytes_all_replicas": 1184256
+            }
+          },
+          "all_three_releases_item_table_payload_bytes_per_replica": 0,
+          "all_three_releases_folded_parameter_payload_bytes_per_replica": 888192,
+          "memory_scope": "Logical persistent tensor payload, not loaded-serving peak measurement. CPU ID dictionaries, per-call projection/gather scratch and allocator overhead are separate. A serving Current release needs its own table; the offline user-major model-chain prototype retains three release objects concurrently."
+        }
+      }
+    }
+  },
+  "verification": {
+    "full_and_strict_row_shapes_match_retained_fixed30k_ledgers": true,
+    "reads_future_labels_or_scores": false,
+    "static_admission_from_fit_only_prerelease_histories": true
+  },
+  "sources": {
+    "/home/gkl/work/evokv/scripts/partial_refresh_2026_10/round2/factored_cost.py": "24d851270268cec51f403974b8df559ced464b4ae4e55ef70a494186fd1f7b0c",
+    "/home/gkl/work/evokv/results/partial_refresh_2026_10/population_cost_raw/summary.json": "e00419559b2682fd25ca3bd6e0244c7295049b12c661b51c48e9e8e6379c1e3b",
+    "/home/gkl/work/evokv/results/partial_refresh_2026_10/round2/item_tables/item_ids.npz": "54da405eac7bed0021dd5614b2c54ab1f91dda1c43d3d0457782f04258934be5",
+    "/home/gkl/work/evokv/results/partial_refresh_2026_10/round2/item_tables/summary.json": "8b812347a86fc7b7e6aae4af0637b0cb3dea0ad8193d8409e0fc4efac3290bf9",
+    "/home/gkl/work/evokv/configs/design/medium_v0_v5_development.json": "cc7e5f4027d7c33fbe96ea2e3a304434596f8e63d92c5f0d55863bb639b27e1e",
+    "/home/gkl/work/evokv/results/design_two_2026_10/benchmark_panel/binding.json": "02ea25a775a7d982c45b711c32214379731153fe63574c3138bfd7b00883830b",
+    "/home/gkl/work/evokv/data/processed/yambda500m_unified_v1/scales/medium/dataset.json": "d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb",
+    "/home/gkl/work/evokv/data/manifests/yambda500m_scale_v1/medium_users.parquet": "62ab1d94f89f77361cd24442589d2d99aa756a44db83358a46a43289b0c78e5c",
+    "/home/gkl/work/evokv/data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/requests_fidelity.parquet": "22a70eea34bc6ca88343f06db8f388d3631644dd00c1e4851bcb8c3c81e46bcd",
+    "/home/gkl/work/evokv/results/partial_refresh_2026_10/validation_raw_strict/cost_audit.json": "4880e266e2ecb389f0557ca9546643631bb9e31be3e93e7f1ab398a24f7ab1ff"
+  },
+  "elapsed_seconds": 109.45035659335554,
+  "notes": [
+    "Maintenance denominator includes V3 initialization, every first-read refresh, active appends and original encode support masks.",
+    "One-time static preparation, normalization folding and every uncached unique projection are charged in maintenance.",
+    "Shared Current-item table memory and folded parameters are additional to unchanged per-user rank8 codes/flags/version tags.",
+    "Default cost assumes one shared table per release. Independent serving replicas repeat table preparation and memory; uncached computations depend on their actual encode calls.",
+    "Fixed D2 is fully charged. Strict also retains its original complete publication-validation cost; source reconstruction sensitivities remain separate.",
+    "Static IDs are selected before release from fit-only histories. No user-major LRU-hit rate is claimed."
+  ],
+  "nocache_derivation_sources": {
+    "/home/gkl/work/evokv/scripts/partial_refresh_2026_10/round2/factored_cost.py": "4d6b9d1da3a4b136bbde2e0857c2431eb4b2f8c3a3202e09826bd3f27646ad50"
+  },
+  "primary_reporting_preparation_replicas": 4,
+  "replica_sensitivity_derivation_sources": {
+    "/home/gkl/work/evokv/scripts/partial_refresh_2026_10/round2/factored_cost.py": "e31b98fa7325c30bc2beb77e25f5cdb4ce9bca221a484658d731332c96f034c1",
+    "/home/gkl/work/evokv/results/partial_refresh_2026_10/validation_raw_strict/cost_audit.json": "4880e266e2ecb389f0557ca9546643631bb9e31be3e93e7f1ab398a24f7ab1ff"
+  }
+}

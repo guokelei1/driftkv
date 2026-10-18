@@ -1,0 +1,293 @@
+{
+  "kind": "current_scheme_preparation_equivalence",
+  "device": "cuda:1",
+  "gpu_name": "NVIDIA A40",
+  "dtype": "float32",
+  "tf32": false,
+  "chunk_size": 16384,
+  "full_catalogue": false,
+  "seed": 20261015,
+  "bindings": {
+    "freeze_sha256": "b82c93a5e4eb7890ee36f6c66864fa7a7e4d105835f16de6e9437670427db0a5",
+    "source_sha256": {
+      "scripts/implementation_2026_10/run_prepare.py": "4b288877f99eb90ceee746aa8bbaa8106d2bfb7d51896eba13f95cf43657d326",
+      "scripts/implementation_2026_10/prepare.py": "5f390c87b72446fafff0dd87148b13fecd2ceb45d0a9472beff4979191295c91",
+      "scripts/query_relay_2026_10/adapter.py": "bce49fafa2f8c6c2ea81cbd2f55d988a6dd3d8646be05863cad6ba5f7fe098f8",
+      "scripts/query_relay_2026_10/publish.py": "6d4f3f545568aed8674156b0b41a3f2d8517048ce041da2b8c63f5170d2cd6d9"
+    },
+    "releases": {
+      "v3": {
+        "calibration_sha256": "e3c307d263d3462036f28d04609e29cfd49a94008780213bc9dbf1c9a2d8e606",
+        "model_sha256": "5581d722ae226814f90d04d4fd112f87c8fe83b089f9b35e553dda7ec024b455"
+      },
+      "v4": {
+        "calibration_sha256": "0ef1c22a7a7e0c77bee859b2467f281c39d5bd91ce2ad68a607cc9c8593f2ef3",
+        "model_sha256": "c1a41440ce4663b499d5c8fa27bd52a8d651898a53df062bf4217a8174885082"
+      },
+      "v5": {
+        "calibration_sha256": "003f660b72a94c9b4ca88ebaac12ef0f488b2d7edcaccc49a42c7b3fe41535b9",
+        "model_sha256": "c82fba0c9a954e175b4eba8d9da531ec92f637edf5df144a2af8ca9fb59e722d"
+      }
+    }
+  },
+  "releases": {
+    "v3": {
+      "real_subset_D_difference": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "subset_work": {
+        "arithmetic": {
+          "item_projection_flops": 453720960,
+          "history_composition_flops": 0,
+          "matrix_composition_flops": 0,
+          "cayley_preparation_flops_estimate": 61344
+        },
+        "total_flops": 453782304,
+        "item_lookup_calls": 4,
+        "reference_item_lookup_calls": 24,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "history_block_calls": 0,
+        "reference_history_block_calls": 0,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "item_projection_parameter_bytes": 221184,
+        "table_bytes": 4713984,
+        "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+      },
+      "subset_isolated_timing": {
+        "reference": {
+          "observations_ms": [
+            9.754624366760254,
+            9.671680450439453,
+            9.522175788879395,
+            9.595904350280762,
+            9.586688041687012
+          ],
+          "median_ms": 9.595904350280762,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        },
+        "batched": {
+          "observations_ms": [
+            7.654399871826172,
+            7.650303840637207,
+            7.618559837341309,
+            7.588863849639893,
+            7.601151943206787
+          ],
+          "median_ms": 7.618559837341309,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        }
+      },
+      "subset_phi_difference": {
+        "max_abs": 5.7220458984375e-06,
+        "relative_l2": 2.509780827656002e-07
+      },
+      "subset_phi_work": {
+        "item_projection_flops": 452542464,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "table_bytes": 4713984,
+        "scope": "One immutable bank across releases; no row-state saving or SiLU folding"
+      }
+    },
+    "v4": {
+      "real_subset_D_difference": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "subset_work": {
+        "arithmetic": {
+          "item_projection_flops": 453720960,
+          "history_composition_flops": 0,
+          "matrix_composition_flops": 0,
+          "cayley_preparation_flops_estimate": 61344
+        },
+        "total_flops": 453782304,
+        "item_lookup_calls": 4,
+        "reference_item_lookup_calls": 24,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "history_block_calls": 0,
+        "reference_history_block_calls": 0,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "item_projection_parameter_bytes": 221184,
+        "table_bytes": 4713984,
+        "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+      },
+      "subset_isolated_timing": {
+        "reference": {
+          "observations_ms": [
+            9.712639808654785,
+            9.61945629119873,
+            9.628671646118164,
+            9.677824020385742,
+            9.537535667419434
+          ],
+          "median_ms": 9.628671646118164,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        },
+        "batched": {
+          "observations_ms": [
+            7.692287921905518,
+            7.662591934204102,
+            7.616511821746826,
+            7.565311908721924,
+            7.614463806152344
+          ],
+          "median_ms": 7.616511821746826,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        }
+      }
+    },
+    "v5": {
+      "real_subset_D_difference": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "subset_work": {
+        "arithmetic": {
+          "item_projection_flops": 453720960,
+          "history_composition_flops": 0,
+          "matrix_composition_flops": 0,
+          "cayley_preparation_flops_estimate": 61344
+        },
+        "total_flops": 453782304,
+        "item_lookup_calls": 4,
+        "reference_item_lookup_calls": 24,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "history_block_calls": 0,
+        "reference_history_block_calls": 0,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "item_projection_parameter_bytes": 221184,
+        "table_bytes": 4713984,
+        "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+      },
+      "subset_isolated_timing": {
+        "reference": {
+          "observations_ms": [
+            9.533439636230469,
+            9.556991577148438,
+            9.545727729797363,
+            9.559040069580078,
+            9.43718433380127
+          ],
+          "median_ms": 9.545727729797363,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        },
+        "batched": {
+          "observations_ms": [
+            7.498752117156982,
+            7.518208026885986,
+            7.48851203918457,
+            7.498752117156982,
+            7.610367774963379
+          ],
+          "median_ms": 7.498752117156982,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        }
+      }
+    }
+  },
+  "exclusions": "No training, quality selection, new labels, old publication replacement, or row eta persistence",
+  "real_item_subset": {
+    "requested_rows": 4096,
+    "unique_rows": 4092,
+    "includes_padding_and_last": true,
+    "selection": "Seeded uniform IDs, no request/user-dependent selection"
+  },
+  "actual_native_features": {
+    "source_pack_sha256": "5797722cee58540d5869372156f3e2ecce7fc11bae99b918d9deb4f9e34ea879",
+    "users": [
+      {
+        "uid": 947210,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.9073486328125e-06,
+          "relative_l2": 5.781942491818869e-08
+        }
+      },
+      {
+        "uid": 486120,
+        "rows": 348,
+        "difference": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0
+        }
+      },
+      {
+        "uid": 496380,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.9073486328125e-06,
+          "relative_l2": 6.690099968302902e-08
+        }
+      },
+      {
+        "uid": 860020,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.430511474609375e-06,
+          "relative_l2": 6.29141785925334e-08
+        }
+      },
+      {
+        "uid": 83430,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.6689300537109375e-06,
+          "relative_l2": 6.626994498566371e-08
+        }
+      },
+      {
+        "uid": 5440,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.5497207641601562e-06,
+          "relative_l2": 5.754345117453206e-08
+        }
+      },
+      {
+        "uid": 241300,
+        "rows": 1018,
+        "difference": {
+          "max_abs": 1.5497207641601562e-06,
+          "relative_l2": 7.161112626044384e-08
+        }
+      },
+      {
+        "uid": 67470,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.9073486328125e-06,
+          "relative_l2": 6.757618884633187e-08
+        }
+      }
+    ],
+    "scope": "8 frozen fit-state trajectories; equivalence only, no quality optimization",
+    "row_eta_flops": 84384,
+    "avoided_naive_row_item_projection_flops": 110592,
+    "eta_persistent_bytes": 0,
+    "note": "Per-row saving is relative to recomputing the item projection, not a new saving over the existing shared-bank method"
+  },
+  "cuda_peak_allocated_bytes": 2709164032,
+  "arithmetic_conclusion": "All-layer batching preserves shared-preparation FLOPs; it reduces repeated embedding reads and operation count. Full catalogue has no projection misses, so batch dedup is not counted again."
+}

@@ -1,0 +1,404 @@
+{
+  "kind": "current_scheme_preparation_equivalence",
+  "device": "cuda:1",
+  "gpu_name": "NVIDIA A40",
+  "dtype": "float32",
+  "tf32": false,
+  "chunk_size": 16384,
+  "full_catalogue": true,
+  "seed": 20261015,
+  "bindings": {
+    "freeze_sha256": "b82c93a5e4eb7890ee36f6c66864fa7a7e4d105835f16de6e9437670427db0a5",
+    "source_sha256": {
+      "scripts/implementation_2026_10/run_prepare.py": "4b288877f99eb90ceee746aa8bbaa8106d2bfb7d51896eba13f95cf43657d326",
+      "scripts/implementation_2026_10/prepare.py": "9a75f1fbfbe4b57ae434c5c055f1012c2cd19d1e6c07eb041736c8309d7fe4dd",
+      "scripts/query_relay_2026_10/adapter.py": "bce49fafa2f8c6c2ea81cbd2f55d988a6dd3d8646be05863cad6ba5f7fe098f8",
+      "scripts/query_relay_2026_10/publish.py": "6d4f3f545568aed8674156b0b41a3f2d8517048ce041da2b8c63f5170d2cd6d9"
+    },
+    "releases": {
+      "v3": {
+        "calibration_sha256": "e3c307d263d3462036f28d04609e29cfd49a94008780213bc9dbf1c9a2d8e606",
+        "model_sha256": "5581d722ae226814f90d04d4fd112f87c8fe83b089f9b35e553dda7ec024b455"
+      },
+      "v4": {
+        "calibration_sha256": "0ef1c22a7a7e0c77bee859b2467f281c39d5bd91ce2ad68a607cc9c8593f2ef3",
+        "model_sha256": "c1a41440ce4663b499d5c8fa27bd52a8d651898a53df062bf4217a8174885082"
+      },
+      "v5": {
+        "calibration_sha256": "003f660b72a94c9b4ca88ebaac12ef0f488b2d7edcaccc49a42c7b3fe41535b9",
+        "model_sha256": "c82fba0c9a954e175b4eba8d9da531ec92f637edf5df144a2af8ca9fb59e722d"
+      }
+    }
+  },
+  "releases": {
+    "v3": {
+      "real_subset_D_difference": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "subset_work": {
+        "arithmetic": {
+          "item_projection_flops": 453720960,
+          "history_composition_flops": 0,
+          "matrix_composition_flops": 0,
+          "cayley_preparation_flops_estimate": 61344
+        },
+        "total_flops": 453782304,
+        "item_lookup_calls": 4,
+        "reference_item_lookup_calls": 24,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "history_block_calls": 0,
+        "reference_history_block_calls": 0,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "item_projection_parameter_bytes": 221184,
+        "table_bytes": 4713984,
+        "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+      },
+      "subset_isolated_timing": {
+        "reference": {
+          "observations_ms": [
+            9.74233627319336,
+            9.660415649414062,
+            9.598976135253906,
+            9.550848007202148,
+            9.533439636230469
+          ],
+          "median_ms": 9.598976135253906,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        },
+        "batched": {
+          "observations_ms": [
+            7.634943962097168,
+            7.593984127044678,
+            7.568384170532227,
+            7.546879768371582,
+            7.643136024475098
+          ],
+          "median_ms": 7.593984127044678,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        }
+      },
+      "subset_phi_difference": {
+        "max_abs": 5.7220458984375e-06,
+        "relative_l2": 2.509780827656002e-07
+      },
+      "subset_phi_work": {
+        "item_projection_flops": 452542464,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "table_bytes": 4713984,
+        "scope": "One immutable bank across releases; no row-state saving or SiLU folding"
+      },
+      "full_catalogue": {
+        "work": {
+          "arithmetic": {
+            "item_projection_flops": 153099334080,
+            "history_composition_flops": 0,
+            "matrix_composition_flops": 0,
+            "cayley_preparation_flops_estimate": 61344
+          },
+          "total_flops": 153099395424,
+          "item_lookup_calls": 85,
+          "reference_item_lookup_calls": 510,
+          "item_projection_calls": 85,
+          "reference_item_projection_calls": 510,
+          "history_block_calls": 0,
+          "reference_history_block_calls": 0,
+          "embedding_read_payload_bytes": 1060428288,
+          "reference_embedding_read_payload_bytes": 6362569728,
+          "item_projection_parameter_bytes": 221184,
+          "table_bytes": 1590642432,
+          "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+        },
+        "D_difference": {
+          "max_abs": 7.152557373046875e-07,
+          "relative_l2": 1.2398810919634305e-08
+        },
+        "P_Q_bitwise_equal": true,
+        "original_publication_sha256": "f284ef1ff8c03c5a092c47a4d41e958552cb8b89942e256796210d4a738e7b54",
+        "original_compilation_flops": 153099395424,
+        "one_observation_elapsed_seconds": 0.03524720799759962,
+        "scope": "Fresh V3-to-V5 optimized compilation, each from optimized prior; no table copied from retained publication"
+      }
+    },
+    "v4": {
+      "real_subset_D_difference": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "subset_work": {
+        "arithmetic": {
+          "item_projection_flops": 453720960,
+          "history_composition_flops": 0,
+          "matrix_composition_flops": 0,
+          "cayley_preparation_flops_estimate": 61344
+        },
+        "total_flops": 453782304,
+        "item_lookup_calls": 4,
+        "reference_item_lookup_calls": 24,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "history_block_calls": 0,
+        "reference_history_block_calls": 0,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "item_projection_parameter_bytes": 221184,
+        "table_bytes": 4713984,
+        "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+      },
+      "subset_isolated_timing": {
+        "reference": {
+          "observations_ms": [
+            9.713664054870605,
+            9.670656204223633,
+            9.62559986114502,
+            9.545727729797363,
+            9.595904350280762
+          ],
+          "median_ms": 9.62559986114502,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        },
+        "batched": {
+          "observations_ms": [
+            7.609344005584717,
+            7.593984127044678,
+            7.601151943206787,
+            7.58681583404541,
+            7.611392021179199
+          ],
+          "median_ms": 7.601151943206787,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        }
+      },
+      "full_catalogue": {
+        "work": {
+          "arithmetic": {
+            "item_projection_flops": 153099334080,
+            "history_composition_flops": 6362569728,
+            "matrix_composition_flops": 74736,
+            "cayley_preparation_flops_estimate": 61344
+          },
+          "total_flops": 159462039888,
+          "item_lookup_calls": 85,
+          "reference_item_lookup_calls": 510,
+          "item_projection_calls": 85,
+          "reference_item_projection_calls": 510,
+          "history_block_calls": 595,
+          "reference_history_block_calls": 3570,
+          "embedding_read_payload_bytes": 1060428288,
+          "reference_embedding_read_payload_bytes": 6362569728,
+          "item_projection_parameter_bytes": 221184,
+          "table_bytes": 1590642432,
+          "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+        },
+        "D_difference": {
+          "max_abs": 9.5367431640625e-07,
+          "relative_l2": 1.1717716866540612e-08
+        },
+        "P_Q_bitwise_equal": true,
+        "original_publication_sha256": "f4a6f59b3e3ba8c7f86e06ba9fe707b8202a7dd22510d0b9588082d0bc88a535",
+        "original_compilation_flops": 159462039888,
+        "one_observation_elapsed_seconds": 0.08797057600168046,
+        "scope": "Fresh V3-to-V5 optimized compilation, each from optimized prior; no table copied from retained publication"
+      }
+    },
+    "v5": {
+      "real_subset_D_difference": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "subset_work": {
+        "arithmetic": {
+          "item_projection_flops": 453720960,
+          "history_composition_flops": 0,
+          "matrix_composition_flops": 0,
+          "cayley_preparation_flops_estimate": 61344
+        },
+        "total_flops": 453782304,
+        "item_lookup_calls": 4,
+        "reference_item_lookup_calls": 24,
+        "item_projection_calls": 4,
+        "reference_item_projection_calls": 24,
+        "history_block_calls": 0,
+        "reference_history_block_calls": 0,
+        "embedding_read_payload_bytes": 3142656,
+        "reference_embedding_read_payload_bytes": 18855936,
+        "item_projection_parameter_bytes": 221184,
+        "table_bytes": 4713984,
+        "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+      },
+      "subset_isolated_timing": {
+        "reference": {
+          "observations_ms": [
+            9.692159652709961,
+            9.713664054870605,
+            9.608192443847656,
+            9.660415649414062,
+            9.647104263305664
+          ],
+          "median_ms": 9.660415649414062,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        },
+        "batched": {
+          "observations_ms": [
+            7.630847930908203,
+            7.59603214263916,
+            7.5878400802612305,
+            7.544832229614258,
+            7.564288139343262
+          ],
+          "median_ms": 7.5878400802612305,
+          "warmups": 2,
+          "repeats": 5,
+          "scope": "Isolated synchronous CUDA operations; no loaded-serving throughput or p99"
+        }
+      },
+      "full_catalogue": {
+        "work": {
+          "arithmetic": {
+            "item_projection_flops": 153099334080,
+            "history_composition_flops": 6362569728,
+            "matrix_composition_flops": 74736,
+            "cayley_preparation_flops_estimate": 61344
+          },
+          "total_flops": 159462039888,
+          "item_lookup_calls": 85,
+          "reference_item_lookup_calls": 510,
+          "item_projection_calls": 85,
+          "reference_item_projection_calls": 510,
+          "history_block_calls": 595,
+          "reference_history_block_calls": 3570,
+          "embedding_read_payload_bytes": 1060428288,
+          "reference_embedding_read_payload_bytes": 6362569728,
+          "item_projection_parameter_bytes": 221184,
+          "table_bytes": 1590642432,
+          "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+        },
+        "D_difference": {
+          "max_abs": 9.5367431640625e-07,
+          "relative_l2": 9.939933071423302e-09
+        },
+        "P_Q_bitwise_equal": true,
+        "original_publication_sha256": "0089050d6a696d7ce11862ae4b7f73cdefafbdf0ebe6a3fddec0d9dfb9ce29c6",
+        "original_compilation_flops": 159462039888,
+        "one_observation_elapsed_seconds": 0.08719261500664288,
+        "scope": "Fresh V3-to-V5 optimized compilation, each from optimized prior; no table copied from retained publication"
+      }
+    }
+  },
+  "exclusions": "No training, quality selection, new labels, old publication replacement, or row eta persistence",
+  "real_item_subset": {
+    "requested_rows": 4096,
+    "unique_rows": 4092,
+    "includes_padding_and_last": true,
+    "selection": "Seeded uniform IDs, no request/user-dependent selection"
+  },
+  "fixed_phi": {
+    "work": {
+      "item_projection_flops": 152701673472,
+      "item_projection_calls": 85,
+      "reference_item_projection_calls": 510,
+      "embedding_read_payload_bytes": 1060428288,
+      "reference_embedding_read_payload_bytes": 6362569728,
+      "table_bytes": 1590642432,
+      "scope": "One immutable bank across releases; no row-state saving or SiLU folding"
+    },
+    "difference": {
+      "max_abs": 7.62939453125e-06,
+      "relative_l2": 1.5179402405894164e-08
+    },
+    "one_observation_elapsed_seconds": 0.17452156599756563,
+    "bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+    "scope": "Immutable all-catalogue table; prepared once, not once per release"
+  },
+  "actual_native_features": {
+    "source_pack_sha256": "5797722cee58540d5869372156f3e2ecce7fc11bae99b918d9deb4f9e34ea879",
+    "users": [
+      {
+        "uid": 947210,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 3.814697265625e-06,
+          "relative_l2": 7.601876498243641e-08
+        }
+      },
+      {
+        "uid": 486120,
+        "rows": 348,
+        "difference": {
+          "max_abs": 2.5033950805664062e-06,
+          "relative_l2": 1.8308611391272858e-08
+        }
+      },
+      {
+        "uid": 496380,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 2.86102294921875e-06,
+          "relative_l2": 7.105926527295394e-08
+        }
+      },
+      {
+        "uid": 860020,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 3.337860107421875e-06,
+          "relative_l2": 7.995607986578904e-08
+        }
+      },
+      {
+        "uid": 83430,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.6689300537109375e-06,
+          "relative_l2": 6.626994498566371e-08
+        }
+      },
+      {
+        "uid": 5440,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.7881393432617188e-06,
+          "relative_l2": 6.043745419797702e-08
+        }
+      },
+      {
+        "uid": 241300,
+        "rows": 1018,
+        "difference": {
+          "max_abs": 1.5497207641601562e-06,
+          "relative_l2": 7.286409131797779e-08
+        }
+      },
+      {
+        "uid": 67470,
+        "rows": 1024,
+        "difference": {
+          "max_abs": 1.9073486328125e-06,
+          "relative_l2": 7.370743487855942e-08
+        }
+      }
+    ],
+    "scope": "8 frozen fit-state trajectories; equivalence only, no quality optimization",
+    "row_eta_flops": 84384,
+    "avoided_naive_row_item_projection_flops": 110592,
+    "eta_persistent_bytes": 0,
+    "note": "Per-row saving is relative to recomputing the item projection, not a new saving over the existing shared-bank method"
+  },
+  "cuda_peak_allocated_bytes": 5985929728,
+  "arithmetic_conclusion": "All-layer batching preserves shared-preparation FLOPs; it reduces repeated embedding reads and operation count. Full catalogue has no projection misses, so batch dedup is not counted again."
+}
