@@ -1,0 +1,63 @@
+{
+  "config": {
+    "branch": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4",
+    "source": "source_v5/source.pt",
+    "source_current_version": "v4",
+    "target_version": "v5",
+    "selection": "First 8 ascending UID among retained V5 fit source rows with exactly 1024 history rows; no labels or future requests",
+    "users": 8,
+    "history_length": 1024,
+    "row_chunk": 1024,
+    "warmup": 3,
+    "repetitions": 5,
+    "batch_sizes": [
+      1,
+      8
+    ],
+    "dtype": "float32",
+    "tf32": false,
+    "prepared_features": true,
+    "scope": "Fused FP32 conversion on eight distinct real states; compare stable reference, not quality or loaded throughput",
+    "conversion_backend": "triton"
+  },
+  "uids": [
+    5440,
+    23770,
+    31780,
+    42800,
+    67470,
+    75350,
+    83430,
+    85870
+  ],
+  "eligible_full_history_fit_users": 61,
+  "created_utc": "2026-10-18T23:30:45.099578+00:00",
+  "command": [
+    "scripts/system_study_2026_10/batched_conversion_probe.py",
+    "--config",
+    "configs/system_study_2026_10/fused_conversion.json",
+    "--output",
+    "results/system_study_2026_10/service/fused_conversion/attempt3"
+  ],
+  "bindings": {
+    "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/source_v5/source.pt": "d73d409e253c9deff3b5050e1aad37fda76b15f634126994eecdb3065ac3a663",
+    "configs/system_study_2026_10/fused_conversion.json": "f1f9f0f3ba3e8aa9e4a9f8e8562e9dae755a47bd099dd06d94d01c668ea9f271",
+    "scripts/system_study_2026_10/batched_conversion_probe.py": "b2f763937606ae3436f6cc42ae8e5bf560f07b9e5e38530dafef9b8ea990476a",
+    "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v4/calibration.pt": "0ef1c22a7a7e0c77bee859b2467f281c39d5bd91ce2ad68a607cc9c8593f2ef3",
+    "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v4.pt": "f4a6f59b3e3ba8c7f86e06ba9fe707b8202a7dd22510d0b9588082d0bc88a535",
+    "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v5/calibration.pt": "003f660b72a94c9b4ca88ebaac12ef0f488b2d7edcaccc49a42c7b3fe41535b9",
+    "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v5.pt": "0089050d6a696d7ce11862ae4b7f73cdefafbdf0ebe6a3fddec0d9dfb9ce29c6",
+    "scripts/system_study_2026_10/fused_conversion.py": "1307ab0e10ac9fa3a675cc7e5330a2903ccafd85fd5959d119e9ab10ab40a822"
+  },
+  "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+  "semantics": "source previous_codes are V4 current; V4 anchorize -> immutable anchors -> V5 materialize",
+  "persistent_code_layout": [
+    6,
+    8,
+    1024,
+    6,
+    8
+  ],
+  "no_training": true,
+  "no_new_users_or_labels": true
+}

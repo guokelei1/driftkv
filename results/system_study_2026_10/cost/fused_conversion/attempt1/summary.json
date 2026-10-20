@@ -1,0 +1,51 @@
+{
+  "status": "analytical_padding_sensitivity",
+  "rows": [
+    {
+      "scenario": "valid_rows_lower",
+      "valid_rows": 125294025,
+      "padded_rows": 125294025,
+      "extra_dot_flops": 12389073192000,
+      "added_percent_of_rebuild": 20.69611067466203,
+      "with_source_percent": 21.93073104248058
+    },
+    {
+      "scenario": "ideal_same_shape_batch8",
+      "valid_rows": 125294025,
+      "padded_rows": 125330016,
+      "extra_dot_flops": 12395928181824,
+      "added_percent_of_rebuild": 20.69797533217852,
+      "with_source_percent": 21.93259569999707
+    },
+    {
+      "scenario": "individual_batch1",
+      "valid_rows": 125294025,
+      "padded_rows": 125469616,
+      "extra_dot_flops": 12422516956224,
+      "added_percent_of_rebuild": 20.70520786779303,
+      "with_source_percent": 21.93982823561158
+    }
+  ],
+  "geometry": {
+    "layers": 6,
+    "output_tile": 16,
+    "useful_dot_flops_per_layer_row": 15264,
+    "padded_dot_flops_per_layer_row": 31744
+  },
+  "formula": "extra=6*(31744*padded_rows-15264*valid_rows)",
+  "sources": [
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/time_model/ledger30k/attempt2/summary.json",
+      "sha256": "b463cf3dfef71e21a18cf9dfb94dc3fc4f9cdf3f1db1d1378b009be399a762f4"
+    },
+    {
+      "path": "/home/gkl/work/evokv/scripts/system_study_2026_10/fused_conversion.py",
+      "sha256": "423544c44f47d9896cdb1bd8d910cadf48b81c50cf5c0b8eb45436e4fbce5402"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/cost/initial/summary.json",
+      "sha256": "5db0463372a676594910123b29e97c58305e9110fa5c9aaa4da5a4a86facc308"
+    }
+  ],
+  "scope": "Extra logical padded dot work only; original vector and SiLU work retained. This is not TF32x3 instruction accounting; existing reader padding remains outside this added sensitivity."
+}

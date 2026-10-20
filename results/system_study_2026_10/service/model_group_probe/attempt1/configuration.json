@@ -1,0 +1,93 @@
+{
+  "created_utc": "2026-10-18T23:03:27.565254+00:00",
+  "pid": 3151313,
+  "command": [
+    "scripts/system_study_2026_10/model_group_probe.py",
+    "--config",
+    "configs/system_study_2026_10/model_group_probe.json",
+    "--output",
+    "/home/gkl/work/evokv/results/system_study_2026_10/service/model_group_probe/attempt1",
+    "--gpu",
+    "0"
+  ],
+  "config": {
+    "purpose": "Native operator timing coefficients across real model chains; no correction quality or population performance claim",
+    "scales": [
+      "medium",
+      "large",
+      "max"
+    ],
+    "endpoints": {
+      "v2": 245,
+      "v5": 287
+    },
+    "history_end_day": 288,
+    "context": 1024,
+    "batch_sizes": [
+      1,
+      8
+    ],
+    "candidates": 16,
+    "append_width": 16,
+    "warmup_calls": 2,
+    "measured_calls": 5,
+    "threads": 2,
+    "medium_selection": "results/implementation_2026_10/registration.json",
+    "candidate_uids": {
+      "large": [
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100,
+        110,
+        130,
+        140,
+        150,
+        160,
+        180
+      ],
+      "max": [
+        2,
+        6,
+        12,
+        16,
+        21,
+        33,
+        36,
+        38,
+        44,
+        45,
+        57,
+        60,
+        62,
+        64,
+        66,
+        68
+      ]
+    },
+    "datasets": {
+      "medium": "data/processed/yambda500m_unified_v1/scales/medium/dataset.json",
+      "large": "data/processed/yambda500m_unified_v1/scales/large/dataset.json",
+      "max": "data/processed/yambda5b_max_200k_v1/scales/max/dataset.json"
+    },
+    "atol": 3e-05,
+    "rtol": 3e-05
+  },
+  "config_sha256": "72282124fe3108f90f277aa543c4e85556533f492f6292216fb997cd9096bf8f",
+  "source_sha256": "7eab84eeb28e89942fb1cd975a63a41fd5eab5836d95b897925d6b5eac2ec8ca",
+  "device": "NVIDIA A40",
+  "torch_version": "2.12.1+cu130",
+  "precision": "FP32; native Triton attention and fused query use their existing policies",
+  "scope": "Native operator coefficients only; no Large/Max correction adapter or method quality evidence",
+  "timing_scope": "resident GPU inputs; synchronous API wall time incl launches; IO/H2D/load/warmup separate",
+  "batch8_scope": "eight copies of one selected actual history, not eight independent users",
+  "query_scope": "fixed valid catalog IDs 1..16, synthetic operator inputs, no recommendation labels",
+  "selection_scope": "Medium reuses the D259 engineering panel, so V2 is retrospective operator sampling; all actual V2 inputs are strictly before D245. Large/Max pools use first-behavior-before-D231 plus uid only",
+  "flops_scope": "analytical executed-shape convention, FMA=2; not hardware instructions or peak-throughput estimates"
+}

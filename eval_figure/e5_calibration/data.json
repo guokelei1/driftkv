@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "synthetic": true,
+    "figure": "6-5",
+    "purpose": "模拟校准人数、增量拟合费用和续写监督的图形布局；不是实测结果。",
+    "notes": [
+      "所有数字为人工编制的模拟数据，不代表任何配置已完成的适配或评价。",
+      "当前预览按已确认的 Yambda、RecFlow 两个数据集，各配 Large、Max。",
+      "四个数据集与基础模型组合分别拟合自己的纠正参数，不跨模型或跨数据集迁移。",
+      "面板 b 的费用仅为后续版本的增量拟合，不含首次初始化和固定特征来源准备。",
+      "独立监督路径表是 Yambda-Large、64 名拟合用户的代表性校准路径比较；恢复率按各追加位置的跨发布等权 AUC 增益汇总，非 E3 中单独用户队列的数值。",
+      "模拟曲线保留饱和和轻微回落，不构造方差、置信区间或真实统计证据。"
+    ],
+    "mock_default_sync": "2026-10-19: mock default references synchronized with the revised E1/E3 preview; not new measurements."
+  },
+  "fit_users": [
+    16,
+    64,
+    256
+  ],
+  "recovery_percent": {
+    "Yambda-Large": [
+      67.92593,
+      85.925926,
+      87.12593
+    ],
+    "Yambda-Max": [
+      63.95833,
+      82.958333,
+      82.65833
+    ],
+    "RecFlow-Large": [
+      65.3913,
+      85.391304,
+      86.3913
+    ],
+    "RecFlow-Max": [
+      61.05333,
+      82.053333,
+      82.55333
+    ]
+  },
+  "incremental_fit_seconds": {
+    "Yambda-Large": [
+      200,
+      440,
+      1150
+    ],
+    "Yambda-Max": [
+      380,
+      740,
+      1800
+    ],
+    "RecFlow-Large": [
+      220,
+      450,
+      1130
+    ],
+    "RecFlow-Max": [
+      400,
+      760,
+      1870
+    ]
+  },
+  "append_steps": [
+    0,
+    32,
+    64,
+    128,
+    256
+  ],
+  "training_routes": {
+    "Local only": [
+      65,
+      63,
+      60,
+      56,
+      50
+    ],
+    "+ Direct score": [
+      88,
+      86,
+      82,
+      77,
+      70
+    ],
+    "+ Short tail": [
+      85.925926,
+      85.82592600000001,
+      85.625926,
+      85.125926,
+      84.125926
+    ]
+  },
+  "configurations": [
+    {
+      "name": "Yambda-Large",
+      "dataset": "Yambda",
+      "scale": "Large"
+    },
+    {
+      "name": "Yambda-Max",
+      "dataset": "Yambda",
+      "scale": "Max"
+    },
+    {
+      "name": "RecFlow-Large",
+      "dataset": "RecFlow",
+      "scale": "Large"
+    },
+    {
+      "name": "RecFlow-Max",
+      "dataset": "RecFlow",
+      "scale": "Max"
+    }
+  ]
+}

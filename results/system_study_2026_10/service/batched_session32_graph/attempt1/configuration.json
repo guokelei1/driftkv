@@ -1,0 +1,218 @@
+{
+  "created_utc": "2026-10-19T00:15:56.330309+00:00",
+  "pid": 3499162,
+  "command": [
+    "scripts/system_study_2026_10/batched_session_probe.py",
+    "--config",
+    "configs/system_study_2026_10/batched_session32_graph.json",
+    "--output",
+    "/home/gkl/work/evokv/results/system_study_2026_10/service/batched_session32_graph/attempt1",
+    "--gpu",
+    "0"
+  ],
+  "config": {
+    "purpose": "Fixed32 actual sessions; same-process eager vs bounded common-shape CUDA Graph compute for both Relay and fair Rebuild; dynamic prefix, staging and output copies included; full graph warmup before interleaved timing.",
+    "panel": "results/design_system_2026_10/phase2/representative4096/panel",
+    "selection": "results/implementation_2026_10/registration.json",
+    "candidate": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4",
+    "relay_reference": null,
+    "native_reference": null,
+    "protocol": "behavior_stride16_candidates16",
+    "methods": [
+      "relay",
+      "rebuild"
+    ],
+    "expected_users": 32,
+    "stride": 16,
+    "candidates": 16,
+    "query_batch": 16,
+    "max_batch": 8,
+    "row_chunk": 1024,
+    "reader_backend": "triton",
+    "timing_repeats": 2,
+    "atol": 3e-05,
+    "rtol": 3e-05,
+    "conversion_backend": "fused",
+    "profile_state_transfer": false,
+    "coalesce_zero_tail": true,
+    "separate_phase_warmup": true,
+    "projection_fused": true,
+    "timed_executions": [
+      "batch8"
+    ],
+    "interleave_methods": true,
+    "native_fused_append": true,
+    "oracle_execution": "previous_batch",
+    "previous_batch_reference": null,
+    "reference_scope": "Same fair-native and fused-code-maintenance eager batch path; graph is the sole numerical execution change.",
+    "fused_code_append": true,
+    "reference_native_fused_append": true,
+    "defer_measurement": false,
+    "timing_code_append_control": false,
+    "graph_compute": true,
+    "timing_graph_control": true,
+    "reference_fused_code_append": true
+  },
+  "users": [
+    380,
+    1990,
+    3740,
+    6000,
+    9140,
+    10790,
+    11770,
+    16950,
+    4520,
+    9240,
+    10150,
+    10470,
+    11880,
+    16170,
+    21430,
+    29430,
+    130,
+    150,
+    230,
+    790,
+    810,
+    2780,
+    3230,
+    3320,
+    1010,
+    2130,
+    4890,
+    4960,
+    7170,
+    11020,
+    12790,
+    13870
+  ],
+  "device": "NVIDIA A40",
+  "source_sha256": {
+    "scripts/system_study_2026_10/batched_session_probe.py": "f372bcfc35d50eac7919b11a7782f40f1256c8d0bbbc95eed27f7b880dbba3a9",
+    "scripts/system_study_2026_10/batched_session.py": "5ffd69b327b6f2c1574472ece93a7212873f04d392fae5ebf4cb906d947d2ec5",
+    "scripts/query_relay_2026_10/session.py": "49d2225539e17b3702c467fa26feec36b57432260bd0238c28222c91ce8e443d",
+    "scripts/implementation_2026_10/state.py": "2068d032571ba535dc64feefc0c274918daab23f4a2d6f53460795adb0ee6fe4",
+    "scripts/system_study_2026_10/fused_conversion.py": "1307ab0e10ac9fa3a675cc7e5330a2903ccafd85fd5959d119e9ab10ab40a822",
+    "scripts/system_study_2026_10/fused_query_projection.py": "637152cef5c52d0d857f0a4fa33079ad0b6fa8dd9a94f7daa6ebc3951f1fb025",
+    "scripts/system_study_2026_10/fused_query_projection_kernel.py": "4fc9e94c93578a12d3b31985a364812479e3e18d64d015033e0a3d3d931ae4c3",
+    "scripts/system_study_2026_10/graph_compute.py": "cc5e13f0bbc9c6b62c226e38f6953847be532035a3b1ea03e1d7541914c0e45a"
+  },
+  "input_sha256": {
+    "config": "ca34f5fef08e6655344b703f3ebba015952d5261f3c86b6e196d3b24b97e192e",
+    "selection": "aa1bf858c8faac98f0b68dfa2c318a9e82d44966d092b56f19c43dec940ef09f",
+    "panel": "a473f10eb1955e231fc2678386359d4c65f07b887a4d119f2c961a9418e8cae3",
+    "freeze": "b82c93a5e4eb7890ee36f6c66864fa7a7e4d105835f16de6e9437670427db0a5"
+  },
+  "scope": "Real distinct-user bulk execution; multiple model versions resident; no online arrival latency, capacity, quality-improvement or full deployment time claim",
+  "scheduling": "Within each version, one pending request per uid; reorder independent users only; publications are barriers",
+  "phase_scope": "Extra synchronization per pack/compute/scatter; separate uninstrumented full-trace timing",
+  "shared_load_seconds": 26.10670777701307,
+  "publications": {
+    "v3": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v3.pt",
+      "sha256": "f284ef1ff8c03c5a092c47a4d41e958552cb8b89942e256796210d4a738e7b54"
+    },
+    "v4": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v4.pt",
+      "sha256": "f4a6f59b3e3ba8c7f86e06ba9fe707b8202a7dd22510d0b9588082d0bc88a535"
+    },
+    "v5": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v5.pt",
+      "sha256": "0089050d6a696d7ce11862ae4b7f73cdefafbdf0ebe6a3fddec0d9dfb9ce29c6"
+    }
+  },
+  "calibration": {
+    "v3": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v3/calibration.pt",
+      "sha256": "e3c307d263d3462036f28d04609e29cfd49a94008780213bc9dbf1c9a2d8e606",
+      "metadata_sha256": "1d40956e7e8f5bd4afbd2b1d88c7f3bb040ea82313facde830866d20f429e260",
+      "config": {
+        "num_layers": 6,
+        "heads": 6,
+        "head_dim": 32,
+        "rank": 8,
+        "max_length": 1024,
+        "mode": "A",
+        "xi_width": 1,
+        "read_shared": 3,
+        "gate_normalization": "rms",
+        "read_private": 3,
+        "feature_mode": "origin_encoder",
+        "feature_bank_path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "gate_source": "item"
+      },
+      "gate_constants_available": true,
+      "feature_bank": {
+        "path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "storage_bytes": 1590809472,
+        "item_table_bytes": 1590642432,
+        "catalogue_items": 1380766,
+        "scope": "One immutable shared asset; not per-user or per-release persistent state"
+      }
+    },
+    "v4": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v4/calibration.pt",
+      "sha256": "0ef1c22a7a7e0c77bee859b2467f281c39d5bd91ce2ad68a607cc9c8593f2ef3",
+      "metadata_sha256": "124cd9049d8668b0de65e5136a9c2707613e95937ebc28102a88120d41d7d023",
+      "config": {
+        "num_layers": 6,
+        "heads": 6,
+        "head_dim": 32,
+        "rank": 8,
+        "max_length": 1024,
+        "mode": "A",
+        "xi_width": 1,
+        "read_shared": 3,
+        "gate_normalization": "rms",
+        "read_private": 3,
+        "feature_mode": "origin_encoder",
+        "feature_bank_path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "gate_source": "item"
+      },
+      "gate_constants_available": true,
+      "feature_bank": {
+        "path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "storage_bytes": 1590809472,
+        "item_table_bytes": 1590642432,
+        "catalogue_items": 1380766,
+        "scope": "One immutable shared asset; not per-user or per-release persistent state"
+      }
+    },
+    "v5": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v5/calibration.pt",
+      "sha256": "003f660b72a94c9b4ca88ebaac12ef0f488b2d7edcaccc49a42c7b3fe41535b9",
+      "metadata_sha256": "b6e00d6f3d81ac5de526cef236a2467f3bd4277b9d0f0a34a1b34a7bf9383a86",
+      "config": {
+        "num_layers": 6,
+        "heads": 6,
+        "head_dim": 32,
+        "rank": 8,
+        "max_length": 1024,
+        "mode": "A",
+        "xi_width": 1,
+        "read_shared": 3,
+        "gate_normalization": "rms",
+        "read_private": 3,
+        "feature_mode": "origin_encoder",
+        "feature_bank_path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "gate_source": "item"
+      },
+      "gate_constants_available": true,
+      "feature_bank": {
+        "path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "storage_bytes": 1590809472,
+        "item_table_bytes": 1590642432,
+        "catalogue_items": 1380766,
+        "scope": "One immutable shared asset; not per-user or per-release persistent state"
+      }
+    }
+  },
+  "conversion_wrap_seconds_included_in_shared_load": 0.004657195007894188
+}

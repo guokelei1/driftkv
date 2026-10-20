@@ -1,5 +1,71 @@
 # Repository agent notes
 
+## Active work — 2026-10-19 (read first)
+
+Latest evaluation-scope clarification: the user explicitly excludes end-to-end
+serving experiments, including the briefly proposed limited arrival replay.
+Validate the design using real-model feedback quality, continuous cache/code
+evolution, complete FLOPs, total auxiliary memory, and controlled measurements
+of preparation/read/append/handover paths. Keep calibration, shared preparation,
+all per-event work and transfers accounted for; measured path time is not online
+throughput, p99 or complete-system wall time. Optional scale-time estimates must
+state their assumptions and remain distinct from measurements. This supersedes
+older service-platform and full-cycle-time requirements below. The active task
+is evaluation planning, not launching GPU work. See paper/new_eval.md and
+docs/system_study_2026_10/evaluation_rationale.md for the claim/evidence audit.
+
+Latest user clarification during evaluation figure review: final evaluation covers
+Yambda and RecFlow, each at Large and Max scale (four conditions). Medium is
+development-only and is not a final-result configuration. This supersedes the
+earlier Medium/30k final-evaluation priorities below; existing evidence remains
+unchanged. See paper/new_eval.md and eval_figure/README.md for the latest plan
+and explicitly synthetic figure previews. RecFlow Large/Max model/task/population
+settings still need to be established; its existing six-layer NDCG evidence must
+not be relabeled as feedback-AUC results. This figure task launches no training.
+
+Later evaluation-planning clarification: foundation models are fixed backbones;
+do not retrain their chains for multiple seeds. Proposed repeats concern only
+the paper's correction-training modules and key learned baselines. The current
+new_eval.md separates training seeds, fitting-user samples and timing repeats,
+with single-run exploration and shared main trajectories to limit costs. This
+is an evaluation plan, not authorization to launch a new training queue.
+
+The user authorized organizing and beginning the parallel system study. Resume
+from `docs/system_study_2026_10/README.md` and its `STATUS.md`; these point to
+the actual commands, outputs and pending work. Do not rely on chat memory.
+The current reference is `A_itemgate6_rms_roll4` (query_relay_2026_10), with
+shared12/private6 persistent codes, shared3/private3 online reads, item gates,
+corrected behavior writes and composable anchor-code lifecycle. The rank8 and
+support-flag candidate below is historical, not the active default.
+Quality exploration, strong baselines, service replay and cross-condition
+preparation may proceed in parallel. 80% recovery is a historical reference,
+not a pass/fail requirement; retain the compact state and approximately20%
+complete added-cost design target and report the quality/cost frontier.
+New small development implementations and probes are authorized. Record
+concrete settings before expensive runs; do not restart completed experiments
+or launch old configurations merely because they are retained. No foundation
+model retraining is part of the initial work. Current workload roles, task
+separation and complete cost rules are in the active plan. Later dated user
+instructions take precedence over the archived settings below.
+The user's latest clarification on 2026-10-19 restores the original real
+like/dislike feedback task as primary, matching Motivation. Next-item results
+remain separate historical/exploratory evidence; do not reuse their quality,
+request counts or cost/time projections as feedback results. Existing next-item
+run configurations are not the default continuation queue. This supersedes the
+earlier same-day decision to prioritize next-item. Small-panel timing, including
+4096 users, is diagnostic rather than a final deployment-scale verdict. First
+derive fixed/shared versus per-user costs and the scale break-even; then test
+whether implementation converts that saving into complete preparation/service
+time. Common foundation training must be distinguished from correction fitting.
+Sample multiple model chains, version edges and pre-release history strata;
+unadapted H10/RecFlow cases are not evidence of correction-quality transfer.
+The user clarified that every foundation-model group requires its own correction
+calibration and fitting users; cross-model correction transfer is not a goal.
+Experiments must support the paper's central quality/cost claim or determine its
+final settings. Prioritize the actual 30k Medium lifecycle time/cost accounting
+and fitting-population choice; broader inventories and numerical probes are
+supporting evidence, not reasons to expand the experiment matrix on their own.
+
 ## Research workflow — applies to code and experiments
 
 EvoKV is a paper research repository. Optimize for fast, credible idea
@@ -27,7 +93,7 @@ exhaustive edge-case handling and test coverage are not project goals.
   These checks serve the research question; they do not require industrial
   hardening or an exhaustive engineering checklist before exploration.
 
-## Current direction
+## Archived direction and evidence — 2026-10-05
 
 The user fixed the three-part framework on 2026-10-05. Select clear, technically
 justified internal choices; do not change the three problems or add modules just

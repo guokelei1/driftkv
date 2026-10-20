@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "synthetic": true,
+    "figure": "6-3-hold",
+    "date": "2026-10-20",
+    "purpose": "A single cost–recovery trajectory through prolonged service without another model release; append stages are labeled on the points. Synthetic preview only.",
+    "cost_coefficient_source": "e7_applicability/data.json Yambda-Max; copied, not refit. Full initialization charged once and no future handover.",
+    "notes": [
+      "Quality arrays and operation coefficients are explicitly synthetic, not empirical boundary results.",
+      "Candidate scoring frequency is fixed in the workload configuration; it is not a plotted axis, parameter sweep or invented quality data.",
+      "Calibration, shared preparation, user preparation, initial trigger and every subsequent correction read/write are charged.",
+      "Common native score/append work is excluded symmetrically from the plotted added-work comparison and retained in full total ledgers.",
+      "The complete Rebuild service total grows; only its extra reconstruction expense is the horizontal100% line.",
+      "Empty-prefix bypass makes correction arithmetic plateau after initial rows leave; actual cost crossing and quality behavior remain empirical questions.",
+      "One initial candidate read per active user triggers preparation before the origin and is charged.",
+      "No extra release or handover is invented, and initialization is not amortized over future releases.",
+      "Real heterogeneous populations require their own causal event ledger, active-user counts and held-out quality coverage.",
+      "No GPU, fitting, foundation-model training or real result file is used.",
+      "User authorized an illustrative later break-even; fixed synthetic workload changes from16 candidates perappend to alternating11/12. Cost coefficients and raw AUC arrays are unchanged.",
+      "Recovery uses each checkpoint matching Rebuild/Reuse AUC gap; it is not normalized to the initial gap.",
+      "The gap shrinks with FIFO, so falling recovery does not imply monotonically increasing absolute AUC error.",
+      "Only cost crossing100% defines parity; intersections between recovery and cost curves do not define efficiency.",
+      "Latest layout uses cumulative added FLOPs on x and matched recovery on y, with sparse append-stage labels; no threshold guide or shaded region. The curve is one causal trajectory, not a budget frontier.",
+      "Synthetic parity interpolation is retained only as a ledger diagnostic, not plotted or treated as a deployment rule."
+    ]
+  },
+  "scenario": {
+    "configuration": "Yambda-Max",
+    "window_length": 1024,
+    "max_appends": 2048,
+    "active_population": 200000,
+    "catalogue_items": 3000000,
+    "shared_table_replicas": 1,
+    "fitting_users": 64,
+    "event_order": "One initial triggering read, then a fixed alternating11/12 candidate-read schedule before each behavior append and FIFO. Mean11.5 is a synthetic layout setting, not a measured production rate.",
+    "initialization_allocations": 1,
+    "model_and_correction_frozen": true,
+    "rebuild_once_at_start": true,
+    "next_release_handover": false,
+    "zero_prefix_correction_skipped": true,
+    "initial_trigger_candidate_reads": 1,
+    "candidate_reads_per_append_cycle": [
+      11,
+      12
+    ]
+  },
+  "fixed_cost_flops": {
+    "initialization_total": 180000000000000.0,
+    "calibration_per_release": 40000000000000.0,
+    "teacher_preparation_per_release": 5000000000000.0,
+    "source_preparation_per_release": 5000000000000.0
+  },
+  "flop_coefficients": {
+    "rebuild_linear_flops_per_row": 12240000.0,
+    "rebuild_quadratic_flops_per_row_squared": 6528.0,
+    "native_score_fixed_flops": 12580000.0,
+    "native_score_flops_per_history_row": 13056.0,
+    "native_append_fixed_flops": 12580000.0,
+    "native_append_flops_per_history_row": 13056.0,
+    "materialize_fixed_flops": 4500000.0,
+    "materialize_flops_per_row": 975000.0,
+    "handover_fixed_flops": 3000000.0,
+    "handover_flops_per_row": 900000.0,
+    "correction_read_fixed_flops": 132000.0,
+    "correction_read_flops_per_inherited_row": 2475.0,
+    "catalogue_flops_per_item": 600000.0,
+    "correction_score_fixed_flops": 132000.0,
+    "correction_score_flops_per_inherited_row": 2475.0,
+    "correction_append_fixed_flops": 132000.0,
+    "correction_append_flops_per_inherited_row": 2475.0
+  },
+  "quality_preview": {
+    "appends": [
+      0,
+      64,
+      128,
+      256,
+      512,
+      768,
+      1024,
+      1536,
+      2048
+    ],
+    "auc": {
+      "Rebuild": [
+        0.795,
+        0.7952,
+        0.7955,
+        0.7958,
+        0.796,
+        0.7963,
+        0.7965,
+        0.797,
+        0.7974
+      ],
+      "CacheTide": [
+        0.7922,
+        0.7922,
+        0.7923,
+        0.7922,
+        0.7917,
+        0.7917,
+        0.7925,
+        0.7942,
+        0.7957
+      ],
+      "Reuse": [
+        0.776,
+        0.7776,
+        0.7793,
+        0.782,
+        0.786,
+        0.789,
+        0.7912,
+        0.7939,
+        0.7955
+      ]
+    },
+    "cohort": "Separate synthetic long-continuation cohort; not the full-population default-point ledger.",
+    "metric": "100*(AUC_Rebuild-AUC_method) in percentage points; lower is better."
+  }
+}

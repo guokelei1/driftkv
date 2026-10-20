@@ -1,0 +1,69 @@
+{
+  "preparation": "single publisher/one serving worker, shared compile once; calibration64fit and fixed origin unchanged",
+  "reference_population": 30000,
+  "views": {
+    "mathematical_effective": {
+      "added_flops": 63607494930992.0,
+      "added_percent_of_mathematical_rebuild": 17.302169160460053,
+      "with_source_reconstruction_added_percent": 18.536789528278604,
+      "saved_percent_against_mathematical_full_service": 30.19002844100826
+    },
+    "with_conversion_tile_sensitivity": {
+      "added_flops": 76029670575728.0,
+      "added_percent_of_mathematical_rebuild": 20.681182664754605,
+      "with_source_reconstruction_added_percent": 21.915803032573155,
+      "saved_percent_against_mathematical_full_service": 28.95647113047686
+    },
+    "with_conversion_and_reader_dot_tile_sensitivity": {
+      "added_flops": 136585593999728.0,
+      "added_percent_of_mathematical_rebuild": 37.15327973266492,
+      "with_source_reconstruction_added_percent": 38.38790010048347,
+      "saved_percent_against_mathematical_full_service": 22.943096004251753
+    }
+  },
+  "reader_padding": {
+    "vector_coded_queries": 1711529,
+    "vector_valid_pair_multiply_accumulate_equivalent_flops": 1095951631968,
+    "vector_padded_pair_multiply_accumulate_equivalent_flops": 1523147563008,
+    "history_code_dot_useful_flops": 31050722352384,
+    "history_code_dot_tile_flops": 89210160414720,
+    "key_projection_and_value_decode_useful_flops": 1356427911168,
+    "key_projection_and_value_decode_tile_flops": 3752913272832,
+    "additional_reader_dot_padding_flops": 60555923424000,
+    "by_operation": {
+      "append": {
+        "history_code_dot_useful_flops": 16010448498432,
+        "history_code_dot_tile_flops": 47577020497920,
+        "key_projection_and_value_decode_useful_flops": 695499595776,
+        "key_projection_and_value_decode_tile_flops": 1990437765120,
+        "additional_reader_dot_padding_flops": 32861510168832
+      },
+      "score": {
+        "history_code_dot_useful_flops": 15040273853952,
+        "history_code_dot_tile_flops": 41633139916800,
+        "key_projection_and_value_decode_useful_flops": 660928315392,
+        "key_projection_and_value_decode_tile_flops": 1762475507712,
+        "additional_reader_dot_padding_flops": 27694413255168
+      }
+    },
+    "geometry": "M>4: BM16,BN64,BR16,BD32; key projection and value decode once per query tile, score/latent code dots only ceil(maxcoded/64) blocks. Count all six layers/heads and actual batch/query geometry. M<=4 uses vector products/reductions with rank8 masks; shown separately, no tensor-dot claim.",
+    "boundary": "Only method-specific logical dots added to the mathematical ledger. Does not count TF32x3 instruction expansion, scalar/reduction padding, gate GEMM backend padding, common native attention/model padding, or machine instruction FLOPs."
+  },
+  "additional_coalescing_mathematical_flops": 1786193991036,
+  "additional_conversion_dot_padding_flops": 12422175644736,
+  "boundary": "Tile sensitivity adds known method dot padding to the mathematical numerator and keeps the mathematical Rebuild denominator. It is not complete executed hardware FLOPs. Logical coalescing is included before tile padding; no double counting.",
+  "source_bindings": [
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/time_model/window128_30k/attempt1/summary.json",
+      "sha256": "8dd3e5ccb795bcb58840918125d98efc3e99f48cf937f439ab6c3dbff510c087"
+    },
+    {
+      "path": "/home/gkl/work/evokv/scripts/system_study_2026_10/time_model.py",
+      "sha256": "5bb8c107e11b36a01dff66074e4c06d7859c6ee0ab8d9e0acc990f0acbdc5cc2"
+    },
+    {
+      "path": "/home/gkl/work/evokv/scripts/system_study_2026_10/fused_query_projection_kernel.py",
+      "sha256": "e13ea3586030f7bb51ae3416d2eecd071b62564f16f0b9ed6bac05bd226d3c6c"
+    }
+  ]
+}

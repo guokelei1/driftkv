@@ -1,0 +1,56 @@
+{
+  "config": {
+    "purpose": "Correctness of shared session graph entries with dynamic code-prefix length and independent staged user inputs",
+    "branch": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4",
+    "panel": "results/design_system_2026_10/phase2/representative4096/panel",
+    "source_panel": "results/design_two_2026_10/benchmark_panel",
+    "batch_sizes": [
+      1,
+      8
+    ],
+    "repeats": 3,
+    "iterations": 20,
+    "dynamic_only": true
+  },
+  "users": [
+    5440,
+    23770,
+    31780,
+    42800,
+    67470,
+    75350,
+    83430,
+    85870
+  ],
+  "command": [
+    "scripts/system_study_2026_10/graph_compute_probe.py",
+    "--config",
+    "configs/system_study_2026_10/graph_dynamic_probe.json",
+    "--output",
+    "results/system_study_2026_10/service/graph_dynamic/attempt1",
+    "--gpu",
+    "1"
+  ],
+  "model": {
+    "version": "v4",
+    "checkpoint": "results/unified_training_2026_09/medium/seed17/checkpoints/v4/checkpoint_100.pt",
+    "checkpoint_sha256": "c1a41440ce4663b499d5c8fa27bd52a8d651898a53df062bf4217a8174885082",
+    "training_days_half_open": [
+      259,
+      273
+    ],
+    "epochs": 1,
+    "seal": {
+      "path": "results/unified_training_2026_09/medium/seed17/checkpoints/v4/checkpoint.seal.json",
+      "sha256": "8fd29479500bb0bcc77eac36aa97b4ad8c578b11482988ef52538b8d9155ae3b"
+    },
+    "full_only_admission": {
+      "path": "results/unified_training_2026_09/medium/seed17/v4_1epoch_4gpu_b32_cpu14/admission.seal.json",
+      "sha256": "293b6107d3e97f0094a2b494fd5d703b5a2a83475fdf5efa19c28eba85ce9a50"
+    },
+    "full_only_gates_pass": true
+  },
+  "source_sha256": "d73d409e253c9deff3b5050e1aad37fda76b15f634126994eecdb3065ac3a663",
+  "code_sha256": "4f570727d30d828d00846af48c2e123e4d6deed974b90f0c11e5de9d283848ce",
+  "scope": "Real retained V4 model/cache operands; repeated operation diagnostic. Appends reuse retained tail operands to measure shapes, not a new causal quality trace. Both methods graphed; no population timing inference."
+}

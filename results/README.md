@@ -1,5 +1,8 @@
 # 结果索引与保留范围
 
+2026-10-19新工作集中在[system_study_2026_10](system_study_2026_10/README.md)。
+准备检查与后续质量／服务实验分别标明证据类型；既有结果不覆盖。
+
 ## 当前Design证据
 
 2026-10-15[Query correction／码接续探索](query_relay_2026_10/README.md)已完成：

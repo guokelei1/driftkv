@@ -1,0 +1,996 @@
+{
+  "meta": {
+    "synthetic": true,
+    "experiment": "E3",
+    "figure": "6-3",
+    "datasets": [
+      "Yambda",
+      "RecFlow"
+    ],
+    "scales": [
+      "Large",
+      "Max"
+    ],
+    "notes": [
+      "全部数字为模拟数据。RecFlow 上的 Large/Max 适配未由这些数据验证；不得作为真实实验发现。",
+      "每配置有 8 条显式保存的合成 cohort 轨迹，每个 cohort 代表同时含正负反馈的群组，不是单用户 AUC，也不是置信区间。",
+      "粗线是 8 条群组 AUC 增益轨迹的等权均值，不是将群组请求合并后得到的全人口 AUC；不应直接替代 E1 的全人口指标。",
+      "每版显示追加 0/64/256 个行为的三个位置，横轴为有序检查点，不是等间隔的真实时间。",
+      "热图按群组平均增益除以同一位置的参考 Rebuild 增益；参考分母保存在数据文件中。",
+      "三个有限发布不能证明任意长期稳定；粗线与细线仅展现一种有升降、有尾部差异的模拟轨迹。",
+      "准备成本以单跳显式更新=1归一化，仅用户侧每行操作；发布级共享准备在整体成本中另计。"
+    ],
+    "display_releases": [
+      "V3",
+      "V4",
+      "V5"
+    ],
+    "active_display": "Four configurations (2x2): five-release shared-axis recovery line and added-cost bars, with the meaning of gray delta annotations in the common top legend.",
+    "simulation_revision": "2026-10-19: intentionally regenerated optimistic MOCK CT scores and cost ledger at user request, preserving baseline AUC gaps. Earlier cohort fields are archived preview inputs, not current quality evidence.",
+    "cost_scope": "Cost (%) is complete added FLOPs / same-release Rebuild history FLOPs. All fitting, source/teacher/shared preparation, conversion and extra read/write work are conceptually included; first initialization is charged once at V3. Values remain synthetic; a normalized ledger is explicit.",
+    "latest_revision": "2026-10-19: user restored Large alongside Max and requested a Delta legend entry. Existing Max five-release values are unchanged; new early Large points are synthetic."
+  },
+  "positions": {
+    "releases": [
+      "V3",
+      "V3",
+      "V3",
+      "V4",
+      "V4",
+      "V4",
+      "V5",
+      "V5",
+      "V5"
+    ],
+    "appended_behaviors": [
+      0,
+      64,
+      256,
+      0,
+      64,
+      256,
+      0,
+      64,
+      256
+    ]
+  },
+  "trajectories": {
+    "Yambda-Large": {
+      "cohort_ids": [
+        "cohort_01",
+        "cohort_02",
+        "cohort_03",
+        "cohort_04",
+        "cohort_05",
+        "cohort_06",
+        "cohort_07",
+        "cohort_08"
+      ],
+      "cohort_gain_pp": [
+        [
+          1.685324,
+          1.634294,
+          1.757761,
+          1.284016,
+          1.346347,
+          1.408976,
+          0.882815,
+          0.896873,
+          0.948159
+        ],
+        [
+          1.449896,
+          1.477321,
+          1.377288,
+          1.382692,
+          1.33086,
+          1.104222,
+          0.724207,
+          0.594936,
+          0.448434
+        ],
+        [
+          1.781683,
+          1.624889,
+          1.658765,
+          1.497221,
+          1.415591,
+          1.303138,
+          0.96747,
+          0.837231,
+          0.807926
+        ],
+        [
+          1.698621,
+          1.750959,
+          1.646675,
+          1.463409,
+          1.440466,
+          1.370606,
+          0.873944,
+          0.857147,
+          1.042046
+        ],
+        [
+          1.528541,
+          1.563379,
+          1.366817,
+          1.333946,
+          1.057071,
+          1.1681,
+          0.778852,
+          0.76088,
+          0.769865
+        ],
+        [
+          1.449682,
+          1.457682,
+          1.551691,
+          1.096743,
+          1.127793,
+          1.259126,
+          0.57032,
+          0.961057,
+          0.620858
+        ],
+        [
+          1.692167,
+          1.519294,
+          1.39771,
+          1.203487,
+          1.246235,
+          1.166886,
+          0.847706,
+          0.606276,
+          0.762228
+        ],
+        [
+          1.834086,
+          1.772182,
+          1.723292,
+          1.398486,
+          1.435636,
+          1.358946,
+          1.078686,
+          1.045599,
+          0.996484
+        ]
+      ],
+      "reference_rebuild_gain_pp": [
+        2.0,
+        2.0,
+        2.0,
+        1.8,
+        1.8,
+        1.8,
+        1.6,
+        1.6,
+        1.6
+      ],
+      "release_aggregate_auc": {
+        "reuse": [
+          0.806,
+          0.813,
+          0.817
+        ],
+        "rebuild": [
+          0.826,
+          0.831,
+          0.833
+        ],
+        "ct": [
+          0.8232,
+          0.82812,
+          0.83108
+        ],
+        "static": [
+          0.81536,
+          0.820992,
+          0.823976
+        ]
+      },
+      "release_added_flops_percent": [
+        15,
+        16,
+        13
+      ],
+      "release_rebuild_budget_units": [
+        1.0,
+        1.1,
+        1.05
+      ],
+      "release_flops_ledger": [
+        {
+          "release": "V3",
+          "rebuild_history": 1.0,
+          "cachetide_added": 0.15
+        },
+        {
+          "release": "V4",
+          "rebuild_history": 1.1,
+          "cachetide_added": 0.176
+        },
+        {
+          "release": "V5",
+          "rebuild_history": 1.05,
+          "cachetide_added": 0.1365
+        }
+      ]
+    },
+    "Yambda-Max": {
+      "cohort_ids": [
+        "cohort_01",
+        "cohort_02",
+        "cohort_03",
+        "cohort_04",
+        "cohort_05",
+        "cohort_06",
+        "cohort_07",
+        "cohort_08"
+      ],
+      "cohort_gain_pp": [
+        [
+          1.156593,
+          1.078748,
+          1.12393,
+          1.234258,
+          1.077022,
+          0.961148,
+          0.461492,
+          0.496925,
+          0.455516
+        ],
+        [
+          1.498935,
+          1.559687,
+          1.321712,
+          1.297498,
+          1.359535,
+          1.399487,
+          0.640551,
+          0.698917,
+          0.662835
+        ],
+        [
+          1.235796,
+          1.291074,
+          1.298325,
+          1.346056,
+          1.074586,
+          1.258658,
+          0.634588,
+          0.58483,
+          0.824742
+        ],
+        [
+          1.466789,
+          1.491795,
+          1.539791,
+          1.379733,
+          1.312277,
+          1.297464,
+          0.828155,
+          0.845543,
+          0.677132
+        ],
+        [
+          1.233727,
+          1.168328,
+          1.183222,
+          1.022005,
+          1.100435,
+          1.101206,
+          0.662657,
+          0.619627,
+          0.455172
+        ],
+        [
+          1.255003,
+          1.219148,
+          1.346498,
+          1.085547,
+          1.236287,
+          1.113427,
+          0.696301,
+          0.651573,
+          0.64803
+        ],
+        [
+          1.334714,
+          1.356395,
+          1.140448,
+          1.097816,
+          1.101364,
+          1.119613,
+          0.517864,
+          0.472923,
+          0.464099
+        ],
+        [
+          1.478443,
+          1.234825,
+          1.186074,
+          1.377086,
+          1.338493,
+          1.108997,
+          0.642391,
+          0.589663,
+          0.648474
+        ]
+      ],
+      "reference_rebuild_gain_pp": [
+        1.7,
+        1.7,
+        1.7,
+        1.6,
+        1.6,
+        1.6,
+        1.5,
+        1.5,
+        1.5
+      ],
+      "release_aggregate_auc": {
+        "reuse": [
+          0.828,
+          0.833,
+          0.838
+        ],
+        "rebuild": [
+          0.845,
+          0.849,
+          0.853
+        ],
+        "ct": [
+          0.84211,
+          0.84596,
+          0.85075
+        ],
+        "static": [
+          0.835752,
+          0.839912,
+          0.84436
+        ]
+      },
+      "release_added_flops_percent": [
+        16,
+        17,
+        15
+      ],
+      "release_rebuild_budget_units": [
+        1.0,
+        1.1,
+        1.05
+      ],
+      "release_flops_ledger": [
+        {
+          "release": "V3",
+          "rebuild_history": 1.0,
+          "cachetide_added": 0.16
+        },
+        {
+          "release": "V4",
+          "rebuild_history": 1.1,
+          "cachetide_added": 0.187
+        },
+        {
+          "release": "V5",
+          "rebuild_history": 1.05,
+          "cachetide_added": 0.1575
+        }
+      ]
+    },
+    "RecFlow-Large": {
+      "cohort_ids": [
+        "cohort_01",
+        "cohort_02",
+        "cohort_03",
+        "cohort_04",
+        "cohort_05",
+        "cohort_06",
+        "cohort_07",
+        "cohort_08"
+      ],
+      "cohort_gain_pp": [
+        [
+          1.935885,
+          1.923637,
+          1.98733,
+          2.047723,
+          1.994436,
+          2.026751,
+          1.259777,
+          1.301179,
+          1.357414
+        ],
+        [
+          1.763663,
+          1.696389,
+          1.695835,
+          1.907015,
+          1.824713,
+          1.671538,
+          1.129129,
+          1.012413,
+          0.994576
+        ],
+        [
+          1.649533,
+          1.532603,
+          1.607533,
+          1.748099,
+          1.736719,
+          1.661646,
+          0.933914,
+          0.878838,
+          0.995114
+        ],
+        [
+          1.988426,
+          1.809758,
+          1.826167,
+          2.154589,
+          2.033197,
+          2.006558,
+          1.281475,
+          1.318024,
+          1.173758
+        ],
+        [
+          2.188356,
+          2.00304,
+          1.899269,
+          2.151605,
+          2.0231,
+          1.943063,
+          1.318063,
+          1.338537,
+          1.22981
+        ],
+        [
+          1.61204,
+          1.833502,
+          1.66347,
+          1.910536,
+          1.752248,
+          1.85914,
+          1.220456,
+          1.121449,
+          1.018802
+        ],
+        [
+          1.667013,
+          1.767557,
+          1.555375,
+          1.730875,
+          1.754356,
+          1.810599,
+          1.027582,
+          1.032729,
+          0.971616
+        ],
+        [
+          1.955083,
+          1.833512,
+          1.805021,
+          1.929558,
+          2.081232,
+          1.840704,
+          1.095604,
+          1.036832,
+          1.07291
+        ]
+      ],
+      "reference_rebuild_gain_pp": [
+        2.4,
+        2.4,
+        2.4,
+        2.4,
+        2.4,
+        2.4,
+        2.1,
+        2.1,
+        2.1
+      ],
+      "release_aggregate_auc": {
+        "reuse": [
+          0.736,
+          0.742,
+          0.748
+        ],
+        "rebuild": [
+          0.76,
+          0.766,
+          0.769
+        ],
+        "ct": [
+          0.7564,
+          0.76288,
+          0.76564
+        ],
+        "static": [
+          0.747424,
+          0.752848,
+          0.757324
+        ]
+      },
+      "release_added_flops_percent": [
+        14,
+        15,
+        16
+      ],
+      "release_rebuild_budget_units": [
+        1.0,
+        1.1,
+        1.05
+      ],
+      "release_flops_ledger": [
+        {
+          "release": "V3",
+          "rebuild_history": 1.0,
+          "cachetide_added": 0.14
+        },
+        {
+          "release": "V4",
+          "rebuild_history": 1.1,
+          "cachetide_added": 0.165
+        },
+        {
+          "release": "V5",
+          "rebuild_history": 1.05,
+          "cachetide_added": 0.168
+        }
+      ]
+    },
+    "RecFlow-Max": {
+      "cohort_ids": [
+        "cohort_01",
+        "cohort_02",
+        "cohort_03",
+        "cohort_04",
+        "cohort_05",
+        "cohort_06",
+        "cohort_07",
+        "cohort_08"
+      ],
+      "cohort_gain_pp": [
+        [
+          2.122121,
+          1.956475,
+          2.005133,
+          1.929004,
+          2.193718,
+          1.98955,
+          1.45577,
+          1.494487,
+          1.494212
+        ],
+        [
+          2.129668,
+          1.93854,
+          1.853806,
+          1.848504,
+          1.628873,
+          1.812002,
+          1.2615,
+          1.296867,
+          1.209567
+        ],
+        [
+          1.771117,
+          1.70273,
+          1.789865,
+          1.739657,
+          1.620999,
+          1.587917,
+          1.121354,
+          1.117378,
+          1.182605
+        ],
+        [
+          1.830333,
+          2.042085,
+          1.816987,
+          1.853663,
+          1.634256,
+          1.795088,
+          1.322857,
+          1.07275,
+          1.168639
+        ],
+        [
+          2.004507,
+          1.773969,
+          1.878653,
+          1.840615,
+          1.87816,
+          1.579783,
+          1.276916,
+          1.272173,
+          1.180062
+        ],
+        [
+          1.996003,
+          1.922674,
+          1.94056,
+          1.860872,
+          1.821341,
+          1.661714,
+          1.18945,
+          1.200395,
+          1.042661
+        ],
+        [
+          1.829553,
+          1.913537,
+          1.744901,
+          1.765462,
+          1.831418,
+          1.772437,
+          1.25474,
+          1.265568,
+          1.139182
+        ],
+        [
+          1.896698,
+          1.949988,
+          1.790095,
+          1.922223,
+          1.791235,
+          1.841509,
+          1.367412,
+          1.280382,
+          1.333073
+        ]
+      ],
+      "reference_rebuild_gain_pp": [
+        2.7,
+        2.7,
+        2.7,
+        2.5,
+        2.5,
+        2.5,
+        2.3,
+        2.3,
+        2.3
+      ],
+      "release_aggregate_auc": {
+        "reuse": [
+          0.748,
+          0.756,
+          0.761
+        ],
+        "rebuild": [
+          0.775,
+          0.781,
+          0.784
+        ],
+        "ct": [
+          0.77014,
+          0.777,
+          0.7794
+        ],
+        "static": [
+          0.760474,
+          0.76695,
+          0.77089
+        ]
+      },
+      "release_added_flops_percent": [
+        17,
+        18,
+        16
+      ],
+      "release_rebuild_budget_units": [
+        1.0,
+        1.1,
+        1.05
+      ],
+      "release_flops_ledger": [
+        {
+          "release": "V3",
+          "rebuild_history": 1.0,
+          "cachetide_added": 0.17
+        },
+        {
+          "release": "V4",
+          "rebuild_history": 1.1,
+          "cachetide_added": 0.198
+        },
+        {
+          "release": "V5",
+          "rebuild_history": 1.05,
+          "cachetide_added": 0.168
+        }
+      ]
+    }
+  },
+  "preparation": {
+    "release_gap": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "normalized_user_work": {
+      "Shared composition": [
+        1.12,
+        1.12,
+        1.12,
+        1.12,
+        1.12
+      ],
+      "Sequential updates": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "normalizer": "one explicit one-hop per-row update",
+    "shared_preparation_included": false
+  },
+  "lifecycle_preview": {
+    "synthetic": true,
+    "release_labels": [
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5"
+    ],
+    "version_semantics": "Five illustrative serving updates after an inherited predecessor V0. Large early V1/V2 points are newly authorized mock values; all V3-V5 reuse existing default values. This does not assert five real trained checkpoints.",
+    "cost_scope": "Complete per-release added FLOPs / same-release rebuilding budget, including fitting, state preparation/maintenance and extra reads/writes. One-time initialization is charged once at V1 in this five-release illustration.",
+    "series": [
+      {
+        "configuration": "Yambda-Large",
+        "dataset": "Yambda",
+        "scale": "Large",
+        "auc": {
+          "reuse": [
+            0.793,
+            0.799,
+            0.806,
+            0.813,
+            0.817
+          ],
+          "rebuild": [
+            0.815,
+            0.82,
+            0.826,
+            0.831,
+            0.833
+          ],
+          "ct": [
+            0.81214,
+            0.81685,
+            0.8232,
+            0.82812,
+            0.83108
+          ]
+        },
+        "added_flops_percent": [
+          17,
+          15,
+          15,
+          16,
+          13
+        ],
+        "flops_ledger": [
+          {
+            "release": "V1",
+            "rebuild_history": 0.93,
+            "cachetide_added": 0.1581
+          },
+          {
+            "release": "V2",
+            "rebuild_history": 0.97,
+            "cachetide_added": 0.1455
+          },
+          {
+            "release": "V3",
+            "rebuild_history": 1.0,
+            "cachetide_added": 0.15
+          },
+          {
+            "release": "V4",
+            "rebuild_history": 1.1,
+            "cachetide_added": 0.176
+          },
+          {
+            "release": "V5",
+            "rebuild_history": 1.05,
+            "cachetide_added": 0.1365
+          }
+        ]
+      },
+      {
+        "configuration": "Yambda-Max",
+        "dataset": "Yambda",
+        "scale": "Max",
+        "auc": {
+          "reuse": [
+            0.817,
+            0.823,
+            0.828,
+            0.833,
+            0.838
+          ],
+          "rebuild": [
+            0.836,
+            0.841,
+            0.845,
+            0.849,
+            0.853
+          ],
+          "ct": [
+            0.83315,
+            0.83812,
+            0.84211,
+            0.84596,
+            0.85075
+          ]
+        },
+        "added_flops_percent": [
+          18,
+          16,
+          16,
+          17,
+          15
+        ],
+        "flops_ledger": [
+          {
+            "release": "V1",
+            "rebuild_history": 0.92,
+            "cachetide_added": 0.1656
+          },
+          {
+            "release": "V2",
+            "rebuild_history": 0.96,
+            "cachetide_added": 0.1536
+          },
+          {
+            "release": "V3",
+            "rebuild_history": 1.0,
+            "cachetide_added": 0.16
+          },
+          {
+            "release": "V4",
+            "rebuild_history": 1.1,
+            "cachetide_added": 0.187
+          },
+          {
+            "release": "V5",
+            "rebuild_history": 1.05,
+            "cachetide_added": 0.1575
+          }
+        ]
+      },
+      {
+        "configuration": "RecFlow-Large",
+        "dataset": "RecFlow",
+        "scale": "Large",
+        "auc": {
+          "reuse": [
+            0.723,
+            0.729,
+            0.736,
+            0.742,
+            0.748
+          ],
+          "rebuild": [
+            0.749,
+            0.754,
+            0.76,
+            0.766,
+            0.769
+          ],
+          "ct": [
+            0.74484,
+            0.7505,
+            0.7564,
+            0.76288,
+            0.76564
+          ]
+        },
+        "added_flops_percent": [
+          16,
+          15,
+          14,
+          15,
+          16
+        ],
+        "flops_ledger": [
+          {
+            "release": "V1",
+            "rebuild_history": 0.91,
+            "cachetide_added": 0.1456
+          },
+          {
+            "release": "V2",
+            "rebuild_history": 0.95,
+            "cachetide_added": 0.1425
+          },
+          {
+            "release": "V3",
+            "rebuild_history": 1.0,
+            "cachetide_added": 0.14
+          },
+          {
+            "release": "V4",
+            "rebuild_history": 1.1,
+            "cachetide_added": 0.165
+          },
+          {
+            "release": "V5",
+            "rebuild_history": 1.05,
+            "cachetide_added": 0.168
+          }
+        ]
+      },
+      {
+        "configuration": "RecFlow-Max",
+        "dataset": "RecFlow",
+        "scale": "Max",
+        "auc": {
+          "reuse": [
+            0.735,
+            0.742,
+            0.748,
+            0.756,
+            0.761
+          ],
+          "rebuild": [
+            0.764,
+            0.77,
+            0.775,
+            0.781,
+            0.784
+          ],
+          "ct": [
+            0.75907,
+            0.76468,
+            0.77014,
+            0.777,
+            0.7794
+          ]
+        },
+        "added_flops_percent": [
+          19,
+          18,
+          17,
+          18,
+          16
+        ],
+        "flops_ledger": [
+          {
+            "release": "V1",
+            "rebuild_history": 0.9,
+            "cachetide_added": 0.171
+          },
+          {
+            "release": "V2",
+            "rebuild_history": 0.95,
+            "cachetide_added": 0.171
+          },
+          {
+            "release": "V3",
+            "rebuild_history": 1.0,
+            "cachetide_added": 0.17
+          },
+          {
+            "release": "V4",
+            "rebuild_history": 1.1,
+            "cachetide_added": 0.198
+          },
+          {
+            "release": "V5",
+            "rebuild_history": 1.05,
+            "cachetide_added": 0.168
+          }
+        ]
+      }
+    ]
+  }
+}

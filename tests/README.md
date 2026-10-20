@@ -5,6 +5,7 @@
 
 | 范围 | 检查 |
 | --- | --- |
+| 新系统研究的事件因果、会话、单worker计时与预算成本 | [system_study_2026_10/](system_study_2026_10/) |
 | 当前Implementation共享准备、融合读取、单缓冲转换与集成 | [implementation_2026_10/](implementation_2026_10/) |
 | 新 Query 门控、编译递推、纠正写入与简单校准 | [query_relay_2026_10/](query_relay_2026_10/) |
 | rank8共享code与Key/Value读取 | [test_lightweight_fullitem_kv.py](design_one/test_lightweight_fullitem_kv.py)、[test_lightweight.py](design_one/test_lightweight.py) |

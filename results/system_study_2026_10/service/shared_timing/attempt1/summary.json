@@ -1,0 +1,662 @@
+{
+  "kind": "actual_shared_preparation_timing",
+  "started_utc": "2026-10-18T23:15:35.277753+00:00",
+  "gpu_name": "NVIDIA A40",
+  "device": "cuda:0",
+  "dtype": "float32",
+  "tf32": false,
+  "chunk_size": 16384,
+  "replicas": 4,
+  "phases": [
+    {
+      "name": "foundation_checkpoint_cpu_load",
+      "version": "v3",
+      "category": "common_model_startup",
+      "wall_seconds": 0.5506314499652945,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "file_bytes": 1065055194,
+      "scope": "Existing base model also required by Reuse/Rebuild; not all method-added cost"
+    },
+    {
+      "name": "foundation_cpu_construct",
+      "version": "v3",
+      "category": "common_model_startup",
+      "wall_seconds": 1.4635716440388933,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "scope": "Same constructor as existing load_model"
+    },
+    {
+      "name": "foundation_initial_to_gpu",
+      "version": "v3",
+      "category": "common_model_startup",
+      "wall_seconds": 0.20145752897951752,
+      "cuda_event_ms": 201.43309020996094,
+      "repetitions": 1,
+      "scope": "Existing loader transfers initialized model before loading weights"
+    },
+    {
+      "name": "foundation_weights_h2d",
+      "version": "v3",
+      "category": "common_model_startup",
+      "wall_seconds": 0.1058475449681282,
+      "cuda_event_ms": 105.82425689697266,
+      "repetitions": 1,
+      "tensor_bytes": 1065037060
+    },
+    {
+      "name": "adapter_checkpoint_cpu_load",
+      "version": "v3",
+      "category": "method_input_load",
+      "wall_seconds": 0.00711324397707358,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "file_bytes": 2030473
+    },
+    {
+      "name": "adapter_construct_and_h2d",
+      "version": "v3",
+      "category": "method_input_load",
+      "wall_seconds": 0.011529293027706444,
+      "cuda_event_ms": 11.512831687927246,
+      "repetitions": 1,
+      "tensor_bytes": 1961568
+    },
+    {
+      "name": "fixed_bank_generate",
+      "version": "origin_v3",
+      "category": "shared_compute",
+      "wall_seconds": 0.11093281098874286,
+      "cuda_event_ms": 110.91251373291016,
+      "repetitions": 1,
+      "frequency": "once per immutable origin",
+      "scope": "Fresh complete catalogue projection, no precomputed phi loaded"
+    },
+    {
+      "name": "fixed_bank_d2h",
+      "version": "origin_v3",
+      "category": "distribution",
+      "wall_seconds": 1.0562527219881304,
+      "cuda_event_ms": 1056.2213134765625,
+      "repetitions": 1,
+      "tensor_bytes": 1590809472,
+      "scope": "GPU publisher to pageable CPU allocations; includes allocations and synchronous copies",
+      "replicas": 1
+    },
+    {
+      "name": "fixed_bank_h2d",
+      "version": "origin_v3",
+      "category": "distribution",
+      "wall_seconds": 0.20876390702323988,
+      "cuda_event_ms": 208.7409210205078,
+      "repetitions": 1,
+      "tensor_bytes": 1590809472,
+      "replica_index": 0,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "fixed_bank_h2d",
+      "version": "origin_v3",
+      "category": "distribution",
+      "wall_seconds": 0.19667035498423502,
+      "cuda_event_ms": 196.6499786376953,
+      "repetitions": 1,
+      "tensor_bytes": 1590809472,
+      "replica_index": 1,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "fixed_bank_h2d",
+      "version": "origin_v3",
+      "category": "distribution",
+      "wall_seconds": 0.17871566099347547,
+      "cuda_event_ms": 178.69517517089844,
+      "repetitions": 1,
+      "tensor_bytes": 1590809472,
+      "replica_index": 2,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "fixed_bank_h2d",
+      "version": "origin_v3",
+      "category": "distribution",
+      "wall_seconds": 0.18866236502071843,
+      "cuda_event_ms": 188.64230346679688,
+      "repetitions": 1,
+      "tensor_bytes": 1590809472,
+      "replica_index": 3,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "release_table_compile",
+      "version": "v3",
+      "category": "shared_compute",
+      "wall_seconds": 0.08713878697017208,
+      "cuda_event_ms": 87.06230163574219,
+      "repetitions": 1,
+      "frequency": "once per publication",
+      "scope": "Fresh P/Q/D generation, V4/V5 from newly generated prior publication"
+    },
+    {
+      "name": "small_block_inverse",
+      "version": "v3",
+      "category": "shared_compute",
+      "wall_seconds": 0.008050200005527586,
+      "cuda_event_ms": 8.029184341430664,
+      "repetitions": 1,
+      "frequency": "once per publication",
+      "scope": "Inverse actual FP32 P in FP64 then retain FP32 inverse"
+    },
+    {
+      "name": "reader_pack",
+      "version": "v3",
+      "category": "shared_compute",
+      "wall_seconds": 0.015583959990181029,
+      "cuda_event_ms": 15.564800262451172,
+      "repetitions": 1,
+      "frequency": "once per publication"
+    },
+    {
+      "name": "publication_d2h",
+      "version": "v3",
+      "category": "distribution",
+      "wall_seconds": 1.1303546149865724,
+      "cuda_event_ms": 1130.3231201171875,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "scope": "GPU publisher to pageable CPU allocations; includes allocations and synchronous copies",
+      "replicas": 1
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v3",
+      "category": "distribution",
+      "wall_seconds": 0.18048879801062867,
+      "cuda_event_ms": 180.4674835205078,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 0,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v3",
+      "category": "distribution",
+      "wall_seconds": 0.19781135302037,
+      "cuda_event_ms": 197.78970336914062,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 1,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v3",
+      "category": "distribution",
+      "wall_seconds": 0.18027791701024398,
+      "cuda_event_ms": 180.23936462402344,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 2,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v3",
+      "category": "distribution",
+      "wall_seconds": 0.17518446798203513,
+      "cuda_event_ms": 175.15621948242188,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 3,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "foundation_checkpoint_cpu_load",
+      "version": "v4",
+      "category": "common_model_startup",
+      "wall_seconds": 0.5297101379837841,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "file_bytes": 1065055194,
+      "scope": "Existing base model also required by Reuse/Rebuild; not all method-added cost"
+    },
+    {
+      "name": "foundation_cpu_construct",
+      "version": "v4",
+      "category": "common_model_startup",
+      "wall_seconds": 1.6425888240337372,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "scope": "Same constructor as existing load_model"
+    },
+    {
+      "name": "foundation_initial_to_gpu",
+      "version": "v4",
+      "category": "common_model_startup",
+      "wall_seconds": 0.1790819350280799,
+      "cuda_event_ms": 179.06019592285156,
+      "repetitions": 1,
+      "scope": "Existing loader transfers initialized model before loading weights"
+    },
+    {
+      "name": "foundation_weights_h2d",
+      "version": "v4",
+      "category": "common_model_startup",
+      "wall_seconds": 0.1201502539915964,
+      "cuda_event_ms": 120.13056182861328,
+      "repetitions": 1,
+      "tensor_bytes": 1065037060
+    },
+    {
+      "name": "adapter_checkpoint_cpu_load",
+      "version": "v4",
+      "category": "method_input_load",
+      "wall_seconds": 0.008477788011077791,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "file_bytes": 2030473
+    },
+    {
+      "name": "adapter_construct_and_h2d",
+      "version": "v4",
+      "category": "method_input_load",
+      "wall_seconds": 0.01143953000428155,
+      "cuda_event_ms": 11.422719955444336,
+      "repetitions": 1,
+      "tensor_bytes": 1961568
+    },
+    {
+      "name": "release_table_compile",
+      "version": "v4",
+      "category": "shared_compute",
+      "wall_seconds": 0.0944852449465543,
+      "cuda_event_ms": 94.45171356201172,
+      "repetitions": 1,
+      "frequency": "once per publication",
+      "scope": "Fresh P/Q/D generation, V4/V5 from newly generated prior publication"
+    },
+    {
+      "name": "small_block_inverse",
+      "version": "v4",
+      "category": "shared_compute",
+      "wall_seconds": 0.006374357035383582,
+      "cuda_event_ms": 6.358016014099121,
+      "repetitions": 1,
+      "frequency": "once per publication",
+      "scope": "Inverse actual FP32 P in FP64 then retain FP32 inverse"
+    },
+    {
+      "name": "reader_pack",
+      "version": "v4",
+      "category": "shared_compute",
+      "wall_seconds": 0.0008763939840719104,
+      "cuda_event_ms": 0.8468480110168457,
+      "repetitions": 1,
+      "frequency": "once per publication"
+    },
+    {
+      "name": "publication_d2h",
+      "version": "v4",
+      "category": "distribution",
+      "wall_seconds": 1.0341874270234257,
+      "cuda_event_ms": 1034.154052734375,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "scope": "GPU publisher to pageable CPU allocations; includes allocations and synchronous copies",
+      "replicas": 1
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v4",
+      "category": "distribution",
+      "wall_seconds": 0.16633646498667076,
+      "cuda_event_ms": 166.316162109375,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 0,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v4",
+      "category": "distribution",
+      "wall_seconds": 0.17165677103912458,
+      "cuda_event_ms": 171.63571166992188,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 1,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v4",
+      "category": "distribution",
+      "wall_seconds": 0.18832866597222164,
+      "cuda_event_ms": 188.30642700195312,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 2,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v4",
+      "category": "distribution",
+      "wall_seconds": 0.18867182999383658,
+      "cuda_event_ms": 188.65151977539062,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 3,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "foundation_checkpoint_cpu_load",
+      "version": "v5",
+      "category": "common_model_startup",
+      "wall_seconds": 0.5011933180503547,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "file_bytes": 1065055194,
+      "scope": "Existing base model also required by Reuse/Rebuild; not all method-added cost"
+    },
+    {
+      "name": "foundation_cpu_construct",
+      "version": "v5",
+      "category": "common_model_startup",
+      "wall_seconds": 1.5395528129884042,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "scope": "Same constructor as existing load_model"
+    },
+    {
+      "name": "foundation_initial_to_gpu",
+      "version": "v5",
+      "category": "common_model_startup",
+      "wall_seconds": 0.22376001498196274,
+      "cuda_event_ms": 223.73695373535156,
+      "repetitions": 1,
+      "scope": "Existing loader transfers initialized model before loading weights"
+    },
+    {
+      "name": "foundation_weights_h2d",
+      "version": "v5",
+      "category": "common_model_startup",
+      "wall_seconds": 0.09682417602743953,
+      "cuda_event_ms": 96.80486297607422,
+      "repetitions": 1,
+      "tensor_bytes": 1065037060
+    },
+    {
+      "name": "adapter_checkpoint_cpu_load",
+      "version": "v5",
+      "category": "method_input_load",
+      "wall_seconds": 0.012354784994386137,
+      "cuda_event_ms": null,
+      "repetitions": 1,
+      "file_bytes": 2030473
+    },
+    {
+      "name": "adapter_construct_and_h2d",
+      "version": "v5",
+      "category": "method_input_load",
+      "wall_seconds": 0.015475448046345264,
+      "cuda_event_ms": 15.455231666564941,
+      "repetitions": 1,
+      "tensor_bytes": 1961568
+    },
+    {
+      "name": "release_table_compile",
+      "version": "v5",
+      "category": "shared_compute",
+      "wall_seconds": 0.08858931198483333,
+      "cuda_event_ms": 88.56678771972656,
+      "repetitions": 1,
+      "frequency": "once per publication",
+      "scope": "Fresh P/Q/D generation, V4/V5 from newly generated prior publication"
+    },
+    {
+      "name": "small_block_inverse",
+      "version": "v5",
+      "category": "shared_compute",
+      "wall_seconds": 0.013240637024864554,
+      "cuda_event_ms": 13.191167831420898,
+      "repetitions": 1,
+      "frequency": "once per publication",
+      "scope": "Inverse actual FP32 P in FP64 then retain FP32 inverse"
+    },
+    {
+      "name": "reader_pack",
+      "version": "v5",
+      "category": "shared_compute",
+      "wall_seconds": 0.001128203992266208,
+      "cuda_event_ms": 1.1059199571609497,
+      "repetitions": 1,
+      "frequency": "once per publication"
+    },
+    {
+      "name": "publication_d2h",
+      "version": "v5",
+      "category": "distribution",
+      "wall_seconds": 1.0510832369909622,
+      "cuda_event_ms": 1051.0299072265625,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "scope": "GPU publisher to pageable CPU allocations; includes allocations and synchronous copies",
+      "replicas": 1
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v5",
+      "category": "distribution",
+      "wall_seconds": 0.1674076510244049,
+      "cuda_event_ms": 167.38552856445312,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 0,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v5",
+      "category": "distribution",
+      "wall_seconds": 0.18055024999193847,
+      "cuda_event_ms": 180.527099609375,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 1,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v5",
+      "category": "distribution",
+      "wall_seconds": 0.19791978801367804,
+      "cuda_event_ms": 197.8982391357422,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 2,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    },
+    {
+      "name": "publication_h2d",
+      "version": "v5",
+      "category": "distribution",
+      "wall_seconds": 0.16880884300917387,
+      "cuda_event_ms": 168.7879638671875,
+      "repetitions": 1,
+      "tensor_bytes": 1592833824,
+      "replica_index": 3,
+      "replicas": 4,
+      "scope": "One actual pageable CPU to GPU copy; all replica observations sequentially reuse the same GPU, not concurrent four-device wall time"
+    }
+  ],
+  "checks": {
+    "fixed_bank": {
+      "max_abs": 7.62939453125e-06,
+      "relative_l2": 1.5179402405894164e-08,
+      "verification_wall_seconds_excluded": 1.1182975679985248
+    },
+    "v3": {
+      "D": {
+        "max_abs": 7.152557373046875e-07,
+        "relative_l2": 1.2398810919634305e-08
+      },
+      "P_Q_bitwise_equal": true,
+      "arithmetic_equal": true,
+      "verification_wall_seconds_excluded": 0.519411368004512
+    },
+    "v4": {
+      "D": {
+        "max_abs": 9.5367431640625e-07,
+        "relative_l2": 1.1717716866540612e-08
+      },
+      "P_Q_bitwise_equal": true,
+      "arithmetic_equal": true,
+      "verification_wall_seconds_excluded": 0.5031308950274251
+    },
+    "v5": {
+      "D": {
+        "max_abs": 9.5367431640625e-07,
+        "relative_l2": 9.939933071423302e-09
+      },
+      "P_Q_bitwise_equal": true,
+      "arithmetic_equal": true,
+      "verification_wall_seconds_excluded": 0.4854203470167704
+    }
+  },
+  "context_startup_seconds": 0.879178197006695,
+  "timing_scope": "Single-process actual synchronized API wall time; CUDA event spans include launch gaps, not pure GPU busy time. One fresh full-catalogue generation per version, no claim about timing variance.",
+  "storage_scope": "OS page cache uncontrolled, no cache flush: file load is actual observed CPU deserialization, not guaranteed physical disk cold-read latency.",
+  "exclusions": "No foundation/method retraining; no user C or requests R, queue/network transfer, artifact persistence/fsync or concurrent replica deployment. Verification/hashing excluded from phase times.",
+  "bindings": {
+    "freeze": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/freeze.json",
+    "freeze_sha256": "b82c93a5e4eb7890ee36f6c66864fa7a7e4d105835f16de6e9437670427db0a5",
+    "entry_sha256": "38381aa38ebbd87a3f217214c32916834f96db7ce82817580a2f80c4ff02a965",
+    "v3": {
+      "calibration_path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v3/calibration.pt",
+      "calibration_sha256": "e3c307d263d3462036f28d04609e29cfd49a94008780213bc9dbf1c9a2d8e606",
+      "calibration_metadata_sha256": "1d40956e7e8f5bd4afbd2b1d88c7f3bb040ea82313facde830866d20f429e260",
+      "fit_settings_sha256": "d0a8dae8ab3806f4d6dd36bdde469cd30da8335471af7b0b12084079c32469ed",
+      "model_path": "/home/gkl/work/evokv/results/unified_training_2026_09/medium/seed17/checkpoints/v3/checkpoint_100.pt",
+      "model_sha256": "5581d722ae226814f90d04d4fd112f87c8fe83b089f9b35e553dda7ec024b455",
+      "source_pack": null,
+      "source_pack_sha256": null
+    },
+    "v4": {
+      "calibration_path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v4/calibration.pt",
+      "calibration_sha256": "0ef1c22a7a7e0c77bee859b2467f281c39d5bd91ce2ad68a607cc9c8593f2ef3",
+      "calibration_metadata_sha256": "124cd9049d8668b0de65e5136a9c2707613e95937ebc28102a88120d41d7d023",
+      "fit_settings_sha256": "d6608298cb4065ef75a25ca89efcbb1daabac001c123bf72279c9bf7f0c4af2e",
+      "model_path": "/home/gkl/work/evokv/results/unified_training_2026_09/medium/seed17/checkpoints/v4/checkpoint_100.pt",
+      "model_sha256": "c1a41440ce4663b499d5c8fa27bd52a8d651898a53df062bf4217a8174885082",
+      "source_pack": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/source_v4/source.pt",
+      "source_pack_sha256": "5797722cee58540d5869372156f3e2ecce7fc11bae99b918d9deb4f9e34ea879"
+    },
+    "v5": {
+      "calibration_path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v5/calibration.pt",
+      "calibration_sha256": "003f660b72a94c9b4ca88ebaac12ef0f488b2d7edcaccc49a42c7b3fe41535b9",
+      "calibration_metadata_sha256": "b6e00d6f3d81ac5de526cef236a2467f3bd4277b9d0f0a34a1b34a7bf9383a86",
+      "fit_settings_sha256": "efded47101a8a359ecaac4d216cefeef2982bfb7ab5e9c9e809579ed360b57c2",
+      "model_path": "/home/gkl/work/evokv/results/unified_training_2026_09/medium/seed17/checkpoints/v5/checkpoint_100.pt",
+      "model_sha256": "c82fba0c9a954e175b4eba8d9da531ec92f637edf5df144a2af8ca9fb59e722d",
+      "source_pack": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/source_v5/source.pt",
+      "source_pack_sha256": "d73d409e253c9deff3b5050e1aad37fda76b15f634126994eecdb3065ac3a663"
+    }
+  },
+  "fixed_bank_work": {
+    "item_projection_flops": 152701673472,
+    "item_projection_calls": 85,
+    "reference_item_projection_calls": 510,
+    "embedding_read_payload_bytes": 1060428288,
+    "reference_embedding_read_payload_bytes": 6362569728,
+    "table_bytes": 1590642432,
+    "scope": "One immutable bank across releases; no row-state saving or SiLU folding"
+  },
+  "release_work": {
+    "v3": {
+      "arithmetic": {
+        "item_projection_flops": 153099334080,
+        "history_composition_flops": 0,
+        "matrix_composition_flops": 0,
+        "cayley_preparation_flops_estimate": 61344
+      },
+      "total_flops": 153099395424,
+      "item_lookup_calls": 85,
+      "reference_item_lookup_calls": 510,
+      "item_projection_calls": 85,
+      "reference_item_projection_calls": 510,
+      "history_block_calls": 0,
+      "reference_history_block_calls": 0,
+      "embedding_read_payload_bytes": 1060428288,
+      "reference_embedding_read_payload_bytes": 6362569728,
+      "item_projection_parameter_bytes": 221184,
+      "table_bytes": 1590642432,
+      "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+    },
+    "v4": {
+      "arithmetic": {
+        "item_projection_flops": 153099334080,
+        "history_composition_flops": 6362569728,
+        "matrix_composition_flops": 74736,
+        "cayley_preparation_flops_estimate": 61344
+      },
+      "total_flops": 159462039888,
+      "item_lookup_calls": 85,
+      "reference_item_lookup_calls": 510,
+      "item_projection_calls": 85,
+      "reference_item_projection_calls": 510,
+      "history_block_calls": 595,
+      "reference_history_block_calls": 3570,
+      "embedding_read_payload_bytes": 1060428288,
+      "reference_embedding_read_payload_bytes": 6362569728,
+      "item_projection_parameter_bytes": 221184,
+      "table_bytes": 1590642432,
+      "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+    },
+    "v5": {
+      "arithmetic": {
+        "item_projection_flops": 153099334080,
+        "history_composition_flops": 6362569728,
+        "matrix_composition_flops": 74736,
+        "cayley_preparation_flops_estimate": 61344
+      },
+      "total_flops": 159462039888,
+      "item_lookup_calls": 85,
+      "reference_item_lookup_calls": 510,
+      "item_projection_calls": 85,
+      "reference_item_projection_calls": 510,
+      "history_block_calls": 595,
+      "reference_history_block_calls": 3570,
+      "embedding_read_payload_bytes": 1060428288,
+      "reference_embedding_read_payload_bytes": 6362569728,
+      "item_projection_parameter_bytes": 221184,
+      "table_bytes": 1590642432,
+      "scope": "Equal floating-point work; fewer lookup/projection operations, not loaded serving throughput"
+    }
+  },
+  "cuda_peak_allocated_bytes": 5852845056,
+  "aggregates": {
+    "resident_shared_compute_seconds": 0.42639990692259744,
+    "method_input_load_seconds": 0.06639008806087077,
+    "common_model_startup_seconds": 7.154369641037192,
+    "distribution_serial_seconds": 7.208133089065086,
+    "composition_warning": "Historical calibration includes its own input loads. Add resident generation and required distribution to those recorded workflows; do not also add this standalone foundation reload without explicitly assuming separate preparation commands. Replicas multiply transfers, not the single publication fit/compile."
+  }
+}

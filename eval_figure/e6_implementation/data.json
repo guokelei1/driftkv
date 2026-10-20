@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Synthetic controlled-path implementation and total auxiliary-memory preview, not end-to-end performance.",
+    "configuration_scope": "Path and conversion panels: Yambda-Large; total auxiliary space: four independent mock configurations.",
+    "timing_scope": "Fixed weights and inputs. Each operation is normalized to its own framework implementation. Sequential variants reflect contributions in that combination, not independent speedups.",
+    "memory_scope": "Auxiliary state in a specified mock resident working set; include all full-catalogue tables, resident row codes, execution buffers and additional old tables simultaneously retained at handover. Exclude common foundation weights and native KV; no auxiliary component is hidden by user amortization.",
+    "working_set_scope": "Absolute directory and resident-user choices are synthetic placeholders, not finalized deployment counts. Fourth stack component is extra old-release tables, avoiding double-count of the current shared tables.",
+    "workspace_scope": "Panel b is only conversion workspace. Panel c workspace additionally includes read/preparation buffers and other auxiliary working tensors.",
+    "uncertainty": "No measured runs or error bars are fabricated."
+  },
+  "representative_configuration": {
+    "dataset": "Yambda",
+    "scale": "Large",
+    "heads": 10,
+    "persistent_code_width": 72
+  },
+  "variants": [
+    "Base",
+    "+Proj.",
+    "+Fusion",
+    "Full"
+  ],
+  "path_relative_time": {
+    "Prepare": [
+      1,
+      0.6,
+      0.6,
+      0.48
+    ],
+    "Read": [
+      1,
+      1,
+      0.6,
+      0.48
+    ],
+    "Append": [
+      1,
+      1,
+      0.74,
+      0.62
+    ]
+  },
+  "history_length": [
+    128,
+    256,
+    512,
+    1024,
+    2048
+  ],
+  "workspace_megabytes": {
+    "Full temporary": [
+      0.3456,
+      0.6912,
+      1.3824,
+      2.7648,
+      5.5296
+    ],
+    "Block-128": [
+      0.3456,
+      0.3456,
+      0.3456,
+      0.3456,
+      0.3456
+    ]
+  },
+  "auxiliary_components": [
+    "Shared tables",
+    "Row codes",
+    "Workspace",
+    "Old tables"
+  ],
+  "auxiliary_memory_GB": {
+    "YL": [
+      2.4,
+      1.1,
+      0.24,
+      2.0
+    ],
+    "YM": [
+      5.6,
+      2.6,
+      0.45,
+      4.8
+    ],
+    "RL": [
+      3.2,
+      1.4,
+      0.3,
+      2.6
+    ],
+    "RM": [
+      7.1,
+      3.1,
+      0.5,
+      6.0
+    ]
+  }
+}

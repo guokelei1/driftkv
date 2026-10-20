@@ -1,0 +1,43 @@
+{
+  "purpose": "Fixed32 actual sessions; same-process eager vs bounded common-shape CUDA Graph compute for both Relay and fair Rebuild; dynamic prefix, staging and output copies included; full graph warmup before interleaved timing.",
+  "panel": "results/design_system_2026_10/phase2/representative4096/panel",
+  "selection": "results/implementation_2026_10/registration.json",
+  "candidate": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4",
+  "relay_reference": null,
+  "native_reference": null,
+  "protocol": "behavior_stride16_candidates16",
+  "methods": [
+    "relay",
+    "rebuild"
+  ],
+  "expected_users": 32,
+  "stride": 16,
+  "candidates": 16,
+  "query_batch": 16,
+  "max_batch": 8,
+  "row_chunk": 1024,
+  "reader_backend": "triton",
+  "timing_repeats": 2,
+  "atol": 3e-05,
+  "rtol": 3e-05,
+  "conversion_backend": "fused",
+  "profile_state_transfer": false,
+  "coalesce_zero_tail": true,
+  "separate_phase_warmup": true,
+  "projection_fused": true,
+  "timed_executions": [
+    "batch8"
+  ],
+  "interleave_methods": true,
+  "native_fused_append": true,
+  "oracle_execution": "previous_batch",
+  "previous_batch_reference": null,
+  "reference_scope": "Same fair-native and fused-code-maintenance eager batch path; graph is the sole numerical execution change.",
+  "fused_code_append": true,
+  "reference_native_fused_append": true,
+  "defer_measurement": false,
+  "timing_code_append_control": false,
+  "graph_compute": true,
+  "timing_graph_control": true,
+  "reference_fused_code_append": true
+}

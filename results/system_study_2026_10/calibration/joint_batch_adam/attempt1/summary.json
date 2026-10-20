@@ -1,0 +1,115 @@
+{
+  "status": "complete",
+  "selected_uids": [
+    122720,
+    67470,
+    793570,
+    85870,
+    757490,
+    947210,
+    178730,
+    832000
+  ],
+  "losses": {
+    "max_abs": 2.7939677238464355e-09,
+    "reference_l2": 0.008958753989780173,
+    "error_l2": 4.086161212712583e-09,
+    "relative_l2": 4.5610820627220376e-07
+  },
+  "logits": {
+    "max_abs": 7.152557373046875e-07,
+    "reference_l2": 36.26258604098506,
+    "error_l2": 3.142696935287492e-06,
+    "relative_l2": 8.666499768481821e-08
+  },
+  "gradients": {
+    "max_abs": 2.444721758365631e-09,
+    "reference_l2": 0.01146548001122839,
+    "error_l2": 8.073167641076311e-09,
+    "relative_l2": 7.041281859259346e-07
+  },
+  "after_step_parameters": {
+    "max_abs": 7.450580596923828e-08,
+    "reference_l2": 139.0651897129337,
+    "error_l2": 2.306892789662703e-07,
+    "relative_l2": 1.6588571118514438e-09
+  },
+  "logical_counts": {
+    "joint_forward_token_queries": 131072,
+    "joint_forward_calls": 8,
+    "joint_rollout_behavior_queries": 32,
+    "joint_rollout_forward_calls": 8,
+    "joint_rollout_forward_token_queries": 131072,
+    "joint_backward_calls": 8
+  },
+  "execution_group_calls": {
+    "train_group_forward_calls": 1,
+    "train_logical_users": 8,
+    "train_group_backward_calls": 1,
+    "train_group_rollout_writes": 4
+  },
+  "operation_ledger": {
+    "components": {
+      "joint_static_encoder_forward_flops": 1680309504,
+      "joint_static_encoder_backward_flops_estimate": 3360619008,
+      "joint_static_query_native_forward_flops": 914121984,
+      "joint_static_query_correction_forward_flops": 125955072,
+      "joint_static_query_frozen_backbone_backward_flops_estimate": 1828243968,
+      "joint_static_query_correction_backward_flops_estimate": 251910144,
+      "joint_static_score_loss_flops": 768,
+      "joint_rollout_encoder_forward_flops": 1673747712,
+      "joint_rollout_encoder_backward_flops_estimate": 3347495424,
+      "joint_rollout_write_native_forward_flops": 229364352,
+      "joint_rollout_write_correction_forward_flops": 31373568,
+      "joint_rollout_write_frozen_backbone_backward_flops_estimate": 458728704,
+      "joint_rollout_write_correction_backward_flops_estimate": 62747136,
+      "joint_rollout_query_native_forward_flops": 914121984,
+      "joint_rollout_query_correction_forward_flops": 125494272,
+      "joint_rollout_query_frozen_backbone_backward_flops_estimate": 1828243968,
+      "joint_rollout_query_correction_backward_flops_estimate": 250988544,
+      "joint_rollout_score_loss_flops": 768,
+      "joint_two_view_combination_flops": 24
+    },
+    "calibration_flops": 17083466904,
+    "stage_calibration_flops": 17083466904,
+    "warmstart_origin": {},
+    "calibration_with_initial_origin_flops": 17083466904,
+    "source_reconstruction_sensitivity": {
+      "additional_flops": 0,
+      "scope": "Only reconstruction omitted from primary. Required source work already charged is not added twice."
+    },
+    "operation_counts": {
+      "joint_static_query_gate_item_lookup_calls": 8,
+      "joint_static_query_gate_item_lookup_items": 128,
+      "joint_static_query_gate_item_lookup_bytes": 98304,
+      "joint_static_encoder_rows": 8192,
+      "joint_static_query_candidate_queries": 128,
+      "joint_static_query_dense_token_queries": 131072,
+      "joint_rollout_encoder_rows": 8160,
+      "joint_rollout_write_behavior_queries": 32,
+      "joint_rollout_write_dense_prefix_pairs": 32640,
+      "joint_rollout_write_gate_item_lookup_calls": 32,
+      "joint_rollout_write_gate_item_lookup_items": 32,
+      "joint_rollout_write_gate_item_lookup_bytes": 24576,
+      "joint_rollout_query_gate_item_lookup_calls": 8,
+      "joint_rollout_query_gate_item_lookup_items": 128,
+      "joint_rollout_query_gate_item_lookup_bytes": 98304,
+      "joint_rollout_query_candidate_queries": 128,
+      "joint_rollout_query_dense_token_queries": 131072
+    },
+    "immutable_feature_bank_preparation": {
+      "actual_construction_flops": 0,
+      "actual_payload_bytes": 0,
+      "cost_owner": "Complete serving price includes the once-per-chain shared bank and replica policy; excluded from this per-release fit total to avoid double charging."
+    },
+    "convention": "MAC=2; elementary pointwise=1; padded dense shapes charged. Forward arithmetic declared from current adapter. Trainable forward and frozen-backbone backward conservatively estimated2x; no loaded serving timing claim.",
+    "source_extra_scope": "Supplied source_extra_* FLOPs join the reconstruction sensitivity or, if source_available=False, the primary cost. Other shared-calibration work is added explicitly at its call site."
+  },
+  "optimizer_steps_per_disposable_copy": 1,
+  "original_weights_unchanged": true,
+  "backbone_gradients_absent": true,
+  "within_declared_tolerance": true,
+  "elapsed_whole_probe_seconds": 16.24430335703073,
+  "scope": "One Adam step in two disposable adapter copies; original first8 fit users. No new fitted candidate or complete calibration timing.",
+  "timing_scope": "Includes loading, checks, CPU copies and ledger instrumentation; not a speed measurement."
+}

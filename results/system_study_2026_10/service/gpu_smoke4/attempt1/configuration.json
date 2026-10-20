@@ -1,0 +1,174 @@
+{
+  "created_utc": "2026-10-18T22:31:22.969520+00:00",
+  "command": [
+    "scripts/system_study_2026_10/model_replay.py",
+    "--config",
+    "configs/system_study_2026_10/gpu_smoke.json",
+    "--output",
+    "results/system_study_2026_10/service/gpu_smoke4/attempt1",
+    "--gpu",
+    "0"
+  ],
+  "config": {
+    "purpose": "Actual GPU correctness of global versus per-user causal replay; not a load or capacity benchmark",
+    "panel": "results/design_system_2026_10/phase2/representative4096/panel",
+    "selection": "results/implementation_2026_10/registration.json",
+    "candidate": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4",
+    "selection_rule": "first_registered_uid_per_existing_stratum",
+    "expected_users": 4,
+    "protocols": [
+      "behavior_stride16_candidates16",
+      "original_feedback"
+    ],
+    "methods": [
+      "relay",
+      "reuse",
+      "rebuild"
+    ],
+    "behavior_processing": "on_demand",
+    "stride": 16,
+    "candidates": 16,
+    "query_batch": 16,
+    "reader_backend": "triton",
+    "row_chunk": 128,
+    "seed": 17,
+    "atol": 3e-05,
+    "rtol": 3e-05
+  },
+  "users": [
+    380,
+    4520,
+    130,
+    1010
+  ],
+  "pid": 2671509,
+  "device": "NVIDIA A40",
+  "cuda_visible_devices": "0",
+  "input_sha256": {
+    "config": "7f06af0469f9b81f65ee8f759b648328cc2a4c7a6ee8a9f5cd3364fcdb3b95cb",
+    "selection": "aa1bf858c8faac98f0b68dfa2c318a9e82d44966d092b56f19c43dec940ef09f",
+    "panel": "a473f10eb1955e231fc2678386359d4c65f07b887a4d119f2c961a9418e8cae3",
+    "freeze": "b82c93a5e4eb7890ee36f6c66864fa7a7e4d105835f16de6e9437670427db0a5"
+  },
+  "source_sha256": {
+    "scripts/system_study_2026_10/model_replay.py": "8341cf5f2ff892811b89a4a8613a1d0881fd92535be2d2e1627e4d5469a1ecf5",
+    "scripts/system_study_2026_10/events.py": "b017f59c5ae74e4ac8a3972ea738947fc29abf89e2d0ec0a64cff40b35d92956",
+    "scripts/query_relay_2026_10/session.py": "49d2225539e17b3702c467fa26feec36b57432260bd0238c28222c91ce8e443d",
+    "scripts/implementation_2026_10/backend.py": "abe833af9a496b23839885b91e2913f5cc85355e062391913d1e3b5ac7437f6b",
+    "scripts/implementation_2026_10/reader.py": "efc7ee8f7a83f1863001a5216bcf0830eec5b8d278e6c80d15b77799aea2287f",
+    "scripts/implementation_2026_10/reader_kernel.py": "3fcff80a41b76e2db34c639f035d6a4bbaf13bb118906fcaf8e476717536616d",
+    "scripts/implementation_2026_10/state.py": "2068d032571ba535dc64feefc0c274918daab23f4a2d6f53460795adb0ee6fe4"
+  },
+  "scope": "GPU scheduling correctness; all releases resident; no load, capacity, quality-gain or fresh confirmation claim",
+  "training": false,
+  "catalogue_recompiled": false,
+  "calibration": {
+    "v3": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v3/calibration.pt",
+      "sha256": "e3c307d263d3462036f28d04609e29cfd49a94008780213bc9dbf1c9a2d8e606",
+      "metadata_sha256": "1d40956e7e8f5bd4afbd2b1d88c7f3bb040ea82313facde830866d20f429e260",
+      "config": {
+        "num_layers": 6,
+        "heads": 6,
+        "head_dim": 32,
+        "rank": 8,
+        "max_length": 1024,
+        "mode": "A",
+        "xi_width": 1,
+        "read_shared": 3,
+        "gate_normalization": "rms",
+        "read_private": 3,
+        "feature_mode": "origin_encoder",
+        "feature_bank_path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "gate_source": "item"
+      },
+      "gate_constants_available": true,
+      "feature_bank": {
+        "path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "storage_bytes": 1590809472,
+        "item_table_bytes": 1590642432,
+        "catalogue_items": 1380766,
+        "scope": "One immutable shared asset; not per-user or per-release persistent state"
+      }
+    },
+    "v4": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v4/calibration.pt",
+      "sha256": "0ef1c22a7a7e0c77bee859b2467f281c39d5bd91ce2ad68a607cc9c8593f2ef3",
+      "metadata_sha256": "124cd9049d8668b0de65e5136a9c2707613e95937ebc28102a88120d41d7d023",
+      "config": {
+        "num_layers": 6,
+        "heads": 6,
+        "head_dim": 32,
+        "rank": 8,
+        "max_length": 1024,
+        "mode": "A",
+        "xi_width": 1,
+        "read_shared": 3,
+        "gate_normalization": "rms",
+        "read_private": 3,
+        "feature_mode": "origin_encoder",
+        "feature_bank_path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "gate_source": "item"
+      },
+      "gate_constants_available": true,
+      "feature_bank": {
+        "path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "storage_bytes": 1590809472,
+        "item_table_bytes": 1590642432,
+        "catalogue_items": 1380766,
+        "scope": "One immutable shared asset; not per-user or per-release persistent state"
+      }
+    },
+    "v5": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/calibration/v5/calibration.pt",
+      "sha256": "003f660b72a94c9b4ca88ebaac12ef0f488b2d7edcaccc49a42c7b3fe41535b9",
+      "metadata_sha256": "b6e00d6f3d81ac5de526cef236a2467f3bd4277b9d0f0a34a1b34a7bf9383a86",
+      "config": {
+        "num_layers": 6,
+        "heads": 6,
+        "head_dim": 32,
+        "rank": 8,
+        "max_length": 1024,
+        "mode": "A",
+        "xi_width": 1,
+        "read_shared": 3,
+        "gate_normalization": "rms",
+        "read_private": 3,
+        "feature_mode": "origin_encoder",
+        "feature_bank_path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "feature_bank_sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "gate_source": "item"
+      },
+      "gate_constants_available": true,
+      "feature_bank": {
+        "path": "/home/gkl/work/evokv/results/query_relay_2026_10/feature_banks/origin_v3.pt",
+        "sha256": "aa34bfb0b0bb5394aa2077fd957dc65056830ea7ae4e611fd10a537480e40a0d",
+        "storage_bytes": 1590809472,
+        "item_table_bytes": 1590642432,
+        "catalogue_items": 1380766,
+        "scope": "One immutable shared asset; not per-user or per-release persistent state"
+      }
+    }
+  },
+  "publications": {
+    "v3": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v3.pt",
+      "sha256": "f284ef1ff8c03c5a092c47a4d41e958552cb8b89942e256796210d4a738e7b54",
+      "model_sha256": "5581d722ae226814f90d04d4fd112f87c8fe83b089f9b35e553dda7ec024b455"
+    },
+    "v4": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v4.pt",
+      "sha256": "f4a6f59b3e3ba8c7f86e06ba9fe707b8202a7dd22510d0b9588082d0bc88a535",
+      "model_sha256": "c1a41440ce4663b499d5c8fa27bd52a8d651898a53df062bf4217a8174885082"
+    },
+    "v5": {
+      "path": "/home/gkl/work/evokv/results/query_relay_2026_10/probes/A_itemgate6_rms_roll4/publication/v5.pt",
+      "sha256": "0089050d6a696d7ce11862ae4b7f73cdefafbdf0ebe6a3fddec0d9dfb9ce29c6",
+      "model_sha256": "c82fba0c9a954e175b4eba8d9da531ec92f637edf5df144a2af8ca9fb59e722d"
+    }
+  }
+}

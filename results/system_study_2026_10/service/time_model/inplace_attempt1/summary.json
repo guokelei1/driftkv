@@ -1,0 +1,1289 @@
+{
+  "status": "conditional_time_projection_resident_coefficients",
+  "created_utc": "2026-10-18T23:24:09.115722+00:00",
+  "reference_population": 30000,
+  "task": "Medium V3/V4/V5 next-item stride16 candidates16",
+  "scenarios": {
+    "maximum_batch1": {
+      "methods": {
+        "relay": {
+          "point_seconds": 20792.122615824475,
+          "empirical_low_seconds": 17036.491952495242,
+          "empirical_high_seconds": 35382.51208122284,
+          "user_operations": 4195811,
+          "stages": {
+            "pack_h2d": 593.6281530783423,
+            "compute": 19368.200266857668,
+            "scatter": 734.0819455876306,
+            "scatter_d2h": 96.21225029244265
+          },
+          "operations": {
+            "append": {
+              "point_seconds": 12213.983399431267,
+              "empirical_low_seconds": 9979.494972504093,
+              "empirical_high_seconds": 19259.55042528134,
+              "user_operations": 2462581
+            },
+            "materialize": {
+              "point_seconds": 683.9078485247767,
+              "empirical_low_seconds": 562.3965447240626,
+              "empirical_high_seconds": 1587.7930202753632,
+              "user_operations": 82455
+            },
+            "score": {
+              "point_seconds": 7500.997449037296,
+              "empirical_low_seconds": 6140.696770850453,
+              "empirical_high_seconds": 13799.735380214232,
+              "user_operations": 1598231
+            },
+            "anchorize": {
+              "point_seconds": 393.23391881898726,
+              "empirical_low_seconds": 353.90366441663355,
+              "empirical_high_seconds": 735.433255451906,
+              "user_operations": 52544
+            }
+          },
+          "weighted_coefficient_coverage": {
+            "tier3": 90310,
+            "batch1": 4195811,
+            "tier2": 148680,
+            "tier1": 1392356,
+            "tier0": 2437831,
+            "tier7": 111629,
+            "tier4": 15005
+          },
+          "range_scope": "Sum of empirical observed per-call minima/maxima in selected shape pools, not confidence limits or guaranteed bounds",
+          "sample_accounting": {
+            "sample_users": 32,
+            "diagnostic_phase_sum_seconds": 15.264306637924165,
+            "coefficient_prediction_before_normalization_seconds": 19.411602154560477,
+            "uninstrumented_service_seconds": [
+              18.066948728985153,
+              18.710980619012844
+            ],
+            "normalization_to_bulk_median": 0.9473182340942824,
+            "normalization_low": 0.9307293949840499,
+            "normalization_high": 0.9639070732045149,
+            "scope": "Same-sample accounting and observed barrier/orchestration normalization, not independent prediction validation; original scores and state checks are in the session report"
+          },
+          "normalized_point_seconds": 19696.756879494635,
+          "normalized_empirical_low_seconds": 15856.363847596533,
+          "normalized_empirical_high_seconds": 34105.453662834894
+        },
+        "rebuild": {
+          "point_seconds": 13981.799407987122,
+          "empirical_low_seconds": 12247.913811757986,
+          "empirical_high_seconds": 34890.09772126033,
+          "user_operations": 4141077,
+          "stages": {
+            "pack_h2d": 526.5243783882873,
+            "compute": 13119.44311228748,
+            "scatter": 251.84778731852867,
+            "scatter_d2h": 83.9841300083153
+          },
+          "operations": {
+            "append": {
+              "point_seconds": 8470.488555824553,
+              "empirical_low_seconds": 7343.0242168175755,
+              "empirical_high_seconds": 21957.00415012997,
+              "user_operations": 2462581
+            },
+            "rebuild": {
+              "point_seconds": 293.18780218757615,
+              "empirical_low_seconds": 243.23969946964644,
+              "empirical_high_seconds": 401.7428434714093,
+              "user_operations": 80265
+            },
+            "score": {
+              "point_seconds": 5218.123049985191,
+              "empirical_low_seconds": 4661.649895470764,
+              "empirical_high_seconds": 12531.350727658952,
+              "user_operations": 1598231
+            }
+          },
+          "weighted_coefficient_coverage": {
+            "tier3": 9022,
+            "batch1": 4141077,
+            "tier2": 174062,
+            "tier0": 3891742,
+            "tier7": 66251
+          },
+          "range_scope": "Sum of empirical observed per-call minima/maxima in selected shape pools, not confidence limits or guaranteed bounds",
+          "sample_accounting": {
+            "sample_users": 32,
+            "diagnostic_phase_sum_seconds": 7.588005234545562,
+            "coefficient_prediction_before_normalization_seconds": 13.548259093436595,
+            "uninstrumented_service_seconds": [
+              13.024377349007409,
+              13.805881153966766
+            ],
+            "normalization_to_bulk_median": 0.9901736569229029,
+            "normalization_low": 0.9613321725827506,
+            "normalization_high": 1.0190151412630553,
+            "scope": "Same-sample accounting and observed barrier/orchestration normalization, not independent prediction validation; original scores and state checks are in the session report"
+          },
+          "normalized_point_seconds": 13844.409450169089,
+          "normalized_empirical_low_seconds": 11774.313594263584,
+          "normalized_empirical_high_seconds": 35553.5378581119
+        }
+      },
+      "per_user_C_seconds": 0.6565585626498212,
+      "per_user_R_seconds": 0.4614803150056363,
+      "fixed_S_midpoint_seconds": 392.2420755107887,
+      "break_even": {
+        "minimum_users": null,
+        "reason": "C>=R: no finite population amortizes positive S",
+        "per_user_margin_seconds": -0.19507824764418485
+      },
+      "population_grid": [
+        {
+          "users": 1000,
+          "relay_S_plus_NC_seconds": 1048.8006381606099,
+          "rebuild_NR_seconds": 461.48031500563627,
+          "saved_seconds": -587.3203231549735,
+          "saved_percent": -127.26877053202156
+        },
+        {
+          "users": 4000,
+          "relay_S_plus_NC_seconds": 3018.4763261100734,
+          "rebuild_NR_seconds": 1845.921260022545,
+          "saved_seconds": -1172.555066087528,
+          "saved_percent": -63.52140210320819
+        },
+        {
+          "users": 10000,
+          "relay_S_plus_NC_seconds": 6957.827702009,
+          "rebuild_NR_seconds": 4614.803150056363,
+          "saved_seconds": -2343.024551952637,
+          "saved_percent": -50.77192841744551
+        },
+        {
+          "users": 30000,
+          "relay_S_plus_NC_seconds": 20088.998955005423,
+          "rebuild_NR_seconds": 13844.409450169089,
+          "saved_seconds": -6244.5895048363345,
+          "saved_percent": -45.10549566821766
+        },
+        {
+          "users": 79681,
+          "relay_S_plus_NC_seconds": 52707.48490601119,
+          "rebuild_NR_seconds": 36771.212979964104,
+          "saved_seconds": -15936.271926047082,
+          "saved_percent": -43.33898893879415
+        },
+        {
+          "users": 200000,
+          "relay_S_plus_NC_seconds": 131703.954605475,
+          "rebuild_NR_seconds": 92296.06300112726,
+          "saved_seconds": -39407.89160434776,
+          "saved_percent": -42.69726174979582
+        }
+      ]
+    },
+    "maximum_batch8": {
+      "methods": {
+        "relay": {
+          "point_seconds": 12650.868154491345,
+          "empirical_low_seconds": 10942.835400673239,
+          "empirical_high_seconds": 17135.6206164926,
+          "user_operations": 4195811,
+          "stages": {
+            "pack_h2d": 474.61563323017606,
+            "compute": 11501.640063894029,
+            "scatter": 625.6751797780431,
+            "scatter_d2h": 48.93727758357525
+          },
+          "operations": {
+            "append": {
+              "point_seconds": 8520.130046649077,
+              "empirical_low_seconds": 7385.727859206805,
+              "empirical_high_seconds": 11696.480280205727,
+              "user_operations": 2462581
+            },
+            "materialize": {
+              "point_seconds": 192.98380705428428,
+              "empirical_low_seconds": 178.76310024174745,
+              "empirical_high_seconds": 241.83240959046088,
+              "user_operations": 82455
+            },
+            "score": {
+              "point_seconds": 3835.320301299863,
+              "empirical_low_seconds": 3283.020938720455,
+              "empirical_high_seconds": 5074.698217979012,
+              "user_operations": 1598231
+            },
+            "anchorize": {
+              "point_seconds": 102.43399948105066,
+              "empirical_low_seconds": 95.3235025042377,
+              "empirical_high_seconds": 122.60970871739846,
+              "user_operations": 52544
+            }
+          },
+          "weighted_coefficient_coverage": {
+            "tier3": 90310,
+            "batch1": 1678806,
+            "tier2": 148609,
+            "tier1": 1101875,
+            "tier0": 2840012,
+            "batch2": 1067633,
+            "batch4": 257386,
+            "batch3": 332445,
+            "batch8": 491197,
+            "batch5": 188839,
+            "batch6": 130914,
+            "batch7": 48591,
+            "tier4": 15005
+          },
+          "range_scope": "Sum of empirical observed per-call minima/maxima in selected shape pools, not confidence limits or guaranteed bounds",
+          "sample_accounting": {
+            "sample_users": 32,
+            "diagnostic_phase_sum_seconds": 15.264306637924165,
+            "coefficient_prediction_before_normalization_seconds": 15.264306637924165,
+            "uninstrumented_service_seconds": [
+              14.57070364797255,
+              15.48799086100189
+            ],
+            "normalization_to_bulk_median": 0.984607267856295,
+            "normalization_low": 0.9545604653782074,
+            "normalization_high": 1.0146540703343827,
+            "scope": "Same-sample accounting and observed barrier/orchestration normalization, not independent prediction validation; original scores and state checks are in the session report"
+          },
+          "normalized_point_seconds": 12456.136729603933,
+          "normalized_empirical_low_seconds": 10445.598052623769,
+          "normalized_empirical_high_seconds": 17386.72720622998
+        },
+        "rebuild": {
+          "point_seconds": 3285.033344493045,
+          "empirical_low_seconds": 2983.953268508662,
+          "empirical_high_seconds": 4333.552593408183,
+          "user_operations": 4141077,
+          "stages": {
+            "pack_h2d": 230.88067492488832,
+            "compute": 2869.005664972754,
+            "scatter": 169.91556262821487,
+            "scatter_d2h": 15.231441968693908
+          },
+          "operations": {
+            "append": {
+              "point_seconds": 2202.117740112063,
+              "empirical_low_seconds": 2042.47282264718,
+              "empirical_high_seconds": 2601.482658104494,
+              "user_operations": 2462581
+            },
+            "rebuild": {
+              "point_seconds": 113.49844563833805,
+              "empirical_low_seconds": 108.50678774251719,
+              "empirical_high_seconds": 118.41748847295821,
+              "user_operations": 80265
+            },
+            "score": {
+              "point_seconds": 969.4171587429664,
+              "empirical_low_seconds": 832.97365811895,
+              "empirical_high_seconds": 1613.652446830718,
+              "user_operations": 1598231
+            }
+          },
+          "weighted_coefficient_coverage": {
+            "tier3": 9022,
+            "batch1": 168723,
+            "tier2": 173995,
+            "tier0": 3958060,
+            "batch3": 496997,
+            "batch5": 400053,
+            "batch8": 2921525,
+            "batch2": 74499,
+            "batch4": 79280
+          },
+          "range_scope": "Sum of empirical observed per-call minima/maxima in selected shape pools, not confidence limits or guaranteed bounds",
+          "sample_accounting": {
+            "sample_users": 32,
+            "diagnostic_phase_sum_seconds": 7.588005234545562,
+            "coefficient_prediction_before_normalization_seconds": 7.588005234545562,
+            "uninstrumented_service_seconds": [
+              8.20618405204732,
+              8.520809631037991
+            ],
+            "normalization_to_bulk_median": 1.1021996668461098,
+            "normalization_low": 1.0814678955000456,
+            "normalization_high": 1.1229314381921738,
+            "scope": "Same-sample accounting and observed barrier/orchestration normalization, not independent prediction validation; original scores and state checks are in the session report"
+          },
+          "normalized_point_seconds": 3620.762657878596,
+          "normalized_empirical_low_seconds": 3227.049661564545,
+          "normalized_empirical_high_seconds": 4866.282446197276
+        }
+      },
+      "per_user_C_seconds": 0.4152045576534644,
+      "per_user_R_seconds": 0.1206920885959532,
+      "fixed_S_midpoint_seconds": 392.2420755107887,
+      "break_even": {
+        "minimum_users": null,
+        "reason": "C>=R: no finite population amortizes positive S",
+        "per_user_margin_seconds": -0.2945124690575112
+      },
+      "population_grid": [
+        {
+          "users": 1000,
+          "relay_S_plus_NC_seconds": 807.4466331642532,
+          "rebuild_NR_seconds": 120.69208859595321,
+          "saved_seconds": -686.7545445682999,
+          "saved_percent": -569.0137212451278
+        },
+        {
+          "users": 4000,
+          "relay_S_plus_NC_seconds": 2053.0603061246466,
+          "rebuild_NR_seconds": 482.76835438381283,
+          "saved_seconds": -1570.2919517408336,
+          "saved_percent": -325.268203162383
+        },
+        {
+          "users": 10000,
+          "relay_S_plus_NC_seconds": 4544.287652045433,
+          "rebuild_NR_seconds": 1206.9208859595321,
+          "saved_seconds": -3337.366766085901,
+          "saved_percent": -276.5190995458341
+        },
+        {
+          "users": 30000,
+          "relay_S_plus_NC_seconds": 12848.378805114722,
+          "rebuild_NR_seconds": 3620.762657878596,
+          "saved_seconds": -9227.616147236125,
+          "saved_percent": -254.8528312718123
+        },
+        {
+          "users": 79681,
+          "relay_S_plus_NC_seconds": 33476.15643389649,
+          "rebuild_NR_seconds": 9616.866311414147,
+          "saved_seconds": -23859.29012248234,
+          "saved_percent": -248.0983862088633
+        },
+        {
+          "users": 200000,
+          "relay_S_plus_NC_seconds": 83433.15360620368,
+          "rebuild_NR_seconds": 24138.417719190642,
+          "saved_seconds": -59294.735887013034,
+          "saved_percent": -245.64466725535303
+        }
+      ]
+    }
+  },
+  "shared_preparation": {
+    "calibration_recorded_workflow_lower_seconds": 376.80504792090505,
+    "calibration_recorded_workflow_upper_seconds": 392.410037108697,
+    "fresh_shared_compute_seconds": 0.42639990692259744,
+    "shared_distribution_serial_seconds": 7.208133089065086,
+    "fixed_S_lower_seconds": 384.43958091689274,
+    "fixed_S_upper_seconds": 400.0445701046847,
+    "standalone_method_input_load_seconds": 0.06639008806087077,
+    "common_foundation_startup_seconds_separate": 7.154369641037192,
+    "scope": "Retained offline calibration including causal source/teacher generation and one origin, plus fresh compile once and serialized measured distribution to four serving copies. Historical calibration loads are not counted twice.",
+    "missing": "Final relay checkpoint serialization and artifact/network persistence are not separately measured; add their nonnegative fixed delta_S if required. Initial V2 cache and foundation training are common outside the window.",
+    "distribution_scope": "Host D2H plus four H2D copies measured sequentially on one GPU. This is an additive API-work scenario, not four-GPU deployment wall time; publisher not counted among four serving copies."
+  },
+  "native_model_references": {
+    "scope": "Measured native-only Medium/Large/Max V2/V5 operator references. Large/Max correction, full service traces and end-to-end method comparisons are absent.",
+    "units": [
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 13,
+        "batch": 1,
+        "median_seconds": 0.0024906799662858248,
+        "min_seconds": 0.002405078033916652,
+        "max_seconds": 0.002625180990435183
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 13,
+        "batch": 1,
+        "median_seconds": 0.002228651021141559,
+        "min_seconds": 0.0021851169876754284,
+        "max_seconds": 0.0025934299919754267
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 13,
+        "batch": 1,
+        "median_seconds": 0.0023889369913376868,
+        "min_seconds": 0.0023227910278365016,
+        "max_seconds": 0.002418053976725787
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 13,
+        "batch": 1,
+        "median_seconds": 0.0026095350040122867,
+        "min_seconds": 0.002577258041128516,
+        "max_seconds": 0.0038156069931574166
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 13,
+        "batch": 8,
+        "median_seconds": 0.0031739480327814817,
+        "min_seconds": 0.0027409299509599805,
+        "max_seconds": 0.003211978997569531
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 13,
+        "batch": 8,
+        "median_seconds": 0.002488776983227581,
+        "min_seconds": 0.002472110965754837,
+        "max_seconds": 0.0024993320112116635
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 13,
+        "batch": 8,
+        "median_seconds": 0.002465684025082737,
+        "min_seconds": 0.002386320033110678,
+        "max_seconds": 0.0025224799755960703
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 13,
+        "batch": 8,
+        "median_seconds": 0.0027654989971779287,
+        "min_seconds": 0.0027240990311838686,
+        "max_seconds": 0.002780271985102445
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.00282044499181211,
+        "min_seconds": 0.0023926790454424918,
+        "max_seconds": 0.0035670549841597676
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.002283707959577441,
+        "min_seconds": 0.002183926000725478,
+        "max_seconds": 0.002629805007018149
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0023608559858985245,
+        "min_seconds": 0.0023096189834177494,
+        "max_seconds": 0.00484438898274675
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0023144669830799103,
+        "min_seconds": 0.002239149995148182,
+        "max_seconds": 0.0027727169799618423
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.006555225001648068,
+        "min_seconds": 0.006515133020002395,
+        "max_seconds": 0.006656264013145119
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.002939127036370337,
+        "min_seconds": 0.002710909000597894,
+        "max_seconds": 0.00300731195602566
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0024795400095172226,
+        "min_seconds": 0.002417061012238264,
+        "max_seconds": 0.002566396025940776
+      },
+      {
+        "scale": "medium",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0027064629830420017,
+        "min_seconds": 0.002618169004563242,
+        "max_seconds": 0.002729917992837727
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 43,
+        "batch": 1,
+        "median_seconds": 0.0024281730293296278,
+        "min_seconds": 0.002393912000115961,
+        "max_seconds": 0.0025128039997071028
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 43,
+        "batch": 1,
+        "median_seconds": 0.0021761920070275664,
+        "min_seconds": 0.002172346052248031,
+        "max_seconds": 0.0022651450126431882
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 43,
+        "batch": 1,
+        "median_seconds": 0.0023315679864026606,
+        "min_seconds": 0.0022945950040593743,
+        "max_seconds": 0.0023482090327888727
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 43,
+        "batch": 8,
+        "median_seconds": 0.0025482489727437496,
+        "min_seconds": 0.0025157100171782076,
+        "max_seconds": 0.003910803003236651
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 43,
+        "batch": 8,
+        "median_seconds": 0.0030275850440375507,
+        "min_seconds": 0.00294878997374326,
+        "max_seconds": 0.01091922097839415
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 43,
+        "batch": 8,
+        "median_seconds": 0.0029171890346333385,
+        "min_seconds": 0.0026558279641903937,
+        "max_seconds": 0.002962171973194927
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0023344740038737655,
+        "min_seconds": 0.002291990036610514,
+        "max_seconds": 0.0023727919906377792
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0022395100095309317,
+        "min_seconds": 0.0021751720341853797,
+        "max_seconds": 0.0022923750220797956
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.00230701599502936,
+        "min_seconds": 0.0022803909960202873,
+        "max_seconds": 0.00239617598708719
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0023391369613818824,
+        "min_seconds": 0.00227637798525393,
+        "max_seconds": 0.0023646109621040523
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.006568904034793377,
+        "min_seconds": 0.006525451026391238,
+        "max_seconds": 0.0066989740007556975
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.002508683013729751,
+        "min_seconds": 0.0024932019878178835,
+        "max_seconds": 0.002524746989365667
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0025074079749174416,
+        "min_seconds": 0.002458769013173878,
+        "max_seconds": 0.0025591900339350104
+      },
+      {
+        "scale": "medium",
+        "version": "v5",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.003094976011198014,
+        "min_seconds": 0.0026841830112971365,
+        "max_seconds": 0.0036441299598664045
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 92,
+        "batch": 1,
+        "median_seconds": 0.006722230988088995,
+        "min_seconds": 0.004829699988476932,
+        "max_seconds": 0.007213174016214907
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 92,
+        "batch": 1,
+        "median_seconds": 0.0033734969911165535,
+        "min_seconds": 0.003327234007883817,
+        "max_seconds": 0.0033922140137292445
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 92,
+        "batch": 1,
+        "median_seconds": 0.004249104007612914,
+        "min_seconds": 0.0036294350284151733,
+        "max_seconds": 0.005091472994536161
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 92,
+        "batch": 8,
+        "median_seconds": 0.004793329979293048,
+        "min_seconds": 0.00399946398101747,
+        "max_seconds": 0.010990988987032324
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 92,
+        "batch": 8,
+        "median_seconds": 0.0038673729868605733,
+        "min_seconds": 0.003812363022007048,
+        "max_seconds": 0.003915334993507713
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 92,
+        "batch": 8,
+        "median_seconds": 0.0037618710193783045,
+        "min_seconds": 0.0036443290300667286,
+        "max_seconds": 0.0038426149985753
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0036278029438108206,
+        "min_seconds": 0.003541007055900991,
+        "max_seconds": 0.003672673017717898
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.004169599968008697,
+        "min_seconds": 0.0033982250024564564,
+        "max_seconds": 0.004628280003089458
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.003573165973648429,
+        "min_seconds": 0.003494896984193474,
+        "max_seconds": 0.003683711984194815
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.003604175988584757,
+        "min_seconds": 0.003573447000235319,
+        "max_seconds": 0.0041515210177749395
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.018252546025905758,
+        "min_seconds": 0.018190824950579554,
+        "max_seconds": 0.02084719599224627
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.004966029024217278,
+        "min_seconds": 0.0037828159984201193,
+        "max_seconds": 0.005686012969817966
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0037472330150194466,
+        "min_seconds": 0.0037044030032120645,
+        "max_seconds": 0.0038357109879143536
+      },
+      {
+        "scale": "large",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.004605116962920874,
+        "min_seconds": 0.004565350012853742,
+        "max_seconds": 0.004641783016268164
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 92,
+        "batch": 1,
+        "median_seconds": 0.004739709023851901,
+        "min_seconds": 0.0039831039612181485,
+        "max_seconds": 0.007188402989413589
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 92,
+        "batch": 1,
+        "median_seconds": 0.0033715820172801614,
+        "min_seconds": 0.0033210119581781328,
+        "max_seconds": 0.003417861007619649
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 92,
+        "batch": 1,
+        "median_seconds": 0.0035032079904340208,
+        "min_seconds": 0.003450835996773094,
+        "max_seconds": 0.0035571440239436924
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 92,
+        "batch": 8,
+        "median_seconds": 0.003979650035034865,
+        "min_seconds": 0.003924479999113828,
+        "max_seconds": 0.005914987006690353
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 92,
+        "batch": 8,
+        "median_seconds": 0.006068897026125342,
+        "min_seconds": 0.004620852996595204,
+        "max_seconds": 0.01301638997392729
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 92,
+        "batch": 8,
+        "median_seconds": 0.006751570967026055,
+        "min_seconds": 0.004691129026468843,
+        "max_seconds": 0.010175494011491537
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.004808466997928917,
+        "min_seconds": 0.003911783976946026,
+        "max_seconds": 0.0064737380016595125
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0034308030153624713,
+        "min_seconds": 0.003375765052624047,
+        "max_seconds": 0.0034539829939603806
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.0035599039983935654,
+        "min_seconds": 0.0035079229855909944,
+        "max_seconds": 0.003633067011833191
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.003626141988206655,
+        "min_seconds": 0.003562808968126774,
+        "max_seconds": 0.0052068959921598434
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.019104378996416926,
+        "min_seconds": 0.018207374028861523,
+        "max_seconds": 0.019593573990277946
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0038288109935820103,
+        "min_seconds": 0.0037863979814574122,
+        "max_seconds": 0.0038912599557079375
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.003723398025613278,
+        "min_seconds": 0.0036640589823946357,
+        "max_seconds": 0.0037658819928765297
+      },
+      {
+        "scale": "large",
+        "version": "v5",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.004601574037224054,
+        "min_seconds": 0.004573758982587606,
+        "max_seconds": 0.006026162998750806
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 21,
+        "batch": 1,
+        "median_seconds": 0.013770646008197218,
+        "min_seconds": 0.007348624989390373,
+        "max_seconds": 0.015018511970993131
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 21,
+        "batch": 1,
+        "median_seconds": 0.00789394200546667,
+        "min_seconds": 0.006582126021385193,
+        "max_seconds": 0.010256462031975389
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 21,
+        "batch": 1,
+        "median_seconds": 0.0052702950197272,
+        "min_seconds": 0.005243655003141612,
+        "max_seconds": 0.005363637988921255
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 21,
+        "batch": 8,
+        "median_seconds": 0.0061855760286562145,
+        "min_seconds": 0.006129955989308655,
+        "max_seconds": 0.006212747015524656
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 21,
+        "batch": 8,
+        "median_seconds": 0.012391470954753458,
+        "min_seconds": 0.00716474698856473,
+        "max_seconds": 0.017247872019652277
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 21,
+        "batch": 8,
+        "median_seconds": 0.008693834010045975,
+        "min_seconds": 0.006888522999361157,
+        "max_seconds": 0.011687249003443867
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.005434366990812123,
+        "min_seconds": 0.00539475999539718,
+        "max_seconds": 0.005452399025671184
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.005147771968040615,
+        "min_seconds": 0.005110502999741584,
+        "max_seconds": 0.005174283985979855
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.00718091003363952,
+        "min_seconds": 0.006366667977999896,
+        "max_seconds": 0.012873020954430103
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.013039058016147465,
+        "min_seconds": 0.008122890023514628,
+        "max_seconds": 0.014166814973577857
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.029286320030223578,
+        "min_seconds": 0.029147642955649644,
+        "max_seconds": 0.03256459900876507
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0075170789496041834,
+        "min_seconds": 0.005756494996603578,
+        "max_seconds": 0.008540904032997787
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0055771570187062025,
+        "min_seconds": 0.00550805201055482,
+        "max_seconds": 0.005693611979950219
+      },
+      {
+        "scale": "max",
+        "version": "v2",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.0071297219838015735,
+        "min_seconds": 0.007041714969091117,
+        "max_seconds": 0.008742412028368562
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 33,
+        "batch": 1,
+        "median_seconds": 0.007312575995456427,
+        "min_seconds": 0.005898203991819173,
+        "max_seconds": 0.0074343199958093464
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 33,
+        "batch": 1,
+        "median_seconds": 0.005176249018404633,
+        "min_seconds": 0.005088592995889485,
+        "max_seconds": 0.006228536018170416
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 33,
+        "batch": 1,
+        "median_seconds": 0.005302859004586935,
+        "min_seconds": 0.005250304006040096,
+        "max_seconds": 0.00585738499648869
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 33,
+        "batch": 8,
+        "median_seconds": 0.007695787993725389,
+        "min_seconds": 0.006345764035359025,
+        "max_seconds": 0.008448561013210565
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 33,
+        "batch": 8,
+        "median_seconds": 0.005773517012130469,
+        "min_seconds": 0.005674488958902657,
+        "max_seconds": 0.005824202031362802
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 33,
+        "batch": 8,
+        "median_seconds": 0.005570476001594216,
+        "min_seconds": 0.005548741959501058,
+        "max_seconds": 0.006930284027475864
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.00708290800685063,
+        "min_seconds": 0.006243684038054198,
+        "max_seconds": 0.009824134001974016
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.006981892976909876,
+        "min_seconds": 0.0051278320024721324,
+        "max_seconds": 0.007621693948749453
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.005391468992456794,
+        "min_seconds": 0.005242344050202519,
+        "max_seconds": 0.0068397329887375236
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 1,
+        "median_seconds": 0.005352751992177218,
+        "min_seconds": 0.005300148972310126,
+        "max_seconds": 0.005424234957899898
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "rebuild",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.028998141002375633,
+        "min_seconds": 0.028828775975853205,
+        "max_seconds": 0.03000502398936078
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_torch",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.01081429299665615,
+        "min_seconds": 0.0060533430078066885,
+        "max_seconds": 0.011611786030698568
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "query16_fused",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.007555757008958608,
+        "min_seconds": 0.006314460013527423,
+        "max_seconds": 0.007905890990514308
+      },
+      {
+        "scale": "max",
+        "version": "v5",
+        "operation": "append16",
+        "history_length": 1024,
+        "batch": 8,
+        "median_seconds": 0.007031685032416135,
+        "min_seconds": 0.007010388013441116,
+        "max_seconds": 0.007081256015226245
+      }
+    ],
+    "batch8_scope": "Native probe B8 repeats one history; not actual eight-user scheduling. Not substituted into corrected session totals."
+  },
+  "source_bindings": [
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/time_model/ledger30k/attempt2/summary.json",
+      "sha256": "b463cf3dfef71e21a18cf9dfb94dc3fc4f9cdf3f1db1d1378b009be399a762f4"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/batched_session32/attempt1/summary.json",
+      "sha256": "01e4ba02229df8d182de64ae1cf1a4b9a80cccc9d25a313481401b5f36aaac72"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/batched_session32/attempt1/phases.parquet",
+      "sha256": "78ea3728f3a890acd13ca6368d9e260da08ea5f2b55ba3a43500dbf3bf1e98d2"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/shared_timing/attempt1/summary.json",
+      "sha256": "2ebbb3c7814a394bedafc8c88c55f47f58899fef58e1fc379e669dae9ebee3c5"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/shared_timing/attempt1/calibration_timing.json",
+      "sha256": "c01e1357d7c16ce568dbb8d85c57ecc6671f68ec27ec2460fac28546a518b580"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/model_group_probe/attempt1/summary.json",
+      "sha256": "77b0fdaf63443afb83f40b968367bd3bf202e04f3ddc43332eb8c0c1a6f65d31"
+    },
+    {
+      "path": "/home/gkl/work/evokv/scripts/system_study_2026_10/time_model.py",
+      "sha256": "df70ee1c6d9a3c432dce9b2dec68cbb4e2b09a10fc80fc10f3ff005b88f88452"
+    }
+  ],
+  "distinctions": [
+    "Actual phase/body wall times include CPU work, launch gaps and synchronization; neither they nor CUDA event spans are GPU busy seconds.",
+    "Pack_h2d combines CPU packing, device gathers and small input copies; it cannot be relabelled as pure CPU or transfer time. All three phase intervals are sequential and non-overlapping.",
+    "30k population counts are exact, hardware time coefficients are sampled and shape-bucket fallbacks are explicit empirical projections.",
+    "Batch8 uses the largest real distinct-user batch observed in a compatible pool; final-population scheduler feasibility, finite-batch tails and queue delays are not proved.",
+    "Resident coefficients omit additional host backing-store paging. 30k final K/V+code do not fit four48GB cards; host-miss sensitivity must be added before choosing that deployment.",
+    "S plus population service is additive API-work seconds under serialized execution assumptions, not loaded multi-GPU makespan or p99.",
+    "Foundation training, initial V2 cache construction and common foundation deployment add the same B to both sides; absolute savings unchanged, percentages diluted.",
+    "Population expansion holds Medium model, catalogue, calibration users, three-release horizon and activity distribution fixed; 79681/200000 rows are not Large/Max workload evidence."
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "meta": {
+    "synthetic": true,
+    "figure": "6-7",
+    "seed": 20261019,
+    "purpose": "Two controlled one-dimensional slices of the synthetic complete-FLOPs model; no timing or quality inference.",
+    "notes": [
+      "All coefficients, populations and resulting curves are illustrative, not measurements or validated predictions.",
+      "Four planned Yambda/RecFlow x Large/Max conditions; RecFlow population/model assumptions remain placeholders.",
+      "Each curve reports 100*(1-C_CT/C_R), including common native score/append work in both totals.",
+      "Panel (a) fixes eight scoring queries per appended behavior and varies history128-2048; panel(b) fixes history1024 and varies query/behavior1-256.",
+      "Stored slice values were computed from the explicit cost equations and coefficients; no new curve fitting or values chosen to match a visual trend.",
+      "Each release has20 appends per active user; Q=20*r is the number of candidate history reads, not production arrivals.",
+      "Shared cost includes one initialization allocated over three releases, calibration, teacher/source preparation and replicated full-catalogue projection.",
+      "Every U user consumes history and triggers one Rebuild or one materialization; all materialized codes incur one handover. Inactive users are not added for amortization.",
+      "Window N remains fixed under append/evict; inherited prefix means are N-B/2 for scoring and N-(B-1)/2 for behavior reads.",
+      "Transfers remain separate byte accounts, never converted into FLOPs or time. Shared catalogue/population assumptions must change together when scaling.",
+      "Quality heterogeneity belongs to feedback-bucket analysis in the manuscript; no quality points, interpolated quality surface, workload point clouds or marginals appear in this figure.",
+      "No throughput, queueing, latency or end-to-end time conclusion follows from these curves."
+    ]
+  },
+  "scenario": {
+    "releases_amortizing_initialization": 3,
+    "behaviors_per_user_per_release": 20,
+    "shared_table_replicas": 1,
+    "head_count": 10,
+    "head_dimension": 32,
+    "layer_count": 6,
+    "code_coordinates_per_row_layer": 72,
+    "scalar_bytes": 4,
+    "native_cache_transfers_per_release": 2,
+    "code_transfers_per_release": 2,
+    "shared_tables_per_replica": 2,
+    "transfer_scope": "one state ingress and one state egress; shared tables copied once per replica; no repeated staging assumed",
+    "fitting_users": 64,
+    "fitting_history_length": 1024,
+    "fitting_queries_per_user": 16,
+    "one_calibration_run_per_release": true,
+    "common_backbone_training_included": false,
+    "flop_coefficients_are_synthetic_not_timing_derived": true
+  },
+  "model_formulas": {
+    "R(N)": "a*N+b*N^2",
+    "S(N)": "s0+s1*N",
+    "W(N)": "w0+w1*N",
+    "P(N)": "p0+p1*N",
+    "H(N)": "h0+h1*N",
+    "F_shared": "F_init/3+F_cal+F_teacher+F_source+replicas*M*f_item",
+    "C_R": "U*(R(N)+Q*S(N)+B*W(N))",
+    "C_CT": "F_shared+U*(P(N)+H(N)+Q*S(N)+B*W(N)+Q*D_Q(N)+B*D_B(N))",
+    "saving_pct": "100*(1-C_CT/C_R)",
+    "native_transfer_bytes": "2*U*N*layers*2*H*d*scalar_bytes",
+    "additional_code_transfer_bytes": "2*U*N*layers*C*scalar_bytes",
+    "shared_table_transfer_bytes": "replicas*M*layers*2*C*scalar_bytes",
+    "D_Q(N)": "d0+d1*(N-B/2)",
+    "D_B(N)": "d0+d1*(N-(B-1)/2)"
+  },
+  "configurations": [
+    {
+      "dataset": "Yambda",
+      "scale": "Large",
+      "active_population": 79681,
+      "catalogue_items": 1200000,
+      "fixed_cost_flops": {
+        "initialization_total": 120000000000000.0,
+        "calibration_per_release": 22000000000000.0,
+        "teacher_preparation_per_release": 3000000000000.0,
+        "source_preparation_per_release": 3000000000000.0
+      },
+      "flop_coefficients": {
+        "rebuild_linear_flops_per_row": 7200000.0,
+        "rebuild_quadratic_flops_per_row_squared": 3840.0,
+        "native_score_fixed_flops": 7400000.0,
+        "native_score_flops_per_history_row": 7680.0,
+        "native_append_fixed_flops": 7400000.0,
+        "native_append_flops_per_history_row": 7680.0,
+        "materialize_fixed_flops": 3000000.0,
+        "materialize_flops_per_row": 650000.0,
+        "handover_fixed_flops": 2000000.0,
+        "handover_flops_per_row": 600000.0,
+        "correction_read_fixed_flops": 80000.0,
+        "correction_read_flops_per_inherited_row": 1500.0,
+        "catalogue_flops_per_item": 400000.0
+      }
+    },
+    {
+      "dataset": "Yambda",
+      "scale": "Max",
+      "active_population": 200000,
+      "catalogue_items": 3000000,
+      "fixed_cost_flops": {
+        "initialization_total": 180000000000000.0,
+        "calibration_per_release": 40000000000000.0,
+        "teacher_preparation_per_release": 5000000000000.0,
+        "source_preparation_per_release": 5000000000000.0
+      },
+      "flop_coefficients": {
+        "rebuild_linear_flops_per_row": 12240000.0,
+        "rebuild_quadratic_flops_per_row_squared": 6528.0,
+        "native_score_fixed_flops": 12580000.0,
+        "native_score_flops_per_history_row": 13056.0,
+        "native_append_fixed_flops": 12580000.0,
+        "native_append_flops_per_history_row": 13056.0,
+        "materialize_fixed_flops": 4500000.0,
+        "materialize_flops_per_row": 975000.0,
+        "handover_fixed_flops": 3000000.0,
+        "handover_flops_per_row": 900000.0,
+        "correction_read_fixed_flops": 132000.0,
+        "correction_read_flops_per_inherited_row": 2475.0,
+        "catalogue_flops_per_item": 600000.0
+      }
+    },
+    {
+      "dataset": "RecFlow",
+      "scale": "Large",
+      "active_population": 80000,
+      "catalogue_items": 800000,
+      "fixed_cost_flops": {
+        "initialization_total": 160000000000000.0,
+        "calibration_per_release": 30000000000000.0,
+        "teacher_preparation_per_release": 4000000000000.0,
+        "source_preparation_per_release": 4000000000000.0
+      },
+      "flop_coefficients": {
+        "rebuild_linear_flops_per_row": 6120000.0,
+        "rebuild_quadratic_flops_per_row_squared": 3264.0,
+        "native_score_fixed_flops": 6290000.0,
+        "native_score_flops_per_history_row": 6528.0,
+        "native_append_fixed_flops": 6290000.0,
+        "native_append_flops_per_history_row": 6528.0,
+        "materialize_fixed_flops": 2700000.0,
+        "materialize_flops_per_row": 585000.0,
+        "handover_fixed_flops": 1800000.0,
+        "handover_flops_per_row": 540000.0,
+        "correction_read_fixed_flops": 76000.0,
+        "correction_read_flops_per_inherited_row": 1425.0,
+        "catalogue_flops_per_item": 360000.0
+      }
+    },
+    {
+      "dataset": "RecFlow",
+      "scale": "Max",
+      "active_population": 200000,
+      "catalogue_items": 2000000,
+      "fixed_cost_flops": {
+        "initialization_total": 220000000000000.0,
+        "calibration_per_release": 46000000000000.0,
+        "teacher_preparation_per_release": 6000000000000.0,
+        "source_preparation_per_release": 6000000000000.0
+      },
+      "flop_coefficients": {
+        "rebuild_linear_flops_per_row": 10800000.0,
+        "rebuild_quadratic_flops_per_row_squared": 5760.0,
+        "native_score_fixed_flops": 11100000.0,
+        "native_score_flops_per_history_row": 11520.0,
+        "native_append_fixed_flops": 11100000.0,
+        "native_append_flops_per_history_row": 11520.0,
+        "materialize_fixed_flops": 4200000.0,
+        "materialize_flops_per_row": 910000.0,
+        "handover_fixed_flops": 2800000.0,
+        "handover_flops_per_row": 840000.0,
+        "correction_read_fixed_flops": 124000.0,
+        "correction_read_flops_per_inherited_row": 2325.0,
+        "catalogue_flops_per_item": 560000.0
+      }
+    }
+  ],
+  "slices": {
+    "history": {
+      "fixed_queries_per_behavior": 8,
+      "history_length": [
+        128,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "saving_pct": {
+        "Yambda-Large": [
+          -3.4565360658680877,
+          21.942622381584076,
+          45.13190907606873,
+          63.382818084802636,
+          76.71773666225019
+        ],
+        "Yambda-Max": [
+          18.65634485230214,
+          37.05115457397081,
+          54.205314722394824,
+          68.26201967053719,
+          79.14235204764852
+        ],
+        "RecFlow-Large": [
+          -23.63312718377555,
+          8.27938439055268,
+          37.059089914240076,
+          59.15971115150241,
+          74.70356372115742
+        ],
+        "RecFlow-Max": [
+          13.683223635596853,
+          33.498205678844826,
+          51.903473364619245,
+          66.87457734624161,
+          78.34588250262259
+        ]
+      }
+    },
+    "density": {
+      "fixed_history_length": 1024,
+      "queries_per_behavior": [
+        1,
+        4,
+        16,
+        64,
+        256
+      ],
+      "saving_pct": {
+        "Yambda-Large": [
+          76.52725105215299,
+          70.36172088207493,
+          52.50735140290021,
+          22.960669113919852,
+          1.141523958074464
+        ],
+        "Yambda-Max": [
+          82.21975151140506,
+          75.67273522059298,
+          56.713644174436496,
+          25.338789952783447,
+          2.1696066309371043
+        ],
+        "RecFlow-Large": [
+          71.77226157670252,
+          65.8562163306764,
+          48.72431448861174,
+          20.37322310317239,
+          -0.563021860488
+        ],
+        "RecFlow-Max": [
+          80.7025327795516,
+          74.21638943458284,
+          55.43357650829455,
+          24.3504398747826,
+          1.3966793316398274
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,354 @@
+{
+  "status": "completed_conditional_comparison_not_population_timing",
+  "resource": "One A40 worker, serialized API resource work, Medium V3/V4/V5 next-item stride16 candidates16; coefficients from matched-fused native/Relay 128-user measured sessions.",
+  "scenarios": {
+    "window128": {
+      "primary_complete": {
+        "assumed_uniform_missed_operation_fraction": 1.0,
+        "paging_policy": "mandatory_complete_release_window_128",
+        "resident_service_seconds": {
+          "relay": 7120.869881107216,
+          "rebuild": 6126.614411962299
+        },
+        "additional_state_paging_seconds": {
+          "relay": 175.36280355051247,
+          "rebuild": 166.0342391553881
+        },
+        "per_user_C_seconds": 0.24320775615525764,
+        "per_user_R_seconds": 0.20975495503725625,
+        "serial_resource_relay_seconds": 7686.333905246569,
+        "serial_resource_rebuild_seconds": 6292.648651117687,
+        "saved_percent": -22.14783204019087,
+        "empirical_relay_interval_seconds": [
+          6845.830522024969,
+          8860.292162199079
+        ],
+        "empirical_rebuild_interval_seconds": [
+          5173.792174942787,
+          7772.472576522176
+        ],
+        "break_even": {
+          "minimum_users": null,
+          "reason": "C>=R: no finite population amortizes positive S",
+          "per_user_margin_seconds": -0.03345280111800139
+        },
+        "ideal_four_balanced_workers": {
+          "relay_seconds": 2216.3726500203034,
+          "rebuild_seconds": 1573.1621627794218,
+          "scope": "Conditional no-overlap upper scheduling ideal: equal service work, no CPU/PCIe contention; offline calibration S remains once and is not divided. Not a distributed measurement or loaded wall-clock bound."
+        }
+      },
+      "fixed_S_seconds": [
+        382.2987259949441,
+        397.90371518273605
+      ],
+      "phase_difference_seconds": {
+        "compute": 406.9180728834299,
+        "fixed_preparation": 390.1012205888401,
+        "scatter": 376.5723266607792,
+        "sample_bulk_normalization": 194.65298806085684,
+        "pack_h2d": 16.552367802139315,
+        "additional_state_paging": 9.328564395124374,
+        "scatter_d2h": -0.44028626248819336
+      },
+      "maintenance_full_phase_details": {
+        "relay": {
+          "raw_full_phase_seconds": 28.76788850945982,
+          "raw_phase_seconds": {
+            "pack_h2d": 8.387601984712502,
+            "compute": 16.48679029198111,
+            "scatter": 3.8934962327663714
+          },
+          "sample_bulk_normalization": 1.0557595884355657,
+          "normalized_full_phase_seconds": 30.37197413290754
+        },
+        "rebuild": {
+          "raw_full_phase_seconds": 151.4758866990678,
+          "raw_phase_seconds": {
+            "pack_h2d": 7.657669930516436,
+            "compute": 137.5483951865094,
+            "scatter": 6.26982158204286
+          },
+          "sample_bulk_normalization": 1.030517719158367,
+          "normalized_full_phase_seconds": 156.09858526861456
+        }
+      },
+      "required_method_variable_time_reduction_seconds": 1393.6852541288818,
+      "required_method_variable_time_reduction_percent": 19.101436513386915,
+      "coefficient_user_operation_coverage_percent": {
+        "relay": {
+          "tier2": 3.843071101153031,
+          "exact_batch": 99.94928274891315,
+          "tier4": 0.5819613895859466,
+          "tier0": 45.61551986016529,
+          "batch_proxy": 0.05071725108685782,
+          "tier7": 0.03448677740727597,
+          "tier3": 5.2276901890957435,
+          "tier1": 43.75042155139972,
+          "tier5": 0.9468491311929923
+        },
+        "rebuild": {
+          "tier2": 4.25454537551463,
+          "exact_batch": 99.94986811401961,
+          "tier3": 0.07428019329271104,
+          "tier0": 95.38849434579458,
+          "tier7": 0.03158598596452082,
+          "batch_proxy": 0.05013188598038626,
+          "tier4": 0.25109409943355315
+        }
+      },
+      "zero_extra_read_counterfactual": {
+        "scope": "Optimistic counterfactual within the existing scheduler and measured coefficient model: Relay append and score take exactly matched-native time, while all conversion phases, fixed preparation and actual paging policy remain. Not an achieved implementation, hardware lower bound or statistical bound.",
+        "population": 30000,
+        "fixed_S_seconds": 390.1012205888401,
+        "avoided_full_rebuild_seconds": 156.09858526861456,
+        "retained_full_conversion_seconds": 30.37197413290766,
+        "retained_extra_paging_seconds": 9.328564395124374,
+        "maximum_allowed_fixed_S_for_reference_break_even_seconds": 116.39804674058252,
+        "method_total_seconds": 6566.351824965945,
+        "native_total_seconds": 6292.648651117687,
+        "saved_percent": -4.349570252895699,
+        "conditional_break_even": {
+          "minimum_users": 100544,
+          "per_user_margin_seconds": 0.003879934891352771,
+          "reason": "conditional S+N*C < N*R, fixed catalogue and workload mix"
+        },
+        "asymptotic_total_time_saving_percent": 1.8497464771040115,
+        "assumptions": "Same Medium model, catalogue, 3-release horizon and measured window/batch/activity distribution at every population; not measured Large/Max extrapolation."
+      },
+      "mathematical_and_dot_tile_cost_views": {
+        "mathematical_effective": {
+          "added_flops": 63607494930992.0,
+          "added_percent_of_mathematical_rebuild": 17.302169160460053,
+          "with_source_reconstruction_added_percent": 18.536789528278604,
+          "saved_percent_against_mathematical_full_service": 30.19002844100826
+        },
+        "with_conversion_tile_sensitivity": {
+          "added_flops": 76029670575728.0,
+          "added_percent_of_mathematical_rebuild": 20.681182664754605,
+          "with_source_reconstruction_added_percent": 21.915803032573155,
+          "saved_percent_against_mathematical_full_service": 28.95647113047686
+        },
+        "with_conversion_and_reader_dot_tile_sensitivity": {
+          "added_flops": 136585593999728.0,
+          "added_percent_of_mathematical_rebuild": 37.15327973266492,
+          "with_source_reconstruction_added_percent": 38.38790010048347,
+          "saved_percent_against_mathematical_full_service": 22.943096004251753
+        }
+      },
+      "unnormalized_resident_phase_sensitivity": {
+        "per_user_C_seconds": 0.22482611758418053,
+        "per_user_R_seconds": 0.19817270154804517,
+        "relay_S_plus_service_seconds": 7134.884748114256,
+        "rebuild_service_seconds": 5945.181046441355,
+        "saved_percent": -20.011227452611045,
+        "break_even": {
+          "minimum_users": null,
+          "reason": "C>=R: no finite population amortizes positive S",
+          "per_user_margin_seconds": -0.026653416036135358
+        },
+        "scope": "Direct measured synchronous-phase coefficients before bulk normalization. Difference from main prediction exposes sample orchestration/measurement-order sensitivity; neither is independent population validation."
+      }
+    },
+    "frontier_operation_paging": {
+      "primary_complete": {
+        "assumed_uniform_missed_operation_fraction": 1.0,
+        "paging_policy": "uniform_operation_miss_sensitivity",
+        "resident_service_seconds": {
+          "relay": 4383.545745296144,
+          "rebuild": 3658.499979815542
+        },
+        "additional_state_paging_seconds": {
+          "relay": 7332.3783911727405,
+          "rebuild": 6840.87996748341
+        },
+        "per_user_C_seconds": 0.39053080454896283,
+        "per_user_R_seconds": 0.34997933157663175,
+        "serial_resource_relay_seconds": 12106.025357057724,
+        "serial_resource_rebuild_seconds": 10499.379947298952,
+        "saved_percent": -15.302288495351519,
+        "empirical_relay_interval_seconds": [
+          11045.68714212038,
+          22675.890084020506
+        ],
+        "empirical_rebuild_interval_seconds": [
+          8888.856307983522,
+          13496.04694664702
+        ],
+        "break_even": {
+          "minimum_users": null,
+          "reason": "C>=R: no finite population amortizes positive S",
+          "per_user_margin_seconds": -0.04055147297233108
+        },
+        "ideal_four_balanced_workers": {
+          "relay_seconds": 3321.295512973092,
+          "rebuild_seconds": 2624.844986824738,
+          "scope": "Conditional no-overlap upper scheduling ideal: equal service work, no CPU/PCIe contention; offline calibration S remains once and is not divided. Not a distributed measurement or loaded wall-clock bound."
+        }
+      },
+      "fixed_S_seconds": [
+        382.2987259949441,
+        397.90371518273605
+      ],
+      "phase_difference_seconds": {
+        "additional_state_paging": 491.4984236893306,
+        "fixed_preparation": 390.1012205888401,
+        "scatter": 317.8866925164748,
+        "compute": 257.9858099424455,
+        "sample_bulk_normalization": 123.17279502432893,
+        "pack_h2d": 26.659667909542577,
+        "scatter_d2h": -0.6591999124805916
+      },
+      "maintenance_full_phase_details": {
+        "relay": {
+          "raw_full_phase_seconds": 27.20659780863047,
+          "raw_phase_seconds": {
+            "pack_h2d": 8.055193015209406,
+            "compute": 14.954077370755211,
+            "scatter": 4.197327422665963
+          },
+          "sample_bulk_normalization": 1.0557595884355657,
+          "normalized_full_phase_seconds": 28.72362650517167
+        },
+        "rebuild": {
+          "raw_full_phase_seconds": 121.05785940686282,
+          "raw_phase_seconds": {
+            "pack_h2d": 6.202076703723844,
+            "compute": 108.6474899635698,
+            "scatter": 6.208292739571806
+          },
+          "sample_bulk_normalization": 1.030517719158367,
+          "normalized_full_phase_seconds": 124.75226916215453
+        }
+      },
+      "required_method_variable_time_reduction_seconds": 1606.645409758772,
+      "required_method_variable_time_reduction_percent": 13.713347671462527,
+      "coefficient_user_operation_coverage_percent": {
+        "relay": {
+          "tier2": 1.547281324158786,
+          "exact_batch": 99.84091275798647,
+          "tier4": 0.04568842590860265,
+          "batch_proxy": 0.15908724201352253,
+          "tier7": 2.7440702166994653,
+          "tier0": 42.905817254399686,
+          "tier3": 12.255866625069624,
+          "tier1": 34.751898977337156,
+          "tier5": 5.749377176426679
+        },
+        "rebuild": {
+          "tier2": 1.9145985452576708,
+          "exact_batch": 99.8344392050667,
+          "tier7": 2.612388033354608,
+          "tier3": 0.03501504560287094,
+          "tier0": 95.42433043384608,
+          "batch_proxy": 0.16556079493329875,
+          "tier4": 0.01366794193877583
+        }
+      },
+      "zero_extra_read_counterfactual": {
+        "scope": "Optimistic counterfactual within the existing scheduler and measured coefficient model: Relay append and score take exactly matched-native time, while all conversion phases, fixed preparation and actual paging policy remain. Not an achieved implementation, hardware lower bound or statistical bound.",
+        "population": 30000,
+        "fixed_S_seconds": 390.1012205888401,
+        "avoided_full_rebuild_seconds": 124.75226916215453,
+        "retained_full_conversion_seconds": 28.723626505171946,
+        "retained_extra_paging_seconds": 491.4984236893306,
+        "maximum_allowed_fixed_S_for_reference_break_even_seconds": -395.469781032348,
+        "method_total_seconds": 11284.950948920141,
+        "native_total_seconds": 10499.379947298952,
+        "saved_percent": -7.482070422866096,
+        "conditional_break_even": {
+          "minimum_users": null,
+          "reason": "C>=R: no finite population amortizes positive S",
+          "per_user_margin_seconds": -0.013182326034411607
+        },
+        "asymptotic_total_time_saving_percent": -3.766601294718225,
+        "assumptions": "Same Medium model, catalogue, 3-release horizon and measured window/batch/activity distribution at every population; not measured Large/Max extrapolation."
+      },
+      "mathematical_and_dot_tile_cost_views": {
+        "mathematical_effective": {
+          "added_flops": 63851038538720.0,
+          "added_percent_of_mathematical_rebuild": 17.368416584657943,
+          "with_source_reconstruction_added_percent": 18.603036952476497,
+          "saved_percent_against_mathematical_full_service": 30.165843869292484
+        },
+        "with_conversion_tile_sensitivity": {
+          "added_flops": 76250044618784.0,
+          "added_percent_of_mathematical_rebuild": 20.741127628404975,
+          "with_source_reconstruction_added_percent": 21.97574799622353,
+          "saved_percent_against_mathematical_full_service": 28.934587362315984
+        },
+        "with_conversion_and_reader_dot_tile_sensitivity": {
+          "added_flops": 137240941859360.0,
+          "added_percent_of_mathematical_rebuild": 37.33154393782816,
+          "with_source_reconstruction_added_percent": 38.56616430564671,
+          "saved_percent_against_mathematical_full_service": 22.87801810112834
+        }
+      },
+      "unnormalized_resident_phase_sensitivity": {
+        "per_user_C_seconds": 0.13840100825074272,
+        "per_user_R_seconds": 0.11833857590220029,
+        "relay_S_plus_service_seconds": 4542.131468111122,
+        "rebuild_service_seconds": 3550.1572770660086,
+        "saved_percent": -27.94169704686774,
+        "break_even": {
+          "minimum_users": null,
+          "reason": "C>=R: no finite population amortizes positive S",
+          "per_user_margin_seconds": -0.020062432348542436
+        },
+        "scope": "Direct measured synchronous-phase coefficients before bulk normalization. Difference from main prediction exposes sample orchestration/measurement-order sensitivity; neither is independent population validation."
+      }
+    }
+  },
+  "source_bindings": [
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/time_model/fair128_window30k/attempt1/summary.json",
+      "sha256": "c7f2e1bae5f8ccd2c3847afceec9986e3f088513c9b25cad7442c92077491065"
+    },
+    {
+      "path": "/home/gkl/work/evokv/results/system_study_2026_10/service/time_model/fair128_frontier30k/attempt1/summary.json",
+      "sha256": "7b4234ea9b78bc8219070b334a0482132191fe1601d32e59eed92d595bf101bd"
+    }
+  ],
+  "first_query_overwrite_sensitivity": {
+    "status": "complete_CPU_first_query_overwrite_sensitivity",
+    "users": 30000,
+    "removable_native_append_mathematical_flops": 3857386274604,
+    "percent_of_recorded_common_native_service": 0.6032885357503676,
+    "percent_of_recorded_full_rebuild_service": 0.3830494089493587,
+    "common_native_after_skip_flops": 635535880134180,
+    "original_rebuild_flops_unchanged": 367627286157574,
+    "scope": "Strictly causal first-query-only sensitivity: Rebuild can advance item/event metadata to its existing first query and reconstruct once, without performing the immediately overwritten incremental K/V writes. Users without a query excluded. Actual fair128 scheduling is unchanged; no GPU or timing benefit measured. Native service decreases by delta; method work is unchanged, so its added cost over common native increases by delta.",
+    "source_bindings": [
+      {
+        "path": "/home/gkl/work/evokv/configs/design/medium_v0_v5_development.json",
+        "sha256": "cc7e5f4027d7c33fbe96ea2e3a304434596f8e63d92c5f0d55863bb639b27e1e"
+      },
+      {
+        "path": "/home/gkl/work/evokv/results/design_two_2026_10/benchmark_panel/binding.json",
+        "sha256": "02ea25a775a7d982c45b711c32214379731153fe63574c3138bfd7b00883830b"
+      },
+      {
+        "path": "/home/gkl/work/evokv/data/processed/yambda500m_unified_v1/scales/medium/dataset.json",
+        "sha256": "d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb"
+      },
+      {
+        "path": "/home/gkl/work/evokv/data/manifests/yambda500m_scale_v1/medium_users.parquet",
+        "sha256": "62ab1d94f89f77361cd24442589d2d99aa756a44db83358a46a43289b0c78e5c"
+      },
+      {
+        "path": "/home/gkl/work/evokv/scripts/system_study_2026_10/time_batch_shapes.py",
+        "sha256": "306729b436fa02828cb1c0be897acbc07d552b4e416c75dc3c056e93aeb56102"
+      }
+    ],
+    "elapsed_CPU_seconds": 93.0276506380178
+  },
+  "scope_limits": [
+    "30k event geometry is exact; times are empirical shape-pool projections, not a measured whole-population run or statistical bound. Same actual batch is matched for >99.8% of user operations; exact length/width/code matches are lower and recorded separately.",
+    "Raw phase and sample-normalized predictions are both slower; normalization is sample accounting, not independent prediction validation.",
+    "Window128 requires saturated/offline release-wide cross-user reorder, with every UID fully paged each release including initial/final boundaries. Global frontier uses per-operation pages; neither establishes online arrival latency.",
+    "All S estimates include historical calibration, origin/source/teacher workflows and fresh one-worker shared preparation; common foundation training/initial V2 cache add B to both methods. Final persistence, full host code-buffer initial allocation and cold JIT require separate nonnegative deltas.",
+    "Optimistic same-native append/score counterfactual retains full conversion/extra pages/S. Its conditional population threshold is not a tested implementation and holds directory, activity and batch distributions fixed.",
+    "Large/Max have native-only probes; there are no adapted independent Large/Max correctors or complete quality/time claims.",
+    "Current first-query baseline does append work before rebuilding some users; exact possible removed work is retained only as a FLOPs sensitivity. No timing is subtracted."
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Synthetic layout preview: controlled paths and complete FLOPs; no serving measurements.",
+    "task": "Real feedback task is planned; these invented values are not task evidence.",
+    "configuration_scope": "Yambda/RecFlow × Large/Max, independently calibrated. RecFlow final model/task settings are pending.",
+    "population_scope": "Fractions of a distinct fixed population per condition; no absolute RecFlow population is asserted.",
+    "flops_model": "100*(F_fixed + f*F_variable)/(f*F_rebuild_full), expressed directly using percent coefficients. Added costs include initialization, calibration, shared preparation, maintenance, reads and appends. Common native service is excluded from this added-cost ratio.",
+    "transfers": "All controlled path times include the declared movement/synchronization for that operation. Transfer bytes are recorded separately; bytes are not converted to FLOPs.",
+    "time_scope": "Per-path artificial examples on matched inputs and resources. No online throughput, tail latency, full-cycle wall time or scale-time estimate.",
+    "setup_scope": "Initial feature calibration, later release fitting and shared preparation are distinct operations; do not sum these bars into a serving-cycle time.",
+    "uncertainty": "No fake repeats, intervals or error bars.",
+    "mock_default_sync": "2026-10-19: mock default references synchronized with the revised E1/E3 preview; not new measurements."
+  },
+  "population_percent": [
+    5,
+    10,
+    25,
+    50,
+    100
+  ],
+  "configurations": [
+    {
+      "dataset": "Yambda",
+      "scale": "Large",
+      "name": "Yambda / Large",
+      "short_name": "YL",
+      "fixed_flops_percent_of_full_rebuild": {
+        "initialization": 1.0,
+        "incremental_calibration": 2.5,
+        "shared_preparation": 0.5
+      },
+      "variable_flops_percent_of_full_rebuild": {
+        "code_preparation": 3.56084656,
+        "handover": 0.712169312,
+        "read_overhead": 4.154320987,
+        "append_overhead": 2.255202821
+      },
+      "path_reference_ms": {
+        "Prepare": 10,
+        "Read": 0.8,
+        "Append": 1.4
+      },
+      "path_cachetide_ms": {
+        "Prepare": 1.6,
+        "Read": 0.96,
+        "Append": 1.512
+      },
+      "full_scale_transfer_GB": 160
+    },
+    {
+      "dataset": "Yambda",
+      "scale": "Max",
+      "name": "Yambda / Max",
+      "short_name": "YM",
+      "fixed_flops_percent_of_full_rebuild": {
+        "initialization": 1.3,
+        "incremental_calibration": 3,
+        "shared_preparation": 0.7
+      },
+      "variable_flops_percent_of_full_rebuild": {
+        "code_preparation": 3.768588138,
+        "handover": 0.869674186,
+        "read_overhead": 4.116457813,
+        "append_overhead": 2.261152883
+      },
+      "path_reference_ms": {
+        "Prepare": 24,
+        "Read": 2.2,
+        "Append": 3.2
+      },
+      "path_cachetide_ms": {
+        "Prepare": 3.4,
+        "Read": 2.64,
+        "Append": 3.52
+      },
+      "full_scale_transfer_GB": 420
+    },
+    {
+      "dataset": "RecFlow",
+      "scale": "Large",
+      "name": "RecFlow / Large",
+      "short_name": "RL",
+      "fixed_flops_percent_of_full_rebuild": {
+        "initialization": 1.2,
+        "incremental_calibration": 2.7,
+        "shared_preparation": 0.6
+      },
+      "variable_flops_percent_of_full_rebuild": {
+        "code_preparation": 3.637923639,
+        "handover": 0.738953239,
+        "read_overhead": 3.865293867,
+        "append_overhead": 2.273702275
+      },
+      "path_reference_ms": {
+        "Prepare": 9.5,
+        "Read": 1.15,
+        "Append": 1.6
+      },
+      "path_cachetide_ms": {
+        "Prepare": 1.8,
+        "Read": 1.4375,
+        "Append": 1.792
+      },
+      "full_scale_transfer_GB": 185
+    },
+    {
+      "dataset": "RecFlow",
+      "scale": "Max",
+      "name": "RecFlow / Max",
+      "short_name": "RM",
+      "fixed_flops_percent_of_full_rebuild": {
+        "initialization": 1.5,
+        "incremental_calibration": 3.2,
+        "shared_preparation": 0.8
+      },
+      "variable_flops_percent_of_full_rebuild": {
+        "code_preparation": 4.133903135,
+        "handover": 0.885836386,
+        "read_overhead": 4.133903135,
+        "append_overhead": 2.362230363
+      },
+      "path_reference_ms": {
+        "Prepare": 23,
+        "Read": 2.5,
+        "Append": 3.6
+      },
+      "path_cachetide_ms": {
+        "Prepare": 3.8,
+        "Read": 3.175,
+        "Append": 4.14
+      },
+      "full_scale_transfer_GB": 500
+    }
+  ],
+  "path_names": [
+    "Prepare",
+    "Read",
+    "Append"
+  ],
+  "representative_configuration": "Yambda / Large",
+  "setup_seconds": {
+    "Initial fit": 1200,
+    "Release fit": 440,
+    "Shared tables": 120
+  }
+}

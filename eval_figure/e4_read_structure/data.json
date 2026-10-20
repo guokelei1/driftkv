@@ -1,0 +1,150 @@
+{
+  "meta": {
+    "synthetic": true,
+    "experiment": "E4",
+    "figure": "6-4",
+    "datasets": [
+      "Yambda",
+      "RecFlow"
+    ],
+    "scales": [
+      "Large",
+      "Max"
+    ],
+    "representative_configuration": "Yambda-Large",
+    "notes": [
+      "全部数字为模拟数据，不是已有实验结果；RecFlow 的独立适配和拟合尚不能由本图验证。",
+      "常量门控对照独立训练并维护自己的码与增量状态，不是测试时冻结动态门控，也不是 E1 的持久 K/V 映射。",
+      "左图由各配置三版绝对 AUC 的等权均值减去对应 Reuse 均值得到增益。动态方法与基线沿用一致的预览设置；constant_gate 是独立指定的模拟对照，不复用 E1 静态映射实验。数值相同仅为布局占位，不表示方法等价。",
+      "中图读取 FLOPs 以原生读取为分母，不是 E1 的完整新增成本。",
+      "右图只统计码张量，假设所有配置 H=10,d=32 且 dtype 相同；RecFlow 架构为预览假设，未实证验证。",
+      "原生每层每行 K/V 共 640 标量，宽码72=12+6H，占11.25%；窄码36=6+3H，占5.625%。"
+    ],
+    "mock_default_sync": "2026-10-19: mock default references synchronized with the revised E1/E3 preview; not new measurements."
+  },
+  "release_quality": {
+    "Yambda-Large": {
+      "reuse": [
+        0.806,
+        0.813,
+        0.817
+      ],
+      "rebuild": [
+        0.826,
+        0.831,
+        0.833
+      ],
+      "ct": [
+        0.8232,
+        0.82812,
+        0.83108
+      ],
+      "constant_gate": [
+        0.8217,
+        0.82662,
+        0.82958
+      ]
+    },
+    "Yambda-Max": {
+      "reuse": [
+        0.828,
+        0.833,
+        0.838
+      ],
+      "rebuild": [
+        0.845,
+        0.849,
+        0.853
+      ],
+      "ct": [
+        0.84211,
+        0.84596,
+        0.85075
+      ],
+      "constant_gate": [
+        0.84111,
+        0.84496,
+        0.84975
+      ]
+    },
+    "RecFlow-Large": {
+      "reuse": [
+        0.736,
+        0.742,
+        0.748
+      ],
+      "rebuild": [
+        0.76,
+        0.766,
+        0.769
+      ],
+      "ct": [
+        0.7564,
+        0.76288,
+        0.76564
+      ],
+      "constant_gate": [
+        0.7539,
+        0.76038,
+        0.76314
+      ]
+    },
+    "RecFlow-Max": {
+      "reuse": [
+        0.748,
+        0.756,
+        0.761
+      ],
+      "rebuild": [
+        0.775,
+        0.781,
+        0.784
+      ],
+      "ct": [
+        0.77014,
+        0.777,
+        0.7794
+      ],
+      "constant_gate": [
+        0.76814,
+        0.775,
+        0.7774
+      ]
+    }
+  },
+  "structures": [
+    {
+      "name": "Narrow / narrow",
+      "short_label": "36 / 6",
+      "stored_coordinates": 36,
+      "read_coordinates_per_head": 6,
+      "added_read_flops_pct": 12,
+      "auc_gain_pp": 1.190933,
+      "code_bytes_pct_native_kv": 5.625,
+      "color": "#969DA4",
+      "marker": "s"
+    },
+    {
+      "name": "Wide / wide",
+      "short_label": "72 / 18",
+      "stored_coordinates": 72,
+      "read_coordinates_per_head": 18,
+      "added_read_flops_pct": 32,
+      "auc_gain_pp": 1.616267,
+      "code_bytes_pct_native_kv": 11.25,
+      "color": "#B58735",
+      "marker": "D"
+    },
+    {
+      "name": "Wide / narrow",
+      "short_label": "72 / 6",
+      "stored_coordinates": 72,
+      "read_coordinates_per_head": 6,
+      "added_read_flops_pct": 12,
+      "auc_gain_pp": 1.546667,
+      "code_bytes_pct_native_kv": 11.25,
+      "color": "#1764AB",
+      "marker": "o"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "purpose": "Four-user synthetic-arrival GPU pilot, not production tail latency or sustainable throughput evidence",
+  "panel": "results/design_system_2026_10/phase2/representative4096/panel",
+  "selection": "results/implementation_2026_10/registration.json",
+  "candidate": "results/query_relay_2026_10/probes/A_itemgate6_rms_roll4",
+  "reference_scores": "results/system_study_2026_10/service/gpu_smoke4/attempt2/scores.parquet",
+  "protocol": "behavior_stride16_candidates16",
+  "methods": ["relay", "reuse", "rebuild"],
+  "arrival_scales": [0.00001, 0.000001],
+  "expected_users": 4,
+  "stride": 16,
+  "candidates": 16,
+  "query_batch": 16,
+  "behavior_processing": "on_demand",
+  "reader_backend": "triton",
+  "row_chunk": 128,
+  "warmup": "one_complete_four_user_trace_per_method_then_fresh_sessions",
+  "atol": 0.00003,
+  "rtol": 0.00003
+}
