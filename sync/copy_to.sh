@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 3 || ( $1 != 201 && $1 != 202 ) ]]; then
-  printf 'Usage: %s {201|202} DESTINATION_ROOT MODEL_PATH [MODEL_PATH ...]\n' "$0" >&2
-  printf 'Select repository-relative files or directories from the inventory.\n' >&2
+if [[ $# -lt 2 || ( $1 != 201 && $1 != 202 ) ]]; then
+  printf 'Usage: %s {201|202} DESTINATION_ROOT [ITEM_ID ...]\n' "$0" >&2
+  printf 'Select numbered inventory items, e.g. D007 Y002.\n' >&2
   exit 2
 fi
 
@@ -21,34 +21,25 @@ fi
 cd "$repo_root"
 
 files=()
-for selection in "${selections[@]}"; do
-  selection=${selection#./}
-  selection=${selection%/}
-  if [[ -z $selection || $selection == /* || /$selection/ == */../* || $selection == . ]]; then
-    printf 'Use a repository-relative file or directory: %s\n' "$selection" >&2
-    exit 1
-  fi
-  matched=0
-  while IFS=$'\t' read -r size path; do
-    [[ $size =~ ^[0-9]+$ && -n ${path:-} ]] || continue
-    if [[ $path == "$selection" || $path == "$selection/"* ]]; then
-      if [[ ! -f $path ]]; then
-        printf 'Missing source file: %s\n' "$path" >&2
-        exit 1
-      fi
-      files+=("$path")
-      matched=1
+while IFS=$'\t' read -r marker item_id size path; do
+  [[ $marker == FILE && $size =~ ^[0-9]+$ && -n ${path:-} ]] || continue
+  if (( ${#selections[@]} == 0 )) || [[ " ${selections[*]} " == *" $item_id "* ]]; then
+    if [[ ! -f $path ]]; then
+      printf 'Missing source file: %s\n' "$path" >&2
+      exit 1
     fi
-  done < "$inventory"
-  if [[ $matched -eq 0 ]]; then
-    printf 'No inventory files match: %s\n' "$selection" >&2
-    exit 1
+    files+=("$path")
   fi
-done
+done < "$inventory"
+
+if (( ${#files[@]} == 0 )); then
+  printf 'No inventory files match the selected IDs.\n' >&2
+  exit 1
+fi
 
 mkdir -p "$destination"
 for path in "${files[@]}"; do
   rsync -a --relative "./$path" "$destination/"
 done
 
-printf 'Copied selected files from inventory %s to %s\n' "$machine" "$destination"
+printf 'Copied %s files from inventory %s to %s\n' "${#files[@]}" "$machine" "$destination"
