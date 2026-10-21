@@ -2,6 +2,21 @@
 
 ## Active work — 2026-10-19 (read first)
 
+Latest execution authorization — 2026-10-21 evening: after the completed
+Yambda-Large V0→V1 report, the user requested all remaining independent adjacent
+edges V1→V2, V2→V3, V3→V4 and V4→V5 on physical GPU 1. The four-edge sequential
+queue started at 19:39 Shanghai on g201. Resume from experiments/STATUS.md and
+experiments/01_quality_cost/runs/yambda/large/baselines_v1_v5_gpu1_201/attempt_1/.
+Keep the same 24 natural points, all 75,807 eligible quality/cost users and
+4096-user checkpoints. Each edge fits its own six learned points and profiles
+its own layer intervals; reuse UID roles only, not correction weights or state.
+V4→V5 [287,301) includes partial source day 300 and must remain E14_partial,
+not complete 14-day evidence. Do not rerun V0→V1 or launch CacheTide quality.
+The queue freezes source/config hashes; do not edit its execution Python files
+while queued edges remain pending. Runtime estimate: 3–4h/edge, 12–16h total,
+progress only, not controlled timing evidence. This supersedes GPU 0 and the
+first-edge-only queue restriction in the historical paragraph below.
+
 Latest user clarification — 2026-10-21: experiment 01 compares independent
 adjacent-version transitions. All methods start each edge from the same old
 native state; correction/student state is not carried between edges. Normal
@@ -26,7 +41,13 @@ users based on their outcomes. The current Large V0→V1 test pool is 75,807.
 Before a population run, optimize execution and report a measured-input-based
 30k-user runtime estimate. This is done: the 24-point plan is 70–100 minutes for
 30k resident users and about 3–3.5 hours for all 75,807 eligible users.
-The full run has now launched on GPU 0; resume from experiments/STATUS.md.
+The full run completed on GPU 0 in 3h06m on 2026-10-21: 75,807 eligible users,
+34,190 feedback users, 345,630 feedback events, all 24 points and UID intervals.
+Resume from experiments/STATUS.md; this task has no active GPU job.
+Selected Layer intervals all start at zero and require no persistent old hidden
+boundary cache. The earlier generic 45% claim was corrected in report metadata;
+all measured metrics/FLOPs/scores/weights are unchanged. Layer2 is 84.88% recovery
+at 21.04% added FLOPs / once-Rebuild, not the earlier partial-preview ~95–98%.
 Full deployment costs still include events
 omitted solely because they cannot affect an independent edge's scored quality.
 Latest reliability instruction: save results promptly and support bounded-loss

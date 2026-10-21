@@ -469,6 +469,23 @@ def evaluate(parent,current,histories,by_user,uids,policies,cfg,device,output):
     return scores,observed
 
 
+def layer_boundary_accounting(policies,shapes,cm):
+    rows=sum(n*count for n,count in shapes["initial"].items())
+    points=[]
+    for policy in policies:
+        if policy["method"]!="layer":continue
+        start,end=policy["interval"]
+        points.append(dict(method=policy["tag"],interval=[start,end],
+            required_old_boundary_layers=[start] if start else [],
+            required_persistent_old_boundary_bytes=int(rows*cm.hidden_size*4) if start else 0,
+            required_persistent_old_boundary_relative_to_native_kv=1/(2*cm.num_layers) if start else 0.))
+    return dict(selected_points=points,
+        policy="A prefix starting at layer zero recomputes from raw events and needs no old hidden boundary. A nonzero start needs its actual old input, not teacher hidden.",
+        prototype="Shared research capture keeps all old block inputs transiently for profiling/evaluation; this is not a persistent-state requirement of a selected prefix point.",
+        scope="Point-specific additional persistent old boundary state only; raw history/native KV and temporary reconstruction workspace are separate.",
+        nonprefix_source="Non-prefix boundaries must come from the old producer or separately charged old-state reconstruction.")
+
+
 def finish(scores,observed,policies,shapes,cm,denominator,cfg,output):
     from experiments_2026_10.statistics import paired_user_bootstrap,write_tables
     from sklearn.metrics import roc_auc_score
@@ -515,12 +532,9 @@ def finish(scores,observed,policies,shapes,cm,denominator,cfg,output):
         preparation_rule=cfg["repair_schedule"],query_only_schedule=cfg["query_only_schedule"],
         arithmetic="executed-shape analytical FLOPs, FMA=2; retained fitting conventions estimate solves/backward/optimizer arithmetic; sorting and transfers are separate",
         created_utc=datetime.now(timezone.utc).isoformat())
-    summary["layer_boundary_state"]=dict(
-        policy="retain actual old-model block inputs alongside original KV; never borrow current/teacher hidden for free",
-        prerelease_extra_retained_bytes=int(sum(n*count for n,count in shapes["initial"].items())*(cm.num_layers-1)*cm.hidden_size*4),
-        extra_relative_to_native_kv=(cm.num_layers-1)/(2*cm.num_layers),
-        copy_traffic="one extra write per captured block input; no extra projection FLOPs; boundary state can retire after the once-per-release repair",
-        unavailable_boundary_case="requires additional old-state reconstruction; present cost point assumes the disclosed auxiliary boundary cache")
+    summary["evaluation_window"]=dict(start_day=cfg["release_day"],end_day_exclusive=cfg["end_day"],
+        **cfg.get("evaluation_window",{}))
+    summary["layer_boundary_state"]=layer_boundary_accounting(policies,shapes,cm)
     quality_uids=json.loads((output/"configuration.json").read_text())["roles"]["quality"]
     confidence,metadata=paired_user_bootstrap(groups,quality_uids,
         replicates=cfg.get("confidence_replicates",1000),seed=cfg.get("confidence_seed",17021),
@@ -645,7 +659,7 @@ def run(args):
     summary.update(calibration_snapshot_transfer_bytes=transfer,torch_version=torch.__version__,
         cuda_device=torch.cuda.get_device_name(device),canary=args.canary,source_sha256=sha256(Path(__file__)),
         configuration_sha256=sha256(output/"configuration.json"),execution_progress_wall_seconds=time.perf_counter()-started,
-        offline_evaluation_execution=fast_stats)
+        offline_evaluation_execution=fast_stats,completed_utc=datetime.now(timezone.utc).isoformat())
     write_json(output/"summary.json",summary)
     print(json.dumps(dict(status="complete",output=str(output),results=summary["results"])),flush=True)
 

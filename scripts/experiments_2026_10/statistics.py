@@ -94,6 +94,12 @@ def write_tables(summary,output):
         "Independent adjacent edge; frozen backbone and correction seed 17.","",
         "| Method | Setting | Added FLOPs / Rebuild (%) | AUC | Gain over Reuse | Recovery (%) | UID 95% CI (%) |",
         "|---|---|---:|---:|---:|---:|---|" ]
+    window=summary.get("evaluation_window")
+    if window:
+        note=f"Window: days [{window['start_day']}, {window['end_day_exclusive']}); {window.get('name','fixed horizon')}."
+        if not window.get("complete_source_horizon",True):
+            note+=" Incomplete source horizon: "+window["interpretation"]
+        md[2:2]=[note,""]
     tex=[r"\begin{tabular}{llrrrr}",r"\toprule",
         r"Method & Setting & Added FLOPs (\%) & AUC & Recovery (\%) & UID 95\% CI \\",r"\midrule"]
     def number(value,decimals):return "--" if value is None else f"{value:.{decimals}f}"
@@ -106,15 +112,17 @@ def write_tables(summary,output):
         tex.append(f"{row['method']} & {tex_setting} & {row['added_flops_percent']:.2f} & "
             f"{row['auc']:.6f} & {number(row['recovery_percent'],1)} & {ci} "+chr(92)*2)
     tex.extend([r"\bottomrule",r"\end{tabular}"])
+    prefix_only=all(not p["required_old_boundary_layers"] for p in summary["layer_boundary_state"]["selected_points"])
+    boundary_note=("All selected Layer intervals start at layer zero and recompute from raw events; they need no additional persistent old hidden boundary cache. Temporary reconstruction workspace is separate."
+        if prefix_only else "Non-prefix Layer points need their actual old input boundary; point-specific persistent bytes are in summary.json. Teacher hidden is not free.")
     md.extend(["","Recovery = 100 × (AUC(method) − AUC(Reuse)) / (AUC(Rebuild) − AUC(Reuse)); values are not clipped.","",
         "Complete added FLOPs include each method's calibration, selection, repair/mapping and query correction. "
         "The denominator is once-per-user/release Rebuild at the first history consumer. "
         "Common native reads/appends and old-cache initialization are reported separately in summary.json. "
         "All population events count toward costs, including users without feedback and events after the last scored request.","",
-        "Layer assumes retained old block inputs (45% auxiliary state relative to native KV for ten layers); "
-        "this is disclosed extra memory, and reconstruction would need a separate cost point.","",
+        boundary_note,"",
         "Intervals resample paired user clusters, conditional on these fitted weights. "
-        "This first-edge full-population comparison does not establish cross-edge, cross-dataset or training-seed stability. "
+        "This independent-edge comparison alone does not establish cross-edge, cross-dataset or training-seed stability. "
         "Execution progress times are not controlled paper timing results."])
     (output/"report.md").write_text("\n".join(md)+"\n")
     (output/"table.tex").write_text("\n".join(tex)+"\n")
