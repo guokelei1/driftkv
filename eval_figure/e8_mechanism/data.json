@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Invented preview for two design panels in Section 6.3; no measurements or fabricated uncertainty.",
+    "representative_configuration": "Yambda-Large, independent module calibration; illustrative values only.",
+    "read_scope": "Read FLOPs relative to native attention; AUC gain over Reuse. Width labels are stored coordinates / coordinates read per head.",
+    "calibration_scope": "Recovery after 256 causal appends on the same held-out histories. Each fitting count and tail-supervision setting is trained independently; users and evaluation trajectory are fixed.",
+    "provenance": "Width and constant-gate default values follow the current manuscript synthetic tables. Calibration values are invented layout examples, not a new experiment."
+  },
+  "read_structure": [
+    {
+      "label": "36/6",
+      "stored": 36,
+      "read": 6,
+      "read_flops_pct": 12,
+      "gain_pp": 1.19,
+      "state_pct": 5.625
+    },
+    {
+      "label": "72/6",
+      "stored": 72,
+      "read": 6,
+      "read_flops_pct": 12,
+      "gain_pp": 1.55,
+      "state_pct": 11.25
+    },
+    {
+      "label": "72/18",
+      "stored": 72,
+      "read": 18,
+      "read_flops_pct": 32,
+      "gain_pp": 1.62,
+      "state_pct": 11.25
+    }
+  ],
+  "constant_gate": {
+    "stored": 72,
+    "read": 6,
+    "read_flops_pct": 12,
+    "gain_pp": 1.4,
+    "control": "independently trained constant gate; same stored/read widths, fitting budget and held-out trajectory as dynamic 72/6"
+  },
+  "calibration": {
+    "fit_users": [
+      16,
+      64,
+      256
+    ],
+    "appends": 256,
+    "with_tail_recovery": [
+      63.9,
+      84.1,
+      85.7
+    ],
+    "without_tail_recovery": [
+      55,
+      70,
+      72
+    ],
+    "with_tail_before_append_recovery": [
+      67.9,
+      85.9,
+      87.1
+    ],
+    "incremental_fit_seconds": [
+      200,
+      440,
+      1150
+    ]
+  }
+}

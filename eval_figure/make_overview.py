@@ -6,17 +6,17 @@ from render_all import FIGURES, ROOT
 
 FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
 TITLES = ['整体质量与计算成本', '相同资源下的完整时间分解', '默认点跨发布的质量与成本',
-          '动态读取与状态容量', '校准投入与持续质量', '投影复用与融合读取的实现贡献',
-          '历史长度与请求频度的成本敏感性', '单次发布后的长期质量与累计费用']
-ORDER = [0, 2, 7, 3, 4, 1, 5, 6]
+          'Design：读取结构与校准', 'Implementation：准备与读取优化',
+          '固定版本与读取次数的适用边界']
+ORDER = [0, 2, 3, 4, 1, 5]
 
 
 def contact_sheet():
     width, tile_w, gap, header = 2400, 1156, 28, 150
-    tile_h, rows = 850, 4
+    tile_h, rows = 850, 3
     out = Image.new('RGB', (width, header + rows * (tile_h + gap) + 30), '#F2F4F6')
     draw = ImageDraw.Draw(out)
-    draw.text((30, 16), 'CacheTide 实验章节 · 七组实验图表总览（模拟数据）',
+    draw.text((30, 16), 'CacheTide 实验章节 · 六幅实验图总览（模拟数据）',
               font=ImageFont.truetype(FONT, 38), fill='#22364B')
     draw.text((32, 83), 'Yambda / RecFlow × Large / Max；双栏主结果与单栏图表预览。所有数值均为模拟。',
               font=ImageFont.truetype(FONT, 23), fill='#626D77')
@@ -25,7 +25,7 @@ def contact_sheet():
         title = TITLES[i]
         x, y = gap + (slot % 2) * (tile_w + gap), header + (slot // 2) * (tile_h + gap)
         draw.rounded_rectangle((x, y, x+tile_w, y+tile_h), radius=8, fill='white')
-        code = 'E3b' if i == 7 else f'E{i+1}'
+        code = FIGURES[i][0].split('_')[0].upper()
         draw.text((x+18, y+12), f'{code}  {title} · 模拟',
                   font=ImageFont.truetype(FONT, 23), fill='#263D51')
         image = Image.open(ROOT / folder / f'fig_{number}_simulated.png').convert('RGB')
@@ -35,10 +35,10 @@ def contact_sheet():
 
 
 def paper_preview():
-    """Render E1 at double-column width and the other assets at column width."""
+    """Render both core results wide and all mechanism/cost details narrow."""
     doc = fitz.open()
     # E1 spans both columns. Keep the two complementary E3 studies adjacent.
-    pages = [[(0,), (2, 7)], [(3, 4), (1, 5), (6,)]]
+    pages = [[(0,), (2,)], [(3, 4), (1, 5)]]
     for page_no, rows in enumerate(pages, 1):
         page = doc.new_page(width=595.3, height=841.9)
         page.insert_text((35,30), 'CacheTide | double-column main result and column-width details', fontsize=11, fontname='hebo', color=(.12,.23,.32))
@@ -50,13 +50,13 @@ def paper_preview():
                 folder, number, caption = FIGURES[index]
                 src = fitz.open(ROOT / folder / f'fig_{number}_simulated.pdf')
                 x = 42 + slot * 270
-                width = 511.2 if index == 0 else 241.2
+                width = 511.2 if index in (0, 2) else 241.2
                 height = width * src[0].rect.height / src[0].rect.width
                 row_height = max(row_height, height)
                 if row_y + height > 795:
                     raise ValueError(f'Asset too tall for preview page: {folder}')
                 page.show_pdf_page(fitz.Rect(x,row_y,x+width,row_y+height),src,0)
-                code = 'E3b' if index == 7 else f'E{index+1}'
+                code = folder.split('_')[0].upper()
                 page.insert_textbox(fitz.Rect(x,row_y+height+7,x+width,row_y+height+38), f'{code} (simulated). {caption}', fontsize=7.4,fontname='heit',color=(.2,.24,.28))
                 src.close()
             row_y += row_height + 35

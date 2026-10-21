@@ -3,15 +3,17 @@
 EvoKV研究模型发布后如何复用持久化K/V，以紧凑的读取校正恢复推荐收益。
 当前保留已经确定的Motivation和三部分Design；历史探索只保留有解释价值的证据与必要公共依赖。
 
-2026-10-19启动[并行系统研究](docs/system_study_2026_10/README.md)：质量／机制、强基线、
-服务回放、跨条件与相关工作同步推进。中断后从[状态与下一步](docs/system_study_2026_10/STATUS.md)恢复；
-80%恢复为历史参考，本轮比较质量—成本组合，不重跑已完成实验。
+正式实验统一放在[experiments/](experiments/README.md)，按八组实验保存配置与结果。
+当前实验状态见[正式实验准备度与推进报告（2026-10-21）](experiments/docs/experiment_readiness_2026_10_21.md)：
+逐项核对Yambda／RecFlow × Large／Max的模型、数据、方法、基线与证据，并列出先后依赖和并行工作。
+本轮为只读盘点与计划，没有启动新训练；不开展端到端服务回放。恢复工作从
+[状态与下一步](experiments/STATUS.md)进入，旧配置不自动成为执行队列。
 
 ## 当前 Design 与 Implementation
 
 2026-10-15当前方案采用候选内容门控读取、两阶段教师校准，以及可合成码／单缓冲锚码接续。
 一份原生K/V与共享12＋每头私有6的码持续维护；当前每头读取共享3＋私有3。
-主行为任务与原反馈任务的质量和成本分别报告，原反馈仍未达到联合80%／20%目标。
+正式主任务为真实反馈预测；next-item结果单独保留。80%恢复是历史参考，仍探索约20%完整新增成本的质量—成本前沿。
 机制与证据见[Query relay报告](results/query_relay_2026_10/report.md)。
 工程优化独立放在[implementation_2026_10](scripts/implementation_2026_10/README.md)，
 覆盖共享码准备、融合读取、分块原地转换与系统集成；[本轮实验索引](results/implementation_2026_10/README.md)记录实现等价及资源边界。

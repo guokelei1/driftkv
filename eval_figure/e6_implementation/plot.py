@@ -1,7 +1,7 @@
-"""SIMULATED DATA: compact two-panel, single-column implementation comparison.
+"""SIMULATED DATA: preparation reuse and fused reading, one panel each.
 
-Simulation is disclosed in the manuscript caption. All original values remain.
-Conversion and auxiliary-space data are presented in paper tables.
+New preview values are declared in optimization_preview; historical timing
+arrays remain intact. Captions and metadata identify simulation.
 """
 from pathlib import Path
 import sys
@@ -12,37 +12,43 @@ import numpy as np
 
 
 def main():
-    data = load_data(__file__)
-    plt.rcParams.update({'font.size': 7.4, 'axes.titlesize': 7.4,
-                         'axes.labelsize': 7.3, 'xtick.labelsize': 7,
-                         'ytick.labelsize': 7, 'legend.fontsize': 7})
-    fig, axes = plt.subplots(1, 2, figsize=(3.35, 1.7), sharey=True)
-    # Only the three defined cumulative stages belong in the paper.  The
-    # retained JSON's fourth "Full" point has no specified added mechanism.
-    stages = ['Base', '+P', '+F']
-    x = np.arange(len(stages))
-    axes[0].bar(x, data['path_relative_time']['Prepare'][:3], width=.65,
-                color='#1764AB', edgecolor='white', linewidth=.35)
-    axes[0].set_title('(a) Preparation', pad=4)
+    d = load_data(__file__)['optimization_preview']
+    plt.rcParams.update({'font.size': 7, 'axes.titlesize': 7.3,
+                         'axes.labelsize': 7, 'xtick.labelsize': 6.5,
+                         'ytick.labelsize': 6.5, 'legend.fontsize': 6.1})
+    fig, axes = plt.subplots(1, 2, figsize=(3.35, 1.58), sharey=True)
+    fig.subplots_adjust(left=.15, right=.99, bottom=.23, top=.69, wspace=.25)
+    x = np.arange(3)
+    bottom = np.zeros(3)
+    for (name, values), color in zip(d['preparation']['components'].items(),
+                                    ['#1764AB', '#D5B86E', '#BDC3C8']):
+        axes[0].bar(x, values, bottom=bottom, color=color, width=.58,
+                    edgecolor='white', lw=.35,
+                    label={'Row work':'Rows', 'Table build':'Build', 'Transfers':'Move'}[name])
+        bottom += np.array(values)
+    axes[0].set_xticks(x, d['preparation']['variants'])
+    axes[0].set_title('(a) Preparation', loc='left', pad=4)
+    for xi, total in zip(x, bottom):
+        axes[0].text(xi, total+.035, f'{total:.2f}', ha='center', fontsize=6.1)
     width = .34
-    for index, (key, label, color) in enumerate([
-            ('Read', 'Score', '#2D8B78'), ('Append', 'Append', '#B65757')]):
-        axes[1].bar(x+(index-.5)*width, data['path_relative_time'][key][:3],
-                    width=width, color=color, label=label,
-                    edgecolor='white', linewidth=.35)
-    axes[1].set_title('(b) Score / append', pad=4)
+    for j, (key, label, color) in enumerate([
+            ('score', 'Score', '#2D8B78'), ('append', 'Append', '#B65757')]):
+        axes[1].bar(x+(j-.5)*width, d['reading'][key], width=width,
+                    color=color, edgecolor='white', lw=.35, label=label)
+    axes[1].set_xticks(x, ['Base', 'Fused', '+Disp.'])
+    axes[1].set_title('(b) Reading', loc='left', pad=4)
+    # Each panel owns its legend: preparation stages are distinct from
+    # the score/append series in the reading comparison.
+    for ax, ncol in zip(axes, [3, 2]):
+        ax.legend(loc='upper left', bbox_to_anchor=(-.025, 1.60),
+                  ncol=ncol, handlelength=.9, handletextpad=.3,
+                  columnspacing=.55, borderaxespad=0, fontsize=6.2)
     for ax in axes:
-        ax.set_xticks(x, stages)
-        ax.set_ylim(0, 1.15)
-        ax.set_yticks([0, .5, 1])
-        ax.grid(axis='y')
-        ax.tick_params(axis='both', pad=2, length=2.5)
-    axes[0].set_ylabel('Time / base', labelpad=3)
-    handles, labels = axes[1].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(.57, 1.01),
-               ncol=2, handlelength=1.3, columnspacing=1.2, fontsize=7)
-    fig.subplots_adjust(left=.17, right=.985, top=.74, bottom=.235, wspace=.22)
-    finish(fig, __file__, '6-6', '', paper_column=True, layout=False)
+        ax.set(ylim=(0, 1.2), yticks=[0, .5, 1])
+        ax.tick_params(length=2, pad=2)
+        ax.grid(axis='y', lw=.4)
+    axes[0].set_ylabel('Time / reference', labelpad=3)
+    finish(fig, __file__, '6-6', 'Implementation mechanism analysis', layout=False)
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@
 
 | 问题 | 文档 |
 | --- | --- |
+| 正式实验目录、准备度与当前进度 | [实验索引](../experiments/README.md)、[准备报告](../experiments/docs/experiment_readiness_2026_10_21.md)、[STATUS](../experiments/STATUS.md) |
 | 2026-10-19并行系统研究与中断恢复 | [总计划](system_study_2026_10/README.md)、[当前状态](system_study_2026_10/STATUS.md) |
 | CacheTide相关技术的逐步自学、讨论笔记与学习进度 | [学习与复习笔记](learning/cachetide_learning.md) |
 | 当前框架、设置、候选选择及局限 | [设计入口](paper_design.md)、[开发计划](design/plan.md) |

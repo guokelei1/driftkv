@@ -1,6 +1,6 @@
 # E3：四配置五次连续发布的恢复率与成本（模拟柱线图）
 
-当前正文编号为 Figure 6（由 LaTeX 自动编号）。本图采用约 **3.35 × 3.05 英寸单栏画布，2×2**：第一行Yambda-Large／Max，第二行RecFlow-Large／Max；横轴均为V1—V5五次发布。
+当前正文编号为 Figure 7（由 LaTeX 自动编号）。2026-10-21 改为约 **7.05 × 1.08 英寸双栏画布，1×4**，依次为 Yambda-Large、Yambda-Max、RecFlow-Large、RecFlow-Max；横轴均为 V1—V5 五次发布。导出高度约为原单栏 2×2 版的 40%，共用顶部图例、纵轴及底部发布轴标题。数据保持不变，只调整版式；主论文使用 `figure*` 与 `width=\textwidth`，图注不超过一行。
 
 ## 两个量共同展示
 

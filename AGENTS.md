@@ -2,6 +2,14 @@
 
 ## Active work — 2026-10-19 (read first)
 
+Latest organization — 2026-10-21: formal experiment plans, configurations and
+new results are centralized under `experiments/`. Resume from
+`experiments/README.md` and `experiments/STATUS.md`; readiness and scheduling
+are in `experiments/docs/experiment_readiness_2026_10_21.md`. Quality/FLOPs
+runs may share GPUs; formal timing requires controlled resource conditions.
+Legacy system-study logs and results retain their historical paths. This
+directory organization does not launch or queue experiments.
+
 Latest evaluation-scope clarification: the user explicitly excludes end-to-end
 serving experiments, including the briefly proposed limited arrival replay.
 Validate the design using real-model feedback quality, continuous cache/code

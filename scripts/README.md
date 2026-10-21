@@ -6,7 +6,7 @@
 
 2026-10-19新增[并行系统研究入口](system_study_2026_10/README.md)，
 复用现有会话／校准／读取后端，新增资产清单和跨用户事件回放；
-实际进度见[恢复记录](../docs/system_study_2026_10/STATUS.md)。
+正式实验计划、配置与结果见[experiments/](../experiments/README.md)，实际进度见[恢复记录](../experiments/STATUS.md)。
 
 只将当前方法、Motivation/模型链和必要公共依赖作为活动代码。
 已完成失败分支的专用入口退出；历史结论见[结果索引](../results/README.md)。

@@ -13,11 +13,9 @@ EXPORTS = [
     ('e1_quality_cost', '6_1', 'quality_cost'),
     ('e2_time_breakdown', '6_5_time', 'time_breakdown'),
     ('e3_lifecycle', '6_3', 'lifecycle'),
-    ('e3_release_hold', '6_3_hold', 'release_hold'),
-    ('e4_read_structure', '6_4', 'read_structure'),
-    ('e5_calibration', '6_5', 'calibration'),
+    ('e8_mechanism', '6_3_design', 'design_analysis'),
     ('e6_implementation', '6_6', 'implementation'),
-    ('e7_applicability', '6_7', 'applicability'),
+    ('e9_boundaries', '6_5_boundaries', 'boundaries'),
 ]
 
 
@@ -36,7 +34,7 @@ def main():
                 f'fig_eval_{name}_simulated.{extension}')
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
-    print(f'Exported eight simulated previews (seven figures, one table preview; PDF and PNG) to {paper}/pic/evaluation/')
+    print(f'Exported {len(EXPORTS)} simulated figures (PDF and PNG) to {paper}/pic/evaluation/')
 
 
 if __name__ == '__main__':

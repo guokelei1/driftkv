@@ -1,7 +1,7 @@
 # 本轮代码入口
 
-工作定义和恢复状态在 [总计划](../../docs/system_study_2026_10/README.md) 与
-[STATUS](../../docs/system_study_2026_10/STATUS.md)。旧会话、校准和推理核通过 import 复用，
+正式实验工作定义和恢复状态在 [总计划](../../experiments/README.md) 与
+[STATUS](../../experiments/STATUS.md)。旧会话、校准和推理核通过 import 复用，
 这里只增加本轮需要的薄入口。
 
 | 文件 | 用途 |

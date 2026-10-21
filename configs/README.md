@@ -1,7 +1,7 @@
 # 配置入口
 
 2026-10-19本轮实际执行配置位于[system_study_2026_10/](system_study_2026_10/)，
-目标、授权范围和恢复状态见[总计划](../docs/system_study_2026_10/README.md)。
+当前正式实验配置与结果集中在[experiments/](../experiments/README.md)，目标和恢复状态见其中的README与STATUS；本目录保留已有配置。
 下文“当前”配置说明属于旧研究阶段，不覆盖本轮入口。
 
 本目录保存实际执行配方与冻结合同。当前三规模训练、15边Full/Reuse、

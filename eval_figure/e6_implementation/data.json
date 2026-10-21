@@ -95,5 +95,73 @@
       0.5,
       6.0
     ]
+  },
+  "optimization_preview": {
+    "synthetic": true,
+    "revision": "2026-10-21: two explicit implementation panels for Section 6.3. New preparation breakdown and append-dispatch values are invented preview data, not reinterpreted historical measurements.",
+    "preparation": {
+      "variants": [
+        "Rows",
+        "Table",
+        "+Batch"
+      ],
+      "components": {
+        "Row work": [
+          0.9,
+          0.32,
+          0.32
+        ],
+        "Table build": [
+          0,
+          0.12,
+          0.08
+        ],
+        "Transfers": [
+          0.1,
+          0.1,
+          0.1
+        ]
+      },
+      "normalization": "Each complete preparation variant / direct row-wise preparation. Includes full catalogue build, per-row preparation and transfers for the same declared population. Weights and outputs are fixed; calibration is unchanged and belongs in the full ledger.",
+      "variant_semantics": [
+        "Direct projection per history row",
+        "Catalogue projection reuse, per-layer compilation",
+        "Same tables, with cross-layer concatenated projection and batched compilation"
+      ]
+    },
+    "reading": {
+      "variants": [
+        "Framework",
+        "Fused",
+        "+Dispatch"
+      ],
+      "score": [
+        1,
+        0.6,
+        0.6
+      ],
+      "append": [
+        1,
+        0.74,
+        0.48
+      ],
+      "normalization": "Score and append each divide by their own framework baseline, not a common absolute time.",
+      "score_candidates": 16,
+      "append_queries": 1,
+      "variant_semantics": [
+        "Differentiable framework operations, used here without gradients",
+        "Fused tiled matrix path for both request shapes",
+        "Same fused batch path; vector-reduction dispatch for a single-query append"
+      ],
+      "fixed_zero_suffix": true,
+      "correctness": "Formal measurements must verify output agreement against the framework reference at fixed inputs and declared precision."
+    },
+    "population": {
+      "users": 79681,
+      "window_rows": 1024,
+      "catalogue_items": 1200000,
+      "layers": 10,
+      "synthetic": true
+    }
   }
 }

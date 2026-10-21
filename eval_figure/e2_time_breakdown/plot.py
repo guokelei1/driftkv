@@ -52,42 +52,45 @@ def time_ledger(cfg, scenario):
 def main():
     d = load_data(__file__)
     rows = [time_ledger(cfg, d['scenario']) for cfg in d['configurations']]
-    plt.rcParams.update({'font.size': 7, 'axes.labelsize': 7,
-                         'axes.titlesize': 7.2, 'xtick.labelsize': 6.5,
-                         'ytick.labelsize': 6.5, 'legend.fontsize': 6.5,
-                         'hatch.linewidth': .45})
-    fig, axes = plt.subplots(2, 2, figsize=(3.35, 3.15))
-    fig.subplots_adjust(left=.16, right=.985, top=.80, bottom=.14,
-                        wspace=.52, hspace=.82)
+    plt.rcParams.update({'font.size': 7, 'axes.labelsize': 6.7,
+                         'axes.titlesize': 7.1, 'xtick.labelsize': 6.4,
+                         'ytick.labelsize': 6.2, 'legend.fontsize': 6.1,
+                         'axes.linewidth': .45})
+    fig, axes = plt.subplots(2, 2, figsize=(3.35, 2.30))
+    fig.subplots_adjust(left=.14, right=.99, top=.80, bottom=.105,
+                        wspace=.38, hspace=.72)
     for i, (ax, row, cfg) in enumerate(zip(axes.flat, rows, d['configurations'])):
-        for y, key in [(1, 'Rebuild_seconds'), (0, 'CacheTide_seconds')]:
-            start = 0
+        for x, key in [(0, 'Rebuild_seconds'), (1, 'CacheTide_seconds')]:
+            bottom = 0
             for j, seconds in enumerate(row[key]):
                 if seconds <= 0:
                     continue
                 value = seconds/1000
-                ct_work = key == 'CacheTide_seconds' and j in [0, 1, 3, 4]
-                ax.barh(y, value, left=start, height=.42, color=COLORS[j],
-                        edgecolor='#69747D', lw=.32,
-                        hatch='///' if ct_work else None, zorder=3)
-                start += value
-            ax.annotate(f'{start:.1f}', (start, y), xytext=(3, 0),
-                        textcoords='offset points', va='center', fontsize=6.3,
-                        color='#3B4853')
-        total = max(row['Rebuild_total_seconds'], row['CacheTide_total_seconds'])/1000
-        ax.set(xlim=(0, total*1.30), ylim=(-.65, 1.65),
-               yticks=[1, 0], yticklabels=['Rebuild', 'CT'])
-        ax.set_title(f'({chr(97+i)}) {row["configuration"]}', loc='left', pad=3)
-        ax.tick_params(length=2, pad=2)
-        ax.set_xticks([0, 5, 10] if cfg['scale'] == 'Large' else [0, 25, 50])
-        ax.grid(axis='x', lw=.35)
-        if i >= 2:
-            ax.set_xlabel('Time (ks)', labelpad=2)
-    handles = [Patch(facecolor=c, edgecolor='#69747D', lw=.32, label=s)
+                # Thin white separators expose the layers without covering
+                # the short handover/transfer segments with dark outlines.
+                ax.bar(x, value, bottom=bottom, width=.58, color=COLORS[j],
+                       edgecolor='white', lw=.22, zorder=3)
+                bottom += value
+            ax.annotate(f'{bottom:.1f}', (x, bottom), xytext=(0, 3),
+                        textcoords='offset points', ha='center', va='bottom',
+                        fontsize=6.2, color='#3B4853')
+        # Same physical unit, but scale independently so each configuration's
+        # small segments remain visible. No broken or nonlinear time axes.
+        limit = 12 if cfg['scale'] == 'Large' else 70
+        ticks = [0, 4, 8, 12] if cfg['scale'] == 'Large' else [0, 20, 40, 60]
+        ax.set(xlim=(-.65, 1.65), ylim=(0, limit),
+               xticks=[0, 1], xticklabels=['Rebuild', 'CacheTide'], yticks=ticks)
+        ax.set_title(f'({chr(97+i)}) {row["configuration"]}', loc='left', pad=4)
+        ax.tick_params(length=2, width=.45, pad=2)
+        ax.grid(axis='y', lw=.25)
+        if i % 2 == 0:
+            ax.set_ylabel('Time (ks)', labelpad=2)
+    handles = [Patch(facecolor=c, edgecolor='white', lw=.22, label=s)
                for s, c in zip(STAGES, COLORS)]
-    fig.legend(handles=handles, loc='upper center', bbox_to_anchor=(.54, 1.005),
-               ncol=3, columnspacing=.9, handlelength=1.25,
-               handletextpad=.4, labelspacing=.55)
+    fig.legend(handles=handles, loc='upper center', bbox_to_anchor=(.55, 1.005),
+               ncol=3, columnspacing=.85, handlelength=1.15,
+               handletextpad=.35, labelspacing=.35, borderaxespad=0,
+               fontsize=6.1)
     finish(fig, __file__, '6-5-time', 'Complete controlled-release time breakdown',
            layout=False, paper_column=True)
     Path(__file__).with_name('time_ledger.json').write_text(json.dumps(
