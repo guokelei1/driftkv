@@ -34,10 +34,11 @@ class InferenceAdapter:
         self.config = config or ImplementationConfig()
         if adapter.training or any(p.requires_grad for p in adapter.parameters()):
             raise ValueError("freeze and eval the original adapter before configuring inference")
-        if (adapter.mode, adapter.gate_source, adapter.gate_normalization,
-                adapter.heads, adapter.head_dim, adapter.read_shared,
-                adapter.read_private) != ("A", "item", "rms", 6, 32, 3, 3):
-            raise ValueError("implementation targets the frozen A/item/RMS/H6/D32/read3+3 design")
+        if (adapter.heads not in (6, 10) or adapter.layout != "shared12_private6"
+                or (adapter.mode, adapter.gate_source, adapter.gate_normalization,
+                    adapter.head_dim, adapter.read_shared,
+                    adapter.read_private) != ("A", "item", "rms", 32, 3, 3)):
+            raise ValueError("implementation targets A/item/RMS/H6-or-H10/D32/read3+3")
         if not adapter.layers:
             raise ValueError("adapter needs a layer")
         self.counters = Counter()

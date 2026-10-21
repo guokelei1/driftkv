@@ -23,16 +23,18 @@ def _validate(layer, attention, q, k, v, codes, code_count):
         raise ValueError("fused relay reader does not implement attention dropout")
     b, h, m, d = q.shape
     n = k.shape[1]
-    if (h, d, layer.read_shared, layer.read_private) != (6, 32, 3, 3):
-        raise ValueError("fused reader implements frozen H6/D32/shared3+private3 geometry")
+    if (h != layer.heads or h not in (6, 10)
+            or (d, layer.read_shared, layer.read_private) != (32, 3, 3)
+            or layer.layout != "shared12_private6"):
+        raise ValueError("fused reader implements H6/H10 D32, stored12+6/read3+3 geometry")
     if k.shape != (b, n, h*d) or v.shape != k.shape:
-        raise ValueError("native K/V must be [batch,history,192]")
-    if codes.ndim == 4 and codes.shape[-2:] == (6, 8):
+        raise ValueError("native K/V must be [batch,history,heads*32]")
+    if codes.ndim == 4 and codes.shape[-2:] == layer.code_shape:
         flat = codes.flatten(-2)
-    elif codes.ndim == 3 and codes.shape[-1] == 48:
+    elif codes.ndim == 3 and codes.shape[-1] == layer.code_width:
         flat = codes
     else:
-        raise ValueError("codes must be one packed [batch,rows,6,8] or [batch,rows,48] buffer")
+        raise ValueError("codes must match the layer's explicit packed or flat row layout")
     count = flat.shape[1] if code_count is None else int(code_count)
     if flat.shape[0] != b or not 0 <= count <= min(n, flat.shape[1]):
         raise ValueError("code prefix exceeds available native/code rows")
@@ -58,14 +60,14 @@ def _mask_geometry(mask, b, h, m, n, device):
 
 
 def reader_work_model(*, batch, queries, history, code_count, has_mask=False,
-                      block_queries=16, block_history=64):
+                      block_queries=16, block_history=64, heads=6):
     """Logical arithmetic, global tensor and tile traffic models (not timings).
 
     Traffic is requested bytes without assumptions about L1/L2 reuse. Tile read
     bytes include repeated per-head shared loads and repeated query tiles.
     FLOPs use logical width6, not padded Tensor Core instruction work.
     """
-    b, q, n, c, h, d, r = batch, queries, history, code_count, 6, 32, 6
+    b, q, n, c, h, d, r = batch, queries, history, code_count, heads, 32, 6
     vector = q <= 4
     block_queries = 1 if vector else block_queries
     pairs, cpairs = b*h*q*n, b*h*q*c
@@ -103,7 +105,7 @@ def fused_relay_read(layer, attention, q, k, v, codes, *, valid_mask=None,
                      backend="triton", return_stats=False):
     """RelayLayer.read-compatible bounded inference entry, with explicit backend.
 
-    ``q`` is [B,6,Q,32], K/V are native [B,N,192]. Codes may be shorter than N
+    ``q`` is [B,H,Q,32], K/V are native [B,N,H*32]. Codes may be shorter than N
     because entering/current-version suffixes are native-only. Arbitrary masks
     broadcastable from [Q,N], [B,Q,N], [B,H,Q,N] retain their numeric meaning.
     """
@@ -116,7 +118,7 @@ def fused_relay_read(layer, attention, q, k, v, codes, *, valid_mask=None,
     stats = dict(backend=backend, fallback=False, batch=b, queries=m, history=n,
                  kernel="vector_fp32" if m<=4 else "matrix_tf32x3",
                  coded_rows=count, model=reader_work_model(batch=b, queries=m,
-                   history=n, code_count=count, has_mask=mask is not None))
+                   history=n, code_count=count, has_mask=mask is not None, heads=h))
     if backend == "torch":
         if prepared_gates is None:
             out = layer.read(attention, q, k, v, codes, valid_mask=valid_mask,

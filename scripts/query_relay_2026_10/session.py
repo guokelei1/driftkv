@@ -24,7 +24,7 @@ from query_relay_2026_10.adapter import operation_gate_query
 
 def zero_state(cache, adapter):
     shape = (adapter.num_layers, cache.k.shape[1], cache.seq_len,
-             adapter.heads, adapter.rank)
+             *adapter.code_shape)
     return LightweightValueState(cache.k.new_zeros(shape), cache.seq_len)
 
 

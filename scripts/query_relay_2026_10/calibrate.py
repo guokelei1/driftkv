@@ -129,7 +129,7 @@ def prepare(model, captured, adapter, device, operations=None):
         previous = raw.get("previous_codes")
         if previous is None:
             previous = cache.k.new_zeros(adapter.num_layers, 1, cache.seq_len,
-                                         adapter.heads, adapter.rank)
+                                         *adapter.code_shape)
         rows[uid] = dict(cache=cache, teacher=teacher,
             previous=previous.to(device), item=raw["item_features"].to(device),
             item_ids=None if raw.get("item_ids") is None else raw["item_ids"].to(device),
@@ -226,7 +226,7 @@ def fit_local(model, adapter, rows, train, validation, args, costs, operations=N
             data = local_batch(records, indices)
             code = layer.advance(data["k"], data["v"], data["previous"], data["item"],
                                  item_ids=data.get("item_ids"))
-            code = code.reshape(len(indices), data["k"].shape[1], adapter.heads, adapter.rank)
+            code = code.reshape(len(indices), data["k"].shape[1], *adapter.code_shape)
             actual = layer.read(model.blocks[index].attn, data["q"], data["k"],
                                 data["v"], code, valid_mask=data["mask"][:, None, :],
                                 gate_q=data.get("gate_q"))
@@ -621,7 +621,7 @@ def run(args):
     operations = OperationCounts()
     if feature_bank_created:
         operations.record_feature_bank_preparation(catalogue_items=model.cfg.num_items + 1,
-            layers=adapter.num_layers, code_width=adapter.heads * adapter.rank,
+            layers=adapter.num_layers, code_width=adapter.code_width,
             embedding_width=adapter.heads * adapter.head_dim)
     operations.record_native_capture(capture_costs, source_available=not args.require_source_replay)
     rows = prepare(model, captured, adapter, device, operations)

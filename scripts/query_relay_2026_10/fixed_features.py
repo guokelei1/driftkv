@@ -71,9 +71,9 @@ def build_bank(source, origin_item_features, path, *, source_bindings, chunk_siz
     metadata = dict(kind=KIND, source_config=source.get_config(),
         encoder_sha256=encoder_digest(source), source_bindings=dict(source_bindings),
         num_layers=source.num_layers, catalogue_items=len(origin_item_features),
-        item_width=source.heads * source.head_dim, code_width=source.heads * source.rank,
+        item_width=source.heads * source.head_dim, code_width=source.code_width,
         prepare_flops=2 * source.num_layers * len(origin_item_features)
-                      * source.heads * source.head_dim * source.heads * source.rank)
+                      * source.heads * source.head_dim * source.code_width)
     if path.exists():
         digest = sha256(path)
         bank = load_bank(path, digest, device="cpu", dtype=reference.dtype)

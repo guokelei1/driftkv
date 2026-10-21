@@ -20,17 +20,18 @@ from query_relay_2026_10.session import RelaySession
 
 
 @torch.no_grad()
-def test_configured_torch_service_matches_reference_across_release_write_fifo(monkeypatch):
+@pytest.mark.parametrize('heads',[6,10])
+def test_configured_torch_service_matches_reference_across_release_write_fifo(monkeypatch,heads):
     monkeypatch.setenv('EVOKV_ATTENTION_BACKEND','torch')
     torch.manual_seed(20261015)
-    cfg=HSTUConfig(num_items=48,num_behaviors=2,hidden_size=192,num_layers=2,
-        num_heads=6,max_seq_len=4,input_dropout=0.,attn_dropout=0.)
+    cfg=HSTUConfig(num_items=48,num_behaviors=2,hidden_size=heads*32,num_layers=2,
+        num_heads=heads,max_seq_len=4,input_dropout=0.,attn_dropout=0.)
     models=[HSTU(cfg).eval().requires_grad_(False)]
     for _ in range(3):
         current=copy.deepcopy(models[-1])
         current.item_emb.weight.add_(torch.randn_like(current.item_emb.weight)*.01)
         models.append(current)
-    source=StructuredKVAdapter(2,6,32,max_length=4,layout='shared12_private6').eval()
+    source=StructuredKVAdapter(2,heads,32,max_length=4,layout='shared12_private6').eval()
     for layer in source.layers:
         layer.input_weight.normal_(std=.01)
         layer.input_bias.normal_(std=.01)

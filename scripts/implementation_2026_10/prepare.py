@@ -90,7 +90,7 @@ def compile_item_tables(adapter, model, previous=None, *, chunk_size=16384):
     if chunk_size <= 0:
         raise ValueError("item chunk must be positive")
     reference = next(adapter.parameters())
-    layers, code = adapter.num_layers, adapter.heads*adapter.rank
+    layers, code = adapter.num_layers, adapter.code_width
     rows, item_width = model.item_emb.weight.shape
     if previous is not None:
         if previous.D.shape != (layers, rows, code, 1):

@@ -38,7 +38,7 @@ class StableReleasePrefix(ReleasePrefix):
         return cls(prefix.P,prefix.Q,prefix.D,prefix.layers,prefix.release)
 
     def anchorize(self,cache,current,item_ids,*,table_item_ids=None):
-        rhs=_flat(current).to(self.P)-self._offset(cache,item_ids,table_item_ids)
+        rhs=_flat(current,self.layers[0].code_shape).to(self.P)-self._offset(cache,item_ids,table_item_ids)
         rows=[]
         for index,(layer,blocks) in enumerate(zip(self.layers,self.inverse_blocks,strict=True)):
             pieces=[]
@@ -46,7 +46,7 @@ class StableReleasePrefix(ReleasePrefix):
                 section=slice(branch.code_start,branch.code_start+branch.code_width)
                 pieces.append(rhs[index,...,section]@inverse.T)
             rows.append(torch.cat(pieces,-1))
-        return _state(torch.stack(rows).to(cache.k.dtype))
+        return _state(torch.stack(rows).to(cache.k.dtype),code_shape=self.layers[0].code_shape)
 
     def inverse_cost(self):
         """LU inverse estimate; copies/casts excluded, FP64 compute disclosed."""

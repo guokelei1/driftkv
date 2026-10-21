@@ -48,9 +48,6 @@ class InplaceReleasePrefix(StableReleasePrefix):
             raise ValueError("row_chunk must be a positive integer")
         if any(layer.mode != "A" or layer.xi_width != 1 for layer in self.layers):
             raise ValueError("in-place conversion supports the current A / xi=1 updater")
-        if any(layer.code_width != 48 or layer.heads != 6 or layer.rank != 8
-               for layer in self.layers):
-            raise ValueError("in-place conversion uses shared12/private6 packed as [6,8]")
         if not self.inverse_blocks:
             super().__post_init__()
 
@@ -73,7 +70,7 @@ class InplaceReleasePrefix(StableReleasePrefix):
         layers, batch, rows, width = cache.k.shape
         if cache.v.shape != cache.k.shape or layers != len(self.layers) \
                 or cache.seq_len != rows or state.seq_len != rows \
-                or codes.shape != (layers, batch, rows, 6, 8):
+                or codes.shape != (layers, batch, rows, *self.layers[0].code_shape):
             raise ValueError("K/V, state, and row geometry disagree")
         if width != self.layers[0].heads * self.layers[0].head_dim:
             raise ValueError("native K/V width disagrees with publication")
@@ -82,7 +79,9 @@ class InplaceReleasePrefix(StableReleasePrefix):
         if any(t.device != self.P.device or t.dtype != self.P.dtype
                for t in (codes, cache.k, cache.v, self.Q, self.D)):
             raise ValueError("K/V, codes and publication must share dtype and device")
-        if codes.stride(-1) != 1 or codes.stride(-2) != 8 or not _nonoverlapping(codes):
+        if (codes.stride(-1) != 1 or not _nonoverlapping(codes)
+                or (len(self.layers[0].code_shape) == 2
+                    and codes.stride(-2) != self.layers[0].code_shape[-1])):
             raise ValueError("compact buffer must have non-overlapping packed row storage")
         if codes.numel():
             storage = codes.untyped_storage().data_ptr()
@@ -116,7 +115,7 @@ class InplaceReleasePrefix(StableReleasePrefix):
                                  device=self.P.device, dtype=self.P.dtype)
                 if raw.numel() and int(raw.max()) >= bank.table.shape[1]:
                     raise ValueError("raw item_ids exceeds the immutable feature bank")
-        return codes.view(layers, batch, rows, 48), raw, table
+        return codes.view(layers, batch, rows, self.layers[0].code_width), raw, table
 
     def _convert(self, cache, state, item_ids, table_item_ids, *, inverse):
         flat, raw, table = self._inputs(cache, state, item_ids, table_item_ids)
@@ -161,5 +160,5 @@ class InplaceReleasePrefix(StableReleasePrefix):
         squares = sum(branch.code_width ** 2 for branch in self.layers[0].branches)
         return dict(row_chunk=self.row_chunk, maximum_tile_rows=batch * self.row_chunk,
                     persistent_extra_row_bytes=0,
-                    compact_conversion_flops_per_layer_row=4 * squares + 2 * 48,
+                    compact_conversion_flops_per_layer_row=4 * squares + 2 * self.layers[0].code_width,
                     note="Both block transforms plus two vector adds; fixed eta work and shared table reads also occur. Chunking changes scratch space, not arithmetic complexity.")

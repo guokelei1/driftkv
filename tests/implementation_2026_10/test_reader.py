@@ -19,9 +19,9 @@ def attention():
         _activate=lambda s:torch.nn.functional.elu(s)+1)
 
 
-def layer(device):
+def layer(device, heads=6):
     torch.manual_seed(17)
-    result=UnifiedRelayAdapter(1,mode='A',read_shared=3,read_private=3,
+    result=UnifiedRelayAdapter(1,heads=heads,mode='A',read_shared=3,read_private=3,
         gate_normalization='rms',gate_source='item').to(device).layers[0]
     for p in (result.key_decoder,result.decoder,result.key_gate_weight,result.value_gate_weight):
         torch.nn.init.normal_(p,std=.1)
@@ -46,18 +46,19 @@ def test_cpu_requires_explicit_torch_backend():
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(),reason='requires an explicitly allocated GPU')
+@pytest.mark.parametrize('heads',[6,10])
 @pytest.mark.parametrize('b,n,q,c,mask_kind',[
     (1,0,16,0,'none'),(1,1,1,1,'none'),(1,67,17,35,'causal'),
     (1,1024,32,1024,'none'),(1,99,1,0,'none'),(2,19,7,17,'empty'),
     (2,127,3,1,'numeric'),(1,513,16,259,'fifo'),
     (1,1024,2,1024,'none'),(1,65,4,1,'causal'),(1,64,5,64,'none')])
 @torch.no_grad()
-def test_fused_native_and_code_semantics(b,n,q,c,mask_kind):
-    l=layer('cuda');torch.manual_seed(97+n+q)
-    query=torch.randn(b,q,6,32,device='cuda').transpose(1,2)
-    keys=torch.randn(b,n+5,192,device='cuda')[:,5:]
+def test_fused_native_and_code_semantics(b,n,q,c,mask_kind,heads):
+    l=layer('cuda',heads);torch.manual_seed(97+n+q)
+    query=torch.randn(b,q,heads,32,device='cuda').transpose(1,2)
+    keys=torch.randn(b,n+5,heads*32,device='cuda')[:,5:]
     values=torch.randn_like(keys)
-    codes=torch.randn(b,c,6,8,device='cuda')
+    codes=torch.randn(b,c,*l.code_shape,device='cuda')
     gate_query=torch.randn_like(query)
     mask=None
     if mask_kind in ('causal','fifo'):
@@ -66,7 +67,7 @@ def test_fused_native_and_code_semantics(b,n,q,c,mask_kind):
         mask=col[None,:]<pos[:,None]
         if mask_kind=='fifo':mask&=col[None,:]>pos[:,None]-71
     elif mask_kind=='empty':mask=torch.zeros(b,q,n,device='cuda',dtype=torch.bool)
-    elif mask_kind=='numeric':mask=torch.rand(b,6,q,n,device='cuda')
+    elif mask_kind=='numeric':mask=torch.rand(b,heads,q,n,device='cuda')
     expected=fused_relay_read(l,attention(),query,keys,values,codes,
         valid_mask=mask,code_count=c,gate_q=gate_query,backend='torch')
     actual=fused_relay_read(l,attention(),query,keys,values,codes,

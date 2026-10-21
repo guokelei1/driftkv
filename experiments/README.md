@@ -9,7 +9,7 @@
 | 目录 | 对应论文 | 要回答的问题 | GPU安排 |
 |---|---|---|---|
 | [01_quality_cost](01_quality_cost/README.md) | Figure 6、Table 2 | 相对强基线，用多少完整FLOPs恢复多少质量？ | 质量／FLOPs可共享 |
-| [02_continuous_releases](02_continuous_releases/README.md) | Figure 7 | 同一默认方案连续五次发布能否保持收益？ | 可共享；复用01默认轨迹 |
+| [02_continuous_releases](02_continuous_releases/README.md) | Figure 7 | 我们的默认方案连续五次发布能否保持收益？ | 可共享；独立连续轨迹 |
 | [03_read_structure](03_read_structure/README.md) | Figure 8(a) | 动态门控与宽存窄读分别是否值得？ | 质量／FLOPs可共享 |
 | [04_calibration](04_calibration/README.md) | Figure 8(b) | 局部、联合及短尾校准如何影响当前和后续质量？ | 质量／FLOPs可共享；秒数另测 |
 | [05_preparation](05_preparation/README.md) | Figure 9(a) | 目录复用和跨层合批如何降低准备时间？ | 正式计时需受控 |
@@ -18,6 +18,8 @@
 | [08_boundaries](08_boundaries/README.md) | Figure 11(a)(b) | 长期不发布、读取量增加时，收益在何处减弱？ | 质量／FLOPs可共享；公式CPU核算 |
 
 正式四配置为 **Yambda／RecFlow × Large／Max**；Medium仅开发。各模型组独立拟合，真实反馈为主任务，next-item保留历史身份。基础模型不为多seed重复训练。RecFlow反馈目标、两条最终链与正式人口仍待落实；预期曲线不作为通过标准。
+
+2026-10-21用户最新明确：**01只做独立相邻版本比较，02才做我们方法的跨版连续实验。** 01每条边从共同的旧版原生状态重新开始，不继承上一条边纠正后的学生状态；边内仍按因果规则正常读写。基线不需要先适配连续发布。
 
 ## 配置与输出放法
 
@@ -38,6 +40,6 @@ experiments/<实验目录>/
 
 `runs/`内原始输出默认本地保留；Git跟踪说明、`configuration.yaml/json`和`summary.json`，延续仓库不提交大份分数、权重与运行日志的约定。关键汇总之外需要保留的小型证据，再按实际文件明确加入规则。
 
-共同角色／请求manifest首次确定后保留一份，其他实验引用；初始模型与数据不复制进各组。02引用01默认轨迹，07和08按需引用其权重、状态及账本；派生结果记录输入路径，不复制大份cache和分数。各方法／预算／seed仍须维护自己的学生演化状态。
+共同角色／请求manifest首次确定后保留一份，其他实验引用；初始模型与数据不复制进各组。02沿用01选定的默认设置，但单独建立连续来源与校准，不能拼接01独立边。07和08按实际问题引用01独立边或02连续轨迹的权重、状态及账本，并标明来源。派生结果记录输入路径，不复制大份cache和分数。01各方法／预算／seed在每条边内维护自己的学生状态；02保持我们方法跨版连续状态。
 
 先共享完成质量与FLOPs，再冻结输入安排正式计时。共享运行耗时仅作进度记录。完整规则见[报告第7节](docs/experiment_readiness_2026_10_21.md#gpu调度质量flops可共享正式计时单独安排)。当前没有新增训练、GPU实验或论文编译。

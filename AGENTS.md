@@ -2,6 +2,38 @@
 
 ## Active work — 2026-10-19 (read first)
 
+Latest user clarification — 2026-10-21: experiment 01 compares independent
+adjacent-version transitions. All methods start each edge from the same old
+native state; correction/student state is not carried between edges. Normal
+causal reads/appends within an edge remain required. Experiment 02 alone tests
+our method's continuous multi-release state; do not require baselines to support
+continuous releases or reuse experiment 01 edges as a continuous trajectory.
+On machine 201 the user initially allocated physical GPU 1, then changed
+subsequent experiments to physical GPU 0. The user authorized fetching needed
+data and existing V0–V5 models from g202 using the sync workflow. Current work
+prioritizes baselines only, first Yambda-Large V0→V1, roughly 3–5 natural
+operating points per adjustable method, with method-specific counts/settings.
+Latest clarification: choose natural controls, then report actual FLOPs; do not
+invert costs to force exact 15/50/80% points. Layer uses 2/4/6/8 layers; Tail
+uses 10/20/40/80% tokens; Deviation/Query use 10/20/40/60% selected positions.
+The original roughly 15–80% cost range is guidance, not an exact grid.
+Our method's quality runs and
+other version edges wait until this first comparison has been reported.
+The user subsequently required full eligible test-population quality, rather
+than the initially proposed 512-user pilot. Preserve fit/validation and earlier
+calibration/development reservations; do not exclude ordinary historical test
+users based on their outcomes. The current Large V0→V1 test pool is 75,807.
+Before a population run, optimize execution and report a measured-input-based
+30k-user runtime estimate. This is done: the 24-point plan is 70–100 minutes for
+30k resident users and about 3–3.5 hours for all 75,807 eligible users.
+The full run has now launched on GPU 0; resume from experiments/STATUS.md.
+Full deployment costs still include events
+omitted solely because they cannot affect an independent edge's scored quality.
+Latest reliability instruction: save results promptly and support bounded-loss
+resume. The runner commits each 4096-user score block (normally about 8–10 minutes)
+and reuses completed fitting; resume validates frozen settings, inputs, code,
+weights and block hashes. Never discard an entire long run after interruption.
+
 Latest organization — 2026-10-21: formal experiment plans, configurations and
 new results are centralized under `experiments/`. Resume from
 `experiments/README.md` and `experiments/STATUS.md`; readiness and scheduling

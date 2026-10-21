@@ -1,0 +1,53 @@
+{
+  "status": "complete_planning_estimate",
+  "machine": "g201",
+  "physical_gpu": 0,
+  "edge": "v0_to_v1",
+  "policy_points": 24,
+  "point_rule": "natural controls; no inverse FLOPs targeting",
+  "measured_speed_users": 512,
+  "measured_feedback_events": 2086,
+  "warm_quality_seconds": 66.57741162367165,
+  "quality_30k_minutes": 65.01700353874185,
+  "quality_full_minutes": 164.29146624204677,
+  "full_eligible_users": 75807,
+  "planning_30k_total_minutes": [
+    70,
+    100
+  ],
+  "planning_full_total_minutes": [
+    180,
+    210
+  ],
+  "speed_sample_uid95_minutes": [
+    56.79774887362328,
+    73.42203167925163
+  ],
+  "equivalence": {
+    "scores": 1632,
+    "max_absolute_logit_error": 5.364418029785156e-06,
+    "atol": 3e-05,
+    "rtol": 3e-05
+  },
+  "append_band_size": 128,
+  "query_batch": 16,
+  "repair_query_batch": 16,
+  "evaluation_checkpoint_users": 4096,
+  "checkpoint_minutes_expected": 8.876988216489554,
+  "assumptions": [
+    "same GPU0 A800 and FP32 numerical policy; no competing GPU0 computation",
+    "all 24 natural points, completed Q128/Q256/H64 fits reused",
+    "quality excludes causally irrelevant GPU tail only; full CPU cost ledger retains every event",
+    "extra time allowed for unfinished fitting, disk checkpoints and 1000 paired UID-bootstrap replicates",
+    "offline execution estimate, not controlled paper timing or serving throughput"
+  ],
+  "population_run_started": true,
+  "prior_20point_estimate": "attempt_4/summary.json",
+  "evidence": "natural_points_1/summary.json",
+  "full_users_with_feedback": 34190,
+  "full_feedback_events": 345630,
+  "full_users_without_feedback": 41617,
+  "estimate_population_unit": "eligible resident UID; not all UIDs have scored feedback",
+  "population_run": "../baselines_full_v0_v1/seed_17/attempt_1",
+  "estimate_recorded_before_launch": true
+}

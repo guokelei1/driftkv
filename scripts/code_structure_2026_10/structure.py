@@ -1,10 +1,11 @@
-"""Shared/private code layouts with the same 48 persistent floats per row.
+"""Explicit shared/private code layouts.
 
 Each layout contains the original six independent rank8 encoders exactly.
 Weights operate on native K/V and the complete Current item embedding after
 the original fixed normalization is folded. Branches avoid computing forbidden
 zero connections. Only the read temporarily gathers each head's accessible
-coordinates; the stored state remains [layer, owner, row, 6, 8].
+coordinates. The legacy H6 layout keeps its [6,8] packing; H10 stores a
+flat 72-coordinate row (shared12 + 10*private6), not 10*rank8 coordinates.
 """
 from __future__ import annotations
 
@@ -25,18 +26,19 @@ class Branch:
 
 
 def layout_spec(layout, heads=6, rank=8):
-    if (heads, rank) != (6, 8):
-        raise ValueError("this experiment uses six native heads and 48 code floats")
     if layout == "group2":
+        if heads % 2:
+            raise ValueError("group2 requires an even number of heads")
         branches = [Branch((h, h+1), h*rank, 2*rank) for h in range(0, heads, 2)]
         owners = [(h, r) for h in range(heads) for r in range(rank)]
-        access = [list(range((h//2)*16, (h//2+1)*16)) for h in range(heads)]
-    elif layout in ("shared6_private7", "shared12_private6"):
-        shared = 6 if layout == "shared6_private7" else 12
-        private = rank-shared//heads
+        access = [list(range((h//2)*2*rank, (h//2+1)*2*rank)) for h in range(heads)]
+    elif layout in ("shared6_private7", "shared12_private6", "shared6_private3"):
+        shared, private = {"shared6_private7": (6, 7),
+                           "shared12_private6": (12, 6),
+                           "shared6_private3": (6, 3)}[layout]
         branches = [Branch(tuple(range(heads)), 0, shared)]
         branches += [Branch((h,), shared+h*private, private) for h in range(heads)]
-        owners = [(h, r) for h in range(heads) for r in range(private, rank)]
+        owners = [(h, r) for h in range(heads) for r in range(private, rank)][:shared]
         owners += [(h, r) for h in range(heads) for r in range(private)]
         access = [list(range(shared))+list(range(shared+h*private, shared+(h+1)*private))
                   for h in range(heads)]
@@ -51,7 +53,8 @@ class StructuredKVLayer(nn.Module):
         self.heads, self.head_dim, self.rank = heads, head_dim, rank
         self.layout = layout
         self.branches, self.owners, access = layout_spec(layout, heads, rank)
-        self.code_width = heads*rank
+        self.code_width = sum(b.code_width for b in self.branches)
+        self.code_shape = (heads, rank) if self.code_width == heads*rank else (self.code_width,)
         self.accessible_rank = len(access[0])
         self.item_width = heads*head_dim
         self.weight_sizes = [(2*len(b.heads)*head_dim+self.item_width)*b.code_width
@@ -94,10 +97,10 @@ class StructuredKVLayer(nn.Module):
                             for branch, w in zip(self.branches, kv_weights, strict=True)], dim=-1)
         projected = item_features.to(item_weight.dtype) @ item_weight
         result = F.silu(native+projected+effective_bias)
-        return result.reshape(*k.shape[:-1], self.heads, self.rank).to(k.dtype)
+        return result.reshape(*k.shape[:-1], *self.code_shape).to(k.dtype)
 
     def accessible_codes(self, codes):
-        flat = codes.flatten(-2)
+        flat = codes.flatten(-2) if len(self.code_shape) == 2 else codes
         return flat[..., self.access_indices].transpose(1, 2)
 
     def read(self, attention, q, k, v, codes, decoder=None, key_decoder=None):
@@ -119,6 +122,8 @@ class StructuredKVLayer(nn.Module):
 
     @torch.no_grad()
     def embed(self, original):
+        if self.code_width != self.heads*self.rank:
+            raise ValueError("this layout needs its own fitted origin; rank8 embedding is not exact")
         d = self.head_dim
         effective = original.input_weight/original.input_scale[..., None]
         bias = original.input_bias-(original.input_center[..., None]*effective).sum(-2)
@@ -180,6 +185,8 @@ class StructuredKVAdapter(nn.Module):
                                      for _ in range(num_layers)])
         self.response = None
         self.accessible_rank = self.layers[0].accessible_rank
+        self.code_width = self.layers[0].code_width
+        self.code_shape = self.layers[0].code_shape
 
     def get_config(self):
         return dict(num_layers=self.num_layers, heads=self.heads, head_dim=self.head_dim,
@@ -228,13 +235,13 @@ class StructuredKVAdapter(nn.Module):
     def row_kv_flops(self):
         branches = self.layers[0].branches
         return self.num_layers*(sum(4*len(b.heads)*self.head_dim*b.code_width for b in branches)
-                                +2*self.heads*self.rank)
+                                +2*self.code_width)
 
     def estimate_flops(self, *, batch=1, tokens=1, candidates=1):
         h, d, r, l = self.heads, self.head_dim, self.accessible_rank, self.num_layers
         # Actual encode: branch KV products, one complete-item product, then
         # KV+item+bias and SiLU. A served precomputed item term includes bias.
-        encode = self.row_kv_flops()+l*(2*(h*d)*(h*self.rank)+h*self.rank)
+        encode = self.row_kv_flops()+l*(2*(h*d)*self.code_width+self.code_width)
         read = l*batch*candidates*(4*h*d*r+4*h*tokens*r+h*tokens+h*d)
         return dict(token_transform=int(batch*tokens*encode),
                     extra_history_read=int(read), candidate_reads=0)

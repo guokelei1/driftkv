@@ -33,7 +33,7 @@ def feature_signature(adapter):
     """Only immutable feature semantics are required to match across releases."""
     result = dict(feature_mode=adapter.feature_mode, xi_width=adapter.layers[0].xi_width,
                   layers=adapter.num_layers, heads=adapter.heads, head_dim=adapter.head_dim,
-                  code_width=adapter.heads * adapter.rank, layout=adapter.layout)
+                  code_width=adapter.code_width, layout=adapter.layout)
     if adapter.feature_mode == "origin_encoder":
         result["feature_bank_sha256"] = adapter.feature_bank_sha256
     else:
@@ -79,7 +79,7 @@ def compile_full_catalogue(adapter, model, previous=None, *, chunk_size=16384):
         raise ValueError("item chunk must be positive")
     reference = next(adapter.parameters())
     rows = len(model.item_emb.weight)
-    code = adapter.heads * adapter.rank
+    code = adapter.code_width
     xi = adapter.layers[0].xi_width
     if rows != model.cfg.num_items + 1:
         raise ValueError("model item-ID range and embedding rows disagree")

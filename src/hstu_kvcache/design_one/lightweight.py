@@ -20,7 +20,7 @@ from .nonlinear import NonlinearResponseLayer
 
 @dataclass
 class LightweightValueState:
-    codes: torch.Tensor  # [layers, owners, positions, heads, rank]
+    codes: torch.Tensor  # [layers, owners, positions, heads, rank] or explicit flat [...,code_width]
     seq_len: int
 
     def select(self, indices):

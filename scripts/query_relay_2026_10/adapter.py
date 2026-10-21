@@ -1,6 +1,6 @@
 """Query-dependent reads and small, composable release updates.
 
-The only per-row state is 48 code floats. Fixed native features are recomputed
+The only per-row state is the explicitly sized shared/private code. Fixed native features are recomputed
 when codes change; they are never cached. The A/B update is affine in the old
 code and these immutable features, while the serving read is nonlinear in Q.
 This is a research reference, not a fused or concurrent serving implementation.
@@ -19,13 +19,14 @@ from hstu_kvcache.design_one.lightweight import LightweightValueState
 from query_relay_2026_10.fixed_features import encoder_digest, load_bank
 
 
-def _flat(state):
+def _flat(state, code_shape=(6, 8)):
     codes = state.codes if isinstance(state, LightweightValueState) else state
-    return codes.flatten(-2) if codes.shape[-2:] == (6, 8) else codes
+    return codes.flatten(-2) if len(code_shape) == 2 and codes.shape[-2:] == code_shape else codes
 
 
-def _state(flat, heads=6, rank=8):
-    return LightweightValueState(flat.reshape(*flat.shape[:-1], heads, rank), flat.shape[2])
+def _state(flat, heads=6, rank=8, *, code_shape=None):
+    shape = (heads, rank) if code_shape is None else code_shape
+    return LightweightValueState(flat.reshape(*flat.shape[:-1], *shape), flat.shape[2])
 
 
 def _rms(x):
@@ -66,8 +67,10 @@ class RelayLayer(StructuredKVLayer):
     def __init__(self, heads, head_dim, rank, mode, xi_width, read_shared=12,
                  gate_normalization="raw", read_private=6, feature_mode="native",
                  feature_bank_path=None, feature_bank_sha256=None, layer_index=0,
-                 gate_source="layer"):
-        super().__init__(heads, head_dim, rank, "shared12_private6")
+                 gate_source="layer", layout="shared12_private6"):
+        super().__init__(heads, head_dim, rank, layout)
+        self.stored_shared = self.branches[0].code_width
+        self.stored_private = self.branches[1].code_width
         self.mode = mode
         self.feature_mode = feature_mode
         self.feature_bank_path = None if feature_bank_path is None else str(feature_bank_path)
@@ -81,7 +84,7 @@ class RelayLayer(StructuredKVLayer):
         self.value_gate_weight = nn.Parameter(torch.zeros_like(self.key_gate_weight))
         # Decoder/gate parameters keep all 18 slots for checkpoint compatibility.
         # Only the selected shared slots and six private slots execute in reads.
-        self.register_buffer("read_slots", torch.arange(18), persistent=False)
+        self.register_buffer("read_slots", torch.arange(self.accessible_rank), persistent=False)
         self.read_private = read_private
         self.set_read_shared(read_shared)
         self.set_gate_normalization(gate_normalization)
@@ -117,12 +120,14 @@ class RelayLayer(StructuredKVLayer):
         self.set_read_width(self.read_shared, width)
 
     def set_read_width(self, shared, private):
-        if shared not in (0, 3, 6, 12) or private not in (3, 6):
-            raise ValueError("read probe supports shared0/3/6/12 and private3/6")
+        if (shared not in (0, 3, 6, 12) or private not in (3, 6)
+                or shared > self.stored_shared or private > self.stored_private):
+            raise ValueError("read width exceeds the stored shared/private layout")
         self.read_shared, self.read_private = shared, private
         self.accessible_rank = shared + private
         self.read_slots = torch.cat((torch.arange(shared, device=self.access_indices.device),
-                                     torch.arange(12, 12 + private, device=self.access_indices.device)))
+                                     torch.arange(self.stored_shared, self.stored_shared + private,
+                                                  device=self.access_indices.device)))
 
     def set_gate_normalization(self, mode):
         if mode not in ("raw", "rms"):
@@ -130,7 +135,7 @@ class RelayLayer(StructuredKVLayer):
         self.gate_normalization = mode
 
     def accessible_codes(self, codes):
-        flat = _flat(codes)
+        flat = _flat(codes, self.code_shape)
         selected = self.access_indices[:, self.read_slots]
         return flat[..., selected].transpose(1, 2)
 
@@ -196,9 +201,9 @@ class RelayLayer(StructuredKVLayer):
                             self.item_update_weight) + self.item_update_bias
 
     def advance(self, k, v, previous, item_features, item_ids=None):
-        previous = _flat(previous).to(self.input_weight.dtype)
+        previous = _flat(previous, self.code_shape).to(self.input_weight.dtype)
         if self.mode == "legacy":
-            return self.encode(k, v, item_features).flatten(-2)
+            return _flat(self.encode(k, v, item_features), self.code_shape)
         if self.mode == "C":
             native_weights, item_weight, bias = self.effective_weights()
             native = torch.cat([
@@ -248,7 +253,7 @@ class RelayLayer(StructuredKVLayer):
             gk, gv = self.query_gates(q if gate_q is None else gate_q) \
                 if gate_constants is None else gate_constants
             if gate_constants is not None:
-                if gk.shape[-1] == 18:
+                if gk.shape[-1] == self.key_decoder.shape[1]:
                     gk, gv = gk[..., self.read_slots], gv[..., self.read_slots]
                 gk, gv = (gate.to(q).reshape(1, self.heads, 1, self.accessible_rank)
                           for gate in (gk, gv))
@@ -287,10 +292,10 @@ class ReleasePrefix:
     @classmethod
     def identity(cls, adapter, catalog_size):
         reference = adapter.layers[0].input_weight
-        eye = torch.eye(adapter.heads * adapter.rank, device=reference.device,
+        eye = torch.eye(adapter.code_width, device=reference.device,
                         dtype=reference.dtype).repeat(adapter.num_layers, 1, 1)
         d = reference.new_zeros(adapter.num_layers, catalog_size,
-                                adapter.heads * adapter.rank, adapter.layers[0].xi_width)
+                                adapter.code_width, adapter.layers[0].xi_width)
         return cls(eye, torch.zeros_like(eye), d, tuple(adapter.layers))
 
     def _offset(self, cache, item_ids, table_item_ids=None):
@@ -303,23 +308,25 @@ class ReleasePrefix:
         return torch.stack(rows)
 
     def materialize(self, cache, anchors, item_ids, *, table_item_ids=None):
-        flat = _flat(anchors).to(self.P)
+        flat = _flat(anchors, self.layers[0].code_shape).to(self.P)
         current = torch.stack([_block_apply(flat[index], self.P[index], layer.branches)
                                for index, layer in enumerate(self.layers)])
         current = current + self._offset(cache, item_ids, table_item_ids)
-        return _state(current.to(cache.k.dtype))
+        return _state(current.to(cache.k.dtype), code_shape=self.layers[0].code_shape)
 
     def anchorize(self, cache, current, item_ids, *, table_item_ids=None):
-        rhs = _flat(current).to(self.P) - self._offset(cache, item_ids, table_item_ids)
+        rhs = _flat(current, self.layers[0].code_shape).to(self.P) - self._offset(cache, item_ids, table_item_ids)
         # P is a product of block orthogonal transforms, inverse = transpose.
         anchors = torch.stack([_block_apply(rhs[index], self.P[index], layer.branches,
                                             inverse=True)
                                for index, layer in enumerate(self.layers)])
-        return _state(anchors.to(cache.k.dtype))
+        return _state(anchors.to(cache.k.dtype), code_shape=self.layers[0].code_shape)
 
     def zero_anchors(self, cache, item_ids, *, table_item_ids=None):
-        zeros = self.P.new_zeros(cache.k.shape[0], cache.k.shape[1], cache.seq_len, 48)
-        return self.anchorize(cache, _state(zeros), item_ids, table_item_ids=table_item_ids)
+        zeros = self.P.new_zeros(cache.k.shape[0], cache.k.shape[1], cache.seq_len,
+                                self.layers[0].code_width)
+        return self.anchorize(cache, _state(zeros, code_shape=self.layers[0].code_shape),
+                              item_ids, table_item_ids=table_item_ids)
 
     def storage_bytes(self):
         return sum(t.numel() * t.element_size() for t in (self.P, self.Q, self.D))
@@ -331,11 +338,11 @@ class UnifiedRelayAdapter(nn.Module):
     def __init__(self, num_layers, heads=6, head_dim=32, rank=8, max_length=1024,
                  mode="B", xi_width=3, read_shared=12, gate_normalization="raw", read_private=6,
                  feature_mode="native", feature_bank_path=None, feature_bank_sha256=None,
-                 gate_source="layer"):
+                 gate_source="layer", layout="shared12_private6"):
         super().__init__()
         self.num_layers, self.heads, self.head_dim = num_layers, heads, head_dim
         self.rank, self.max_length, self.mode = rank, max_length, mode
-        self.layout = "shared12_private6"
+        self.layout = layout
         self.response_hidden_width, self.response = 0, None
         self.xi_width = 1 if mode == "A" else xi_width
         self.read_shared = read_shared
@@ -355,9 +362,11 @@ class UnifiedRelayAdapter(nn.Module):
         self.layers = nn.ModuleList([
             RelayLayer(heads, head_dim, rank, mode, self.xi_width, read_shared,
                        gate_normalization, read_private, feature_mode,
-                       self.feature_bank_path, feature_bank_sha256, index, gate_source)
+                       self.feature_bank_path, feature_bank_sha256, index, gate_source, layout)
             for index in range(num_layers)])
         self.accessible_rank = self.layers[0].accessible_rank
+        self.code_width = self.layers[0].code_width
+        self.code_shape = self.layers[0].code_shape
 
     def get_config(self):
         return dict(num_layers=self.num_layers, heads=self.heads, head_dim=self.head_dim,
@@ -365,7 +374,8 @@ class UnifiedRelayAdapter(nn.Module):
                     xi_width=self.xi_width, read_shared=self.read_shared,
                     gate_normalization=self.gate_normalization, read_private=self.read_private,
                     feature_mode=self.feature_mode, feature_bank_path=self.feature_bank_path,
-                    feature_bank_sha256=self.feature_bank_sha256, gate_source=self.gate_source)
+                    feature_bank_sha256=self.feature_bank_sha256, gate_source=self.gate_source,
+                    layout=self.layout)
 
     def set_read_shared(self, width):
         self.set_read_width(width, self.read_private)
@@ -396,15 +406,16 @@ class UnifiedRelayAdapter(nn.Module):
     def from_structured(cls, source, *, mode="B", xi_width=3, read_shared=12,
                         gate_normalization="raw", read_private=6, feature_mode="native",
                         feature_bank_path=None, feature_bank_sha256=None, gate_source="layer"):
-        if source.layout != "shared12_private6":
-            raise ValueError("relay warmstart uses the selected shared12/private6 adapter")
+        if source.layout not in ("shared12_private6", "shared6_private3"):
+            raise ValueError("relay warmstart requires an explicit shared/private adapter")
         reference = next(source.parameters())
         result = cls(source.num_layers, source.heads, source.head_dim, source.rank,
                      source.max_length, mode=mode, xi_width=xi_width,
                      read_shared=read_shared, gate_normalization=gate_normalization,
                      read_private=read_private, feature_mode=feature_mode,
                      feature_bank_path=feature_bank_path,
-                     feature_bank_sha256=feature_bank_sha256, gate_source=gate_source).to(reference)
+                     feature_bank_sha256=feature_bank_sha256, gate_source=gate_source,
+                     layout=source.layout).to(reference)
         if feature_mode == "origin_encoder":
             bank = load_bank(feature_bank_path, feature_bank_sha256,
                              device="cpu", dtype=reference.dtype)
@@ -417,7 +428,7 @@ class UnifiedRelayAdapter(nn.Module):
 
     def encode_initial(self, cache, item_features, item_ids=None):
         zeros = cache.k.new_zeros(self.num_layers, cache.k.shape[1], cache.seq_len,
-                                  self.heads, self.rank)
+                                  *self.code_shape)
         return self.advance_codes(cache, zeros, item_features, item_ids)
 
     def encode_cache(self, cache, item_features, item_ids=None):
@@ -427,7 +438,7 @@ class UnifiedRelayAdapter(nn.Module):
         codes = previous.codes if isinstance(previous, LightweightValueState) else previous
         rows = [layer.advance(cache.k[index], cache.v[index], codes[index], item_features, item_ids)
                 for index, layer in enumerate(self.layers)]
-        return _state(torch.stack(rows).to(cache.k.dtype), self.heads, self.rank)
+        return _state(torch.stack(rows).to(cache.k.dtype), code_shape=self.code_shape)
 
     def make_history_read(self, state, *, valid_mask=None, gate_constants=None, code_count=None,
                           fitted_layers=None, gate_query=None):
