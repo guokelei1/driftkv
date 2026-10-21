@@ -1,0 +1,73 @@
+{
+  "status": "passed_synthetic_gpu_smoke",
+  "host": "g201",
+  "python": "3.13.16",
+  "torch": "2.12.1+cu130",
+  "cuda_runtime": "13.0",
+  "triton": "3.7.1",
+  "seed": 17,
+  "model": "2L_H64; batch=2; history=32; candidates=2; FP32; TF32 disabled",
+  "parquet_duckdb_roundtrip": true,
+  "checks": [
+    {
+      "device_index": 0,
+      "device": "NVIDIA A800 80GB PCIe",
+      "capability": [
+        8,
+        0
+      ],
+      "block_variant": "legacy",
+      "max_cpu_gpu_score_error": 6.258487701416016e-7,
+      "max_full_reuse_score_error": 0,
+      "backward_loss": 0.07490171492099762,
+      "gradients_finite": true,
+      "triton_jit_passed": true
+    },
+    {
+      "device_index": 1,
+      "device": "NVIDIA A800 80GB PCIe",
+      "capability": [
+        8,
+        0
+      ],
+      "block_variant": "legacy",
+      "max_cpu_gpu_score_error": 6.258487701416016e-7,
+      "max_full_reuse_score_error": 0,
+      "backward_loss": 0.07490171492099762,
+      "gradients_finite": true,
+      "triton_jit_passed": true
+    },
+    {
+      "device_index": 0,
+      "device": "NVIDIA A800 80GB PCIe",
+      "capability": [
+        8,
+        0
+      ],
+      "block_variant": "hstu_reference",
+      "max_cpu_gpu_score_error": 1.7881393432617188e-7,
+      "max_full_reuse_score_error": 0,
+      "backward_loss": 0.037283070385456085,
+      "gradients_finite": true,
+      "triton_jit_passed": true
+    },
+    {
+      "device_index": 1,
+      "device": "NVIDIA A800 80GB PCIe",
+      "capability": [
+        8,
+        0
+      ],
+      "block_variant": "hstu_reference",
+      "max_cpu_gpu_score_error": 1.7881393432617188e-7,
+      "max_full_reuse_score_error": 0,
+      "backward_loss": 0.037283070385456085,
+      "gradients_finite": true,
+      "triton_jit_passed": true
+    }
+  ],
+  "synthetic_inputs": true,
+  "quality_claim": false,
+  "timing_comparison": false,
+  "ddp_validated": false
+}

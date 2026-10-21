@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,7 @@ def main() -> None:
     device = torch.device(args.device)
     if device.type != "cuda":
         raise ValueError("This smoke is intended to validate a CUDA GPU")
+    torch.cuda.set_device(device)
 
     from hstu_kvcache.data.yambda_history import load_yambda_histories
     from hstu_kvcache.models import HSTU, HSTUConfig
@@ -74,13 +76,22 @@ def main() -> None:
         raise RuntimeError("Yambda forward produced nonfinite output")
     print(json.dumps({
         "status": "passed_yambda_single_gpu_smoke",
+        "host": platform.node(),
+        "dataset": str(args.dataset),
+        "checkpoint": str(args.checkpoint),
         "device": torch.cuda.get_device_name(device),
         "torch": str(torch.__version__),
         "cuda_runtime": torch.version.cuda,
         "checkpoint_version": checkpoint.get("version"),
         "model": f"{len(model.blocks)}L_H{model.cfg.hidden_size}",
         "history_rows": int(len(timestamps)),
+        "uid": uid,
+        "history_end_timestamp": int(timestamps[-1]),
+        "query_timestamp": end_time,
+        "candidate_item_idx": int(item_ids[-1]),
         "scores_shape": list(scores.shape),
+        "scores": scores.cpu().tolist(),
+        "readouts_shape": list(readouts.shape),
         "score_finite": True,
         "readout_finite": True,
         "quality_claim": False,
