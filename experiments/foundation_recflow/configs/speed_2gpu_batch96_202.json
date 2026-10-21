@@ -1,0 +1,46 @@
+{
+  "status": "two_gpu_speed_profile_only_not_formal_training",
+  "training_authorized": false,
+  "design": "experiments/configs/recflow_models_2026_10_21.json",
+  "data": "data/processed/recflow_feedback_large_v1",
+  "machine": "g202",
+  "physical_gpus": [
+    0,
+    1
+  ],
+  "global_batch": 96,
+  "microbatch": 48,
+  "cuda_graphs": true,
+  "base_epochs": 2,
+  "update_epochs": 2,
+  "permanent_epoch_checkpoints": [
+    "v01",
+    "v02",
+    "v11",
+    "v12"
+  ],
+  "optimizer_lineage": "fresh -> v01 -> v02 -> v11 -> v12; inherit full AdamW state; change LR at V1 only",
+  "checkpoint_seconds": 3600,
+  "keep_recovery_generations": 2,
+  "stop_after": "v1",
+  "metrics_frozen_before_training": [
+    "ROC_AUC",
+    "effective_view_PR_AUC",
+    "ineffective_view_PR_AUC",
+    "log_loss",
+    "Brier",
+    "user_macro_AUC",
+    "within_exposure_request_NDCG@1",
+    "within_exposure_request_NDCG@3",
+    "within_exposure_request_NDCG@5"
+  ],
+  "paired_evaluation": {
+    "day": 20,
+    "role": "final",
+    "all_eligible_targets": true,
+    "known_and_hashed_oov_strata": true,
+    "primary": "ROC_AUC"
+  },
+  "metric_selection_scope": "Report every frozen metric, including regressions; choosing a future headline based on this result is exploratory and needs another window.",
+  "comparison_scope": "Same global batch 96 and complete two-epoch windows as four GPUs; one NVLink pair, local batch 48; no formal checkpoint chain."
+}

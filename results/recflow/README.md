@@ -1,5 +1,13 @@
 # RecFlow development evidence
 
+Naming update, 2026-10-21: the user designated the retained 4096-user 6L/H192
+chain **RecFlow-Medium**. Its generative task and original NDCG results retain
+their identity. The new Large/Max [model/data design](../../experiments/docs/recflow_model_design_2026_10_21.md)
+has CPU parameter/sample statistics. The latest [202 two-GPU preparation](../../experiments/foundation_recflow/README.md)
+includes data, feedback code and speed/memory/recovery probes for Large then Max,
+each V0-V5 with two epochs and twelve permanent full checkpoints. The user has now authorized launch; the two-GPU Large-then-Max job is running in detached tmux.
+No new complete-chain quality result is available yet; see experiments/STATUS.md.
+
 This is an independent development track, not the current Yambda motivation
 result or an admitted RecFlow version chain. The authorized complete-window
 development and 4096-user six-layer expansion have completed. The current

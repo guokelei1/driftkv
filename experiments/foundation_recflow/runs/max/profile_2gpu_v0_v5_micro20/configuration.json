@@ -1,0 +1,123 @@
+{
+  "config": {
+    "status": "two_gpu_full_chains_memory_margin_preparation_waiting_for_start_instruction",
+    "training_authorized": false,
+    "design": "experiments/configs/recflow_models_2026_10_21.json",
+    "machine": "g202",
+    "physical_gpus": [
+      0,
+      1
+    ],
+    "base_epochs": 2,
+    "update_epochs": 2,
+    "checkpoint_seconds": 3600,
+    "keep_recovery_generations": 2,
+    "stop_after": "v5",
+    "metrics_frozen_before_training": [
+      "ROC_AUC",
+      "effective_view_PR_AUC",
+      "ineffective_view_PR_AUC",
+      "log_loss",
+      "Brier",
+      "user_macro_AUC",
+      "within_exposure_request_NDCG@1",
+      "within_exposure_request_NDCG@3",
+      "within_exposure_request_NDCG@5"
+    ],
+    "metric_selection_scope": "Report every frozen metric, including regressions; choosing a future headline based on this result is exploratory and needs another window.",
+    "order": [
+      "large",
+      "max"
+    ],
+    "cuda_graphs": true,
+    "permanent_epoch_checkpoints": [
+      "v01",
+      "v02",
+      "v11",
+      "v12",
+      "v21",
+      "v22",
+      "v31",
+      "v32",
+      "v41",
+      "v42",
+      "v51",
+      "v52"
+    ],
+    "optimizer_lineage": "Each scale starts fresh, then v01 -> v02 -> v11 -> v12 -> ... -> v51 -> v52; inherit full AdamW within each scale; V1-V5 use only the newly added day.",
+    "evaluation": {
+      "edges": [
+        "v0_v1",
+        "v1_v2",
+        "v2_v3",
+        "v3_v4",
+        "v4_v5"
+      ],
+      "days": [
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "role": "final",
+      "all_eligible_targets": true,
+      "known_and_hashed_oov_strata": true,
+      "primary": "ROC_AUC",
+      "bootstrap_repetitions": 1000
+    },
+    "memory_plan": "Max uses two microbatches of 20 per GPU per optimizer step; global batch stays 80. Large uses 48 per GPU; global batch stays 96.",
+    "data": "data/processed/recflow_feedback_max_v1",
+    "global_batch": 80,
+    "microbatch": 20,
+    "evaluation_batch": 32,
+    "scale": "max"
+  },
+  "binding": {
+    "configuration_sha256": "69825f8605f2382081f3e5f9947b129514873a2f2a8f7b7594388d05dae6d0db",
+    "design_sha256": "a4440053b8863516e68f8aa334baba45b3c9557424fecddd47714148d7fd3238",
+    "scale": "max",
+    "data_manifest_sha256": "cb6d32fda7ea60e97c81b23c1b908986aed0fa9d4ddf8f11e51030c05cccc666",
+    "torch_version": "2.12.1+cu130",
+    "world_size": 2,
+    "source_sha256": {
+      "/home/gkl/work/evokv/scripts/recflow/train_feedback.py": "65003738636fb3e936acf8649f143b6fafa140be4cdc1f772a53882d2a654de7",
+      "src/hstu_kvcache/recflow/feedback.py": "62d0163d714fe00358d512701aa965eea3afbe0b0448dd512ff2ffb9f91b33db",
+      "src/hstu_kvcache/recflow/feedback_embedding.py": "f3936c61318b47e95e98cdf5f9fbf11098b43e139a4c71e75a71dc0da064ca64",
+      "src/hstu_kvcache/recflow/feedback_embedding_cuda.py": "24dd02426963e342d66d56003893b54544ec2d4fa3c250f9a74f71e4b07a0879",
+      "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+      "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+      "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c"
+    }
+  },
+  "model": {
+    "num_items": 3565536,
+    "num_behaviors": 4,
+    "num_prediction_items": 3565536,
+    "hidden_size": 320,
+    "num_layers": 16,
+    "num_heads": 10,
+    "head_dim": 32,
+    "max_seq_len": 1024,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "elu_plus1",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.1,
+    "tie_item_embeddings": true,
+    "block_variant": "legacy",
+    "relative_position_bias": false,
+    "causal_diagonal": "inclusive",
+    "num_query_types": 3,
+    "num_query_actions": 1,
+    "query_type_id": 2,
+    "query_action_id": 0
+  },
+  "mode": "profile"
+}

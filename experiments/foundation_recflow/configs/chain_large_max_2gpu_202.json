@@ -1,0 +1,83 @@
+{
+  "status": "authorized_two_gpu_large_then_max_v0_v5",
+  "training_authorized": true,
+  "design": "experiments/configs/recflow_models_2026_10_21.json",
+  "machine": "g202",
+  "physical_gpus": [
+    0,
+    1
+  ],
+  "base_epochs": 2,
+  "update_epochs": 2,
+  "checkpoint_seconds": 3600,
+  "keep_recovery_generations": 2,
+  "stop_after": "v5",
+  "metrics_frozen_before_training": [
+    "ROC_AUC",
+    "effective_view_PR_AUC",
+    "ineffective_view_PR_AUC",
+    "log_loss",
+    "Brier",
+    "user_macro_AUC",
+    "within_exposure_request_NDCG@1",
+    "within_exposure_request_NDCG@3",
+    "within_exposure_request_NDCG@5"
+  ],
+  "metric_selection_scope": "Report every frozen metric, including regressions; choosing a future headline based on this result is exploratory and needs another window.",
+  "order": [
+    "large",
+    "max"
+  ],
+  "cuda_graphs": true,
+  "permanent_epoch_checkpoints": [
+    "v01",
+    "v02",
+    "v11",
+    "v12",
+    "v21",
+    "v22",
+    "v31",
+    "v32",
+    "v41",
+    "v42",
+    "v51",
+    "v52"
+  ],
+  "optimizer_lineage": "Each scale starts fresh, then v01 -> v02 -> v11 -> v12 -> ... -> v51 -> v52; inherit full AdamW within each scale; V1-V5 use only the newly added day.",
+  "evaluation": {
+    "edges": [
+      "v0_v1",
+      "v1_v2",
+      "v2_v3",
+      "v3_v4",
+      "v4_v5"
+    ],
+    "days": [
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "role": "final",
+    "all_eligible_targets": true,
+    "known_and_hashed_oov_strata": true,
+    "primary": "ROC_AUC",
+    "bootstrap_repetitions": 1000
+  },
+  "models": {
+    "large": {
+      "data": "data/processed/recflow_feedback_large_v1",
+      "global_batch": 96,
+      "microbatch": 48,
+      "evaluation_batch": 48
+    },
+    "max": {
+      "data": "data/processed/recflow_feedback_max_v1",
+      "global_batch": 80,
+      "microbatch": 20,
+      "evaluation_batch": 32
+    }
+  },
+  "memory_plan": "Max uses two microbatches of 20 per GPU per optimizer step; global batch stays 80. Large uses 48 per GPU; global batch stays 96."
+}

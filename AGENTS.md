@@ -17,6 +17,43 @@ while queued edges remain pending. Runtime estimate: 3–4h/edge, 12–16h total
 progress only, not controlled timing evidence. This supersedes GPU 0 and the
 first-edge-only queue restriction in the historical paragraph below.
 
+Latest RecFlow execution clarification — 2026-10-21: prepare a single sequential
+job on machine 202 using TWO GPUs (NVLink pair 0/1): finish Large V0-V5, then
+Max V0-V5. This supersedes the earlier four-GPU and stop-after-V1 scope.
+Every version uses two complete epochs, preserving all twelve permanent full
+model/AdamW/RNG/progress checkpoints per scale, fresh -> v01 -> v02 -> v11 ->
+v12 -> ... -> v51 -> v52. V0 fits D1-18; V1-V5 fit only D19 through D23,
+one new day per version. Inherit optimizer state within each scale; Max starts
+fresh independently. Hourly rolling recovery retains two generations and
+permanent epoch checkpoints are also resumable. Preserve frozen roles and
+paired multi-metric future-day evaluation on all eligible final-role targets.
+The user has NOW explicitly authorized starting training and requires a durable
+launch that survives network/client disconnection. The formal sequence is
+running in detached tmux socket recflow202, session recflow-foundation, on 202
+GPUs 0/1. Entry: scripts/recflow/run_foundation_chain.py; configuration:
+experiments/foundation_recflow/configs/chain_large_max_2gpu_202.json now has
+training_authorized=true. Run: experiments/foundation_recflow/runs/chain_2gpu/
+attempt_1; launch.json records commands/PIDs/logs. Do not change frozen numeric
+source, design/run configuration or data during execution. Resume only after
+the original process has exited; never start a duplicate sequence. Source data
+is already on 202; earlier copying to 201 did not start training there.
+The user additionally requires explicit GPU-memory risk assessment and long-run
+reliability. Large remains global96/micro48 per GPU. Max now uses global80,
+micro20 per GPU with two accumulated microbatches, replacing micro40 to leave
+headroom. Cover all 15 bounded history/candidate shapes, repeated mixed replays,
+full checkpoint saves and fresh-process recovery before reporting readiness.
+Do not equate these bounded probes with an already completed long training run.
+
+Latest RecFlow planning clarification — 2026-10-21: the user designates the old
+4096-user 6L/H192 generative chain RecFlow-Medium and requests a design only for
+Large/Max matching Yambda parameter counts and structure, with different video
+table sizes. See experiments/docs/recflow_model_design_2026_10_21.md and its
+config/statistics. Proposed Large/Max have 2.2M/3.5M independent videos,
+10/16 layers, width320 and 65,536 OOV hash rows each: 730,211,201/1,149,285,121
+parameters. Both use the existing development population and preserve
+admission/final roles; original Medium NDCG is not feedback AUC. This design
+does not authorize new training, GPU probes or a launch queue.
+
 Latest user clarification — 2026-10-21: experiment 01 compares independent
 adjacent-version transitions. All methods start each edge from the same old
 native state; correction/student state is not carried between edges. Normal

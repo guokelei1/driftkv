@@ -1,0 +1,117 @@
+{
+  "status": "planning_only_waiting_for_user_launch",
+  "host": "g202",
+  "gpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "default_global_batch": 96,
+  "base_epochs": 2,
+  "update_epochs": 2,
+  "permanent_epochs": [
+    "v01",
+    "v02",
+    "v11",
+    "v12"
+  ],
+  "lineage": "fresh -> v01 -> v02 -> v11 -> v12",
+  "estimates_by_batch": {
+    "96": {
+      "source": "experiments/foundation_recflow/runs/large/profile_batch96/summary.json",
+      "original_epochs": {
+        "v0": 2,
+        "v1": 1
+      },
+      "stages": {
+        "v0": {
+          "epochs": 2,
+          "requests_per_epoch": 3023919,
+          "targets_per_epoch": 15515819,
+          "steps": 63000,
+          "training_seconds": 6791.426830455661
+        },
+        "v1": {
+          "epochs": 2,
+          "requests_per_epoch": 161078,
+          "targets_per_epoch": 833795,
+          "steps": 3356,
+          "training_seconds": 413.38826328516006
+        }
+      },
+      "total_pure_training_hours": 2.001337526039117,
+      "training_hours_with_25percent_margin": 2.5016719075488965,
+      "peak_reserved_gb_per_gpu": 20.04877312
+    },
+    "192": {
+      "source": "experiments/foundation_recflow/runs/large/profile_batch192/summary.json",
+      "original_epochs": {
+        "v0": 2,
+        "v1": 1
+      },
+      "stages": {
+        "v0": {
+          "epochs": 2,
+          "requests_per_epoch": 3023919,
+          "targets_per_epoch": 15515819,
+          "steps": 31500,
+          "training_seconds": 5337.166091173887
+        },
+        "v1": {
+          "epochs": 2,
+          "requests_per_epoch": 161078,
+          "targets_per_epoch": 833795,
+          "steps": 1678,
+          "training_seconds": 334.2569083273411
+        }
+      },
+      "total_pure_training_hours": 1.5753952776392302,
+      "training_hours_with_25percent_margin": 1.9692440970490377,
+      "peak_reserved_gb_per_gpu": 30.333206528
+    },
+    "384": {
+      "source": "experiments/foundation_recflow/runs/large/profile_batch384/summary.json",
+      "original_epochs": {
+        "v0": 2,
+        "v1": 1
+      },
+      "stages": {
+        "v0": {
+          "epochs": 2,
+          "requests_per_epoch": 3023919,
+          "targets_per_epoch": 15515819,
+          "steps": 15750,
+          "training_seconds": 4592.512879222631
+        },
+        "v1": {
+          "epochs": 2,
+          "requests_per_epoch": 161078,
+          "targets_per_epoch": 833795,
+          "steps": 840,
+          "training_seconds": 293.99967770278454
+        }
+      },
+      "total_pure_training_hours": 1.3573645991459489,
+      "training_hours_with_25percent_margin": 1.6967057489324362,
+      "peak_reserved_gb_per_gpu": 46.428848128
+    }
+  },
+  "default_practical_hours": {
+    "v0": [
+      2,
+      2.5
+    ],
+    "v1_minutes": [
+      8,
+      12
+    ],
+    "total_including_startup_checkpoint_evaluation": [
+      2.5,
+      3
+    ]
+  },
+  "complete_checkpoint_gb_approx": 8.762534412,
+  "four_permanent_plus_two_rolling_gb_approx": 52.575206472,
+  "scope": "Original shape measurements preserved. Extrapolate both versions to two epochs; representative training shape frequencies, not a measured complete run. Larger batches change optimizer-step counts. No formal training started."
+}

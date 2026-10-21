@@ -1,0 +1,94 @@
+{
+  "config": {
+    "status": "two_gpu_speed_profile_only_not_formal_training",
+    "training_authorized": false,
+    "design": "experiments/configs/recflow_models_2026_10_21.json",
+    "data": "data/processed/recflow_feedback_large_v1",
+    "machine": "g202",
+    "physical_gpus": [
+      0,
+      1
+    ],
+    "global_batch": 96,
+    "microbatch": 48,
+    "cuda_graphs": true,
+    "base_epochs": 2,
+    "update_epochs": 2,
+    "permanent_epoch_checkpoints": [
+      "v01",
+      "v02",
+      "v11",
+      "v12"
+    ],
+    "optimizer_lineage": "fresh -> v01 -> v02 -> v11 -> v12; inherit full AdamW state; change LR at V1 only",
+    "checkpoint_seconds": 3600,
+    "keep_recovery_generations": 2,
+    "stop_after": "v1",
+    "metrics_frozen_before_training": [
+      "ROC_AUC",
+      "effective_view_PR_AUC",
+      "ineffective_view_PR_AUC",
+      "log_loss",
+      "Brier",
+      "user_macro_AUC",
+      "within_exposure_request_NDCG@1",
+      "within_exposure_request_NDCG@3",
+      "within_exposure_request_NDCG@5"
+    ],
+    "paired_evaluation": {
+      "day": 20,
+      "role": "final",
+      "all_eligible_targets": true,
+      "known_and_hashed_oov_strata": true,
+      "primary": "ROC_AUC"
+    },
+    "metric_selection_scope": "Report every frozen metric, including regressions; choosing a future headline based on this result is exploratory and needs another window.",
+    "comparison_scope": "Same global batch 96 and complete two-epoch windows as four GPUs; one NVLink pair, local batch 48; no formal checkpoint chain."
+  },
+  "binding": {
+    "configuration_sha256": "14751be5a16898012b5966873d9dc15fcd5db1f7e1b812e9096f4e31608d3499",
+    "design_sha256": "a4440053b8863516e68f8aa334baba45b3c9557424fecddd47714148d7fd3238",
+    "data_manifest_sha256": "1e03bd49869d466f64d2d0395851b6693f58eeda309426ef97de43441d6ed6dd",
+    "torch_version": "2.12.1+cu130",
+    "world_size": 2,
+    "source_sha256": {
+      "/home/gkl/work/evokv/scripts/recflow/train_feedback.py": "74e16e170b89e813010b624e1a8661686fba920a549ba0a2ca816db55c405017",
+      "src/hstu_kvcache/recflow/feedback.py": "62d0163d714fe00358d512701aa965eea3afbe0b0448dd512ff2ffb9f91b33db",
+      "src/hstu_kvcache/recflow/feedback_embedding.py": "f3936c61318b47e95e98cdf5f9fbf11098b43e139a4c71e75a71dc0da064ca64",
+      "src/hstu_kvcache/recflow/feedback_embedding_cuda.py": "24dd02426963e342d66d56003893b54544ec2d4fa3c250f9a74f71e4b07a0879",
+      "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+      "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+      "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c"
+    }
+  },
+  "model": {
+    "num_items": 2265536,
+    "num_behaviors": 4,
+    "num_prediction_items": 2265536,
+    "hidden_size": 320,
+    "num_layers": 10,
+    "num_heads": 10,
+    "head_dim": 32,
+    "max_seq_len": 1024,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "elu_plus1",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.1,
+    "tie_item_embeddings": true,
+    "block_variant": "legacy",
+    "relative_position_bias": false,
+    "causal_diagonal": "inclusive",
+    "num_query_types": 3,
+    "num_query_actions": 1,
+    "query_type_id": 2,
+    "query_action_id": 0
+  },
+  "mode": "profile"
+}

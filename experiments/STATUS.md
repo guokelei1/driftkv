@@ -33,6 +33,23 @@
 
 以下保存的启动与中间进度描述为历史记录，以以上全量结果为准。
 
+## 当前RecFlow恢复点：202两卡Large→Max完整链已在tmux启动
+
+**2026-10-22 01:51（北京时间）检查：** [运行健康与速度快照](foundation_recflow/runs/chain_2gpu/attempt_1/health_2026_10_22/summary.json)。Large V0–V5完整79,236步已结束，12个永久端点和两份滚动点齐全，五条相邻评价均完成；训练含保存3.81小时，含评价约3.92小时，原预算4.5–5小时。Max当前V0第一轮约70%，最近5000步0.233秒/步，与V0短测0.234秒/步一致；两份滚动点正常。日志无报错／非有限值／OOM，tmux独立运行，GPU0／1利用率99–100%、各约24.8GB，剩余磁盘约534GB。冻结源码／设计／配置hash未变。按当前速率，更新完成预估为当日06:45–07:30；保留原13–14小时为启动前保守排期，不作为实际耗时。没有重启、改参或新增训练队列。
+
+- 最新用户范围为202物理GPU0／1，**先Large V0–V5，再Max V0–V5**。单入口`scripts/recflow/run_foundation_chain.py`，配置`foundation_recflow/configs/chain_large_max_2gpu_202.json`。用户已明确授权启动，`training_authorized=true`已冻结；202的独立tmux socket `recflow202`／session `recflow-foundation`已运行，无客户端连接时继续执行。不从旧只跑V0/V1入口启动。
+- 正式attempt：`foundation_recflow/runs/chain_2gpu/attempt_1`。`launch.json`保存实际命令、PID、会话、日志与恢复命令；`launcher.log`记录阶段，`large_train_v0_v5.log`记录当前Large训练。接入：`tmux -L recflow202 attach -t recflow-foundation`。保持数值源码／配置／数据冻结；只在旧进程确认退出后使用`--resume`，断网无需重启。
+- 启动确认：tmux服务器PPID为1、会话attached=0，训练在客户端未连接时继续推进。Large V0第1轮已进入正式optimizer更新，首份第101步完整恢复文件已提交（约8.76GB），其后进度继续增加。当前PID与时刻以launch.json为准。
+- 每版两轮，独立从头初始化各档V0；V0拟合D1–18，V1–V5分别只拟合D19–23。每档12份完整模型／AdamW／RNG／进度永久保存：`fresh → v01 → v02 → v11 → v12 → … → v51 → v52`，版本间继承实际优化器。小时滚动恢复保留两份，永久epoch端点同样可恢复。
+- [运行准备](foundation_recflow/README.md)、[预算](foundation_recflow/planning_chain_two_gpu.json)、[模型设计](docs/recflow_model_design_2026_10_21.md)。Large为10L/H320、220万独立视频、730,211,201参数；Max为16L/H320、350万独立视频、1,149,285,121参数。各有65,536个稳定哈希行，非embedding参数与对应Yambda匹配；旧六层链继续叫Medium，原NDCG证据不改。
+- 两档映射已准备，均与CPU规划的已知视频hash一致；Large目录嵌套于Max。角色维持development26,277、admission3,291、final3,210，根训练实际23,668人；每档六版两轮共7,606,044次请求访问、39,043,674条反馈目标访问。既定admission分工保留，评价含所有合法哈希目标。
+- 两档完整六版速度和显存／保存／新进程恢复检查已完成。Large全局96／每卡48；Max全局80／每卡20分两次累积，较每卡40耗时只增约4.3%。当前纯训练预算Large3.69小时／Max6.40小时；含保存、启动、评测排期分别4.5–5小时／8–9小时，串行约13–14小时，属短测外推，非完整链实测。
+- [显存与恢复证据](foundation_recflow/runs/memory_readiness/summary.json)：两档各覆盖15种形状，初始／恢复后各120步混合重放，图缓存最多15、稳态显存未持续增长。最大保留显存Large31.43GB／Max29.12GB每卡；完整恢复文件8.76／13.79GB，实测保存24.5／38.4秒。新进程恢复、空图缓存重建后两步对照loss差均为0。启动器检查GPU空闲、剩余磁盘、防重复运行与同源恢复；这些是有界检查，尚无整夜正式质量结果。
+- Large质量初析（CPU读取已保存评分，无新推理）：V4→V5在D24的整体AUC下降0.002970，配对UID95%区间[-0.004151,-0.001810]；LogLoss／Brier／正负PR-AUC也退步。用户平均AUC和曝光请求NDCG点估计上升，但V5这条边补算的UID区间均跨零，不能称稳定正收益。五条边的请求NDCG@5均上升，等发布平均差0.001670，事后配对UID95%区间[0.000988,0.002400]，支持局部请求内排序的有限收益；不替代预定整体AUC主指标。见`foundation_recflow/runs/chain_2gpu/attempt_1/large/update_analysis/summary.json`，分析脚本`recflow_feedback_update_analysis.py`。未用final结果改训练配方或选择checkpoint；V0与V5在同一D24的累计收益尚无直接测量。
+- 每档训练后，在D20–24做五条相邻版本同人口、多指标配对评价；ROC-AUC主指标，附正负PR-AUC、LogLoss、Brier、用户AUC、曝光请求NDCG及known／hash分层、配对UID区间。完整结果尚未产生。24份永久端点加两档各两份滚动文件约315.8GB，计划至少350GB余量。
+
+## 当前恢复点：GPU 0全量基线已启动
+
 - 用户收窄为先Yambda-Large V0→V1。最新要求选自然参数、各方法约3–5点，不反推费用凑点：Layer 2/4/6/8层，Tail 10/20/40/80%，Deviation/Query 10/20/40/60%；两种学习基线各3个fit人数点，Reuse/Rebuild各1点，共24点。真实费用逐点计入，不把名义token／层比例当FLOPs。
 - 用户要求质量覆盖全部合法测试用户；撤销最初自行设置的512人质量面板。保留既有fit/validation及开发角色排除，普通历史test用户不因其质量结果被排除。当前完整合法测试人口75,807，质量与完整费用绑定同一人口。其中34,190人有345,630条评分反馈，41,617人本窗口无评分反馈；不能说75,807人都贡献AUC。Large用户池79,681人，V0实际训练62,035人、V1增量训练36,975人，来自实体checkpoint记录。
 - 用户要求先提速并在运行前报告30k耗时，旧人口任务停止；提速、自然点和保存／恢复验证完成，已报告最新预估，现已启动75,807人质量／费用任务。没有其他版本或CacheTide训练队列。
@@ -59,7 +76,7 @@
 - Yambda-Large／Max各V0–V5六个实体权重、数据与版本记录在，无须重训两条底座。
 - 当前方法及准备复用、融合读取、原地转换、合批已有Medium原型；本轮H10／72维核心参考／融合／转换及校准形状已扩展并通过针对验证，完整origin训练入口和正式候选质量仍待后续落实；现在优先基线。
 - 当前Medium的4096人真实反馈质量面板恢复约65.89%；独立30k费用账下，工程口径完整新增成本约23.72%。两者不是同人口联合测量，不当作最终四配置结果；晚期退化及完整受控时间收益待验证。
-- RecFlow曝光数据在；旧六层生成式链不能充当Large／Max反馈链。正式任务／目录／模型链尚待确定和训练。
+- RecFlow旧六层生成式链现称Medium。Large／Max反馈入口、冻结数据、双卡速度与显存／恢复检查已完成，正式权重尚未训练。恢复入口见本页上方foundation_recflow，遵守等待启动指令。
 - 当前论文实验图仍为模拟。01已有本轮基线配置及性能探针，其他正式配置尚未冻结；不能从图中数值或旧配置自动恢复执行。
 
 ## 下一步及依赖
