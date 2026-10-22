@@ -5,10 +5,10 @@ import pymupdf as fitz
 from render_all import FIGURES, ROOT
 
 FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
-TITLES = ['整体质量与计算成本', '相同资源下的完整时间分解', '默认点跨发布的质量与成本',
-          'Design：读取结构与校准', 'Implementation：准备与读取优化',
-          '固定版本与读取次数的适用边界']
-ORDER = [0, 2, 3, 4, 1, 5]
+TITLES = ['质量与完整成本前沿', '连续发布与回访用户', '设计分析：容量与候选条件化',
+          '成本：发布时间、请求延迟与首次读取', '适用边界：固定版本与读取次数']
+ORDER = [0, 1, 2, 4, 3]
+WIDE = (0, 1, 3)
 
 
 def contact_sheet():
@@ -16,7 +16,7 @@ def contact_sheet():
     tile_h, rows = 850, 3
     out = Image.new('RGB', (width, header + rows * (tile_h + gap) + 30), '#F2F4F6')
     draw = ImageDraw.Draw(out)
-    draw.text((30, 16), 'CacheTide 实验章节 · 六幅实验图总览（模拟数据）',
+    draw.text((30, 16), 'CacheTide 实验章节 · 五幅实验图总览（模拟数据）',
               font=ImageFont.truetype(FONT, 38), fill='#22364B')
     draw.text((32, 83), 'Yambda / RecFlow × Large / Max；双栏主结果与单栏图表预览。所有数值均为模拟。',
               font=ImageFont.truetype(FONT, 23), fill='#626D77')
@@ -37,8 +37,8 @@ def contact_sheet():
 def paper_preview():
     """Render both core results wide and all mechanism/cost details narrow."""
     doc = fitz.open()
-    # E1 spans both columns. Keep the two complementary E3 studies adjacent.
-    pages = [[(0,), (2,)], [(3, 4), (1, 5)]]
+    # Double-column figures take a full row; single-column figures pair up.
+    pages = [[(0,), (1,)], [(3,), (2, 4)]]
     for page_no, rows in enumerate(pages, 1):
         page = doc.new_page(width=595.3, height=841.9)
         page.insert_text((35,30), 'CacheTide | double-column main result and column-width details', fontsize=11, fontname='hebo', color=(.12,.23,.32))
@@ -50,7 +50,7 @@ def paper_preview():
                 folder, number, caption = FIGURES[index]
                 src = fitz.open(ROOT / folder / f'fig_{number}_simulated.pdf')
                 x = 42 + slot * 270
-                width = 511.2 if index in (0, 2) else 241.2
+                width = 511.2 if index in WIDE else 241.2
                 height = width * src[0].rect.height / src[0].rect.width
                 row_height = max(row_height, height)
                 if row_y + height > 795:

@@ -11,11 +11,10 @@ import shutil
 ROOT = Path(__file__).resolve().parent
 EXPORTS = [
     ('e1_quality_cost', '6_1', 'quality_cost'),
-    ('e2_time_breakdown', '6_5_time', 'time_breakdown'),
-    ('e3_lifecycle', '6_3', 'lifecycle'),
-    ('e8_mechanism', '6_3_design', 'design_analysis'),
-    ('e6_implementation', '6_6', 'implementation'),
-    ('e9_boundaries', '6_5_boundaries', 'boundaries'),
+    ('e10_releases', '6_2_releases', 'releases'),
+    ('e11_design', '6_3_design', 'design_analysis'),
+    ('e12_cost', '6_4_cost', 'cost'),
+    ('e13_boundaries', '6_5_boundaries', 'boundaries'),
 ]
 
 

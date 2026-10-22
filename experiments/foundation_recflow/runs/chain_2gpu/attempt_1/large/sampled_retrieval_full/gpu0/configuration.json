@@ -1,0 +1,26 @@
+{
+  "status": "exploratory_readonly_inference",
+  "scale": "large",
+  "requested_positive_requests_per_day": 1000000000,
+  "edges": [
+    0,
+    2,
+    4
+  ],
+  "seed": 17,
+  "data_manifest_sha256": "1e03bd49869d466f64d2d0395851b6693f58eeda309426ef97de43441d6ed6dd",
+  "source_sha256": {
+    "/home/gkl/work/evokv/scripts/experiments_2026_10/recflow_feedback_sampled_retrieval.py": "7a03bbe9a0e0bde74fd97b6224f7394fc488b75daecbb28ab48de2dcb6e257c9",
+    "src/hstu_kvcache/recflow/feedback.py": "62d0163d714fe00358d512701aa965eea3afbe0b0448dd512ff2ffb9f91b33db",
+    "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+    "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+    "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+    "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c"
+  },
+  "batch": 8,
+  "device": "0",
+  "include_all_requests": true,
+  "per_process_memory_fraction": 0.15,
+  "precision": "FP32",
+  "protocol": "Frozen final-role positive requests; retain all-OOV misses in denominators. All distinct known observed effective-view positives plus exactly 1000 uniformly sampled unique known-catalog distractors, excluding observed positives. Distractors have unobserved relevance, not verified negative feedback. Candidate scoring uses the frozen scalar feedback head, not the old generative head. Histories exclude the entire same-timestamp block. With include_all_requests, all-negative requests score zero and stay in the population. Zero-known-positive requests need no candidate inference because every retrieval metric is exactly zero; this is an offline evaluation shortcut, not deployable serving work. This diagnostic does not replace feedback AUC. No model/data/config changes or training."
+}

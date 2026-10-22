@@ -2,6 +2,42 @@
 
 ## Active work — 2026-10-19 (read first)
 
+Latest RecFlow metric clarification — 2026-10-22: the user wants common,
+task-natural metrics (AUC/NDCG/Recall/MRR), roughly 1–3% relative update gains
+with at least three of five releases showing a clear phenomenon, plus scores
+clearly above a matched random baseline. RecFlow should emphasize a
+generative/retrieval task rather than only like/dislike discrimination; this
+new task preference supersedes the older RecFlow feedback-only planning
+direction, without rewriting existing results. Current Large/Max checkpoints
+are still effective_view BCE models with a scalar candidate head. Their
+sampled positive-item retrieval results are not autoregressive or full-catalog
+generation evidence. No change to the running training recipe or new
+foundation training is authorized by this metric search.
+The user explicitly instructed: stop ONLY this new metric-search inference on
+GPUs 0/1; DO NOT stop the existing foundation training. Metric inference was
+migrated to physical GPUs 2/3, retaining 177 committed blocks and original
+hardware/hash provenance. Foundation tmux session recflow-foundation and
+training PIDs remain running on 0/1. Read experiments/STATUS.md and
+experiments/foundation_recflow/runs/chain_2gpu/attempt_1/large/
+sampled_retrieval_full/plan.json. Full inference completed in tmux sessions
+recflow-metric-full-2/3 (socket recflow202), covering all 94,809 eligible D20–24
+requests, includes all-negative/OOV zero scores, and retains NDCG/Recall
+20/50/100 and MRR, including regressions. Inspect gpu2/gpu3 outputs, not the
+stopped gpu0/gpu1 attempts. NDCG@50 and Recall@100 were selected as focus
+after a 1024-request/day pilot; full-population verification includes that
+pilot and is exploratory, not independent confirmation. The user's three-of-
+five rule does not permit averaging only favorable releases or describing
+positive point estimates as statistically confirmed gains. Full-population
+results corrected the pilot: NDCG@50 has only one positive edge and mean
+-1.56585%; MRR also regresses on average. Recall@100 has five positive point
+estimates (three above1%), mean +0.94667%, paired UID95% [0.32784,1.58641]%,
+and current/random ratios 2.107–2.272. Only V3→V4's per-edge Recall interval
+excludes zero; do not call three or five releases statistically significant.
+Recommend Recall@100 for current candidate coverage, retain adverse NDCG@50
+as ordering evidence. See sampled_retrieval_full/report.md and
+paired_uid_analysis/summary.json. Both inference jobs exited0; original
+training continues unchanged on0/1. This does not launch further jobs.
+
 Latest execution authorization — 2026-10-21 evening: after the completed
 Yambda-Large V0→V1 report, the user requested all remaining independent adjacent
 edges V1→V2, V2→V3, V3→V4 and V4→V5 on physical GPU 1. The four-edge sequential

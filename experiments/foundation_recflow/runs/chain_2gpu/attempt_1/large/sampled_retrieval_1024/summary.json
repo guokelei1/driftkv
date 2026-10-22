@@ -1,0 +1,355 @@
+{
+  "status": "complete_exploratory_sampled_retrieval",
+  "configuration": {
+    "status": "exploratory_readonly_inference",
+    "scale": "large",
+    "requested_positive_requests_per_day": 1024,
+    "edges": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "seed": 17,
+    "data_manifest_sha256": "1e03bd49869d466f64d2d0395851b6693f58eeda309426ef97de43441d6ed6dd",
+    "source_sha256": {
+      "/home/gkl/work/evokv/scripts/experiments_2026_10/recflow_feedback_sampled_retrieval.py": "22fb1ed6feb504d2212cdd9d07ab0b6fe6b9a53bec62fe3ab6926f835bb60afe",
+      "src/hstu_kvcache/recflow/feedback.py": "62d0163d714fe00358d512701aa965eea3afbe0b0448dd512ff2ffb9f91b33db",
+      "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c"
+    },
+    "batch": 8,
+    "device": "0",
+    "per_process_memory_fraction": 0.15,
+    "precision": "FP32",
+    "protocol": "Frozen final-role positive requests; retain all-OOV misses in denominators. All distinct known observed effective-view positives plus exactly 1000 uniformly sampled unique known-catalog distractors, excluding observed positives. Distractors have unobserved relevance, not verified negative feedback. Candidate scoring uses the frozen scalar feedback head, not the old generative head. Histories exclude the entire same-timestamp block. This diagnostic subset does not replace full-population feedback evaluation. No model/data/config changes or training."
+  },
+  "edges": [
+    {
+      "parent": "v0",
+      "current": "v1",
+      "day": 20,
+      "requests": 1024,
+      "eligible_positive_requests": 15216,
+      "users": 495,
+      "all_oov_positive_requests": 342,
+      "results": {
+        "v0": {
+          "metrics": {
+            "Recall@20": 0.032080078124999994,
+            "NDCG@20": 0.016072547939841794,
+            "Recall@50": 0.06417178199404762,
+            "NDCG@50": 0.024440475469828967,
+            "Recall@100": 0.09886067708333332,
+            "NDCG@100": 0.031928466538870395,
+            "MRR": 0.021687623243745593
+          },
+          "random": {
+            "Recall@20": 0.008913463106502262,
+            "NDCG@20": 0.004118325592426987,
+            "Recall@50": 0.022283657766255655,
+            "NDCG@50": 0.0075447496869246854,
+            "Recall@100": 0.04456731553251131,
+            "NDCG@100": 0.012248434215145177,
+            "MRR": 0.007629338881559481
+          },
+          "checkpoint_sha256": "fe81beb43e3311cfe048b26a4a36a1187fd17fed20c34a1e1210b56e553cc5c5",
+          "seconds": 28.56214666366577
+        },
+        "v1": {
+          "metrics": {
+            "Recall@20": 0.031217447916666665,
+            "NDCG@20": 0.016579108141505188,
+            "Recall@50": 0.06447405133928572,
+            "NDCG@50": 0.025186698301404787,
+            "Recall@100": 0.09964192708333333,
+            "NDCG@100": 0.032780294480349526,
+            "MRR": 0.023523676503051788
+          },
+          "random": {
+            "Recall@20": 0.008913463106502262,
+            "NDCG@20": 0.004118325592426987,
+            "Recall@50": 0.022283657766255655,
+            "NDCG@50": 0.0075447496869246854,
+            "Recall@100": 0.04456731553251131,
+            "NDCG@100": 0.012248434215145177,
+            "MRR": 0.007629338881559481
+          },
+          "checkpoint_sha256": "1b502c850603621ef98b8a6a29484706fec3ecd0b6839cbd2049d24c0a28e460",
+          "seconds": 27.748140573501587
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": -2.68899036022322,
+        "NDCG@20": 3.1517106283297958,
+        "Recall@50": 0.47103155911445427,
+        "NDCG@50": 3.0532255090413907,
+        "Recall@100": 0.7902535396773214,
+        "NDCG@100": 2.667926254591957,
+        "MRR": 8.465903518660989
+      }
+    },
+    {
+      "parent": "v1",
+      "current": "v2",
+      "day": 21,
+      "requests": 1024,
+      "eligible_positive_requests": 14641,
+      "users": 514,
+      "all_oov_positive_requests": 373,
+      "results": {
+        "v1": {
+          "metrics": {
+            "Recall@20": 0.028176153273809523,
+            "NDCG@20": 0.013558646456595384,
+            "Recall@50": 0.05465029761904762,
+            "NDCG@50": 0.020499837346486235,
+            "Recall@100": 0.08134300595238095,
+            "NDCG@100": 0.026532636357275867,
+            "MRR": 0.018366792865323875
+          },
+          "random": {
+            "Recall@20": 0.007793128501345163,
+            "NDCG@20": 0.0036582580921465614,
+            "Recall@50": 0.019482821253362904,
+            "NDCG@50": 0.006701908573272137,
+            "Recall@100": 0.03896564250672581,
+            "NDCG@100": 0.010880133825765272,
+            "MRR": 0.007056282651738689
+          },
+          "checkpoint_sha256": "1b502c850603621ef98b8a6a29484706fec3ecd0b6839cbd2049d24c0a28e460",
+          "seconds": 27.734935760498047
+        },
+        "v2": {
+          "metrics": {
+            "Recall@20": 0.02809477306547619,
+            "NDCG@20": 0.012914265146643088,
+            "Recall@50": 0.05854027157738095,
+            "NDCG@50": 0.020957793703468567,
+            "Recall@100": 0.08534691220238094,
+            "NDCG@100": 0.026935193442401348,
+            "MRR": 0.017353592788609602
+          },
+          "random": {
+            "Recall@20": 0.007793128501345163,
+            "NDCG@20": 0.0036582580921465614,
+            "Recall@50": 0.019482821253362904,
+            "NDCG@50": 0.006701908573272137,
+            "Recall@100": 0.03896564250672581,
+            "NDCG@100": 0.010880133825765272,
+            "MRR": 0.007056282651738689
+          },
+          "checkpoint_sha256": "cf60e3549824d422e2d2405bd1834e22715a87bd38606d90a87f80787bb293f7",
+          "seconds": 27.737910985946655
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": -0.28882653903283817,
+        "NDCG@20": -4.752548951070612,
+        "Recall@50": 7.117937372362149,
+        "NDCG@50": 2.2339511735727458,
+        "Recall@100": 4.922250171506959,
+        "NDCG@100": 1.5172147980503592,
+        "MRR": -5.516477940071796
+      }
+    },
+    {
+      "parent": "v2",
+      "current": "v3",
+      "day": 22,
+      "requests": 1024,
+      "eligible_positive_requests": 14827,
+      "users": 493,
+      "all_oov_positive_requests": 449,
+      "results": {
+        "v2": {
+          "metrics": {
+            "Recall@20": 0.019583953373015873,
+            "NDCG@20": 0.009757461291781995,
+            "Recall@50": 0.03517640128968254,
+            "NDCG@50": 0.014200813605082352,
+            "Recall@100": 0.05481344556051587,
+            "NDCG@100": 0.018637295742960146,
+            "MRR": 0.015010356201917579
+          },
+          "random": {
+            "Recall@20": 0.0061988868662023015,
+            "NDCG@20": 0.002933346103695168,
+            "Recall@50": 0.015497217165505754,
+            "NDCG@50": 0.005373873823427727,
+            "Recall@100": 0.030994434331011508,
+            "NDCG@100": 0.008724151593897968,
+            "MRR": 0.0058301466583900174
+          },
+          "checkpoint_sha256": "cf60e3549824d422e2d2405bd1834e22715a87bd38606d90a87f80787bb293f7",
+          "seconds": 27.585277318954468
+        },
+        "v3": {
+          "metrics": {
+            "Recall@20": 0.016930958581349208,
+            "NDCG@20": 0.009512772317068048,
+            "Recall@50": 0.03615296378968254,
+            "NDCG@50": 0.014916052069228995,
+            "Recall@100": 0.055374968998015875,
+            "NDCG@100": 0.01912362999632073,
+            "MRR": 0.016307482080892652
+          },
+          "random": {
+            "Recall@20": 0.0061988868662023015,
+            "NDCG@20": 0.002933346103695168,
+            "Recall@50": 0.015497217165505754,
+            "NDCG@50": 0.005373873823427727,
+            "Recall@100": 0.030994434331011508,
+            "NDCG@100": 0.008724151593897968,
+            "MRR": 0.0058301466583900174
+          },
+          "checkpoint_sha256": "84238d42a77e2d643432da9c50e09f73a97bbce6c66eb12b5d71ae367d740366",
+          "seconds": 27.590733766555786
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": -13.54677853411429,
+        "NDCG@20": -2.5077114568728076,
+        "Recall@50": 2.7761864892257515,
+        "NDCG@50": 5.036602014765301,
+        "Recall@100": 1.0244264555127502,
+        "NDCG@100": 2.609467918886721,
+        "MRR": 8.641539624551786
+      }
+    },
+    {
+      "parent": "v3",
+      "current": "v4",
+      "day": 23,
+      "requests": 1024,
+      "eligible_positive_requests": 14292,
+      "users": 507,
+      "all_oov_positive_requests": 471,
+      "results": {
+        "v3": {
+          "metrics": {
+            "Recall@20": 0.02102167038690476,
+            "NDCG@20": 0.012052371477719167,
+            "Recall@50": 0.037127976190476183,
+            "NDCG@50": 0.01624334571176151,
+            "Recall@100": 0.06172340029761904,
+            "NDCG@100": 0.021645659643563034,
+            "MRR": 0.018707354168088434
+          },
+          "random": {
+            "Recall@20": 0.00609620610639206,
+            "NDCG@20": 0.0028279741671896922,
+            "Recall@50": 0.01524051526598015,
+            "NDCG@50": 0.005180833019072132,
+            "Recall@100": 0.0304810305319603,
+            "NDCG@100": 0.008410761794222323,
+            "MRR": 0.0054655138084909564
+          },
+          "checkpoint_sha256": "84238d42a77e2d643432da9c50e09f73a97bbce6c66eb12b5d71ae367d740366",
+          "seconds": 27.779075860977173
+        },
+        "v4": {
+          "metrics": {
+            "Recall@20": 0.022470238095238092,
+            "NDCG@20": 0.011926088248286795,
+            "Recall@50": 0.037616257440476183,
+            "NDCG@50": 0.01585134993743607,
+            "Recall@100": 0.06355329241071428,
+            "NDCG@100": 0.021454713378156152,
+            "MRR": 0.017066735920407444
+          },
+          "random": {
+            "Recall@20": 0.00609620610639206,
+            "NDCG@20": 0.0028279741671896922,
+            "Recall@50": 0.01524051526598015,
+            "NDCG@50": 0.005180833019072132,
+            "Recall@100": 0.0304810305319603,
+            "NDCG@100": 0.008410761794222323,
+            "MRR": 0.0054655138084909564
+          },
+          "checkpoint_sha256": "e404d99c210d6f993120926c1e1f2c670c011f95a3384bbeadf458bdc0a98c18",
+          "seconds": 27.78594183921814
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": 6.890830660325165,
+        "NDCG@20": -1.047787397408284,
+        "Recall@50": 1.3151302605210358,
+        "NDCG@50": -2.4132699092995535,
+        "Recall@100": 2.964665109621034,
+        "NDCG@100": -0.8821457444641356,
+        "MRR": -8.769910661549385
+      }
+    },
+    {
+      "parent": "v4",
+      "current": "v5",
+      "day": 24,
+      "requests": 1024,
+      "eligible_positive_requests": 12831,
+      "users": 486,
+      "all_oov_positive_requests": 479,
+      "results": {
+        "v4": {
+          "metrics": {
+            "Recall@20": 0.0212890625,
+            "NDCG@20": 0.01216871777318541,
+            "Recall@50": 0.03798828124999999,
+            "NDCG@50": 0.016736533188252984,
+            "Recall@100": 0.05847981770833333,
+            "NDCG@100": 0.021264537554106247,
+            "MRR": 0.01700391779367579
+          },
+          "random": {
+            "Recall@20": 0.0059020221309973,
+            "NDCG@20": 0.0027577556843868785,
+            "Recall@50": 0.01475505532749325,
+            "NDCG@50": 0.0050521931472958335,
+            "Recall@100": 0.0295101106549865,
+            "NDCG@100": 0.00820192292318233,
+            "MRR": 0.00539269548571058
+          },
+          "checkpoint_sha256": "e404d99c210d6f993120926c1e1f2c670c011f95a3384bbeadf458bdc0a98c18",
+          "seconds": 27.84876799583435
+        },
+        "v5": {
+          "metrics": {
+            "Recall@20": 0.018619791666666663,
+            "NDCG@20": 0.010716876578479275,
+            "Recall@50": 0.038492838541666664,
+            "NDCG@50": 0.01604466962271501,
+            "Recall@100": 0.060742187499999996,
+            "NDCG@100": 0.021103003012526142,
+            "MRR": 0.017367814542993052
+          },
+          "random": {
+            "Recall@20": 0.0059020221309973,
+            "NDCG@20": 0.0027577556843868785,
+            "Recall@50": 0.01475505532749325,
+            "NDCG@50": 0.0050521931472958335,
+            "Recall@100": 0.0295101106549865,
+            "NDCG@100": 0.00820192292318233,
+            "MRR": 0.00539269548571058
+          },
+          "checkpoint_sha256": "5ad0ff137ebce05c430abd5f2bef7631839e3306968108e9b9d7179c27aa6ce4",
+          "seconds": 27.846776962280273
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": -12.53822629969421,
+        "NDCG@20": -11.930929961292758,
+        "Recall@50": 1.328191945158541,
+        "NDCG@50": -4.1338523202856585,
+        "Recall@100": 3.8686334539381972,
+        "NDCG@100": -0.7596428615909923,
+        "MRR": 2.1400759150494553
+      }
+    }
+  ],
+  "elapsed_seconds": 286.3498215675354,
+  "peak_allocated_gb": 4.645866496,
+  "peak_reserved_gb": 4.997513216
+}
