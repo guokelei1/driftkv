@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Invented layout preview for Figure 8 (design analysis); not experimental evidence.",
+    "configuration": "Yambda-Max, V4 to V5, default fitting budget.",
+    "capacity": "Recovery versus stored coordinates per row and layer, one line per per-head read width. Read FLOPs are added corrected-read FLOPs relative to the native read.",
+    "specificity": "Each (history, candidate) pair is ranked by the share of its teacher correction (teacher read minus inherited read) not explained by the history's mean correction over its candidates; quintiles hold equal numbers of pairs. The constant gate is trained with the same structure and budget and is foldable into one candidate-independent K/V."
+  },
+  "capacity": {
+    "stored_coordinates": [24, 48, 72, 144],
+    "default_stored": 72,
+    "default_read": 6,
+    "read_widths": [
+      {"read": 2, "read_flops_pct": 4, "recovery_pct": [40, 55, 66, 70]},
+      {"read": 6, "read_flops_pct": 12, "recovery_pct": [55, 72, 84, 87]},
+      {"read": 12, "read_flops_pct": 24, "recovery_pct": [57, 74, 86, 89]}
+    ]
+  },
+  "specificity": {
+    "quintiles": ["Q1", "Q2", "Q3", "Q4", "Q5"],
+    "dynamic_gate_recovery_pct": [88, 87, 85, 82, 76],
+    "constant_gate_recovery_pct": [86, 82, 75, 66, 52]
+  }
+}

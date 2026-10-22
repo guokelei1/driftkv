@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Invented layout preview for Figure 9 and Table 3 (cost); not experimental evidence and no fabricated uncertainty intervals.",
+    "release_time": "Steady-state release V4 to V5. Release-attributable time only: native scoring and appends, identical for both methods, are excluded. Percent of the same configuration's Rebuild time.",
+    "steady_latency": "Yambda-Max, 16-candidate scoring batch, median per request across served users, history length swept by truncating or extending the window.",
+    "first_read": "Yambda-Max, latency of each served user's first scoring request after the release, including any state preparation it triggers. Percentiles across users.",
+    "storage": "Persistent bytes for the two Max models; handover workspace for a 256-user conversion batch."
+  },
+  "release_time": {
+    "segments": ["Calibration + tables", "State preparation", "Added reads", "Handover", "Transfers"],
+    "configurations": [
+      {"configuration": "Yambda-Large", "cachetide_pct": [8.0, 10.0, 3.0, 2.0, 3.0]},
+      {"configuration": "Yambda-Max", "cachetide_pct": [5.0, 12.0, 3.0, 2.0, 2.0]},
+      {"configuration": "RecFlow-Large", "cachetide_pct": [9.0, 11.0, 4.0, 2.0, 3.0]},
+      {"configuration": "RecFlow-Max", "cachetide_pct": [6.0, 13.0, 4.0, 2.0, 2.0]}
+    ]
+  },
+  "steady_latency": {
+    "history_length": [256, 512, 1024, 2048, 4096],
+    "median_ms": {
+      "Native read": [0.42, 0.61, 0.98, 1.75, 3.30],
+      "CacheTide (fused)": [0.47, 0.68, 1.09, 1.94, 3.66],
+      "CacheTide (framework ops)": [0.66, 1.05, 1.86, 3.52, 6.85]
+    }
+  },
+  "first_read": {
+    "percentiles": [1, 5, 10, 25, 50, 75, 90, 95, 99],
+    "latency_ms": {
+      "Reuse": [0.35, 0.45, 0.55, 0.75, 1.00, 1.10, 1.15, 1.18, 1.25],
+      "CacheTide": [0.62, 0.81, 0.97, 1.36, 1.92, 2.12, 2.21, 2.26, 2.41],
+      "CacheTide (per-row projection)": [1.20, 1.62, 2.01, 2.92, 4.21, 4.68, 4.90, 5.02, 5.31],
+      "Rebuild on first read": [9.1, 13.2, 16.4, 25.3, 38.0, 42.1, 44.2, 45.3, 48.0]
+    }
+  },
+  "storage": {
+    "configurations": ["Yambda-Max", "RecFlow-Max"],
+    "native_kv_tb": [8.39, 8.39],
+    "correction_state_gb": [943.7, 943.7],
+    "item_tables_gb": [41.5, 27.6],
+    "shared_parameters_mb": [12, 12],
+    "added_pct_native": [11.7, 11.6],
+    "handover_direct_gb": [3.62, 3.62],
+    "handover_blockwise_mb": [28.3, 28.3],
+    "per_user_native_mb": [41.9, 41.9],
+    "per_user_added_mb": [4.7, 4.7]
+  }
+}

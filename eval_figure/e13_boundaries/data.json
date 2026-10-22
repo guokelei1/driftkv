@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Invented layout preview for Figure 10 (applicability boundaries); not experimental evidence.",
+    "fixed_release": "Yambda-Max at V5 with model and correction parameters frozen. Feedback is appended until the history doubles under FIFO eviction; every arm evolves its own state. Rebuild-once reconstructs at the start of the hold only. Anchors match the manuscript's synthetic Table 2 at V5.",
+    "read_count": "Net FLOPs saved by CacheTide relative to one reconstruction, as candidate reads per user per release vary at history 1,024 and 20 appends. Curves reuse the complete-FLOPs coefficients of ../e7_applicability/data.json for the two Max models.",
+    "ledger_reads": "Candidate reads per user per release in the Figure 6 ledger (20 appends with 11.5 scoring reads each)."
+  },
+  "fixed_release": {
+    "configuration": "Yambda-Max",
+    "appended_over_window": [
+      0,
+      0.0625,
+      0.125,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "auc": {
+      "Rebuild once": [
+        0.767,
+        0.7671,
+        0.7673,
+        0.7675,
+        0.7678,
+        0.768,
+        0.7682,
+        0.7685,
+        0.7688
+      ],
+      "CacheTide": [
+        0.7648,
+        0.7648,
+        0.7647,
+        0.7645,
+        0.7642,
+        0.7648,
+        0.7668,
+        0.768,
+        0.7686
+      ],
+      "CacheTide (no tail)": [
+        0.7646,
+        0.7638,
+        0.763,
+        0.7618,
+        0.7608,
+        0.763,
+        0.7655,
+        0.7676,
+        0.7684
+      ],
+      "Reuse": [
+        0.752,
+        0.7528,
+        0.7537,
+        0.7555,
+        0.759,
+        0.7628,
+        0.7665,
+        0.768,
+        0.7686
+      ]
+    }
+  },
+  "read_count": {
+    "cost_source": "../e7_applicability/data.json",
+    "configurations": [
+      "Yambda-Max",
+      "RecFlow-Max"
+    ],
+    "history_length": 1024,
+    "reads_min": 16,
+    "reads_max": 8192,
+    "points": 81,
+    "ledger_reads": 230
+  }
+}

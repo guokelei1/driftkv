@@ -1,0 +1,138 @@
+{
+  "status": "ready_for_user_launch",
+  "machine": "g202",
+  "physical_gpus": [
+    2,
+    3
+  ],
+  "scale": "max",
+  "model": {
+    "layers": 16,
+    "hidden_size": 320,
+    "heads": 10,
+    "context": 1024
+  },
+  "quality_users": 196363,
+  "fit_users": 512,
+  "validation_users": 16,
+  "points": 24,
+  "full_population_quality_started": false,
+  "calibrated_edges": [
+    1
+  ],
+  "prepared_edges": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "selected_execution": {
+    "append_band_size": 256,
+    "query_batch": 16,
+    "repair_selector_candidates": 16,
+    "cuda_allocator_config": "expandable_segments:True",
+    "cpu_numa_node": 1,
+    "checkpoint_users_per_worker": 4096
+  },
+  "measured_probe": {
+    "total_users": 2048,
+    "feedback_events": 9216,
+    "warm_worker_seconds": [
+      291.0135563259246,
+      265.83520828501787
+    ],
+    "dual_warm_seconds": 291.0135563259246,
+    "cold_worker_seconds": [
+      293.8583151100902,
+      268.1057788670296
+    ],
+    "serial_equivalence": [
+      {
+        "scores": 1464,
+        "max_absolute_logit_error": 1.2367963790893555e-06,
+        "atol": 3e-05,
+        "rtol": 3e-05
+      },
+      {
+        "scores": 1128,
+        "max_absolute_logit_error": 1.430511474609375e-06,
+        "atol": 3e-05,
+        "rtol": 3e-05
+      }
+    ],
+    "batch_equivalence": [
+      {
+        "scores": 116712,
+        "max_absolute_logit_error": 0.0,
+        "atol": 3e-05,
+        "rtol": 3e-05
+      },
+      {
+        "scores": 104472,
+        "max_absolute_logit_error": 0.0,
+        "atol": 3e-05,
+        "rtol": 3e-05
+      }
+    ]
+  },
+  "runtime_estimate": {
+    "user_scaled_quality_hours": 7.760361502024655,
+    "feedback_scaled_quality_hours": 7.525890625546561,
+    "extra_overhead_budget_minutes": 20,
+    "budget_hours_per_edge": [
+      8,
+      9
+    ],
+    "budget_hours_five_edges": [
+      40,
+      45
+    ],
+    "estimated_minutes_per_4096_user_block": [
+      19.400903755061638,
+      17.72234721900119
+    ],
+    "assumptions": "Same 24 points, fixed held-out population, same GPU pair and implementation. Add 20 minutes for capture/fitting/input/save/1000 bootstrap; later edges structurally compatible but not measured. Shared CPU/I/O and GPU0/1 RecFlow remain; progress estimates only, no controlled paper timing."
+  },
+  "memory": {
+    "peak_allocated_gib_by_worker": [
+      21.120558261871338,
+      21.122563362121582
+    ],
+    "peak_reserved_gib_by_worker": [
+      31.017578125,
+      30.919921875
+    ],
+    "observed_nvidia_smi_peak_gib": {
+      "2": 31.5302734375,
+      "3": 31.4326171875
+    },
+    "scope": "bounded 2048-user cold and warm replay; not a completed long population run; research runner packs all baseline points"
+  },
+  "initial_dual_calibration_seconds": 296.0291379740229,
+  "original_large_execution_sources_unchanged": true,
+  "paths": {
+    "entry": "scripts/max_baselines_2026_10/dual_gpu.py",
+    "launcher": "scripts/max_baselines_2026_10/launch.py",
+    "population_preflight": "experiments/01_quality_cost/runs/yambda/max/readiness_2gpu_202/attempt_1/population_preflight.json",
+    "full_added_costs": "experiments/01_quality_cost/runs/yambda/max/readiness_2gpu_202/attempt_1/full_cost_preflight.json",
+    "formal_outputs": "experiments/01_quality_cost/runs/yambda/max/readiness_2gpu_202/attempt_1/edge_v{old}_v{new}",
+    "final_canary": "experiments/01_quality_cost/runs/yambda/max/readiness_2gpu_202/attempt_1/canary_final",
+    "launch_example": "/home/gkl/miniconda3/bin/python scripts/max_baselines_2026_10/launch.py --edges 1 2 3 4 5"
+  },
+  "completed_asia_shanghai": "2026-10-22T02:37:34.368184+08:00",
+  "verification": {
+    "targeted_tests_passed": 6,
+    "includes_cuda_graph_lifecycle": true,
+    "combined_cpu_tests_passed": 9,
+    "combined_cpu_cuda_skips": 2,
+    "final_canary_users": 32,
+    "final_canary_feedback_events": 264,
+    "final_canary_points": 24,
+    "bootstrap_replicates": 1000,
+    "fresh_process_resume": "passed",
+    "completed_fits_reuse": "passed",
+    "inference_ast_unchanged": true
+  },
+  "source_snapshot": "experiments/01_quality_cost/runs/yambda/max/readiness_2gpu_202/attempt_1/source_readiness_probe"
+}

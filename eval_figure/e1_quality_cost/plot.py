@@ -2,7 +2,10 @@
 
 frontier_data.json contains invented values, not measured results. The paper
 caption and export metadata identify simulation; no watermark obscures artwork.
-Historical data.json is retained for other preview figures and is not consumed.
+Five methods are drawn: CacheTide, the two correction alternatives (query-only
+and per-release cache translation), and the two entry-selection baselines.
+Layer-selective, tail and per-request history-conditioned curves remain in the
+data file for the motivation study; add them to METHODS to draw them here.
 """
 from pathlib import Path
 import json
@@ -17,17 +20,16 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 
 
-# Keep system blue and reference gray consistent with the other figures.
-# Baselines use both shape and dash pattern for grayscale readability.
+# System blue and reference grays match the other figures. Baselines differ in
+# shape and dash pattern as well as color for grayscale readability.
 METHODS = {
     'CacheTide': (COLORS['CacheTide'], 'o', '-'),
-    'Layer-selective': ('#2D8B78', '^', '--'),
-    'Tail': ('#A78735', 'v', ':'),
+    'Cache translation': ('#2D8B78', 'P', (0, (5, 1.5))),
+    'Query-only': ('#B65757', 's', (0, (2.5, 1))),
     'Deviation-guided': ('#8964A2', 'D', '-.'),
     'Query-guided': ('#BF7145', '>', (0, (4, 1, 1, 1))),
-    'Query-only': ('#B65757', 's', (0, (3, 1))),
-    'History-conditioned': ('#597C86', 'P', (0, (1, 1))),
 }
+REUSE_COLOR = '#7F8890'
 
 
 def main():
@@ -38,44 +40,44 @@ def main():
         'xtick.labelsize': 6.8, 'ytick.labelsize': 6.8,
         'legend.fontsize': 6.9,
     })
-    fig, axes = plt.subplots(1, 4, figsize=(7.05, 1.43))
-    fig.subplots_adjust(left=.071, right=.995, bottom=.235, top=.675,
+    fig, axes = plt.subplots(1, 4, figsize=(7.05, 1.36))
+    fig.subplots_adjust(left=.071, right=.995, bottom=.25, top=.76,
                         wspace=.38)
 
     for panel_index, (ax, cfg) in enumerate(zip(axes, data['configurations'])):
         panels = cfg['release_panels']
         reuse = np.mean([p['reuse_auc'] for p in panels])
         rebuild = np.mean([p['rebuild_auc'] for p in panels])
+        # Reuse and Rebuild are single operating points. Thin horizontal
+        # guides make the gap between them, the quantity every curve
+        # recovers, visible across the whole budget axis.
+        ax.axhline(rebuild, color=COLORS['Rebuild'], lw=.55, ls=(0, (4, 2)),
+                   zorder=1)
+        ax.axhline(reuse, color=REUSE_COLOR, lw=.55, ls=(0, (1, 1.5)),
+                   zorder=1)
         for method, (color, marker, dash) in METHODS.items():
             runs = np.asarray([p['curves'][method] for p in panels])
-            # Small translucent points are coordinates of synthetic release
-            # observations, not confidence intervals or error bars.
-            ax.scatter(runs[:, :, 0], runs[:, :, 1], color=color, marker=marker,
-                       s=3.0, alpha=.24, linewidths=0, zorder=2)
             mean = runs.mean(axis=0)
+            system = method == 'CacheTide'
             ax.plot(mean[:, 0], mean[:, 1], color=color, marker=marker,
-                    ls=dash, lw=1.05 if method == 'CacheTide' else .8,
-                    ms=2.4 if method == 'CacheTide' else 1.9, mew=.35,
-                    zorder=5 if method == 'CacheTide' else 3)
-            if method == 'CacheTide':
+                    ls=dash, lw=1.15 if system else .85,
+                    ms=2.6 if system else 2.1, mew=.35,
+                    zorder=5 if system else 3)
+            if system:
                 x, y = mean[data['meta']['default_point_index']]
                 ax.scatter(x, y, s=30, facecolors='none', edgecolors=color,
                            lw=.7, zorder=6)
-
-        # References remain single mean operating points, never budget curves.
-        ax.plot(0, reuse, marker='o', ls='', mfc='white', mec='#555D65',
+        ax.plot(0, reuse, marker='o', ls='', mfc='white', mec=REUSE_COLOR,
                 mew=.8, ms=3.1, zorder=6)
         ax.plot(100, rebuild, marker='s', ls='', color=COLORS['Rebuild'],
                 ms=3.0, zorder=6)
-        low = min(p['reuse_auc'] for p in panels)
-        high = max(p['rebuild_auc'] for p in panels)
-        span = high - low
-        ax.set(xlim=(-5, 106), ylim=(low - .08*span, high + .08*span),
+        span = rebuild - reuse
+        ax.set(xlim=(-5, 106), ylim=(reuse - .12*span, rebuild + .12*span),
                xticks=[0, 50, 100])
         ax.yaxis.set_major_locator(MaxNLocator(3))
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
         ax.tick_params(length=2, pad=1.5)
-        ax.grid(axis='y', lw=.35)
+        ax.grid(False)
         ax.set_title(f"({chr(97 + panel_index)}) {cfg['dataset']}-{cfg['scale']}",
                      pad=3)
     axes[0].set_ylabel('AUC', labelpad=3)
@@ -86,18 +88,14 @@ def main():
                       label=name)
                for name, (c, m, ls) in METHODS.items()]
     handles.extend([
-        Line2D([], [], color='#555D65', marker='o', mfc='white', ls='',
-               ms=3.2, label='Reuse'),
-        Line2D([], [], color=COLORS['Rebuild'], marker='s', ls='',
-               ms=3.1, label='Rebuild'),
+        Line2D([], [], color=REUSE_COLOR, marker='o', mfc='white',
+               ls=(0, (1, 1.5)), lw=.6, ms=3.2, label='Reuse'),
+        Line2D([], [], color=COLORS['Rebuild'], marker='s', ls=(0, (4, 2)),
+               lw=.6, ms=3.1, label='Rebuild'),
     ])
-    # Matplotlib fills legend columns first. Reorder so each row reads across
-    # in method order; reference points finish the last row.
-    order = [0, 5, 1, 6, 2, 7, 3, 8, 4]
-    fig.legend(handles=[handles[i] for i in order], ncol=5, loc='upper center',
-               bbox_to_anchor=(.53, 1.015), handlelength=1.65,
-               handletextpad=.4, columnspacing=1.1, labelspacing=.38,
-               borderaxespad=0)
+    fig.legend(handles=handles, ncol=len(handles), loc='upper center',
+               bbox_to_anchor=(.53, 1.005), handlelength=2.0,
+               handletextpad=.4, columnspacing=1.15, borderaxespad=0)
     finish(fig, __file__, '6-1', 'Four configuration quality-cost frontiers',
            layout=False)
 

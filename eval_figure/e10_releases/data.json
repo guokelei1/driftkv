@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "synthetic": true,
+    "purpose": "Invented layout preview for Figure 7; not experimental evidence and no fabricated uncertainty intervals.",
+    "layout": "Double-column 1x4: (a,b) consecutive releases on the two Max models, (c,d) users returning after k skipped releases on Yambda-Max.",
+    "anchors": "Reuse and Rebuild AUC match the manuscript's synthetic Table 2.",
+    "reset_arm": "CacheTide (reset) restarts every release from the previous release's rebuilt cache with fresh correction state, i.e. one release of history. Its gap to the chained arm is accumulated error.",
+    "skip_protocol": "A fixed cohort has all requests and appends of k consecutive releases withheld before the target release V5; k=0 is an active user. Replay applies every intermediate update; composition applies Eq. 4.2 once.",
+    "preparation_cost": "Per-user state-preparation time at the first read after the target release, percent of Rebuild-on-first-read time for the same users."
+  },
+  "release_labels": ["V1", "V2", "V3", "V4", "V5"],
+  "consecutive": [
+    {
+      "configuration": "Yambda-Max",
+      "reuse_auc": [0.739, 0.742, 0.746, 0.749, 0.752],
+      "rebuild_auc": [0.758, 0.760, 0.763, 0.765, 0.767],
+      "chained_recovery_pct": [85.0, 84.0, 83.0, 81.0, 85.0],
+      "reset_recovery_pct": [85.4, 84.9, 83.6, 82.2, 85.5],
+      "added_cost_pct": [18, 16, 16, 17, 15]
+    },
+    {
+      "configuration": "RecFlow-Max",
+      "reuse_auc": [0.683, 0.687, 0.690, 0.693, 0.696],
+      "rebuild_auc": [0.712, 0.715, 0.717, 0.718, 0.719],
+      "chained_recovery_pct": [83.0, 81.0, 82.0, 84.0, 80.0],
+      "reset_recovery_pct": [83.3, 82.1, 82.7, 84.8, 81.0],
+      "added_cost_pct": [19, 18, 17, 18, 16]
+    }
+  ],
+  "returning": {
+    "configuration": "Yambda-Max",
+    "target_release": "V5",
+    "skipped_releases": [0, 1, 2, 3, 4],
+    "rebuild_auc": 0.767,
+    "reuse_auc": [0.7520, 0.7485, 0.7448, 0.7405, 0.7360],
+    "composed_auc": [0.7647, 0.7645, 0.7641, 0.7636, 0.7630],
+    "replay_auc": [0.7647, 0.76452, 0.76408, 0.76361, 0.76299],
+    "max_abs_state_difference": 3.1e-6,
+    "preparation_pct_rebuild": {
+      "composed": [5.1, 5.1, 5.2, 5.1, 5.2],
+      "replay": [5.1, 8.3, 11.5, 14.7, 17.9]
+    },
+    "replay_resident_parameter_sets": [1, 2, 3, 4, 5]
+  }
+}
