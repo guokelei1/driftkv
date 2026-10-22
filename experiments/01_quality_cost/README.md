@@ -2,6 +2,8 @@
 
 对应Figure 6和Table 2。比较CacheTide与合理Rebuild、Reuse及强学习／重算基线，回答同预算恢复多少质量、相近质量需要多少完整FLOPs。
 
+2026-10-22最新：Yambda-Large五条独立相邻边全部24点完成，共120点；GPU 1后四边队列08:07正常结束，实际12小时27分。[完整逐边报告](runs/yambda/large/baselines_all_edges/seed_17/attempt_1/report.md)含全部点AUC／成本／恢复率／UID95%区间，同目录有CSV／TeX及绑定原摘要hash的JSON。末边为E14_partial；两类学习基线的后期退化全部保留。以下启动与首边描述为历史记录，最新状态以[STATUS](../STATUS.md)为准。
+
 - 范围：Yambda／RecFlow × Large／Max；只比较独立相邻版本，主前沿原计划为V2→V3、V3→V4、V4→V5及等权聚合。每组／边独立校准，不以跨版连续适配为基线前置。
 - 输入：冻结的真实反馈角色／请求、实体模型、因果历史；每条边所有方法从共同的旧版原生状态出发，记录该边origin和来源。不同边不传递纠正后的cache、码或其他学生状态；边内各方法正常因果追加／FIFO。
 - 前置：H10／72维、共同首次历史消费触发、强持久静态映射；RecFlow最终链另行准备。

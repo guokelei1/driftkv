@@ -2,6 +2,21 @@
 
 ## Active work — 2026-10-19 (read first)
 
+Latest Yambda-Large completion — 2026-10-22: all five independent adjacent
+baseline edges V0→V1 through V4→V5 are complete (24 points/edge, 75,807 eligible
+quality/cost users per edge). The GPU 1 four-edge queue finished at 08:07
+Shanghai, taking 12h27m14s; no Yambda-Large job remains running. All 95 committed
+score blocks, input/config hashes and formula/row-count consistency passed.
+Full 120-point report, CSV, TeX and derived summary are in
+experiments/01_quality_cost/runs/yambda/large/baselines_all_edges/seed_17/attempt_1/.
+Original edge summaries/weights/scores were not rewritten. V4→V5 remains
+E14_partial; its wide recovery intervals do not establish superiority over
+Rebuild. Layer2 recovery is 84.88/85.48/55.92/47.28/60.46% across the five
+edges at about 21.04–21.05% cost. All 15 Query-only point estimates are below
+Reuse; History256 falls to 4.57% and −40.42% on the last two edges. Preserve
+these adverse outcomes and diagnose independently rather than tuning on test
+outcomes. No new experiment or CacheTide quality run was launched.
+
 Latest execution authorization — 2026-10-21 evening: after the completed
 Yambda-Large V0→V1 report, the user requested all remaining independent adjacent
 edges V1→V2, V2→V3, V3→V4 and V4→V5 on physical GPU 1. The four-edge sequential

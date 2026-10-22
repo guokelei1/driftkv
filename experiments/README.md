@@ -1,6 +1,6 @@
 # CacheTide 正式实验
 
-最新执行（2026-10-21 19:39）：按用户要求，201物理GPU 1已启动V1→V2、V2→V3、V3→V4、V4→V5四条独立边顺序队列，每边24点、75,807名合法用户，各自重新校准。见[STATUS](STATUS.md)和[队列配置](01_quality_cost/runs/yambda/large/baselines_v1_v5_gpu1_201/attempt_1/configuration.json)。最后一条含部分源数据日300，明确标为E14_partial。预计共12–16小时，实际速度后续校正。
+最新结果（2026-10-22）：Yambda-Large五条独立相邻边V0→V1至V4→V5全部完成，每边24点、75,807名合法用户，共120点／1,671,042条反馈。后四边GPU 1队列于08:07结束，实际12小时27分，符合12–16小时排期。本任务已无GPU进程。[完整逐边报告](01_quality_cost/runs/yambda/large/baselines_all_edges/seed_17/attempt_1/report.md)及[完整数值摘要](01_quality_cost/runs/yambda/large/baselines_all_edges/seed_17/attempt_1/summary.json)含全部AUC、费用、恢复率及配对用户区间；V4→V5仍为E14_partial，不能混称完整14日结论。见[STATUS](STATUS.md)。
 
 已有实际结果：Yambda-Large V0→V1基线24点已完成全量75,807名用户的评测／费用核算；34,190人贡献345,630条反馈。实际3小时06分。结果见[首轮全量报告](01_quality_cost/runs/yambda/large/baselines_full_v0_v1/seed_17/attempt_1/report.md)，不重跑。
 
