@@ -2,6 +2,29 @@
 
 ## Active work — 2026-10-19 (read first)
 
+Latest RecFlow-Max completion — 2026-10-22 afternoon: Large and Max V0–V5
+foundation training both finished naturally; Max completed 95,082 optimizer
+steps and all twelve permanent epoch checkpoints. The user's Max Recall@100
+request is now complete on physical GPUs 2/3 only; both inference processes
+exited 0. GPU 0/1 jobs were untouched. Max uses its own 3.5M-video catalog and
+new deterministic candidates, not Large panels/predictions. Actual prepared
+data shares Large's frozen 3,210 final-role users and 94,809 D20–24 requests;
+do not invent a different test population or alter roles after observing results.
+The protocol remains observed positives plus 1,000 unique uniform distractors,
+including all-negative/OOV zeros. Recall@100 gains are +10.56473/−2.60571/
+−4.66152/+7.06526/−2.28181%; only 2/5 positive, so this does NOT satisfy the
+user's three-of-five positive-release rule. Equal-release mean is +1.61619%,
+paired UID95% [0.37400,2.93966]%; current/random ratios 1.924–2.180.
+Both positive edges and the V1→V2/V2→V3 regressions exclude zero in pointwise
+UID intervals; V4→V5 crosses zero. All seven metrics remain in the analysis;
+Recall@50 and MRR have three positive point estimates but their mean intervals
+include zero. Do not switch the headline after inspecting Max outcomes.
+See experiments/foundation_recflow/runs/chain_2gpu/attempt_1/max/
+sampled_retrieval_full/{paired_uid_analysis/summary.json,metrics_by_release.csv,
+completion_audit.json}. All 1,484 rank blocks, eight frozen data hashes, ten
+training sources and six final checkpoint marker identities/sizes passed.
+Inference took 20m43s with peak reserved memory 7.15GB. No further job queued.
+
 Latest Yambda-Large completion — 2026-10-22: all five independent adjacent
 baseline edges V0→V1 through V4→V5 are complete (24 points/edge, 75,807 eligible
 quality/cost users per edge). The GPU 1 four-edge queue finished at 08:07

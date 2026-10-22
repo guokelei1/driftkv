@@ -2,10 +2,11 @@
 
 frontier_data.json contains invented values, not measured results. The paper
 caption and export metadata identify simulation; no watermark obscures artwork.
-Five methods are drawn: CacheTide, the two correction alternatives (query-only
-and per-release cache translation), and the two entry-selection baselines.
-Layer-selective, tail and per-request history-conditioned curves remain in the
-data file for the motivation study; add them to METHODS to draw them here.
+Four methods are drawn: CacheTide, the KV map of Section 3.3 (data key
+'Cache translation': the per-release map, applied once and stored), and the
+two entry-selection baselines. Query-only correction, layer-selective, tail
+and per-request history-conditioned curves remain in the data file; add them
+to METHODS to draw them here.
 """
 from pathlib import Path
 import json
@@ -21,14 +22,16 @@ from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 
 
 # System blue and reference grays match the other figures. Baselines differ in
-# shape and dash pattern as well as color for grayscale readability.
+# shape and dash pattern as well as color for grayscale readability. The data
+# key 'Cache translation' is drawn under the name of Section 3.3, "KV map".
+# Query-only correction is no longer drawn (it remains in the data file).
 METHODS = {
     'CacheTide': (COLORS['CacheTide'], 'o', '-'),
     'Cache translation': ('#2D8B78', 'P', (0, (5, 1.5))),
-    'Query-only': ('#B65757', 's', (0, (2.5, 1))),
     'Deviation-guided': ('#8964A2', 'D', '-.'),
     'Query-guided': ('#BF7145', '>', (0, (4, 1, 1, 1))),
 }
+LABELS = {'Cache translation': 'KV map'}
 REUSE_COLOR = '#7F8890'
 
 
@@ -85,7 +88,7 @@ def main():
              ha='center', va='bottom', fontsize=7.4)
 
     handles = [Line2D([], [], color=c, marker=m, ls=ls, lw=1.0, ms=2.7,
-                      label=name)
+                      label=LABELS.get(name, name))
                for name, (c, m, ls) in METHODS.items()]
     handles.extend([
         Line2D([], [], color=REUSE_COLOR, marker='o', mfc='white',

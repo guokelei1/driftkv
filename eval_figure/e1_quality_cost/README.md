@@ -4,7 +4,7 @@
 
 ## 图中信息
 
-横轴为完整新增 FLOPs／同版 Rebuild 预算，纵轴为绝对反馈 AUC。各面板独立确定 AUC 范围，配置名称直接放在小标题中。七条方法曲线是 CacheTide、四种选择性重算，以及 query-only 和 history-conditioned 读取纠正。曲线连接相同预算档的跨版本均值，小型浅色标记叠加 V3—V5 的逐版观测。Reuse 用空心圆、Rebuild 用实心方，各为跨版本均值的单个参考点；CacheTide 默认预算档加外圈。不把参考点连接成曲线。
+横轴为完整新增 FLOPs／同版 Rebuild 预算，纵轴为绝对反馈 AUC。各面板独立确定 AUC 范围，配置名称直接放在小标题中。四条方法曲线是 CacheTide、KV map（数据键 `Cache translation`：每次发布映射一次并存储，对应论文 3.3 节的 KV 映射），以及 deviation-guided 和 query-guided 两种选择性重算；query-only 等其余方法仍保留在数据文件中，不再绘制。曲线连接相同预算档的跨版本均值，小型浅色标记叠加 V3—V5 的逐版观测。Reuse 用空心圆、Rebuild 用实心方，各为跨版本均值的单个参考点；CacheTide 默认预算档加外圈。不把参考点连接成曲线。
 
 ## 数据与范围
 
