@@ -1,0 +1,42 @@
+contract: yambda500m_large_reuse_scope_d14_e14_only_v1
+date_authorized: 2026-08-31
+status: user_authorized_scope_reduction_after_formal_full_only_started_before_formal_reuse
+purpose: >-
+  Narrow only the Large adjacent Reuse/PRO evaluation queue to the five D14
+  E14 cells. Preserve the already frozen training and Full-only matrix, and do
+  not launch D7 E7, D14 E7, or any other Reuse horizon.
+
+frozen_parent:
+  base_contract: configs/contracts/yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1.yaml
+  base_contract_sha256: f631e7d7a6438187d7b64e28f696f4759ffab5b93d9579e36ffc48b7c3ed13f8
+  execution_contract: configs/contracts/yambda500m_large_hstu_native_d7_d14_execution_v1.yaml
+  execution_contract_sha256: d029fa6b8e67e9c0f9ce2b2d52058eaa6d6069e24730f1c4d869125ef6b6671a
+
+scope_change_boundary:
+  formal_training_changed: false
+  full_only_matrix_changed: false
+  model_admission_changed: false
+  formal_reuse_cells_completed_before_change: 0
+  large_full_only_quality_partially_observed_before_change: true
+  interpretation: >-
+    This is a transparent post-commencement cost/scope reduction, not a claim
+    that the original 20-cell Reuse/PRO matrix was completed prospectively.
+
+reuse_scope:
+  branch: D14
+  horizon_days: 14
+  edges: [1, 2, 3, 4, 5]
+  expected_cells: 5
+  edge5_name: E14_partial
+  edge5_interpretation: directional_diagnostic_not_complete_horizon_qualification
+  adjacent_one_hop_only: true
+  include_frozen_PRO_in_same_raw_pass: true
+  excluded:
+    D7_E7_all_edges: true
+    D14_E7_all_edges: true
+    every_other_reuse_horizon: true
+
+authorization:
+  source: explicit_user_instruction_2026_08_31
+  serving_lineage_promotion: prohibited
+  architecture_or_estimator_change: prohibited

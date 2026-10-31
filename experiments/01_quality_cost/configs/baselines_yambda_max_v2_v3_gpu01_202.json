@@ -1,0 +1,97 @@
+{
+  "purpose": "Independent Max adjacent-edge baselines; own Max roles and fitting; no CacheTide",
+  "evaluation_role": "development_exploration",
+  "scale": "max",
+  "edge": 3,
+  "release_day": 259,
+  "end_day": 273,
+  "history_length": 1024,
+  "quality_users": "all_eligible",
+  "cost_users": "same_as_quality",
+  "completed_fit_sources": [],
+  "evaluation_backend": "policy_batch_graph",
+  "stop_after_last_query": true,
+  "evaluation_checkpoint_users": 4096,
+  "validation_users": 16,
+  "profile_users": 8,
+  "query_fit_users": [
+    128,
+    256,
+    512
+  ],
+  "history_fit_users": [
+    64,
+    128,
+    256
+  ],
+  "partial_points": {
+    "layer": [
+      2,
+      4,
+      8,
+      12
+    ],
+    "tail": [
+      0.1,
+      0.2,
+      0.4,
+      0.8
+    ],
+    "deviation": [
+      0.1,
+      0.2,
+      0.4,
+      0.6
+    ],
+    "query": [
+      0.1,
+      0.2,
+      0.4,
+      0.6
+    ]
+  },
+  "point_selection": "natural method-specific controls frozen before quality; report actual complete FLOPs without inverse budget matching",
+  "calibration_queries_per_user": 16,
+  "tokens_per_user": 128,
+  "seed": 17,
+  "attention_backend": "triton",
+  "append_band_size": 256,
+  "query_batch": 16,
+  "repair_query_batch": 16,
+  "confidence_replicates": 1000,
+  "confidence_seed": 17021,
+  "torch_threads": 4,
+  "history_threads": 8,
+  "feature_mode": "cross_phi",
+  "query_ridge": 0.01,
+  "ridge": 0.01,
+  "query_joint_epochs": 8,
+  "query_learning_rate": 0.001,
+  "nonlinear_epochs": 6,
+  "nonlinear_learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "machine": "g202",
+  "physical_gpu": [
+    0,
+    1
+  ],
+  "student_state": "independent edge; own persistent state within each method; native behavior writes",
+  "repair_schedule": "prepare once before first history consumer, including behavior append; persist repaired KV",
+  "query_only_schedule": "original query-only correction on recommendation reads; native behavior writes",
+  "cost_population_scope": "same full held-out population for quality and complete deployment event costs; includes users with no feedback and post-last-query maintenance",
+  "timing_scope": "shared-machine execution progress only; no formal timing result",
+  "evaluation_window": {
+    "name": "E14",
+    "complete_source_horizon": true,
+    "interpretation": "complete fixed 14-day source horizon"
+  },
+  "role_reuse_scope": "UID membership only; all calibration weights and layer profiling refitted independently for this edge",
+  "authorization": "User 2026-10-23: start only Max V1-to-V2 then V2-to-V3 sequentially on g202 physical GPU0/1 in detached tmux, same full protocol as V0-to-V1; no other edges or CacheTide.",
+  "physical_gpus": [
+    0,
+    1
+  ],
+  "fitting_role_source": "experiments/01_quality_cost/runs/yambda/max/baselines_v0_v1_gpu01_202/attempt_1/edge_v0_v1/configuration.json",
+  "cuda_allocator_config": "expandable_segments:True",
+  "cpu_numa_node": 0
+}

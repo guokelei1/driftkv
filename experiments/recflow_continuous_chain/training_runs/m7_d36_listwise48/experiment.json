@@ -1,0 +1,134 @@
+{
+  "created_at": "2026-10-29T21:43:02.017909+08:00",
+  "question": "From accepted V7/D35, perform one complete D36 update with unchanged listwise weight4.8 and restored AdamW. Evaluate Rebuild versus V7-cache Reuse on every D37 request of the fixed4096 users, with all candidates/history1024/unchanged NDCG10. This is the final available future-day window. Retain positive, negative and inconclusive results; no automatic successor or claim of data exhaustion before actual evaluation and review.",
+  "parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+  "parent_training_cutoff_day": 35,
+  "training_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+  "cache_source": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+  "cache_source_to_training_parent_path": [
+    {
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+      "train_days": [
+        35
+      ],
+      "train_end_day": 35,
+      "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt"
+    }
+  ],
+  "cache_source_training_cutoff_day": 35,
+  "publication_scenario": "Published cache source has training cutoff D35. The 0 subsequent existing optimizer checkpoint(s) are treated as unpublished in this release scenario; the actual training parent has cutoff D35. Train that parent on complete D36 once and compare the resulting target's Rebuild with the published source's cache on complete D37.",
+  "training_day": 36,
+  "training_date": "2024-02-17",
+  "listwise_weight": 4.8,
+  "training_output": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48/training",
+  "training_command": [
+    "/home/gkl/miniconda3/bin/python",
+    "-m",
+    "torch.distributed.run",
+    "--standalone",
+    "--nproc_per_node=4",
+    "-m",
+    "experiments.recflow_full_population.code.train",
+    "--budget-spent-seconds",
+    "0.0",
+    "--checkpoint-every",
+    "100000",
+    "--communication",
+    "rows",
+    "--config",
+    "/home/gkl/work/evokv/experiments/recflow_full_population/configs/full.json",
+    "--data",
+    "/home/gkl/work/evokv/experiments/recflow_full_population/data",
+    "--days",
+    "36",
+    "--dtype",
+    "bfloat16",
+    "--epochs",
+    "1",
+    "--global-batch",
+    "64",
+    "--listwise-weight",
+    "4.8",
+    "--log-every",
+    "50",
+    "--micro-batch",
+    "16",
+    "--output",
+    "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48/training",
+    "--parent",
+    "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+    "--phase",
+    "update",
+    "--scale",
+    "max",
+    "--seed",
+    "17",
+    "--wall-hours",
+    "2.0",
+    "--workers",
+    "4"
+  ],
+  "training_requests": 159106,
+  "training_steps": 2487,
+  "epochs": 1,
+  "baseline_plan": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m9_d36/plan.json",
+  "training_argument_changes": {
+    "listwise_weight": {
+      "original": 0.1,
+      "new": 4.8
+    },
+    "log_every": {
+      "original": 100,
+      "new": 50
+    },
+    "output": {
+      "original": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m9_d36",
+      "new": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48/training"
+    },
+    "parent": {
+      "original": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m8_d35/step_002420.pt",
+      "new": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt"
+    }
+  },
+  "training_selection": {
+    "path": "/home/gkl/work/evokv/experiments/recflow_full_population/data/selections/role0_d36_d36.npy",
+    "requests": 159106,
+    "active_users": 12796
+  },
+  "evaluation_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_listwise48_pilot_4096",
+  "evaluation_day": 37,
+  "evaluation_date": "2024-02-18",
+  "evaluation_interval_ms_half_open": [
+    1708185600000,
+    1708272000000
+  ],
+  "evaluation_users": 4096,
+  "evaluation_seed": 20261029,
+  "evaluation_user_offset": 0,
+  "evaluation_selection_preview": {
+    "path": "/home/gkl/work/evokv/experiments/recflow_full_population/data/selections/role2_d37_d37.npy",
+    "requests": 189676,
+    "active_users": 15900,
+    "pilot_requests": 22865,
+    "pilot_active_users": 2171
+  },
+  "evaluation_rule": "All requests and all logged candidates of the fixed chosen users on the next complete day",
+  "source_label": "V7_interval2_listwise48",
+  "target_label": "V8_candidate_listwise48",
+  "physical_gpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "history_limit": 1024,
+  "optimizer": {
+    "state": "Existing trainer loads the actual parent model and complete AdamW state",
+    "daily_scheduler": "new_daily_schedule_and_explicit_update_lr_after_loading_parent_optimizer_state",
+    "learning_rate": 0.0001,
+    "warmup_fraction": 0.05
+  },
+  "preparation_limit": "CPU sidecars and request indices checked; checkpoint tensors are loaded by the trainer at execution",
+  "automatic_successors": false,
+  "claim": "One actual daily update and one development pilot; no replication or following model is automatic"
+}

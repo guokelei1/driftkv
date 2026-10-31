@@ -1,0 +1,190 @@
+{
+  "status": "prepared_proposal_no_new_gpu_job_launched",
+  "purpose": "Prepare controlled release-edge branches under the user's revised plan; preserve the completed original chain.",
+  "baseline_run": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1",
+  "unit_of_experiment": "A declared previous published model, its updated model, and the same next-day requests for native/Rebuild/Reuse.",
+  "fixed": {
+    "model": "Max 16 layers, width 320, 10 heads, approximately 1.154B parameters",
+    "history_cap": 1024,
+    "population": "Original fixed 30000 training users, including short histories",
+    "primary_metric": "request-macro observed-positive NDCG@10 over complete logged candidates",
+    "secondary_metric": "Recall@10",
+    "diagnostic_metrics": [
+      "observed BCE",
+      "NDCG@5",
+      "NDCG@20",
+      "predeclared history-length slices"
+    ],
+    "loss": "observed BCE + 0.1 * complete-candidate multi-positive listwise cross entropy",
+    "next_day_evaluation": "All eligible requests of the fixed cohort; no result-dependent window or candidate filtering",
+    "relative_loss_formula": "100 * (NDCG_rebuild - NDCG_reuse) / NDCG_rebuild",
+    "aggregate": "Report every edge and both the equal-edge mean relative loss and pooled request metric; never silently average only positive edges",
+    "uncertainty": "Paired UID-cluster intervals; existing edgewise 95% intervals are nominal, not simultaneous confidence statements"
+  },
+  "desired_workload": {
+    "clear_positive_edges": "Approximately half of a declared set, or several explicitly selected mechanism cases",
+    "mean_relative_loss_pct": [
+      1,
+      3
+    ],
+    "preferred_largest_relative_loss_pct": 5,
+    "interpretation": "Desired workload characteristics, not guarantees or reasons to discard or clip an outcome"
+  },
+  "branch_recipe": {
+    "total_passes_over_update_day": 2,
+    "first_pass": "Reuse the exact original one-epoch endpoint and its AdamW state as the first-pass intermediate checkpoint",
+    "second_pass": "One further complete pass over exactly the original update day's training request list",
+    "learning_rate_proposal": "Repeat the original one-pass warmup/cosine schedule for pass two; peak 1e-4, warmup 5%, floor 5e-6",
+    "shuffle": "Deterministic second-epoch shuffle declared before fitting; do not repeatedly change seeds until a desired cache gap appears",
+    "scope_of_claim": "A second-pass optimization-budget experiment, including the declared learning-rate restart; not a pure epoch-count comparison under an unchanged global cosine horizon",
+    "optimizer": "Preserve model parameters and all original AdamW moments and step counters",
+    "checkpoint_selection": "Fixed second-pass endpoint in the pilot; any later epoch selection uses prerelease native validation, not the next-day Rebuild-Reuse gap",
+    "lineage": "Store previous_published_checkpoint, first_pass_checkpoint, and optimization_resume_checkpoint separately; preserve truthful optimizer ancestry",
+    "implementation": "Use a new isolated extension runner and release-edge evaluator. Do not change frozen original sources, parent-check guards, plans or results. Verify the original ancestry before accepting a published parent different from the immediate optimizer checkpoint."
+  },
+  "initial_development_batch": [
+    {
+      "branch": "M5_e2",
+      "previous_published_model": "original_M4",
+      "first_pass_checkpoint": "original_M5",
+      "train_day": 32,
+      "train_date": "2024-02-13",
+      "eval_day": 33,
+      "eval_date": "2024-02-14",
+      "reason": "Near-zero original cache gap",
+      "previous_published_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m4_d31/step_002570.pt",
+      "previous_published_checkpoint_sha256": "92a5a5321a1f5237d56554aa08acb7f2f04eedc2656d981fe8f47cc4246c6b68",
+      "first_pass_checkpoint_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m5_d32/step_002494.pt",
+      "first_pass_checkpoint_sha256": "ca0193e873ae0f13b78af02118215ead91b04cf76e6e4350a44fb393f4b6dfa1",
+      "original_evaluation_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m5_d33/summary.json"
+    },
+    {
+      "branch": "M6_e2",
+      "previous_published_model": "original_M5",
+      "first_pass_checkpoint": "original_M6",
+      "train_day": 33,
+      "train_date": "2024-02-14",
+      "eval_day": 34,
+      "eval_date": "2024-02-15",
+      "reason": "Near-zero original cache gap",
+      "previous_published_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m5_d32/step_002494.pt",
+      "previous_published_checkpoint_sha256": "ca0193e873ae0f13b78af02118215ead91b04cf76e6e4350a44fb393f4b6dfa1",
+      "first_pass_checkpoint_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m6_d33/step_002450.pt",
+      "first_pass_checkpoint_sha256": "e0e9978204871c7a4a525b8e6469acbc04f39a009c117474938934eb30b59baa",
+      "original_evaluation_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m6_d34/summary.json"
+    },
+    {
+      "branch": "M7_e2",
+      "previous_published_model": "original_M6",
+      "first_pass_checkpoint": "original_M7",
+      "train_day": 34,
+      "train_date": "2024-02-15",
+      "eval_day": 35,
+      "eval_date": "2024-02-16",
+      "reason": "Original reverse cache gap",
+      "previous_published_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m6_d33/step_002450.pt",
+      "previous_published_checkpoint_sha256": "e0e9978204871c7a4a525b8e6469acbc04f39a009c117474938934eb30b59baa",
+      "first_pass_checkpoint_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m7_d34/step_002506.pt",
+      "first_pass_checkpoint_sha256": "81065c54ce1a86411c8d5d36499ed9c93653d895b1c343405727dc7761e0e010",
+      "original_evaluation_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m7_d35/summary.json"
+    },
+    {
+      "branch": "M3_e2",
+      "previous_published_model": "original_M2",
+      "first_pass_checkpoint": "original_M3",
+      "train_day": 30,
+      "train_date": "2024-02-11",
+      "eval_day": 31,
+      "eval_date": "2024-02-12",
+      "reason": "Positive-gap control for the same extra-pass recipe",
+      "previous_published_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m2_d29/step_002526.pt",
+      "previous_published_checkpoint_sha256": "66d7d05719e3f11409e812245c9f113d890588d4810c323814acde1663a29112",
+      "first_pass_checkpoint_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m3_d30/step_002573.pt",
+      "first_pass_checkpoint_sha256": "fae2c6789ea3545aff05c19e0437c2e22681482bf9f6771d0722e8dc4931b65b",
+      "original_evaluation_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m3_d31/summary.json"
+    }
+  ],
+  "followup_candidates_not_queued": [
+    {
+      "branch": "M2_e2",
+      "previous_published_model": "original_M1",
+      "first_pass_checkpoint": "original_M2",
+      "train_day": 29,
+      "eval_day": 30,
+      "previous_published_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m1_d28/step_002484.pt",
+      "previous_published_checkpoint_sha256": "8258187874117083140e8dfc44ee2b46be1265780285aa5516b96a7a83acfe27",
+      "first_pass_checkpoint_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m2_d29/step_002526.pt",
+      "first_pass_checkpoint_sha256": "66d7d05719e3f11409e812245c9f113d890588d4810c323814acde1663a29112",
+      "original_evaluation_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m2_d30/summary.json"
+    },
+    {
+      "branch": "M8_e2",
+      "previous_published_model": "original_M7",
+      "first_pass_checkpoint": "original_M8",
+      "train_day": 35,
+      "eval_day": 36,
+      "previous_published_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m7_d34/step_002506.pt",
+      "previous_published_checkpoint_sha256": "81065c54ce1a86411c8d5d36499ed9c93653d895b1c343405727dc7761e0e010",
+      "first_pass_checkpoint_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m8_d35/step_002420.pt",
+      "first_pass_checkpoint_sha256": "cd803f44a485f89293a2eadbccc41c29c010e5a6cae484471d7f4243f7755e10",
+      "original_evaluation_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m8_d36/summary.json"
+    }
+  ],
+  "interpretation_rules": [
+    "Original M4->M5 and original M4->M5_e2 are a matched-parent branch comparison.",
+    "Original M5->M6_e2 is valid independently, but M5_e2->M6_e2 is not an actual continuous lineage.",
+    "A continuous new chain from M5_e2 requires training its own descendants.",
+    "Branches selected after observing the original gaps are development experiments, not fresh independent confirmation.",
+    "Report original and new native quality, Rebuild/Reuse gaps, uncertainty, training budget and all adverse results.",
+    "A larger gap alone does not establish better training or stability; inspect native held-out quality and repeat the fixed recipe across edges or seeds.",
+    "If this batch does not help, diagnose before adding more epochs or seeds; do not silently replace failed branches."
+  ],
+  "runtime_estimate": {
+    "resource_basis": "Four A40 GPUs, as in the completed original run",
+    "extra_pass_minutes_per_branch": [
+      28,
+      35
+    ],
+    "full_next_day_evaluation_minutes_per_branch": [
+      28,
+      35
+    ],
+    "four_branch_batch_hours_including_audits_and_overhead": [
+      4,
+      5
+    ],
+    "foundation_retraining_required": false,
+    "note": "Projection from the original measured workload; verify throughput and device availability before launch"
+  },
+  "secondary_directions_not_queued": [
+    {
+      "name": "Two-day publication cadence using existing checkpoints",
+      "published_sequence": [
+        "M0",
+        "M2",
+        "M4",
+        "M6",
+        "M8"
+      ],
+      "scope": "Five published models and four edges; intervening daily training checkpoints remain real optimizer ancestors but are not published in this scenario",
+      "purpose": "Separate cache producer age/publication cadence from extra optimizer work"
+    },
+    {
+      "name": "Persistent causal cache replay",
+      "scope": "Initialize at release, compare full rebuild at release with inherited cache, append only observed feedback causally, use identical FIFO retention and candidate read rules, record row producers",
+      "note": "Current matched-prefix snapshots do not already implement this; FIFO may reduce rather than enlarge the gap"
+    },
+    {
+      "name": "Fresh-data window versus repeated passes",
+      "scope": "Compare a recent two-day window once against a recent one-day window twice at a common cutoff, from a common earlier parent and on the same next-day evaluation; record actual request and step counts"
+    }
+  ],
+  "before_any_gpu_launch": [
+    "Bind exact checkpoint paths, source/config/data hashes, published-parent ancestry and immutable output directories",
+    "Verify exact saved model/optimizer restoration and second-pass request coverage",
+    "Verify same-version Rebuild/Reuse identity and parity with original scores on a small fixed request set",
+    "Confirm current GPU allocation and measured memory headroom",
+    "Freeze the development recipe and preserve all branches and original results"
+  ],
+  "baseline_summary_path": "/home/gkl/work/evokv/experiments/recflow_release_design/preparation_2026_10_29/baseline_summary.json"
+}

@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "recorded_date": "2026-10-29",
+  "status": "fallback_only",
+  "scheduling_status": "not_scheduled",
+  "current_route_should_continue": true,
+  "current_route_note": "The current V5 experiment continues. This evidence record neither schedules this fallback nor changes the current chain.",
+  "purpose": "Document a conditional, existing-checkpoint alternative to retraining foundation if the current continuous-chain route becomes blocked.",
+  "conclusion": {
+    "same_optimizer_trajectory_supported": true,
+    "basis": "The actual completed second-stage command explicitly resumes the first checkpoint; the saved historical trainer restores model, AdamW, scheduler, sampler cursor and RNG. Actual checkpoint counters and progress logs agree with another 10116 optimizer updates on epoch 1.",
+    "cache_gap_measured_for_this_pair": false,
+    "positive_cache_gap_established": false,
+    "bitwise_independent_replay_proven": false
+  },
+  "source_checkpoint": {
+    "label": "alignment_epoch1",
+    "path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.pt",
+    "sidecar": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.json",
+    "phase": "alignment",
+    "training_days": [24, 25, 26, 27],
+    "training_cutoff_day": 27,
+    "phase_total_step": 10116,
+    "next_epoch": 1,
+    "next_step": 0,
+    "optimizer_step_state_count": 177,
+    "optimizer_steps_unique": [74547],
+    "scheduler": {
+      "base_lrs": [0.0003],
+      "last_epoch": 10116,
+      "step_count": 10117,
+      "last_lr": [0.00016237918607602537]
+    }
+  },
+  "target_checkpoint": {
+    "label": "alignment_epoch2",
+    "path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_020232.pt",
+    "sidecar": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_020232.json",
+    "phase": "alignment",
+    "training_days": [24, 25, 26, 27],
+    "training_cutoff_day": 27,
+    "phase_total_step": 20232,
+    "next_epoch": 2,
+    "next_step": 0,
+    "optimizer_step_state_count": 177,
+    "optimizer_steps_unique": [84663],
+    "scheduler": {
+      "base_lrs": [0.0003],
+      "last_epoch": 20232,
+      "step_count": 20233,
+      "last_lr": [0.000014999999999999999]
+    }
+  },
+  "checkpoint_inspection": {
+    "method": "Read both actual checkpoint payloads with torch.load(map_location='cpu', mmap=True, weights_only=False); inspect cursor, scheduler and every AdamW step scalar only.",
+    "gpu_used": false,
+    "model_instantiated": false,
+    "tensor_equality_or_replay_test_performed": false,
+    "optimizer_step_increase": 10116
+  },
+  "execution_evidence": {
+    "first_stage_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/stages/07_alignment_epoch1.json",
+    "first_stage_status": "completed",
+    "first_stage_returncode": 0,
+    "first_stage_stop_after_steps": 10116,
+    "resume_stage_path": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/stages/10_alignment_epoch2.json",
+    "resume_stage_status": "completed",
+    "resume_stage_returncode": 0,
+    "resume_argument": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.pt",
+    "resume_stage_started_at": "2026-10-28T09:57:37.193627+00:00",
+    "resume_stage_finished_at": "2026-10-28T11:57:22.261952+00:00",
+    "resume_stage_wall_seconds": 7185.068360690959,
+    "historical_trainer_source": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/source_snapshot/train.py",
+    "phase_plan": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/plan.json",
+    "phase_completion": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/completion.json",
+    "first_epoch_log": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/logs/07_alignment_epoch1.log",
+    "second_epoch_log": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/logs/10_alignment_epoch2.log",
+    "requests_per_epoch": 647394,
+    "world_size": 4,
+    "global_batch": 64,
+    "seed": 17,
+    "listwise_weight": 0.1,
+    "logged_continuation": {
+      "first_epoch_final_step": 10116,
+      "first_epoch_final_epoch": 0,
+      "second_epoch_first_logged_step": 10200,
+      "second_epoch_first_logged_epoch": 1,
+      "second_epoch_first_logged_lr": 0.0001603256913370694,
+      "second_epoch_final_step": 20232,
+      "second_epoch_final_epoch": 1
+    },
+    "metadata_parent_interpretation": {
+      "both_sidecars_arguments_parent": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/warmup/step_064431.pt",
+      "explanation": "Resume preserves original phase arguments and cross-stage origin. The sidecar parent field alone does not encode the in-phase E1-to-E2 resume relationship; the completed execution record and historical resume implementation supply that relationship.",
+      "old_sidecars_modified": false
+    }
+  },
+  "prerelease_native_validation": {
+    "first_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/alignment_epoch1_validation/summary.json",
+    "second_summary": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/alignment_epoch2_validation/summary.json",
+    "foundation_selection_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/gates/foundation_learning.json",
+    "second_epoch_budget_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/gates/second_epoch_budget.json",
+    "evaluation_days": [24, 25, 26, 27],
+    "population": "Heldout role1 validation UID population",
+    "requests": 16384,
+    "positive_requests": 9890,
+    "active_uids": 1672,
+    "positive_uids": 1229,
+    "first_epoch": {
+      "ndcg_at_10": 0.05153192946319334,
+      "recall_at_10": 0.08349122089010866,
+      "observed_bce": 0.5737145048569917
+    },
+    "second_epoch": {
+      "ndcg_at_10": 0.05049383165093255,
+      "recall_at_10": 0.0815125507567368,
+      "observed_bce": 0.6227950292828904
+    },
+    "second_minus_first_relative_ndcg_percent_approx": -2.01447,
+    "paired_epoch_difference_ci": null,
+    "paired_epoch_difference_ci_limitation": "No stored paired E2-minus-E1 confidence interval was found. The point estimates do not establish statistically significant native degradation, and these native results are not a cache-gap measurement.",
+    "selected_epoch": 1,
+    "selection_rule": "Highest heldout native NDCG@10 among completed alignment epochs; earliest epoch breaks ties.",
+    "selection_used_cache_gap": false,
+    "second_epoch_run_reason": "The prerelease budget forecast permitted another epoch and validation; the decision did not use cache-gap results.",
+    "second_epoch_remaining_budget_seconds": 25608.4832,
+    "second_epoch_forecast_with_validation_seconds": 8920.4425,
+    "second_epoch_still_above_fixed_native_baselines": true,
+    "operational_limitation": "E2 was not the selected best native-validation checkpoint. Treating it as a later publication is a prospective optimization-only mechanism case, not evidence that the original procedure actually published E2 or preferred it for native quality. The current user goal does not require every new model to improve native quality."
+  },
+  "prior_cache_evaluation_search": {
+    "scope_roots": [
+      "/home/gkl/work/evokv/experiments/recflow_full_population",
+      "/home/gkl/work/evokv/experiments/recflow_release_design",
+      "/home/gkl/work/evokv/experiments/recflow_continuous_chain"
+    ],
+    "method": "rg --hidden --no-ignore text search plus inspection of JSON plan/summary checkpoint, parent and cache_source bindings.",
+    "result": "No E1-to-E2 Rebuild/Reuse score binding or E2 D28 native/reuse result was found in the searched roots. E2 references were confined to native prerelease validation, training/stage/log/latest records, foundation gate and inventory.",
+    "scope_limit": "This is absence of evidence in the searched repository roots, not a claim about unsearched external storage.",
+    "native_validation_score_branches": ["current", "popularity", "random"],
+    "native_validation_parent": null,
+    "different_previously_failed_pair_plan": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/warm_m0_pilot_4096/plan.json",
+    "different_pair_explanation": "warmup step_064431 to alignment E1 is a different, already evaluated pair. Its negative cache-gap result does not establish the sign of E1-to-E2."
+  },
+  "publication_semantics_and_current_tool_limitations": {
+    "source_and_target_training_cutoff_day": 27,
+    "new_training_data_days_in_this_edge": [],
+    "interpretation": "An additional full optimization pass over D24-D27 creates a distinct real model endpoint. E1 and E2 may prospectively be designated consecutive publication nodes, but this must be disclosed as a same-window optimization release, not a fresh-data daily update.",
+    "candidate_first_eval_day": 28,
+    "candidate_first_eval_is_after_both_training_cutoffs": true,
+    "prepare_pair_imported_ancestry": "/home/gkl/work/evokv/experiments/recflow_release_design/code/interval_protocol.py",
+    "current_chain_validator": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/code/validate_chain.py",
+    "current_support": "unsupported",
+    "specific_limitations": [
+      "Current ancestry traversal follows sidecar arguments.parent and cannot infer this in-phase resume edge.",
+      "The ancestry helper used by prepare_pair additionally requires advancing source-to-target training cutoff; E1 and E2 both end at D27.",
+      "Any future implementation must represent the actual completed resume evidence and same-window release semantics explicitly, without rewriting old parents or relabeling data dates. No validator or preparation code was changed for this record."
+    ]
+  },
+  "conditional_fallback_chain": {
+    "condition": "Consider only if the current route actually becomes blocked, after reviewing this evidence and the required explicit resume-edge support.",
+    "next_possible_step": "One bounded E1-to-E2 pilot on a fixed, full D28 cohort; no pilot or successor is scheduled by this record.",
+    "positive_outcome_guaranteed": false,
+    "existing_foundation_nodes": ["V0=alignment_epoch1", "V1=alignment_epoch2"],
+    "new_successor_model_count": 8,
+    "new_successor_training_days": [28, 29, 30, 31, 32, 33, 34, 35],
+    "all_nine_evaluation_days": [28, 29, 30, 31, 32, 33, 34, 35, 36],
+    "spare_evaluation_day": 37,
+    "required_lineage": "V2 must train from E2; V3 through V9 must continue their immediately previous actual chosen ancestor. All nine cache comparisons must correspond to adjacent publication nodes and their own declared future windows.",
+    "cannot_splice": "Original M1 and all currently accepted later models descend from E1, not E2. They cannot be appended after E2 in this proposed chain.",
+    "current_result_retention": "Retain the entire current prefix, all positive, weak and negative evidence. Choosing this fallback would replace that prefix only for the newly proposed chain, not erase or relabel its results.",
+    "cost_tradeoff": "Reuses both existing foundation checkpoints and avoids foundation retraining, but still requires eight new daily successor training runs plus the required evaluations."
+  },
+  "actions_performed_for_this_record": {
+    "new_evidence_json_written": true,
+    "old_files_modified": false,
+    "validator_modified": false,
+    "manifest_modified": false,
+    "gpu_tasks_started": false,
+    "training_started": false,
+    "successor_queue_started": false
+  }
+}

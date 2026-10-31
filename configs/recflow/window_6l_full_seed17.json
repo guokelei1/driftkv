@@ -1,0 +1,135 @@
+{
+  "scope": "Prospective conditional six-layer seed17 complete-window development confirmation; no formal phi admission, final-role evaluation or Yambda theta3.",
+  "authorization": "The 2026-09-18 user instruction explicitly requests complete-window A/B tests, parameter iteration, optional C, and six-layer progression if these work. This replaces the earlier pending one-pass question. Use detached tmux for long runs and retain all outcomes.",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "panels": "/home/gkl/work/evokv/results/recflow/development/full_window_training_seed17/window_panels.npz",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 6,
+    "hidden": 192,
+    "heads": 6,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "clip_norm": 1,
+    "epochs": 3,
+    "evaluation_epochs": [
+      3
+    ],
+    "training_probe_requests": 2048,
+    "decoder": "beam",
+    "beam_width": 300,
+    "eval_precision": "fp32",
+    "sampled_distractors": [
+      1000
+    ],
+    "log_every": 100,
+    "training_order": "shuffle"
+  },
+  "windows": {
+    "A": {
+      "fit": [
+        1,
+        18
+      ],
+      "evaluate": [
+        19,
+        21
+      ],
+      "eligible_requests_per_epoch": 173395
+    },
+    "B": {
+      "fit": [
+        19,
+        21
+      ],
+      "compare_parent_and_current": [
+        22,
+        24
+      ],
+      "eligible_requests_per_epoch": 17046
+    },
+    "C": {
+      "fit": [
+        22,
+        24
+      ],
+      "compare_parent_and_current": [
+        25,
+        27
+      ],
+      "eligible_requests_per_epoch": 10854
+    }
+  },
+  "training_rule": "A fits all eligible D1–18 requests; B continues the exact A model and AdamW state on all eligible D19–21 requests; optional C continues B on all eligible D22–24 requests. Three complete epochs per phase, no request cap or timed endpoint, one uniformly sampled known positive per request, global batch128 including the real tail. Save training counts/order/target hashes and fixed training-only NLL every epoch. Retrieval uses the declared final epoch3 only; do not select an endpoint using future labels.",
+  "training_sufficiency": "Retain complete-epoch mean loss and fixed training-only2048-request/target NLL before fitting and after every epoch. A fixed three-epoch budget is not proof of convergence; if it is still insufficient, record that fact and test a stated subsequent setting. Never rename a partial epoch as a completed model.",
+  "evaluation_rule": "Evaluate all positive requests of the same fixed512 development users in each complete three-day window:29027 onD19–21,25694 onD22–24,25180 onD25–27, keeping all OOV misses. Means are traffic-weighted over requests, with user means and every day reported separately. Original768-request sampled-diagnostic subsets, candidate seed17 and uniform/popularity1000 stay unchanged. A/B and B/C must share their exact future indices and denominators. The original3072 balanced-panel failures remain retained and are not renamed passes.",
+  "working_gate": "Primary free-catalog beam300 FP32 NDCG@50. A must clearly beat matched random on D19-21; A and B must each beat random on D22-24 and B must improve over A there. Optional C repeats the same logic with B/C on D25-27. Report analytic random expectation and5000-trial random-policy variation. Keep the existing2x expectation and>null99 flags as declared working checks; companions do not replace the primary if it fails. Inspect all daily directions; do not select favorable days or cutoffs. Sampled diagnostics are not proof of free-generation quality.",
+  "parameter_iteration": "Confirmation at6L/H192/6heads after complete small-model checks under the explicitly declared full-window protocol. Keep the original shuffle setting, seed17,1M catalog,512 training users, context1024,lr1e-3,wd1e-4,globalbatch128 and three complete epochs. This is a sufficient configuration rather than a best-score selection. The chronological-order variant and all prior failures remain reported. Full-window evaluation prevents the rare-hit3072 panel from being the sole older-model evidence.",
+  "resource_estimate": {
+    "training_devices": "One four-rank DDP job on0/1/2/3, phases queued serially. Measured337.03requests/s versus199.53on the NVLink two-rank pair, at the same globalbatch128.",
+    "global_batch_size": 128,
+    "parameters": 194461521,
+    "measured_two_GPU_training_requests_per_second": 199.53321998420134,
+    "measured_two_GPU_max_allocated_bytes": 19757062656,
+    "measured_two_GPU_max_reserved_bytes": 21896364032,
+    "two_GPU_three_epoch_training_minutes": {
+      "A": 43.45,
+      "B": 4.27,
+      "C": 2.72
+    },
+    "evaluation_devices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "evaluation_seconds_per_free_request_one_GPU_basis": 0.111,
+    "full_window_four_GPU_minutes_estimated": {
+      "A_19_21": 14,
+      "parent_or_current_22_24": 12.5,
+      "parent_or_current_25_27": 12
+    },
+    "two_GPU_training_plus_four_GPU_evaluation_phase_minutes_estimated": {
+      "A": [
+        58,
+        66
+      ],
+      "B": [
+        29,
+        35
+      ],
+      "C": [
+        27,
+        33
+      ]
+    },
+    "four_GPU_training_measurement": {
+      "requests_per_second": 337.0279520560331,
+      "including_proportional_preparation": 330.6646763055043,
+      "max_allocated_bytes": 11876948480,
+      "max_reserved_bytes": 12169773056,
+      "three_epoch_training_minutes": {"A": 25.72, "B": 2.53, "C": 1.61},
+      "training_plus_four_GPU_evaluation_phase_minutes_estimated": {"A": [40, 49], "B": [28, 35], "C": [26, 33]},
+      "numerical": "FP32 actual-generator gradient and two AdamW updates match the single-GPU global loss on unequal four-rank batches5and7. Main runner canary also completes263requests in3steps, including seven-row tail."
+    },
+    "execution": "Detached tmux for each expected long phase, retain log and exit status, and resume result analysis. No overlapping model jobs during four-GPU evaluation. Main waits use CPU Gloo; training uses NCCL; worker memory excludes resident training state."
+  },
+  "progression": "Analyze each declared endpoint honestly. A must show recommendation quality above matched random; B must improve over A on the identical next complete window with both above random. Optional C repeats the check. This is six-layer development, not automatic phi admission or a final-population paper result.",
+  "status": "ready_authorized_after_development_and_canaries",
+  "launch_conditions": {
+    "small_model_report": "results/recflow/development/window_2l_seed17_full_windows/AB_comparison/summary.json",
+    "require": "Completed A19–21 positive control, same full D22–24 panel for A and B, each>2x matched random and above its random99th percentile, B>A; inspect daily directions and hit users. No automatic admission.",
+    "data": "results/recflow/development/full_window_training_seed17/summary.json",
+    "two_GPU_canary": "results/recflow/development/ddp_6l_h192_heads6_c1024_k1m_seed17_gpu23/summary.json",
+    "four_GPU_canary": "results/recflow/development/ddp_6l_h192_heads6_c1024_k1m_seed17_gpu0123_retry/summary.json",
+    "six_layer_runner_canary": "results/recflow/development/window_6l_gpu0123_canary/A/summary.json",
+    "six_layer_resident_evaluation_canary": "results/recflow/development/gloo_resident_6l_parallel_eval_canary_seed17/summary.json",
+    "resident_evaluation_outcome": "Four live training ranks retain actual6L model/AdamW/DDP while serial and four-worker FP32 beam/sample8known/4sample evaluation agree exactly on raw rankings, arrays and all aggregates. Optimizer steps3to3, no updates. Resident3.137GB perrank; serial includingresident peakallocated19.04GB/reserved24.97GB; maxparallelworker separately16.71GB/22.64GB, excluding residentstate. Release unused training CUDA cache before subprocess evaluation.",
+    "small_model_outcome": "Completed paired full-window sensitivity passes: A9.1232xrandom, B107.5617xrandom, both>null99, all three days B>A, Top50hit requests/users A10/10 B63/54. Original balanced3072gate failures and chronological-order results remain retained."
+  }
+}

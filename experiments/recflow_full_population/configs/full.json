@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "status": "full_population_30000_frozen_before_new_quality",
+  "task": "rank_complete_logged_ranking_stage_candidates_per_request",
+  "positive": "realshow == 1 and effective_view == 1",
+  "unknown": "realshow == 0; not an observed negative",
+  "candidate_membership": "0 <= rank_index < 3000; exclude sentinel 3000/8000; whole requests with any out-of-stage exposure excluded before outcomes; original first-request ledger retained",
+  "metric": {
+    "primary": "request_macro_observed_positive_ndcg@10",
+    "secondary": "request_macro_observed_positive_recall@10",
+    "sensitivity_k": [
+      5,
+      20
+    ],
+    "zero_positive_requests": "undefined_ndcg_exclude_from_mean_report_count",
+    "uncertainty": "paired_uid_cluster_bootstrap_request_macro_2000_seed17",
+    "candidate_subsampling_at_evaluation": false
+  },
+  "evaluation_precision": {
+    "compute_dtype": "float32",
+    "cache_dtype": "float32",
+    "same_reader_and_backend_for_rebuild_and_reuse": true,
+    "bf16_training_is_not_a_quality_equivalence_claim": true
+  },
+  "timeline": {
+    "dataset_timezone": "Asia/Shanghai",
+    "request_timestamp_unit": "milliseconds_since_unix_epoch",
+    "interval_convention": "half_open_start_inclusive_end_exclusive",
+    "history_only_days": [],
+    "foundation_observed_feedback_warmup_days": [
+      1,
+      23
+    ],
+    "foundation_full_candidate_alignment_days": [
+      24,
+      27
+    ],
+    "foundation_end_day": 27,
+    "updates": 9,
+    "update_days": [
+      28,
+      36
+    ],
+    "evaluation": "the_next_full_day_after_each_training_cutoff",
+    "final_confirmation_day": 37,
+    "live_midnight_zero_training_latency_claim": false
+  },
+  "history": {
+    "source": "raw_realshow_exposures_only",
+    "max_events": 1024,
+    "window": "most_recent_1024_events_for_all_model_scales_and_versions",
+    "order": [
+      "user_id",
+      "request_timestamp",
+      "request_id",
+      "video_id"
+    ],
+    "causal_cutoff": "strictly_before_the_entire_user_timestamp_block",
+    "feedback_availability": "request_time_replay_assumption; exact_action_arrival_times_not_given",
+    "same_request_duplicate_items": "deduplicate_with_consistency_check_before_counting",
+    "future_activity_intersection": false,
+    "history_can_include_prior_observed_test_feedback": true,
+    "test_feedback_for_gradient_or_checkpoint_selection": "past evaluation days may train later releases; never change an already evaluated model",
+    "minimum_history": 0
+  },
+  "roles": {
+    "algorithm": "foundation-only activity strata, fixed UID hash seed 20261028",
+    "training_users": 30000,
+    "rank_feedback_train_users": 20000,
+    "warmup_only_train_users": 10000,
+    "validation_users": 2000,
+    "cache_fit_users": 384,
+    "cache_validation_users": 128,
+    "primary_evaluation": "same train UID list, strictly future requests"
+  },
+  "architecture": {
+    "family": "causal_HSTU_reference_with_independent_target_queries",
+    "activation": "silu",
+    "block_variant": "hstu_reference",
+    "relative_position_bias": true,
+    "causal_diagonal": "inclusive",
+    "attention_dropout": 0.0,
+    "input_dropout": 0.0,
+    "max_seq_len_including_query": 1025,
+    "pilot": {
+      "layers": 2,
+      "hidden_size": 128,
+      "heads": 4,
+      "head_dim": 32,
+      "item_embedding_dimension": 64
+    },
+    "item_encoder_proposal": {
+      "frequent_explicit_ids": 1048576,
+      "oov_hash_buckets": 262144,
+      "id_embedding_dimension": 64,
+      "features": [
+        "item_id",
+        "author_id",
+        "category_level_one",
+        "category_level_two",
+        "log_duration"
+      ],
+      "vocabulary_cutoff": "selected 30000 train UIDs through D27 only",
+      "same_mapping_all_versions": true,
+      "freeze_later_metadata_to_first_available_observation": false,
+      "unknown_candidates": "retain_all_with_hash_and_content_features_report_collision_and_coverage",
+      "metadata_rule": "each raw event/request uses its own contemporaneous metadata; never backfill future values"
+    },
+    "query_features_exclude": [
+      "current_effective_view",
+      "current_like",
+      "rank_index",
+      "rerank_index",
+      "stage_tags",
+      "current_realshow"
+    ],
+    "candidate_cross_attention": false,
+    "query_writes_to_persistent_cache": false,
+    "max": {
+      "layers": 16,
+      "hidden_size": 320,
+      "heads": 10,
+      "head_dim": 32,
+      "item_embedding_dimension": 320
+    },
+    "formal_scale": "max",
+    "max_reference": "experiments/configs/recflow_models_2026_10_21.json; old total 1149285121 parameters; retain dimensions, rebuild new task with HSTU-reference SiLU and external metadata",
+    "max_item_encoder": {
+      "frequent_explicit_ids": 3500000,
+      "oov_hash_buckets": 65536,
+      "id_embedding_dimension": 320,
+      "vocabulary_directory": "vocabulary_max"
+    }
+  },
+  "optimization_proposal": {
+    "optimizer": "AdamW",
+    "compute_dtype": "bfloat16",
+    "parameter_dtype": "float32",
+    "foundation_learning_rate": 0.0003,
+    "update_learning_rate": 0.0001,
+    "weight_decay": 0.01,
+    "gradient_clip_norm": 1.0,
+    "global_effective_batch_requests": 64,
+    "same_effective_batch_for_world_size_comparison": true,
+    "loss_normalization": "sum_over_local_active_requests_times_world_size_divided_by_global_active_requests_in_full_accumulation_window",
+    "globally_empty_step": "skip_optimizer_on_all_ranks_including_weight_decay",
+    "warmup_fraction": 0.05,
+    "foundation_warmup_epochs": 1,
+    "candidate_alignment_epochs_max": 2,
+    "update_epochs": 1,
+    "training_prefix_recomputed_under_current_parameters": true,
+    "preserve_optimizer_state_between_versions": true,
+    "scheduler_on_update": "new_daily_schedule_and_explicit_update_lr_after_loading_parent_optimizer_state",
+    "train_backbone_and_item_features_on_updates": true,
+    "checkpoint": "matching_model_optimizer_scheduler_rng_sampler_cursor_and_data_source_hashes_atomically_saved",
+    "loss": "request_mean_exposure_BCE_plus_lambda_full_candidate_multi_positive_cross_entropy",
+    "listwise_lambda_development_candidates": [
+      0.1
+    ],
+    "selection": "maximum native NDCG@10 on fixed heldout UID validation requests D24-27; never reuse loss",
+    "foundation_checkpoint_selection": "pre_release_validation_uids_only",
+    "update_checkpoint_selection": "fixed_one_epoch_endpoint_or_pre_release_validation_rule_frozen_before_chain"
+  },
+  "budget": {
+    "foundation_wall_hours_hard_limit": 15,
+    "foundation_projection_hours_admission_limit": 12,
+    "foundation_limit_includes": [
+      "model_initialization_and_compile",
+      "training",
+      "validation",
+      "checkpoints"
+    ],
+    "foundation_limit_excludes_but_reports": [
+      "download",
+      "one_time_CPU_preprocessing",
+      "pilot"
+    ],
+    "pilot_total_wall_hours_limit": 3,
+    "update_wall_hours_target": 1,
+    "update_wall_hours_limit": 2,
+    "projection": "measured_real_batch_forward_backward_optimizer_ddp_io_validation_save_times_plus_25_percent_margin",
+    "first_profile_steps": 200,
+    "dispatch_full_chain_before_pilot_pass": false
+  },
+  "execution": {
+    "preferred_host": "g202",
+    "benchmark_world_sizes": [
+      1,
+      2,
+      4
+    ],
+    "two_gpu_pair": [
+      0,
+      1
+    ],
+    "four_gpu_ids": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "initial_cpu_day_workers": 4,
+    "initial_arrow_threads_per_worker": 4,
+    "initial_loader_workers_per_rank": 4,
+    "candidate_chunk_size": 128,
+    "checkpoint_candidate_chunks": true,
+    "loader_multiprocessing_start_method": "spawn",
+    "torch_cpu_threads_per_rank": 2,
+    "one_history_forward_per_request": true,
+    "no_materialized_candidate_times_history_cache_copy": true,
+    "full_candidate_loss_normalizer_across_chunks": true,
+    "hardware": "recheck_availability_before_launch; choose_measured_world_size_not_maximum_card_count",
+    "prepared_format": "daily_candidate_CSR_plus_shared_user_history_arrays_and_mmap_indices"
+  },
+  "pilot_gates": [
+    "mixed true history and empty history score/gradient oracle",
+    "four-GPU exact normalization and resume",
+    "early heldout observed BCE improvement over identical random initialization",
+    "foundation heldout NDCG@10 above expected random and foundation-only popularity with paired UID confidence bounds"
+  ],
+  "mismatch_protocol": {
+    "primary": "all valid future requests of the fixed 30000 training users",
+    "interpretation": "matched causal prefix snapshots, not persistent serving",
+    "controls": [
+      "parent-native",
+      "current-rebuild",
+      "current-reuse-parent-kv"
+    ],
+    "stop_or_select_by_cache_gap": false,
+    "native_current_better_than_parent_required": false
+  },
+  "training_data_budget": {
+    "automatic_full_data_training": true,
+    "warmup_requests": 4123554,
+    "alignment_requests": 647394,
+    "alignment_epochs_max": 2,
+    "update_requests": "all valid observed requests for fixed training users; one epoch",
+    "minimum_history": 0
+  }
+}

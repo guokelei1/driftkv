@@ -1,0 +1,89 @@
+{
+  "status": "waiting_shared_validation_input_choice",
+  "purpose": "Follow validated causes with a compact matched configuration exploration; preserve MLP form/read+score loss/evaluation and all five edges",
+  "input_selection": "selection.sampling_phase_a.recommendation: the raw-loss winner among all six complete five-edge new PhaseA candidate/time inputs on the shared three-context common validation; preserve catalog256/time-law256. The combined370 winner is an external benchmark only.",
+  "seed": 17,
+  "queries": 16,
+  "edges": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "validation_every": 8,
+  "controls": false,
+  "recipes": [
+    {
+      "name": "reference",
+      "fit_users": 256,
+      "width": 128,
+      "learning_rate": 3e-05,
+      "steps": 2048,
+      "patience": 1024,
+      "h_initialization": "standard"
+    },
+    {
+      "name": "fit64",
+      "fit_users": 64,
+      "width": 128,
+      "learning_rate": 3e-05,
+      "steps": 2048,
+      "patience": 1024,
+      "h_initialization": "standard"
+    },
+    {
+      "name": "fit128",
+      "fit_users": 128,
+      "width": 128,
+      "learning_rate": 3e-05,
+      "steps": 2048,
+      "patience": 1024,
+      "h_initialization": "standard"
+    },
+    {
+      "name": "lr1e5",
+      "fit_users": 256,
+      "width": 128,
+      "learning_rate": 1e-05,
+      "steps": 2048,
+      "patience": 1024,
+      "h_initialization": "standard"
+    },
+    {
+      "name": "width256",
+      "fit_users": 256,
+      "width": 256,
+      "learning_rate": 3e-05,
+      "steps": 2048,
+      "patience": 1024,
+      "h_initialization": "standard"
+    },
+    {
+      "name": "cap1024",
+      "fit_users": 256,
+      "width": 128,
+      "learning_rate": 3e-05,
+      "steps": 1024,
+      "patience": 1024,
+      "h_initialization": "standard"
+    },
+    {
+      "name": "balanced_h_init",
+      "fit_users": 256,
+      "width": 128,
+      "learning_rate": 3e-05,
+      "steps": 2048,
+      "patience": 1024,
+      "h_initialization": "balanced"
+    }
+  ],
+  "matching": "within each recipe f/fg/fgh use same N/width/cap; reference versus balanced starts with identical f/fg and resizes only zero-output h first-layer input groups",
+  "reuse": "All seven matched configurations use new independent run_probe_calibration_init.py identities and fresh fitting, including standard reference. Any future reuse requires a separate exact equivalence audit; do not relabel PhaseA weights or mix sources.",
+  "candidate_catalog_and_time_law_source_users": 256,
+  "teacher_statistics_gradient_users": "own N",
+  "cohort": "fixed development512 for exploratory signal; final selected common config on main2000×3seed and independent2000; supplementary predeclared long_feedback_active2000 same config",
+  "jobs": [],
+  "gpu_launched": false,
+  "final_selection": "retain all attempted configurations and adverse edges; choose common validation winner then freeze three correction seeds17/23/29; no population-method score selection"
+}

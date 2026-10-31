@@ -1,0 +1,57 @@
+{
+  "configurations": [
+    {
+      "name": "kv_norm64",
+      "width": 64,
+      "no_item": true
+    },
+    {
+      "name": "item_norm64",
+      "width": 64
+    },
+    {
+      "name": "item_norm128",
+      "width": 128
+    },
+    {
+      "name": "item_norm256",
+      "width": 256
+    },
+    {
+      "name": "item_norm128_d2",
+      "width": 128,
+      "depth": 2
+    },
+    {
+      "name": "item_norm128_lr1e4",
+      "width": 128,
+      "learning_rate": 0.0001
+    },
+    {
+      "name": "item_raw128_lr1e4",
+      "width": 128,
+      "no_normalize": true,
+      "learning_rate": 0.0001
+    },
+    {
+      "name": "item_norm128_read01",
+      "width": 128,
+      "read_weight": 0.1
+    }
+  ],
+  "edges": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "seed": 17,
+  "fit_users": 64,
+  "queries": 16,
+  "steps": 256,
+  "patience": 128,
+  "validation_every": 32,
+  "selection": "Equal-edge mean of common normalized validation_read_mse + validation_score_mse at the chosen checkpoint; weighted training losses with different read_weight are not directly compared",
+  "quality_population_minimum": 512
+}

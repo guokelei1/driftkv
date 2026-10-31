@@ -1,0 +1,48 @@
+contract: yambda500m_large_full_only_stop_v1
+date_authorized: 2026-08-31
+status: user_authorized_formal_stop_after_full_only_before_any_formal_reuse
+purpose: >-
+  Complete and seal the already-running Large Full-only matrix, then end the
+  formal queue without launching any adjacent Reuse or PRO evaluation.
+
+frozen_parent:
+  base_contract: configs/contracts/yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1.yaml
+  base_contract_sha256: f631e7d7a6438187d7b64e28f696f4759ffab5b93d9579e36ffc48b7c3ed13f8
+  execution_contract: configs/contracts/yambda500m_large_hstu_native_d7_d14_execution_v1.yaml
+  execution_contract_sha256: d029fa6b8e67e9c0f9ce2b2d52058eaa6d6069e24730f1c4d869125ef6b6671a
+  superseded_reuse_scope: configs/contracts/yambda500m_large_reuse_scope_d14_e14_only_v1.yaml
+  superseded_reuse_scope_sha256: 9afa168dbbc3d4ef880ccd6a6ff530ca359609b343a53e31ec405ed1cfc069c2
+
+scope_change_boundary:
+  formal_checkpoints_changed: false
+  full_only_matrix_changed: false
+  model_admission_changed: false
+  formal_reuse_cells_completed_before_change: 0
+  resource_canary_reuse_is_not_formal_quality: true
+  interpretation: >-
+    The completed artifact is a Large Full-only release-chain result. It must
+    not be described as a completed Large Reuse or PRO qualification.
+
+reuse_scope:
+  formal_reuse_enabled: false
+  branch: none
+  horizon_days: null
+  edges: []
+  expected_cells: 0
+  include_frozen_PRO_in_same_raw_pass: false
+  excluded:
+    D7_E7_all_edges: true
+    D14_E7_all_edges: true
+    D14_E14_all_edges: true
+    every_formal_reuse_or_PRO_cell: true
+
+completion:
+  required_full_only_cells: 20
+  required_admission_seals: 15
+  stop_after_full_only_and_admission: true
+  serving_lineage_promotion: prohibited
+
+authorization:
+  source: explicit_user_instruction_2026_08_31
+  long_reuse_execution: cancelled_before_start
+  architecture_or_estimator_change: prohibited

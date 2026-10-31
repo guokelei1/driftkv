@@ -1,0 +1,872 @@
+{
+  "status": "ready_for_user_launch_instruction",
+  "formal_started": false,
+  "configuration": "config.json",
+  "points_per_edge": 29,
+  "edges": 5,
+  "total_method_edge_points": 145,
+  "total_population_edge_users": 379035,
+  "total_feedback_events": 1671042,
+  "selected_user_batch": 1,
+  "parallelism": "4 independent A40 UID shards per edge; CPU UID statistics overlap next edge",
+  "benchmark_users_per_gpu": 256,
+  "benchmark_total_users": 1024,
+  "benchmark_cases": [
+    {
+      "user_batch": 1,
+      "seconds": 40.114249182050116,
+      "steady_seconds": 38.957388743176125,
+      "counts": {
+        "users": 256,
+        "requests": 964,
+        "append_groups": 1970,
+        "query_groups": 775
+      },
+      "graphs": {
+        "entries": 25,
+        "preparation_graph": true,
+        "replays": {
+          "append": 1737,
+          "score": 672
+        },
+        "capture_seconds": 1.1568604388739914
+      },
+      "gpu_peak_reserved_bytes": 15518924800,
+      "gpu_peak_allocated_bytes": 11846579712
+    },
+    {
+      "user_batch": 1,
+      "seconds": 60.21762785699684,
+      "steady_seconds": 59.14263901906088,
+      "counts": {
+        "users": 256,
+        "append_groups": 3260,
+        "requests": 1898,
+        "query_groups": 1578
+      },
+      "graphs": {
+        "entries": 23,
+        "preparation_graph": true,
+        "replays": {
+          "append": 3037,
+          "score": 1455
+        },
+        "capture_seconds": 1.0749888379359618
+      },
+      "gpu_peak_reserved_bytes": 15554576384,
+      "gpu_peak_allocated_bytes": 11913035264
+    },
+    {
+      "user_batch": 1,
+      "seconds": 48.367212970973924,
+      "steady_seconds": 47.28474710788578,
+      "counts": {
+        "users": 256,
+        "append_groups": 2632,
+        "requests": 1507,
+        "query_groups": 1125
+      },
+      "graphs": {
+        "entries": 23,
+        "preparation_graph": true,
+        "replays": {
+          "append": 2240,
+          "score": 941
+        },
+        "capture_seconds": 1.0824658630881459
+      },
+      "gpu_peak_reserved_bytes": 16326328320,
+      "gpu_peak_allocated_bytes": 11865302528
+    },
+    {
+      "user_batch": 1,
+      "seconds": 39.91326180798933,
+      "steady_seconds": 39.11931845906656,
+      "counts": {
+        "users": 256,
+        "append_groups": 2101,
+        "requests": 1075,
+        "query_groups": 862
+      },
+      "graphs": {
+        "entries": 17,
+        "preparation_graph": true,
+        "replays": {
+          "append": 2040,
+          "score": 832
+        },
+        "capture_seconds": 0.7939433489227667
+      },
+      "gpu_peak_reserved_bytes": 14652801024,
+      "gpu_peak_allocated_bytes": 11905480192
+    }
+  ],
+  "maximum_score_error": 7.152557373046875e-07,
+  "cost_basis": "Complete added analytical FLOPs / once-per-user Rebuild FLOPs; wall times below are scheduling-only",
+  "kv_map_points": [
+    {
+      "tag": "kv_map_u32_w32",
+      "method": "kv_map",
+      "fit_users": 32,
+      "width": 32,
+      "mean_cost_pct": 5.139376710427554,
+      "cost_pct_by_edge": [
+        5.139751621302706,
+        5.13786762501896,
+        5.138646139173732,
+        5.142588033644,
+        5.138030132998372
+      ],
+      "min_cost_pct": 5.13786762501896,
+      "max_cost_pct": 5.142588033644,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 835995600432,
+          "fitting_flops": 415713473154,
+          "deployment_flops": 52231122048000,
+          "complete_added_flops": 53482831121586,
+          "rebuild_flops": 1040572289523018,
+          "steps": 24,
+          "training_rows": 186912
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 836051594832,
+          "fitting_flops": 423471553154,
+          "deployment_flops": 53356313472000,
+          "complete_added_flops": 54615836619986,
+          "rebuild_flops": 1063005912297798,
+          "steps": 24,
+          "training_rows": 190432
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 841706547132,
+          "fitting_flops": 426028193154,
+          "deployment_flops": 54470151680000,
+          "complete_added_flops": 55737886420286,
+          "rebuild_flops": 1084680379047240,
+          "steps": 24,
+          "training_rows": 191592
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 863932792572,
+          "fitting_flops": 433363105154,
+          "deployment_flops": 55845889792000,
+          "complete_added_flops": 57143185689726,
+          "rebuild_flops": 1111175643778620,
+          "steps": 24,
+          "training_rows": 194920
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 873335848812,
+          "fitting_flops": 441097863938,
+          "deployment_flops": 60342259712000,
+          "complete_added_flops": 61656693424750,
+          "rebuild_flops": 1200006458287728,
+          "steps": 32,
+          "training_rows": 198408
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u64_w64",
+      "method": "kv_map",
+      "fit_users": 64,
+      "width": 64,
+      "mean_cost_pct": 10.173561409318301,
+      "cost_pct_by_edge": [
+        10.17478017364136,
+        10.174613311297765,
+        10.174978041606794,
+        10.18047246982238,
+        10.16296305022321
+      ],
+      "min_cost_pct": 10.16296305022321,
+      "max_cost_pct": 10.18047246982238,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 1850584808904,
+          "fitting_flops": 1801590761090,
+          "deployment_flops": 102223767436800,
+          "complete_added_flops": 105875943006794,
+          "rebuild_flops": 1040572289523018,
+          "steps": 56,
+          "training_rows": 411952
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 1890172237044,
+          "fitting_flops": 1840641020290,
+          "deployment_flops": 104425927795200,
+          "complete_added_flops": 108156741052534,
+          "rebuild_flops": 1063005912297798,
+          "steps": 56,
+          "training_rows": 420920
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 1903073702184,
+          "fitting_flops": 1857048399490,
+          "deployment_flops": 106605868288000,
+          "complete_added_flops": 110365990389674,
+          "rebuild_flops": 1084680379047240,
+          "steps": 56,
+          "training_rows": 424688
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 1938689089164,
+          "fitting_flops": 1885857109890,
+          "deployment_flops": 109298384307200,
+          "complete_added_flops": 113122930506254,
+          "rebuild_flops": 1111175643778620,
+          "steps": 56,
+          "training_rows": 431304
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 1953366105384,
+          "fitting_flops": 1904424271490,
+          "deployment_flops": 118098422579200,
+          "complete_added_flops": 121956212956074,
+          "rebuild_flops": 1200006458287728,
+          "steps": 56,
+          "training_rows": 435568
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u96_w96",
+      "method": "kv_map",
+      "fit_users": 96,
+      "width": 96,
+      "mean_cost_pct": 15.263503411941533,
+      "cost_pct_by_edge": [
+        15.260654744529914,
+        15.263956112349659,
+        15.271556594811763,
+        15.276905683179104,
+        15.244443924837233
+      ],
+      "min_cost_pct": 15.244443924837233,
+      "max_cost_pct": 15.276905683179104,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 2679034112316,
+          "fitting_flops": 3902697533442,
+          "deployment_flops": 152216412825600,
+          "complete_added_flops": 158798144471358,
+          "rebuild_flops": 1040572289523018,
+          "steps": 80,
+          "training_rows": 598120
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 2758654583376,
+          "fitting_flops": 4002559223042,
+          "deployment_flops": 155495542118400,
+          "complete_added_flops": 162256755924818,
+          "rebuild_flops": 1063005912297798,
+          "steps": 80,
+          "training_rows": 613472
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 2830059695976,
+          "fitting_flops": 4075933367042,
+          "deployment_flops": 158741584896000,
+          "complete_added_flops": 165647577959018,
+          "rebuild_flops": 1084680379047240,
+          "steps": 80,
+          "training_rows": 624752
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 2852288165076,
+          "fitting_flops": 4150088087042,
+          "deployment_flops": 162750878822400,
+          "complete_added_flops": 169753255074518,
+          "rebuild_flops": 1111175643778620,
+          "steps": 80,
+          "training_rows": 636152
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 2882959649856,
+          "fitting_flops": 4196766531842,
+          "deployment_flops": 175854585446400,
+          "complete_added_flops": 182934311628098,
+          "rebuild_flops": 1200006458287728,
+          "steps": 80,
+          "training_rows": 643328
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u128_w128",
+      "method": "kv_map",
+      "fit_users": 128,
+      "width": 128,
+      "mean_cost_pct": 20.4476397972599,
+      "cost_pct_by_edge": [
+        20.446350847948047,
+        20.4498179908432,
+        20.45766277883946,
+        20.467877121006964,
+        20.41649024766182
+      ],
+      "min_cost_pct": 20.41649024766182,
+      "max_cost_pct": 20.467877121006964,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 3594855287808,
+          "fitting_flops": 6955147640194,
+          "deployment_flops": 202209058214400,
+          "complete_added_flops": 212759061142402,
+          "rebuild_flops": 1040572289523018,
+          "steps": 104,
+          "training_rows": 801664
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 3693520711008,
+          "fitting_flops": 7124097144194,
+          "deployment_flops": 206565156441600,
+          "complete_added_flops": 217382774296802,
+          "rebuild_flops": 1063005912297798,
+          "steps": 104,
+          "training_rows": 821184
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 3778513624728,
+          "fitting_flops": 7244439044994,
+          "deployment_flops": 210877301504000,
+          "complete_added_flops": 221900254173722,
+          "rebuild_flops": 1084680379047240,
+          "steps": 104,
+          "training_rows": 835088
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 3832419044988,
+          "fitting_flops": 7398272984578,
+          "deployment_flops": 216203373337600,
+          "complete_added_flops": 227434065367166,
+          "rebuild_flops": 1111175643778620,
+          "steps": 112,
+          "training_rows": 852840
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 3884309823048,
+          "fitting_flops": 7504143390978,
+          "deployment_flops": 233610748313600,
+          "complete_added_flops": 244999201527626,
+          "rebuild_flops": 1200006458287728,
+          "steps": 112,
+          "training_rows": 865072
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u192_w160",
+      "method": "kv_map",
+      "fit_users": 192,
+      "width": 160,
+      "mean_cost_pct": 26.00292127075101,
+      "cost_pct_by_edge": [
+        26.010058311821208,
+        26.014916904806274,
+        26.021401634405475,
+        26.032462422051132,
+        25.935767080670956
+      ],
+      "min_cost_pct": 25.935767080670956,
+      "max_cost_pct": 26.032462422051132,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 5397320503092,
+          "fitting_flops": 13054435175298,
+          "deployment_flops": 252201703603200,
+          "complete_added_flops": 270653459281590,
+          "rebuild_flops": 1040572289523018,
+          "steps": 152,
+          "training_rows": 1206072
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 5550157378152,
+          "fitting_flops": 13355176634498,
+          "deployment_flops": 257634770764800,
+          "complete_added_flops": 276540104777450,
+          "rebuild_flops": 1063005912297798,
+          "steps": 152,
+          "training_rows": 1233904
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 5653605720192,
+          "fitting_flops": 13582414049282,
+          "deployment_flops": 263013018112000,
+          "complete_added_flops": 282249037881474,
+          "rebuild_flops": 1084680379047240,
+          "steps": 160,
+          "training_rows": 1254912
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 5733582573972,
+          "fitting_flops": 13876931482882,
+          "deployment_flops": 269655867852800,
+          "complete_added_flops": 289266381909654,
+          "rebuild_flops": 1111175643778620,
+          "steps": 160,
+          "training_rows": 1282168
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 5808183019632,
+          "fitting_flops": 14055785774082,
+          "deployment_flops": 291366911180800,
+          "complete_added_flops": 311230879974514,
+          "rebuild_flops": 1200006458287728,
+          "steps": 160,
+          "training_rows": 1298720
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u256_w176",
+      "method": "kv_map",
+      "fit_users": 256,
+      "width": 176,
+      "mean_cost_pct": 29.15039423309894,
+      "cost_pct_by_edge": [
+        29.160567156764156,
+        29.169356259826355,
+        29.18352012964694,
+        29.187410743733068,
+        29.051116875524166
+      ],
+      "min_cost_pct": 29.051116875524166,
+      "max_cost_pct": 29.187410743733068,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 7153353438636,
+          "fitting_flops": 19085401564802,
+          "deployment_flops": 277198026297600,
+          "complete_added_flops": 303436781301038,
+          "rebuild_flops": 1040572289523018,
+          "steps": 200,
+          "training_rows": 1604232
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 7362328651176,
+          "fitting_flops": 19540075043586,
+          "deployment_flops": 283169577926400,
+          "complete_added_flops": 310071981621162,
+          "rebuild_flops": 1063005912297798,
+          "steps": 208,
+          "training_rows": 1642480
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 7516079714796,
+          "fitting_flops": 19950960630786,
+          "deployment_flops": 289080876416000,
+          "complete_added_flops": 316547916761582,
+          "rebuild_flops": 1084680379047240,
+          "steps": 208,
+          "training_rows": 1677064
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 7619100753216,
+          "fitting_flops": 20322183370370,
+          "deployment_flops": 296382115110400,
+          "complete_added_flops": 324323399233986,
+          "rebuild_flops": 1111175643778620,
+          "steps": 216,
+          "training_rows": 1708288
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 7738916787036,
+          "fitting_flops": 20631369309570,
+          "deployment_flops": 320244992614400,
+          "complete_added_flops": 348615278711006,
+          "rebuild_flops": 1200006458287728,
+          "steps": 216,
+          "training_rows": 1734312
+        }
+      ]
+    }
+  ],
+  "kv_training": {
+    "epochs": 8,
+    "batch_rows": 8192,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "beta1": 0.9,
+    "beta2": 0.999,
+    "epsilon": 1e-08,
+    "normalization_floor": 1e-05
+  },
+  "real_trajectory_numeric_resume": "passed on all four GPUs",
+  "checkpoint_generations": 2,
+  "checkpoint_seconds": 1800,
+  "checkpoint_timing": {
+    "seconds": 0.5114619679516181,
+    "bytes": 9299415,
+    "scope": "Synthetic final-size rank scalar checkpoint; temporary arrays removed"
+  },
+  "runtime_models": [
+    {
+      "features": [
+        "eligible_users",
+        "append_bands",
+        "query_groups"
+      ],
+      "coefficients": [
+        0.06132610649176227,
+        0.0026669693070676603,
+        0.021920540339933105
+      ],
+      "fitted_sample_seconds": [
+        37.94183156026259,
+        58.98441585934615,
+        47.379554360517965,
+        40.19829154906263
+      ],
+      "gpu_seconds_by_edge": [
+        3022.0730725930594,
+        2933.389806632996,
+        2942.406032765635,
+        3003.902459765211,
+        3010.057444815853
+      ],
+      "total_gpu_seconds": 14911.828816572754
+    },
+    {
+      "features": [
+        "eligible_users",
+        "append_bands",
+        "requests"
+      ],
+      "coefficients": [
+        0.0237170915035613,
+        0.016081279898579003,
+        0.0
+      ],
+      "fitted_sample_seconds": [
+        37.75169682511233,
+        58.496547894279246,
+        48.39750411797163,
+        39.85834449182618
+      ],
+      "gpu_seconds_by_edge": [
+        3010.1588716329975,
+        2917.844284375205,
+        2948.8811545794624,
+        3010.7297570693972,
+        2986.7445281006667
+      ],
+      "total_gpu_seconds": 14874.358595757729
+    }
+  ],
+  "projected_gpu_hours": 4.136970473934789,
+  "projected_setup_minutes": 12.274026720487745,
+  "projected_statistics_all_edges_minutes": 21.626497698695555,
+  "projected_total_hours": 4.413625911605236,
+  "scheduling_range_hours": [
+    3.5309007292841894,
+    6.17907627624733
+  ],
+  "assumptions": "Four A40 remain available; frozen full workload; projected from real-model probes on edges 1/2/3/5. Host statistics timing uses synthetic scalar arrays at actual dimensions. UID/workload skew, shape mix and input contention make this a scheduling estimate, not a measured full-run duration.",
+  "legacy_batch_comparison": [
+    {
+      "edge": 1,
+      "cases": [
+        {
+          "user_batch": 1,
+          "seconds": 41.02892340696417,
+          "steady_seconds": 40.05811001418624,
+          "counts": {
+            "users": 256,
+            "requests": 964,
+            "append_groups": 1970,
+            "query_groups": 775
+          },
+          "graphs": {
+            "entries": 25,
+            "replays": {
+              "append": 1737,
+              "score": 672
+            },
+            "capture_seconds": 0.9708133927779272
+          },
+          "gpu_peak_reserved_bytes": 33606860800,
+          "gpu_peak_allocated_bytes": 11811581952
+        },
+        {
+          "user_batch": 2,
+          "seconds": 54.01352291600779,
+          "steady_seconds": 52.93782325997017,
+          "counts": {
+            "users": 256,
+            "requests": 964,
+            "append_groups": 1937,
+            "query_groups": 679
+          },
+          "graphs": {
+            "entries": 23,
+            "replays": {
+              "append": 1704,
+              "score": 576
+            },
+            "capture_seconds": 1.0756996560376137
+          },
+          "gpu_peak_reserved_bytes": 27348959232,
+          "gpu_peak_allocated_bytes": 15281427968
+        },
+        {
+          "user_batch": 4,
+          "seconds": 54.533140412997454,
+          "steady_seconds": 53.14902357372921,
+          "counts": {
+            "users": 256,
+            "requests": 964,
+            "append_groups": 1846,
+            "query_groups": 544
+          },
+          "graphs": {
+            "entries": 26,
+            "replays": {
+              "append": 1613,
+              "score": 441
+            },
+            "capture_seconds": 1.3841168392682448
+          },
+          "gpu_peak_reserved_bytes": 38291898368,
+          "gpu_peak_allocated_bytes": 28598265344
+        }
+      ]
+    },
+    {
+      "edge": 2,
+      "cases": [
+        {
+          "user_batch": 1,
+          "seconds": 61.651656314963475,
+          "steady_seconds": 60.74256026663352,
+          "counts": {
+            "users": 256,
+            "append_groups": 3260,
+            "requests": 1898,
+            "query_groups": 1578
+          },
+          "graphs": {
+            "entries": 23,
+            "replays": {
+              "append": 3037,
+              "score": 1455
+            },
+            "capture_seconds": 0.9090960483299568
+          },
+          "gpu_peak_reserved_bytes": 24570232832,
+          "gpu_peak_allocated_bytes": 11876146176
+        },
+        {
+          "user_batch": 2,
+          "seconds": 89.45407138590235,
+          "steady_seconds": 88.0689463588642,
+          "counts": {
+            "users": 256,
+            "append_groups": 3195,
+            "requests": 1898,
+            "query_groups": 1400
+          },
+          "graphs": {
+            "entries": 33,
+            "replays": {
+              "append": 2972,
+              "score": 1277
+            },
+            "capture_seconds": 1.385125027038157
+          },
+          "gpu_peak_reserved_bytes": 24243077120,
+          "gpu_peak_allocated_bytes": 15290762240
+        },
+        {
+          "user_batch": 4,
+          "seconds": 91.8869550729869,
+          "steady_seconds": 89.69931860058568,
+          "counts": {
+            "users": 256,
+            "append_groups": 3078,
+            "requests": 1898,
+            "query_groups": 1233
+          },
+          "graphs": {
+            "entries": 32,
+            "replays": {
+              "append": 2855,
+              "score": 1110
+            },
+            "capture_seconds": 2.187636472401209
+          },
+          "gpu_peak_reserved_bytes": 42825940992,
+          "gpu_peak_allocated_bytes": 29374070272
+        }
+      ]
+    },
+    {
+      "edge": 3,
+      "cases": [
+        {
+          "user_batch": 1,
+          "seconds": 49.698977232095785,
+          "steady_seconds": 48.74897971388418,
+          "counts": {
+            "users": 256,
+            "append_groups": 2632,
+            "requests": 1507,
+            "query_groups": 1125
+          },
+          "graphs": {
+            "entries": 23,
+            "replays": {
+              "append": 2240,
+              "score": 941
+            },
+            "capture_seconds": 0.9499975182116032
+          },
+          "gpu_peak_reserved_bytes": 47204794368,
+          "gpu_peak_allocated_bytes": 11828383744
+        },
+        {
+          "user_batch": 2,
+          "seconds": 67.57438402692787,
+          "steady_seconds": 66.16136353916954,
+          "counts": {
+            "users": 256,
+            "requests": 1507,
+            "append_groups": 2585,
+            "query_groups": 972
+          },
+          "graphs": {
+            "entries": 34,
+            "replays": {
+              "append": 2193,
+              "score": 788
+            },
+            "capture_seconds": 1.413020487758331
+          },
+          "gpu_peak_reserved_bytes": 25396510720,
+          "gpu_peak_allocated_bytes": 15290638336
+        },
+        {
+          "user_batch": 4,
+          "seconds": 70.36038217192981,
+          "steady_seconds": 68.43097419594415,
+          "counts": {
+            "users": 256,
+            "requests": 1507,
+            "append_groups": 2490,
+            "query_groups": 845
+          },
+          "graphs": {
+            "entries": 29,
+            "replays": {
+              "append": 2098,
+              "score": 661
+            },
+            "capture_seconds": 1.9294079759856686
+          },
+          "gpu_peak_reserved_bytes": 40630222848,
+          "gpu_peak_allocated_bytes": 29359650304
+        }
+      ]
+    },
+    {
+      "edge": 5,
+      "cases": [
+        {
+          "user_batch": 1,
+          "seconds": 41.3929043749813,
+          "steady_seconds": 40.73219909123145,
+          "counts": {
+            "users": 256,
+            "append_groups": 2101,
+            "requests": 1075,
+            "query_groups": 862
+          },
+          "graphs": {
+            "entries": 17,
+            "replays": {
+              "append": 2040,
+              "score": 832
+            },
+            "capture_seconds": 0.6607052837498486
+          },
+          "gpu_peak_reserved_bytes": 47106228224,
+          "gpu_peak_allocated_bytes": 11868561408
+        },
+        {
+          "user_batch": 2,
+          "seconds": 59.53566464595497,
+          "steady_seconds": 58.23076928232331,
+          "counts": {
+            "users": 256,
+            "append_groups": 2067,
+            "requests": 1075,
+            "query_groups": 725
+          },
+          "graphs": {
+            "entries": 31,
+            "replays": {
+              "append": 2006,
+              "score": 695
+            },
+            "capture_seconds": 1.3048953636316583
+          },
+          "gpu_peak_reserved_bytes": 21336424448,
+          "gpu_peak_allocated_bytes": 15106163200
+        },
+        {
+          "user_batch": 4,
+          "seconds": 60.58349234901834,
+          "steady_seconds": 58.93490078614559,
+          "counts": {
+            "users": 256,
+            "requests": 1075,
+            "append_groups": 1954,
+            "query_groups": 549
+          },
+          "graphs": {
+            "entries": 29,
+            "replays": {
+              "append": 1893,
+              "score": 519
+            },
+            "capture_seconds": 1.6485915628727525
+          },
+          "gpu_peak_reserved_bytes": 42314235904,
+          "gpu_peak_allocated_bytes": 28964009984
+        }
+      ]
+    }
+  ],
+  "retention": "Only core scripts/configuration/input fingerprints/costs/benchmark summaries; no full-population GPU quality run or trace outputs."
+}

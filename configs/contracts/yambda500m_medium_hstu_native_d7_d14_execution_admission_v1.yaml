@@ -1,0 +1,61 @@
+contract: yambda500m_medium_hstu_native_d7_d14_execution_admission_v1
+date_frozen: 2026-08-28
+status: prospective_execution_and_admission_supplement_v1
+purpose: >-
+  Amend only the physical execution topology and the Full-only admission order
+  for the frozen Medium D7/D14 matrix. Model, data, windows, seed, optimizer,
+  metrics, and candidate set remain those of the base contract.
+
+frozen_parent:
+  contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+  contract_sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  manifest: data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/manifest.json
+  manifest_sha256: 122229a5f61849aafdc0faeaf0ab2c7080ac7bb006df67bb135c05dc46cff980
+  requests_quality_sha256: aa51aea945734939a1ef4f9285b78772c3b19d42f4dfcc74a77cecde33f6115b
+  requests_fidelity_sha256: 22a70eea34bc6ca88343f06db8f388d3631644dd00c1e4851bcb8c3c81e46bcd
+
+execution_amendment:
+  reason: gpu0_unavailable_at_launch_preparation
+  gpu0_and_gpu1_use: prohibited
+  world_size: 2
+  physical_gpus: [2, 3]
+  topology: NV4
+  global_train_batch_size: 32
+  local_batch_sizes_by_rank: [16, 16]
+  fsdp_jobs_concurrent: 1
+  training_and_evaluation_world_size_match: true
+  focused_correctness_canary:
+    checkpoint: shared_v0_only
+    training_steps: 2
+    timing_warmup_steps: 1
+    quality_metric_read: prohibited
+    pass_gate: no_OOM_and_complete_checkpoint_seal
+  automatic_batch_or_world_size_change: prohibited
+
+release_admission:
+  full_only_before_reuse: required
+  full_only_paths: [parent_exact_request_local, current_exact_request_local]
+  primary_horizon_by_branch:
+    D7: 7
+    D14: 14
+  primary_horizon_gate:
+    current_minus_parent_ROC_AUC_strictly_positive: true
+    parent_minus_current_log_loss_strictly_positive: true
+    current_brier_not_greater_than_parent: true
+    parent_minus_current_log_loss_user_cluster_bootstrap_95CI_lower_strictly_positive: true
+  reuse_unlock: >-
+    An edge's adjacent one-hop Reuse evaluation is permitted only after its
+    primary-horizon Full-only raw scores, label join, adjudication, and admission
+    seal pass. No Reuse score is constructed for a rejected edge.
+  rejected_candidate:
+    serving_parent_and_cache_lineage_unchanged: true
+    reuse_locked: true
+    descendants_in_pretrained_recipe_scan: full_only_diagnostic_only
+    descendants_reuse_locked_because_not_in_accepted_lineage: true
+  serving_lineage_promotion: prohibited
+  reuse_or_quality_used_to_change_execution: prohibited
+
+authorization:
+  gpu2_gpu3_focused_correctness_canary: authorized_by_user_2026_08_28
+  long_formal_training: still_requires_base_contract_acknowledgement
+  theta3_read_or_training: prohibited

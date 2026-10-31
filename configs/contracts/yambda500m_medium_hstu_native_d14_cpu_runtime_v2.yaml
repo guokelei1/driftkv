@@ -1,0 +1,52 @@
+contract: yambda500m_medium_hstu_native_d14_cpu_runtime_v2
+date_frozen: 2026-08-28
+status: prospective_fixed_cpu_runtime_after_aborted_long_canary_v2
+purpose: >-
+  Resume the untouched D14 Full-only matrix with all 28 physical CPU cores local
+  to GPU2/3 divided disjointly across the two ranks. Numerical and data semantics
+  are unchanged.
+
+frozen_parent:
+  matrix_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+  matrix_contract_sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  execution_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_execution_admission_v1.yaml
+  execution_contract_sha256: d2e86f97e082779d64014da911d4214ae05cb6e90f0aa9fca2a8e1014e59aa72
+  abandoned_long_cpu_canary: configs/contracts/yambda500m_medium_hstu_native_d14_cpu_parallelism_canary_v1.yaml
+  abandoned_long_cpu_canary_sha256: bc4719f733288cfa0b91457bbb8c047bd8afb3e5a7455ebf6f5f337e9b73126b
+
+scope:
+  D7_status: complete_under_original_four_thread_history_runtime
+  applies_to_branch: D14
+  phases: [full_only, adjacent_reuse_if_separately_unlocked]
+  D14_result_read_before_freeze: false
+  physical_gpus: [2, 3]
+  world_size: 2
+
+runtime:
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+  rank0_cpu_affinity: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+  rank1_cpu_affinity: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+  total_physical_history_workers: 28
+  hyperthread_siblings_used: false
+
+correctness_canary:
+  edge: D14_v0_to_v1
+  horizon_days: 14
+  maximum_users_per_rank: 16
+  quality_metric_read: prohibited
+  pass: raw_seal_row_conservation_and_no_runtime_error
+
+invariants:
+  change_data_or_window: prohibited
+  change_model_or_checkpoint: prohibited
+  change_batch_or_world_size: prohibited
+  change_metric_or_admission: prohibited
+  recompute_D7: prohibited
+
+authorization:
+  focused_runtime_canary: authorized_by_user_2026_08_28
+  resume_D14_after_canary_pass: authorized_by_user_2026_08_28

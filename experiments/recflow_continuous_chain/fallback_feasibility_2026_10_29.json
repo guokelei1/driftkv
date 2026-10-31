@@ -1,0 +1,101 @@
+{
+  "recorded_date": "2026-10-29",
+  "record_type": "read_only_fallback_feasibility_attachment",
+  "status": "facts_verified_alternative_not_designed_or_launched",
+  "day_convention": {
+    "D1": "2024-01-13",
+    "D23": "2024-02-04",
+    "D24": "2024-02-05",
+    "D37": "2024-02-18"
+  },
+  "official_sources": [
+    {
+      "title": "Official RecFlow repository README",
+      "url": "https://github.com/RecFlow-ICLR/RecFlow",
+      "evidence": "Dataset directory example lists all_stage from 2024-01-13.feather through 2024-02-18.feather. Early all_stage data are officially described; they must not be characterized as officially unpublished."
+    },
+    {
+      "title": "RecFlow: An Industrial Full Flow Recommendation Dataset, ICLR 2025",
+      "url": "https://proceedings.iclr.cc/paper_files/paper/2025/file/647904f8340763f26e62010872751f76-Paper-Conference.pdf",
+      "location": "Section 2.1, pages 3-4; Table 1",
+      "evidence": "The first period uses stage-specific candidate sampling. The second period retains all videos appearing in ranking, re-ranking and edge-ranking stages. The two periods do not have the same candidate completeness."
+    },
+    {
+      "title": "Official data share linked by the repository",
+      "url": "https://rec.ustc.edu.cn/share/f8e5adc0-2e57-11ef-bea5-3b4cac9d110e",
+      "verification_status": "current_file_listing_not_verified",
+      "limitation": "The page requires JavaScript; this audit did not verify its current file listing or download files."
+    }
+  ],
+  "collection_periods": [
+    {
+      "days": [1, 23],
+      "date_start": "2024-01-13",
+      "date_end": "2024-02-04",
+      "candidate_protocol": "stage_specific_sampled_candidates",
+      "supports_current_complete_ranking_candidate_evaluation": false
+    },
+    {
+      "days": [24, 37],
+      "date_start": "2024-02-05",
+      "date_end": "2024-02-18",
+      "candidate_protocol": "all_candidates_recorded_for_ranking_reranking_and_edge_ranking",
+      "supports_current_complete_ranking_candidate_evaluation": true,
+      "scope_note": "This completeness statement applies to those three stages, not the entire retrieval corpus or all pre-ranking/coarse-ranking candidates."
+    }
+  ],
+  "local_all_stage_inventory": {
+    "directory": "/home/gkl/work/evokv/data/raw/recflow/all_stage",
+    "verified_feather_file_count": 14,
+    "date_start": "2024-02-05",
+    "date_end": "2024-02-18",
+    "days": [24, 37],
+    "all_dates_in_range_present": true,
+    "early_period_files_present": false,
+    "interpretation": "The local directory contains the second period only. Downloading first-period files, if currently available, would supply sampled candidates rather than reconstruct complete ranking candidate sets."
+  },
+  "measured_original_foundation": {
+    "run": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1",
+    "world_size": 4,
+    "warmup": {
+      "source": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/warmup/completion.json",
+      "status": "completed",
+      "steps": 64431,
+      "elapsed_budget_seconds": 20815.896608162904,
+      "elapsed_budget_hours_rounded": 5.78
+    },
+    "foundation_through_alignment": {
+      "source": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/completion.json",
+      "status": "completed",
+      "alignment_steps": 20232,
+      "alignment_epochs": 2,
+      "cumulative_elapsed_budget_seconds": 35568.15250059101,
+      "cumulative_elapsed_budget_hours_rounded": 9.88,
+      "includes_warmup": true
+    },
+    "interpretation": "The 9.88-hour value is cumulative and already includes warmup; it must not be added to 5.78 hours. These are historical measured budget times, not a runtime promise for an earlier foundation or a new pipeline."
+  },
+  "d15_foundation_with_nine_two_day_updates": {
+    "direct_implementation_recommended": false,
+    "proposed_evaluation_days_under_review": [18, 20, 22, 24, 26, 28, 30, 32, 34],
+    "incompatible_evaluation_days": [18, 20, 22],
+    "reason": "D18, D20 and D22 belong to the sampled-candidate period. Evaluating them alongside later complete-ranking-candidate days would change the candidate protocol within the chain. Earlier files alone cannot make those evaluations conform to the current complete-ranking-candidate task.",
+    "prior_runtime_proxies": {
+      "status": "unverified_and_not_applicable_to_direct_execution_of_this_proposal",
+      "note": "Earlier proxy calculations based on exposure request counts and historical throughput are not measured training times for this proposal and do not establish protocol feasibility. Their numerical estimates are intentionally omitted here."
+    }
+  },
+  "conditional_alternative": {
+    "description": "Use early sampled-stage data only for training and restrict every formal complete-ranking-candidate evaluation to D24 or later.",
+    "status": "requires_new_design_and_validation",
+    "requirements": [
+      "Design a chronological ten-release lineage with nine strictly increasing future evaluation dates inside D24-D37; do not assume that all nine updates can retain the original two-day spacing.",
+      "Rebuild population and vocabulary selection for the intended foundation cutoff and prevent use of future information.",
+      "Define how sampled-stage training is followed by complete-stage training, and update date/data-kind routing and request selections accordingly.",
+      "Validate actual parent paths, training windows, complete selected-user evaluation requests, candidate labels and numerical metrics.",
+      "Measure runtime on the actual new inputs before committing to a training budget; do not assume positive Rebuild-minus-Reuse effects."
+    ],
+    "execution_authorized_by_this_attachment": false,
+    "experiment_started_by_this_attachment": false
+  }
+}

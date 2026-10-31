@@ -1,0 +1,67 @@
+contract: yambda500m_large_hstu_native_d7_d14_execution_v1
+date_sealed: 2026-08-30
+status: prospective_execution_sealed_after_label_free_resource_canary_before_large_quality
+purpose: >-
+  Bind the frozen 10L/H320 Large qualification to the passing four-A40
+  resource canary and the exact label-free request-manifest artifacts before
+  any formal Large checkpoint or quality result is produced.
+
+frozen_parent:
+  contract: configs/contracts/yambda500m_large_hstu_native_d7_d14_full_reuse_pro_v1.yaml
+  contract_sha256: f631e7d7a6438187d7b64e28f696f4759ffab5b93d9579e36ffc48b7c3ed13f8
+  manifest: data/manifests/yambda500m_large_hstu_native_d7_d14_v1/manifest.json
+  manifest_sha256: 065afeefa4ffaed459c6e3832fa0f0a8a9a9818e7a7474ccd58bb7f7d1d70785
+  requests_quality: data/manifests/yambda500m_large_hstu_native_d7_d14_v1/requests_quality.parquet
+  requests_quality_sha256: f17de5a1746aec0d899e5850fb4810dd8ef64182a1e8473c353743ba31f7a91e
+  requests_fidelity: data/manifests/yambda500m_large_hstu_native_d7_d14_v1/requests_fidelity.parquet
+  requests_fidelity_sha256: f00e64235bb96ebeac1c1bf8350bde34b78cdbf616a231cb60b1434daea534f0
+  resource_canary_summary: results/yambda500m_large_seed17/qualification_v1/resource_canary/summary.json
+  resource_canary_summary_sha256: ea3e2fe7d1a14939dff5bc1a8d7b5ef78c82f02f9bebe0e26889d821def3120a
+  resource_canary_status: large_resource_canary_passed
+  resource_canary_read_quality_labels: false
+
+execution_amendment:
+  architecture: 10L_H320_heads10_context1024
+  world_size: 4
+  physical_gpus: [0, 1, 2, 3]
+  global_train_batch_size: 96
+  local_batch_sizes_by_rank: [24, 24, 24, 24]
+  full_eval_batch_size_per_rank: 64
+  reuse_cohort_size_per_rank: 12
+  reuse_query_chunk_size_per_rank: 128
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+  cpu_affinity_by_rank:
+    - [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    - [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+    - [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+    - [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+  one_four_rank_job_at_a_time: true
+  selected_by: label_free_memory_throughput_utilization_checkpoint_and_state_io_only
+
+canary_observations:
+  selected_training_requests_per_second: 146.07334510313962
+  selected_training_peak_reserved_mib: 18276.0
+  parent_restore_v1_peak_reserved_mib: 30408.0
+  training_active_GPU_utilization_percent: 76.88461538461539
+  full_peak_reserved_mib: 16382.0
+  full_active_GPU_utilization_percent: 56.0
+  reuse_PRO_extended_requests: 1259
+  reuse_PRO_extended_peak_reserved_mib: 13378.0
+  reuse_PRO_extended_active_GPU_utilization_percent: 53.794642857142854
+  state_io_users_total: 32
+  state_io_two_versions_total_serialized_bytes: 838872716
+  state_io_effective_parallel_write_mib_per_second: 8275.315456717792
+  state_io_effective_parallel_read_mib_per_second: 7718.119781230932
+  state_io_checksums_passed: true
+  checkpoint_save_and_parent_restore_passed: true
+
+formal_authorization:
+  user_authorized_long_training_after_passing_canary: true
+  acknowledgement_token: RUN_LARGE_D7_D14_10L_H320
+  architecture_fallback_triggered: false
+  quality_may_change_runtime_or_architecture: false
+  serving_lineage_promotion: prohibited

@@ -1,0 +1,65 @@
+contract: yambda500m_unified_scales_v1
+date_frozen: 2026-08-24
+status: prospective_unified_preprocessing_authorized_training_not_authorized
+supersedes_for_scale_matrix:
+  - yambda500m_scale_population_v1
+depends_on:
+  - yambda500m_scale_population_v1
+compatible_window_plan: yambda500m_streaming_windows_v1
+
+source:
+  root: data/raw/yambda/flat/500m
+  files: [listens.parquet, likes.parquet, dislikes.parquet]
+  source_hashes_from: data/manifests/yambda500m_scale_v1/manifest.json
+
+population:
+  eligibility: at_least_one_listen_strictly_before_theta0_cutoff
+  theta0_cutoff: 18748800
+  selector_namespace: "evokv:yambda500m:medium:v1"
+  selector: ascending_sha256_then_ascending_uid
+  preserve_complete_history: true
+  scales:
+    small: {rank_limit: 10000, model: 4L_H128, context: 512}
+    medium: {rank_limit: 30000, model: 6L_H192, context: 1024}
+    large: {rank_limit: all_eligible, expected_users: 79681, model: 8L_H256, context: 1024}
+  nesting: small_subset_medium_subset_large
+  do_not_filter_on: [future_activity, feedback_label, model_score, H, S, history_length_above_one]
+
+physical_store:
+  root: data/processed/yambda500m_unified_v1
+  layout: one_shared_week_bucket_store_plus_three_logical_scale_manifests
+  shared_listens: shared/listens
+  shared_feedback: shared/feedback
+  partition_key: week
+  partition_width_days: 7
+  logical_windows_remain_arbitrary_half_open_timestamps: true
+  duplicate_full_event_tables_per_scale: false
+  timestamp_windows: half_open
+  item_ids_in_shared_store: raw
+  scale_membership_column: selector_rank
+
+logical_scales:
+  item_mapping_source: selected_user_listens_strictly_before_theta0_cutoff
+  item_mapping_order: ascending_raw_item_id
+  model_item_idx: one_based
+  oov_item_idx: 0
+  artifacts_per_scale: [users.parquet, item_mapping.parquet, dataset.json]
+
+feedback_access:
+  default_training_end_exclusive: 21168000
+  default_evaluation_end_exclusive: 21772800
+  theta3_and_later_require_separate_unlock_contract: true
+  physical_sharding_does_not_authorize_label_use: true
+  arbitrary_future_feedback_window: prohibited
+
+regeneration:
+  entry_point: scripts/build_yambda500m_unified_scales.py
+  builds_all_scales_together: true
+  staging_then_atomic_swap: true
+  replacement_requires_explicit_flag: true
+  generated_store_is_recoverable_from_raw_and_contract: true
+
+authorization:
+  preprocessing: true
+  training: false
+  theta3_training_or_result_access: false

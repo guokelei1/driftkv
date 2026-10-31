@@ -1,0 +1,168 @@
+{
+  "status": "complete_exploratory_sampled_retrieval",
+  "configuration": {
+    "status": "exploratory_readonly_inference",
+    "scale": "max",
+    "requested_positive_requests_per_day": 1000000000,
+    "edges": [
+      1,
+      3
+    ],
+    "seed": 17,
+    "data_manifest_sha256": "cb6d32fda7ea60e97c81b23c1b908986aed0fa9d4ddf8f11e51030c05cccc666",
+    "source_sha256": {
+      "/home/gkl/work/evokv/scripts/experiments_2026_10/recflow_feedback_sampled_retrieval_max.py": "d3191b9e0245d1108164f7d4a4bc3a07852c80a9484fac629d73719ee49c84bc",
+      "/home/gkl/work/evokv/scripts/experiments_2026_10/recflow_feedback_sampled_retrieval.py": "7a03bbe9a0e0bde74fd97b6224f7394fc488b75daecbb28ab48de2dcb6e257c9",
+      "src/hstu_kvcache/recflow/feedback.py": "62d0163d714fe00358d512701aa965eea3afbe0b0448dd512ff2ffb9f91b33db",
+      "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c"
+    },
+    "batch": 8,
+    "device": "3",
+    "include_all_requests": true,
+    "per_process_memory_fraction": 0.25,
+    "precision": "FP32",
+    "protocol": "Frozen final-role positive requests; retain all-OOV misses in denominators. All distinct known observed effective-view positives plus exactly 1000 uniformly sampled unique known-catalog distractors, excluding observed positives. Distractors have unobserved relevance, not verified negative feedback. Candidate scoring uses the frozen scalar feedback head, not the old generative head. Histories exclude the entire same-timestamp block. With include_all_requests, all-negative requests score zero and stay in the population. Zero-known-positive requests need no candidate inference because every retrieval metric is exactly zero; this is an offline evaluation shortcut, not deployable serving work. This diagnostic does not replace feedback AUC. No model/data/config changes or training."
+  },
+  "edges": [
+    {
+      "parent": "v1",
+      "current": "v2",
+      "day": 21,
+      "requests": 19173,
+      "eligible_requests": 19173,
+      "eligible_positive_requests": 14641,
+      "users": 1515,
+      "all_negative_requests": 4532,
+      "scored_requests": 9268,
+      "all_oov_positive_requests": 5373,
+      "results": {
+        "v1": {
+          "metrics": {
+            "Recall@20": 0.021654563005681762,
+            "NDCG@20": 0.012181563302874565,
+            "Recall@50": 0.04007613633259072,
+            "NDCG@50": 0.017008133232593536,
+            "Recall@100": 0.06352553069420538,
+            "NDCG@100": 0.022100413218140602,
+            "MRR": 0.018857683730850373
+          },
+          "random": {
+            "Recall@20": 0.005880075158352675,
+            "NDCG@20": 0.002755051961921771,
+            "Recall@50": 0.014700187895881687,
+            "NDCG@50": 0.005047239942707137,
+            "Recall@100": 0.029400375791763373,
+            "NDCG@100": 0.008193881702058196,
+            "MRR": 0.005304814192666936
+          },
+          "checkpoint_sha256": "fb1360102c17eb4bffd101925a9b03880ccdf26097989f8aa470453479e3c7c1",
+          "seconds": 209.55776166915894
+        },
+        "v2": {
+          "metrics": {
+            "Recall@20": 0.022506910759922807,
+            "NDCG@20": 0.012709436938166618,
+            "Recall@50": 0.04019193657747874,
+            "NDCG@50": 0.017376916483044624,
+            "Recall@100": 0.06187023915078991,
+            "NDCG@100": 0.022088896483182907,
+            "MRR": 0.019383527377270383
+          },
+          "random": {
+            "Recall@20": 0.005880075158352675,
+            "NDCG@20": 0.002755051961921771,
+            "Recall@50": 0.014700187895881687,
+            "NDCG@50": 0.005047239942707137,
+            "Recall@100": 0.029400375791763373,
+            "NDCG@100": 0.008193881702058196,
+            "MRR": 0.005304814192666936
+          },
+          "checkpoint_sha256": "c42c25bd271cc593450fc4bf71ba215b1fe7a9568248086573f0991ec1269071",
+          "seconds": 208.69090795516968
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": 3.936111543869081,
+        "NDCG@20": 4.333381702884442,
+        "Recall@50": 0.2889506212051085,
+        "NDCG@50": 2.1682758795913637,
+        "Recall@100": -2.605710688799434,
+        "NDCG@100": -0.05211094853304621,
+        "MRR": 2.78848481035745
+      }
+    },
+    {
+      "parent": "v3",
+      "current": "v4",
+      "day": 23,
+      "requests": 19141,
+      "eligible_requests": 19141,
+      "eligible_positive_requests": 14292,
+      "users": 1519,
+      "all_negative_requests": 4849,
+      "scored_requests": 7791,
+      "all_oov_positive_requests": 6501,
+      "results": {
+        "v3": {
+          "metrics": {
+            "Recall@20": 0.014531136105244041,
+            "NDCG@20": 0.008432862348854542,
+            "Recall@50": 0.027348237764360222,
+            "NDCG@50": 0.011758794076740742,
+            "Recall@100": 0.04421542139660315,
+            "NDCG@100": 0.015328153036534786,
+            "MRR": 0.013297563982728536
+          },
+          "random": {
+            "Recall@20": 0.004534397306489808,
+            "NDCG@20": 0.002107520652984733,
+            "Recall@50": 0.01133599326622452,
+            "NDCG@50": 0.003860966169365779,
+            "Recall@100": 0.02267198653244904,
+            "NDCG@100": 0.006268039642764344,
+            "MRR": 0.004101784313005625
+          },
+          "checkpoint_sha256": "a26836a3c68410648a43efb3864eaf62ee9804f4af62460117447ff5d8d07273",
+          "seconds": 177.6044626235962
+        },
+        "v4": {
+          "metrics": {
+            "Recall@20": 0.016328822945509636,
+            "NDCG@20": 0.009327257052063942,
+            "Recall@50": 0.030528397033543056,
+            "NDCG@50": 0.013048434630036354,
+            "Recall@100": 0.047339356305711254,
+            "NDCG@100": 0.01666511595249176,
+            "MRR": 0.014302918928588843
+          },
+          "random": {
+            "Recall@20": 0.004534397306489808,
+            "NDCG@20": 0.002107520652984733,
+            "Recall@50": 0.01133599326622452,
+            "NDCG@50": 0.003860966169365779,
+            "Recall@100": 0.02267198653244904,
+            "NDCG@100": 0.006268039642764344,
+            "MRR": 0.004101784313005625
+          },
+          "checkpoint_sha256": "cd878ab9233c9a0f255cff8d8254079b84bd3ce6d09f96a5308b52434568e2a5",
+          "seconds": 177.3383412361145
+        }
+      },
+      "relative_improvement_percent": {
+        "Recall@20": 12.371275220640454,
+        "NDCG@20": 10.60606311605321,
+        "Recall@50": 11.628388258811938,
+        "NDCG@50": 10.967455887730537,
+        "Recall@100": 7.06526096650093,
+        "NDCG@100": 8.722270144160959,
+        "MRR": 7.560444508228015
+      }
+    }
+  ],
+  "elapsed_seconds": 785.1710321903229,
+  "peak_allocated_gb": 6.321690112,
+  "peak_reserved_gb": 6.968836096
+}

@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/home/gkl/miniconda3/bin/python",
+    "-m",
+    "experiments.recflow_continuous_chain.code.prepare_pair",
+    "--source-checkpoint",
+    "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+    "--target-checkpoint",
+    "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48/training/step_002487.pt",
+    "--source-label",
+    "V7_interval2_listwise48",
+    "--target-label",
+    "V8_candidate_listwise48",
+    "--name",
+    "m7_d36_listwise48_pilot_4096",
+    "--users",
+    "4096",
+    "--offset",
+    "0",
+    "--question",
+    "From accepted V7/D35, perform one complete D36 update with unchanged listwise weight4.8 and restored AdamW. Evaluate Rebuild versus V7-cache Reuse on every D37 request of the fixed4096 users, with all candidates/history1024/unchanged NDCG10. This is the final available future-day window. Retain positive, negative and inconclusive results; no automatic successor or claim of data exhaustion before actual evaluation and review.",
+    "--scenario",
+    "Published cache source has training cutoff D35. The 0 subsequent existing optimizer checkpoint(s) are treated as unpublished in this release scenario; the actual training parent has cutoff D35. Train that parent on complete D36 once and compare the resulting target's Rebuild with the published source's cache on complete D37."
+  ],
+  "finished_at": "2026-10-29T22:13:13.567177+08:00",
+  "pid": 1692905,
+  "returncode": 0,
+  "stage": "prepare_evaluation",
+  "started_at": "2026-10-29T22:13:10.777636+08:00",
+  "status": "completed"
+}

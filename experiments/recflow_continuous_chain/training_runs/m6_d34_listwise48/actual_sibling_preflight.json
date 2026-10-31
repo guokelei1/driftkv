@@ -1,0 +1,161 @@
+{
+  "status": "passed",
+  "checked_at": "2026-10-29T20:10:11.507709+08:00",
+  "baseline_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24",
+  "new_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48",
+  "actual_optimizer_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+  "parent_is_accepted_V6": true,
+  "active_training_launcher_pid": 1668470,
+  "actual_live_command_matches": true,
+  "actual_rank_workers": [
+    {
+      "pid": 1668500,
+      "rank": 0,
+      "local_rank": 0,
+      "world_size": 4,
+      "visible_gpus": "0,1,2,3",
+      "actual_worker_arguments_match": true
+    },
+    {
+      "pid": 1668501,
+      "rank": 1,
+      "local_rank": 1,
+      "world_size": 4,
+      "visible_gpus": "0,1,2,3",
+      "actual_worker_arguments_match": true
+    },
+    {
+      "pid": 1668502,
+      "rank": 2,
+      "local_rank": 2,
+      "world_size": 4,
+      "visible_gpus": "0,1,2,3",
+      "actual_worker_arguments_match": true
+    },
+    {
+      "pid": 1668503,
+      "rank": 3,
+      "local_rank": 3,
+      "world_size": 4,
+      "visible_gpus": "0,1,2,3",
+      "actual_worker_arguments_match": true
+    }
+  ],
+  "training_finished": false,
+  "argument_differences": {
+    "listwise_weight": {
+      "baseline": 2.4,
+      "new": 4.8
+    },
+    "output": {
+      "baseline": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24/training",
+      "new": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training"
+    }
+  },
+  "only_optimization_configuration_change": "listwise_weight 2.4 to 4.8; output path also differs",
+  "semantic_plan_fields_equal": [
+    "requests",
+    "planned_steps",
+    "world_size",
+    "trainable_parameters",
+    "history_limit",
+    "global_batch",
+    "loss_normalization",
+    "selection",
+    "budget_seconds",
+    "budget_already_spent_seconds"
+  ],
+  "training_day": 34,
+  "requests": 160322,
+  "epochs": 1,
+  "planned_steps": 2506,
+  "seed": 17,
+  "selection_field_checks": {
+    "uid": {
+      "same_dtype_values_and_order": true,
+      "records": 160322,
+      "matches_original_full_D34": true
+    },
+    "rid": {
+      "same_dtype_values_and_order": true,
+      "records": 160322,
+      "matches_original_full_D34": true
+    },
+    "day": {
+      "same_dtype_values_and_order": true,
+      "records": 160322,
+      "matches_original_full_D34": true
+    },
+    "ts": {
+      "same_dtype_values_and_order": true,
+      "records": 160322,
+      "matches_original_full_D34": true
+    },
+    "history_length": {
+      "same_dtype_values_and_order": true,
+      "records": 160322,
+      "matches_original_full_D34": true
+    }
+  },
+  "rank_sampler_checks": [
+    {
+      "rank": 0,
+      "batches": 2506,
+      "same_entire_rank_index_order": true,
+      "real_requests": 40082
+    },
+    {
+      "rank": 1,
+      "batches": 2506,
+      "same_entire_rank_index_order": true,
+      "real_requests": 40080
+    },
+    {
+      "rank": 2,
+      "batches": 2506,
+      "same_entire_rank_index_order": true,
+      "real_requests": 40080
+    },
+    {
+      "rank": 3,
+      "batches": 2506,
+      "same_entire_rank_index_order": true,
+      "real_requests": 40080
+    }
+  ],
+  "real_requests_cover_original_once": true,
+  "padding_positions": 62,
+  "sampler_evidence_limit": "Full rank-local index streams were reconstructed on CPU from actual published arguments and byte-for-byte equal saved selection arrays. This is not a trace of all future minibatches; training is still running.",
+  "architecture": {
+    "layers": 16,
+    "hidden_size": 320,
+    "heads": 10,
+    "head_dim": 32,
+    "item_embedding_dimension": 320
+  },
+  "history_limit": 1024,
+  "trainable_parameters": 1154235353,
+  "configuration_semantically_matches_parent_and_baseline_endpoint": true,
+  "optimizer": {
+    "same_actual_parent_state_source": true,
+    "implementation": "AdamW fused; same trainer loads full optimizer state after strict parent model load, before publishing plan.json; it preserves moments and counters and starts the same daily LR schedule",
+    "learning_rate_peak": 0.0001,
+    "learning_rate_floor": 5e-06,
+    "warmup_fraction": 0.05,
+    "warmup_steps": 125,
+    "common_logged_steps": [
+      50,
+      100
+    ],
+    "logged_lr_requests_epoch_and_item_rows_equal": true,
+    "elementwise_tensor_restoration_rechecked_here": false
+  },
+  "scope_limits": [
+    "Checkpoint metadata only was read; no full checkpoint tensors were loaded.",
+    "Plan, actual process arguments and current trainer execution order support the same parent/model/optimizer setup; this review does not independently compare live model or optimizer tensors.",
+    "Preflight validates the comparison setup, not final training completion, heldout NDCG, or cache-loss direction."
+  ],
+  "no_gpu_or_successor_launched": true,
+  "active_numerical_source_modified": false,
+  "wall_seconds": 0.6406917048152536
+}

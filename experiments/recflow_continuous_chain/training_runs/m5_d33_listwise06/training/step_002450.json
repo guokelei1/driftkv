@@ -1,0 +1,312 @@
+{
+  "bytes": 13851135458,
+  "checkpoint_sha256": "547f6c402f28ce8391ee8e21732f93f2d19d385078bfe0748faa16645706f2a1",
+  "elapsed_budget_seconds": 1672.2185750689823,
+  "metadata": {
+    "arguments": {
+      "budget_spent_seconds": 0.0,
+      "checkpoint_every": 100000,
+      "communication": "rows",
+      "config": "/home/gkl/work/evokv/experiments/recflow_full_population/configs/full.json",
+      "data": "/home/gkl/work/evokv/experiments/recflow_full_population/data",
+      "days": [
+        33
+      ],
+      "diagnostic_state": false,
+      "dtype": "bfloat16",
+      "epochs": 1,
+      "global_batch": 64,
+      "listwise_weight": 0.6,
+      "log_every": 50,
+      "max_steps": null,
+      "micro_batch": 16,
+      "output": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise06/training",
+      "parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt",
+      "phase": "update",
+      "pilot": false,
+      "request_limit": null,
+      "resume": null,
+      "scale": "max",
+      "seed": 17,
+      "stop_after_steps": null,
+      "wall_hours": 2.0,
+      "workers": 4
+    },
+    "days": [
+      33
+    ],
+    "next_epoch": 1,
+    "next_step": 0,
+    "parent_checkpoint_sha256": "1bd68f602c089003cb244d7217da43f7b4272bd688d56b81ccde6226fc56f5e6",
+    "phase": "update",
+    "proposal": {
+      "architecture": {
+        "activation": "silu",
+        "attention_dropout": 0.0,
+        "block_variant": "hstu_reference",
+        "candidate_cross_attention": false,
+        "causal_diagonal": "inclusive",
+        "family": "causal_HSTU_reference_with_independent_target_queries",
+        "formal_scale": "max",
+        "input_dropout": 0.0,
+        "item_encoder_proposal": {
+          "features": [
+            "item_id",
+            "author_id",
+            "category_level_one",
+            "category_level_two",
+            "log_duration"
+          ],
+          "freeze_later_metadata_to_first_available_observation": false,
+          "frequent_explicit_ids": 1048576,
+          "id_embedding_dimension": 64,
+          "metadata_rule": "each raw event/request uses its own contemporaneous metadata; never backfill future values",
+          "oov_hash_buckets": 262144,
+          "same_mapping_all_versions": true,
+          "unknown_candidates": "retain_all_with_hash_and_content_features_report_collision_and_coverage",
+          "vocabulary_cutoff": "selected 30000 train UIDs through D27 only"
+        },
+        "max": {
+          "head_dim": 32,
+          "heads": 10,
+          "hidden_size": 320,
+          "item_embedding_dimension": 320,
+          "layers": 16
+        },
+        "max_item_encoder": {
+          "frequent_explicit_ids": 3500000,
+          "id_embedding_dimension": 320,
+          "oov_hash_buckets": 65536,
+          "vocabulary_directory": "vocabulary_max"
+        },
+        "max_reference": "experiments/configs/recflow_models_2026_10_21.json; old total 1149285121 parameters; retain dimensions, rebuild new task with HSTU-reference SiLU and external metadata",
+        "max_seq_len_including_query": 1025,
+        "pilot": {
+          "head_dim": 32,
+          "heads": 4,
+          "hidden_size": 128,
+          "item_embedding_dimension": 64,
+          "layers": 2
+        },
+        "query_features_exclude": [
+          "current_effective_view",
+          "current_like",
+          "rank_index",
+          "rerank_index",
+          "stage_tags",
+          "current_realshow"
+        ],
+        "query_writes_to_persistent_cache": false,
+        "relative_position_bias": true
+      },
+      "budget": {
+        "dispatch_full_chain_before_pilot_pass": false,
+        "first_profile_steps": 200,
+        "foundation_limit_excludes_but_reports": [
+          "download",
+          "one_time_CPU_preprocessing",
+          "pilot"
+        ],
+        "foundation_limit_includes": [
+          "model_initialization_and_compile",
+          "training",
+          "validation",
+          "checkpoints"
+        ],
+        "foundation_projection_hours_admission_limit": 12,
+        "foundation_wall_hours_hard_limit": 15,
+        "pilot_total_wall_hours_limit": 3,
+        "projection": "measured_real_batch_forward_backward_optimizer_ddp_io_validation_save_times_plus_25_percent_margin",
+        "update_wall_hours_limit": 2,
+        "update_wall_hours_target": 1
+      },
+      "candidate_membership": "0 <= rank_index < 3000; exclude sentinel 3000/8000; whole requests with any out-of-stage exposure excluded before outcomes; original first-request ledger retained",
+      "evaluation_precision": {
+        "bf16_training_is_not_a_quality_equivalence_claim": true,
+        "cache_dtype": "float32",
+        "compute_dtype": "float32",
+        "same_reader_and_backend_for_rebuild_and_reuse": true
+      },
+      "execution": {
+        "benchmark_world_sizes": [
+          1,
+          2,
+          4
+        ],
+        "candidate_chunk_size": 128,
+        "checkpoint_candidate_chunks": true,
+        "four_gpu_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "full_candidate_loss_normalizer_across_chunks": true,
+        "hardware": "recheck_availability_before_launch; choose_measured_world_size_not_maximum_card_count",
+        "initial_arrow_threads_per_worker": 4,
+        "initial_cpu_day_workers": 4,
+        "initial_loader_workers_per_rank": 4,
+        "loader_multiprocessing_start_method": "spawn",
+        "no_materialized_candidate_times_history_cache_copy": true,
+        "one_history_forward_per_request": true,
+        "preferred_host": "g202",
+        "prepared_format": "daily_candidate_CSR_plus_shared_user_history_arrays_and_mmap_indices",
+        "torch_cpu_threads_per_rank": 2,
+        "two_gpu_pair": [
+          0,
+          1
+        ]
+      },
+      "history": {
+        "causal_cutoff": "strictly_before_the_entire_user_timestamp_block",
+        "feedback_availability": "request_time_replay_assumption; exact_action_arrival_times_not_given",
+        "future_activity_intersection": false,
+        "history_can_include_prior_observed_test_feedback": true,
+        "max_events": 1024,
+        "minimum_history": 0,
+        "order": [
+          "user_id",
+          "request_timestamp",
+          "request_id",
+          "video_id"
+        ],
+        "same_request_duplicate_items": "deduplicate_with_consistency_check_before_counting",
+        "source": "raw_realshow_exposures_only",
+        "test_feedback_for_gradient_or_checkpoint_selection": "past evaluation days may train later releases; never change an already evaluated model",
+        "window": "most_recent_1024_events_for_all_model_scales_and_versions"
+      },
+      "metric": {
+        "candidate_subsampling_at_evaluation": false,
+        "primary": "request_macro_observed_positive_ndcg@10",
+        "secondary": "request_macro_observed_positive_recall@10",
+        "sensitivity_k": [
+          5,
+          20
+        ],
+        "uncertainty": "paired_uid_cluster_bootstrap_request_macro_2000_seed17",
+        "zero_positive_requests": "undefined_ndcg_exclude_from_mean_report_count"
+      },
+      "mismatch_protocol": {
+        "controls": [
+          "parent-native",
+          "current-rebuild",
+          "current-reuse-parent-kv"
+        ],
+        "interpretation": "matched causal prefix snapshots, not persistent serving",
+        "native_current_better_than_parent_required": false,
+        "primary": "all valid future requests of the fixed 30000 training users",
+        "stop_or_select_by_cache_gap": false
+      },
+      "optimization_proposal": {
+        "candidate_alignment_epochs_max": 2,
+        "checkpoint": "matching_model_optimizer_scheduler_rng_sampler_cursor_and_data_source_hashes_atomically_saved",
+        "compute_dtype": "bfloat16",
+        "foundation_checkpoint_selection": "pre_release_validation_uids_only",
+        "foundation_learning_rate": 0.0003,
+        "foundation_warmup_epochs": 1,
+        "global_effective_batch_requests": 64,
+        "globally_empty_step": "skip_optimizer_on_all_ranks_including_weight_decay",
+        "gradient_clip_norm": 1.0,
+        "listwise_lambda_development_candidates": [
+          0.1
+        ],
+        "loss": "request_mean_exposure_BCE_plus_lambda_full_candidate_multi_positive_cross_entropy",
+        "loss_normalization": "sum_over_local_active_requests_times_world_size_divided_by_global_active_requests_in_full_accumulation_window",
+        "optimizer": "AdamW",
+        "parameter_dtype": "float32",
+        "preserve_optimizer_state_between_versions": true,
+        "same_effective_batch_for_world_size_comparison": true,
+        "scheduler_on_update": "new_daily_schedule_and_explicit_update_lr_after_loading_parent_optimizer_state",
+        "selection": "maximum native NDCG@10 on fixed heldout UID validation requests D24-27; never reuse loss",
+        "train_backbone_and_item_features_on_updates": true,
+        "training_prefix_recomputed_under_current_parameters": true,
+        "update_checkpoint_selection": "fixed_one_epoch_endpoint_or_pre_release_validation_rule_frozen_before_chain",
+        "update_epochs": 1,
+        "update_learning_rate": 0.0001,
+        "warmup_fraction": 0.05,
+        "weight_decay": 0.01
+      },
+      "pilot_gates": [
+        "mixed true history and empty history score/gradient oracle",
+        "four-GPU exact normalization and resume",
+        "early heldout observed BCE improvement over identical random initialization",
+        "foundation heldout NDCG@10 above expected random and foundation-only popularity with paired UID confidence bounds"
+      ],
+      "positive": "realshow == 1 and effective_view == 1",
+      "roles": {
+        "algorithm": "foundation-only activity strata, fixed UID hash seed 20261028",
+        "cache_fit_users": 384,
+        "cache_validation_users": 128,
+        "primary_evaluation": "same train UID list, strictly future requests",
+        "rank_feedback_train_users": 20000,
+        "training_users": 30000,
+        "validation_users": 2000,
+        "warmup_only_train_users": 10000
+      },
+      "schema_version": 1,
+      "status": "full_population_30000_frozen_before_new_quality",
+      "task": "rank_complete_logged_ranking_stage_candidates_per_request",
+      "timeline": {
+        "dataset_timezone": "Asia/Shanghai",
+        "evaluation": "the_next_full_day_after_each_training_cutoff",
+        "final_confirmation_day": 37,
+        "foundation_end_day": 27,
+        "foundation_full_candidate_alignment_days": [
+          24,
+          27
+        ],
+        "foundation_observed_feedback_warmup_days": [
+          1,
+          23
+        ],
+        "history_only_days": [],
+        "interval_convention": "half_open_start_inclusive_end_exclusive",
+        "live_midnight_zero_training_latency_claim": false,
+        "request_timestamp_unit": "milliseconds_since_unix_epoch",
+        "update_days": [
+          28,
+          36
+        ],
+        "updates": 9
+      },
+      "training_data_budget": {
+        "alignment_epochs_max": 2,
+        "alignment_requests": 647394,
+        "automatic_full_data_training": true,
+        "minimum_history": 0,
+        "update_requests": "all valid observed requests for fixed training users; one epoch",
+        "warmup_requests": 4123554
+      },
+      "unknown": "realshow == 0; not an observed negative"
+    },
+    "quality_use_permitted": true,
+    "scale": "max",
+    "source_binding": {
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/batches.py": "9065ca4d0eb85b96c543312385a4597c8f69a97d50e6c4bae19edc3b871c7b3c",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/communication.py": "22040e6ac2be7402afcad071a8be6d4d525e76157ed08cc7f5d6e23b6a4ab44f",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/configuration.py": "ab6e7ba4f41408761befcceab77fb405e211251d750223a9d0141df968e5b556",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/evaluate.py": "13468b2f0d9f545bde5c93890f5f23eed589ac244ea82543efd2d0854fd33a8b",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/model.py": "1895e7b14f398178bd20bc1e876354a5beea2b2dc82cc750a378a9708feb54ec",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/objective.py": "deff78eb4ff6659eecd460fb8bad778da15c53d9009b7f0638b554e0ebfb00ad",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/protocol.py": "766b187ae8a30d1ff710be5e39b4ba3f5c5408c54695740e203a6c81c924fe97",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/runtime.py": "f38247d8a780830f6d2c80aac87ed772fd4d6f2f2684d99e04f67ffde1df0c92",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/sampling.py": "18c4edc2f43a4db092a7dce198a7ab825744cf0183b0d98578b76972ee231e7b",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/shared_reader.py": "0afa302bf96bc15b70e8b8550847eb03f65a1358df0060becffc3141e2473337",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/code/train.py": "cd3037e45d17062f73daa76afb83b8853c0c4817f56bbd6d0784c05f154c50bc",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/data/history/manifest.json": "493587a70bd934f8890673e7eae1be0029ebdb3237537b45016eeb94e0f32e73",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/data/population_manifest.json": "e7cc7feac0ef8f0e032bc2a5f87f3a3934b7f7a920d3b63b595f2a66c021c21d",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/data/selection_manifest.json": "f883fed80bec6d71bf864ce6bc02b7bfa390e42fffe9c7aeb85c62329267c1d7",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/data/stage_index_manifest.json": "1b03ff6b28ce8d7abf68568164aee0cedd529f70fdde6b4860d95244c60178ee",
+      "/home/gkl/work/evokv/experiments/recflow_full_population/data/vocabulary_max/manifest.json": "638894227c45e84db710afc34dd8cd959b6f74d328b3f24e37868aab592afb0b",
+      "/home/gkl/work/evokv/src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "/home/gkl/work/evokv/src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+      "/home/gkl/work/evokv/src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+      "/home/gkl/work/evokv/src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "/home/gkl/work/evokv/src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+      "/home/gkl/work/evokv/src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c"
+    },
+    "total_step": 2450,
+    "vocabulary_sha256": "638894227c45e84db710afc34dd8cd959b6f74d328b3f24e37868aab592afb0b"
+  },
+  "status": "committed"
+}

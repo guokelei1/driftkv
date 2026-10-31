@@ -1,0 +1,256 @@
+{
+  "status": "passed",
+  "source_sha256": {
+    "kv_cost.py": "80ff9aa3dc9c60790f826b5e39b0b4e7432abf3a8a9ca95ba58d048c4765a4a5",
+    "kv_map.py": "3220154360d21250558febda5e1afe2e55e51cdca4c22b08dcd37a9ac8066a6d"
+  },
+  "scope": "Actual CPU autograd operation shapes for the real max-width head architecture; CUDA real-model training records matched to CPU prerelease-history cost estimates; analytical FLOPs, not hardware counter or timed FLOPs",
+  "audit_shape": {
+    "channels": 200,
+    "batch": 8,
+    "head_dim": 32,
+    "width": 176
+  },
+  "forward_gemms": [
+    {
+      "a": [
+        200,
+        8,
+        32
+      ],
+      "b": [
+        200,
+        32,
+        176
+      ],
+      "flops": 18022400
+    },
+    {
+      "a": [
+        200,
+        8,
+        176
+      ],
+      "b": [
+        200,
+        176,
+        32
+      ],
+      "flops": 18022400
+    }
+  ],
+  "backward_gemms": [
+    {
+      "a": [
+        200,
+        176,
+        8
+      ],
+      "b": [
+        200,
+        8,
+        32
+      ],
+      "flops": 18022400
+    },
+    {
+      "a": [
+        200,
+        8,
+        32
+      ],
+      "b": [
+        200,
+        32,
+        176
+      ],
+      "flops": 18022400
+    },
+    {
+      "a": [
+        200,
+        32,
+        8
+      ],
+      "b": [
+        200,
+        8,
+        176
+      ],
+      "flops": 18022400
+    }
+  ],
+  "forward_gemm_flops": 36044800,
+  "backward_gemm_flops": 54067200,
+  "input_gradients": false,
+  "cuda_fitting_checks": [
+    {
+      "edge": 1,
+      "method": "kv_map_u32_w32",
+      "actual_steps": 24,
+      "training_rows": 186912,
+      "parameters": 422400
+    },
+    {
+      "edge": 1,
+      "method": "kv_map_u64_w64",
+      "actual_steps": 56,
+      "training_rows": 411952,
+      "parameters": 838400
+    },
+    {
+      "edge": 1,
+      "method": "kv_map_u96_w96",
+      "actual_steps": 80,
+      "training_rows": 598120,
+      "parameters": 1254400
+    },
+    {
+      "edge": 1,
+      "method": "kv_map_u128_w128",
+      "actual_steps": 104,
+      "training_rows": 801664,
+      "parameters": 1670400
+    },
+    {
+      "edge": 1,
+      "method": "kv_map_u192_w160",
+      "actual_steps": 152,
+      "training_rows": 1206072,
+      "parameters": 2086400
+    },
+    {
+      "edge": 1,
+      "method": "kv_map_u256_w176",
+      "actual_steps": 200,
+      "training_rows": 1604232,
+      "parameters": 2294400
+    },
+    {
+      "edge": 2,
+      "method": "kv_map_u32_w32",
+      "actual_steps": 24,
+      "training_rows": 190432,
+      "parameters": 422400
+    },
+    {
+      "edge": 2,
+      "method": "kv_map_u64_w64",
+      "actual_steps": 56,
+      "training_rows": 420920,
+      "parameters": 838400
+    },
+    {
+      "edge": 2,
+      "method": "kv_map_u96_w96",
+      "actual_steps": 80,
+      "training_rows": 613472,
+      "parameters": 1254400
+    },
+    {
+      "edge": 2,
+      "method": "kv_map_u128_w128",
+      "actual_steps": 104,
+      "training_rows": 821184,
+      "parameters": 1670400
+    },
+    {
+      "edge": 2,
+      "method": "kv_map_u192_w160",
+      "actual_steps": 152,
+      "training_rows": 1233904,
+      "parameters": 2086400
+    },
+    {
+      "edge": 2,
+      "method": "kv_map_u256_w176",
+      "actual_steps": 208,
+      "training_rows": 1642480,
+      "parameters": 2294400
+    },
+    {
+      "edge": 3,
+      "method": "kv_map_u32_w32",
+      "actual_steps": 24,
+      "training_rows": 191592,
+      "parameters": 422400
+    },
+    {
+      "edge": 3,
+      "method": "kv_map_u64_w64",
+      "actual_steps": 56,
+      "training_rows": 424688,
+      "parameters": 838400
+    },
+    {
+      "edge": 3,
+      "method": "kv_map_u96_w96",
+      "actual_steps": 80,
+      "training_rows": 624752,
+      "parameters": 1254400
+    },
+    {
+      "edge": 3,
+      "method": "kv_map_u128_w128",
+      "actual_steps": 104,
+      "training_rows": 835088,
+      "parameters": 1670400
+    },
+    {
+      "edge": 3,
+      "method": "kv_map_u192_w160",
+      "actual_steps": 160,
+      "training_rows": 1254912,
+      "parameters": 2086400
+    },
+    {
+      "edge": 3,
+      "method": "kv_map_u256_w176",
+      "actual_steps": 208,
+      "training_rows": 1677064,
+      "parameters": 2294400
+    },
+    {
+      "edge": 5,
+      "method": "kv_map_u32_w32",
+      "actual_steps": 32,
+      "training_rows": 198408,
+      "parameters": 422400
+    },
+    {
+      "edge": 5,
+      "method": "kv_map_u64_w64",
+      "actual_steps": 56,
+      "training_rows": 435568,
+      "parameters": 838400
+    },
+    {
+      "edge": 5,
+      "method": "kv_map_u96_w96",
+      "actual_steps": 80,
+      "training_rows": 643328,
+      "parameters": 1254400
+    },
+    {
+      "edge": 5,
+      "method": "kv_map_u128_w128",
+      "actual_steps": 112,
+      "training_rows": 865072,
+      "parameters": 1670400
+    },
+    {
+      "edge": 5,
+      "method": "kv_map_u192_w160",
+      "actual_steps": 160,
+      "training_rows": 1298720,
+      "parameters": 2086400
+    },
+    {
+      "edge": 5,
+      "method": "kv_map_u256_w176",
+      "actual_steps": 216,
+      "training_rows": 1734312,
+      "parameters": 2294400
+    }
+  ]
+}

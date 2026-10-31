@@ -1,0 +1,106 @@
+contract: yambda500m_medium_hstu_native_insight2_temporal_coefficient_v1
+date_frozen: 2026-09-02
+status: prospective_oracle_temporal_coordinate_diagnostic_v1
+purpose: >-
+  Determine whether the time-varying S4 correction remains in the direction
+  generated at cutover and changes mainly through one global or one-per-layer
+  scalar coefficient.
+
+rationale:
+  prior_observation: >-
+    On 512 discovery users, same-request S4 recovery remained 0.9339 and the
+    cutover/current correction direction cosine was 0.9460, while a fixed or
+    linear-coverage-scaled amplitude failed the E14 persistence gate.
+  question: stable_response_basis_with_evolving_low_dimensional_coordinates
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  horizon_days: 14
+  context: 1024
+  stage: S4_aggregated_context
+  labels_read: false
+  one_Parent_to_Current_transition_only: true
+
+population:
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  confirmation_read: prohibited
+  inactive_users: retain_in_coverage_and_do_not_replace
+
+correction_semantics:
+  cutover_direction: frozen_even_32_anchor_Current_Exact_minus_Reuse_S4
+  current_request_target: same_even_32_anchors_on_the_rolling_Exact_and_Reuse_states
+  heldout_evaluation: frozen_odd_32_candidate_panel
+  global_projection: one_least_squares_scalar_per_user_request
+  layerwise_projection: one_least_squares_scalar_per_layer_user_request
+  coefficient_counts: {global: 1, layerwise: 6}
+  coefficient_source: Current_Exact_functional_target
+  coefficient_role: oracle_only
+  executable_estimator_or_cost_claim: prohibited
+  refresh_or_update_action_claim: prohibited
+
+rolling_semantics:
+  inherit_from: temporal_persistence_v1
+  query_before_append_at_equal_timestamp: required
+  post_cutover_append_model: Current_for_Exact_and_Reuse
+  correction_basis_frozen_at_cutover: required
+  all_real_request_timestamps: required
+
+methods:
+  - same_request_S4_oracle
+  - frozen_cutover_S4
+  - oracle_global_coefficient_times_cutover_direction
+  - oracle_layerwise_coefficients_times_cutover_directions
+
+metrics:
+  primary: unclipped_probability_gap_recovery_on_fixed_heldout_panel
+  aggregation: request_mean_within_user_then_user_equal_within_edge_then_edge_equal
+  companions:
+    - logit_gap_recovery
+    - projection_relative_l2
+    - coefficient_distribution_by_edge_time_and_append_bucket
+    - real_exposed_item_recovery
+  small_gap_filtering: prohibited
+  every_edge_and_bucket_reported: required
+
+gates:
+  global_coordinate:
+    edge_equal_probability_recovery_at_least: 0.80
+    positive_edges_minimum: 4
+  layerwise_coordinate:
+    edge_equal_probability_recovery_at_least: 0.80
+    positive_edges_minimum: 4
+  interpretation:
+    global_passes: one_dimensional_temporal_coordinate_supported
+    only_layerwise_passes: layerwise_low_dimensional_temporal_coordinates_supported
+    neither_passes: fixed_cutover_response_basis_is_not_causally_sufficient_over_time
+  gate_cannot_authorize_design1: true
+
+frozen_inputs:
+  persistence_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_temporal_persistence_v1.yaml
+    sha256: b803c69255c44b17dbb951710f14e6509af05390338315b1258a4fdd55380bfa
+  persistence_discovery_adjudication:
+    path: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_temporal_persistence_v1/discovery/analysis/summary.json
+    sha256: cad3d0e0c4734376c25e0534c934abc71e8439dd89e90394a66d390065e4f4aa
+  temporal_projection_helper:
+    path: scripts/insight_two/temporal_coefficient.py
+    sha256: 2f775a3ede2ebba4e026eb0bec85bee1bc7c5a7853082be37ad75eef5cf6fbf3
+  frozen_timeline_implementation:
+    path: scripts/insight_two/run_temporal_persistence_diagnostic.py
+    sha256: 2a678f001badc7994db54f4d7945fc8958df539ab717a50313a917ae6f2bfe49
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_temporal_coefficient_v1
+  overwrite_existing_evidence: prohibited
+  raw_first: true
+
+authorization:
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  512_user_discovery_after_passing_instrumentation_and_resource_estimate: authorized_by_user_2026_09_02
+  executable_estimator_or_action: false
+  training: false

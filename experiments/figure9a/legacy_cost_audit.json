@@ -1,0 +1,237 @@
+{
+  "scope": "Retired head-local ridge/SVD map; scheduling seconds never enter the cost numerator",
+  "configuration": {
+    "experiment": "Figure 9(a): Yambda-Large independent-edge baselines",
+    "edges": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "release_days": [
+      231,
+      245,
+      259,
+      273,
+      287
+    ],
+    "end_days": [
+      245,
+      259,
+      273,
+      287,
+      301
+    ],
+    "layer_intervals_one_based": [
+      [
+        1,
+        1
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        7,
+        7
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        7,
+        8
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        1,
+        8
+      ]
+    ],
+    "tokens": [
+      64,
+      128,
+      256,
+      512,
+      768
+    ],
+    "kv_map": [
+      {
+        "fit_users": 8,
+        "rank": 4
+      },
+      {
+        "fit_users": 16,
+        "rank": 8
+      },
+      {
+        "fit_users": 32,
+        "rank": 16
+      },
+      {
+        "fit_users": 64,
+        "rank": 32
+      },
+      {
+        "fit_users": 128,
+        "rank": 32
+      },
+      {
+        "fit_users": 256,
+        "rank": 32
+      }
+    ],
+    "ridge": 0.01,
+    "seed": 17,
+    "history_length": 1024,
+    "append_band_size": 128,
+    "query_batch": 16,
+    "user_batch": 1,
+    "history_threads": 4,
+    "torch_threads": 4,
+    "checkpoint_seconds": 1800,
+    "bootstrap_replicates": 1000,
+    "bootstrap_seed": 17021,
+    "gpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "role_source": "experiments/01_quality_cost/runs/yambda/large/baselines_full_v0_v1/seed_17/attempt_1/configuration.json",
+    "dataset": "data/processed/yambda500m_unified_v1/scales/large/dataset.json",
+    "checkpoints": "results/unified_training_2026_09/large/seed17/checkpoints",
+    "formal_run_authorized": false
+  },
+  "cost_basis": "Complete added FLOPs / once-per-user Rebuild FLOPs; FMA=2",
+  "iterative_training_steps": 0,
+  "deployment_formula": "2*layers*heads*sum(active history rows)*(4*head_dim*rank+2*head_dim)",
+  "edges": [
+    {
+      "edge": 1,
+      "denominator_flops": 1040572289523018,
+      "map_rows": 58293663,
+      "calibration_flops": {
+        "kv_map_u8_r4": 198451825448,
+        "kv_map_u16_r8": 363707692256,
+        "kv_map_u32_r16": 856309532832,
+        "kv_map_u64_r32": 1895234594904,
+        "kv_map_u128_r32": 3681640911408,
+        "kv_map_u256_r32": 7326911446636
+      },
+      "deployment_flops": {
+        "kv_map_u8_r4": 6715429977600,
+        "kv_map_u16_r8": 12684701068800,
+        "kv_map_u32_r16": 24623243251200,
+        "kv_map_u64_r32": 48500327616000,
+        "kv_map_u128_r32": 48500327616000,
+        "kv_map_u256_r32": 48500327616000
+      }
+    },
+    {
+      "edge": 2,
+      "denominator_flops": 1063005912297798,
+      "map_rows": 59549457,
+      "calibration_flops": {
+        "kv_map_u8_r4": 207385161168,
+        "kv_map_u16_r8": 373904243436,
+        "kv_map_u32_r16": 856745863232,
+        "kv_map_u64_r32": 1935791015444,
+        "kv_map_u128_r32": 3782415470608,
+        "kv_map_u256_r32": 7540019355576
+      },
+      "deployment_flops": {
+        "kv_map_u8_r4": 6860097446400,
+        "kv_map_u16_r8": 12957961843200,
+        "kv_map_u32_r16": 25153690636800,
+        "kv_map_u64_r32": 49545148224000,
+        "kv_map_u128_r32": 49545148224000,
+        "kv_map_u256_r32": 49545148224000
+      }
+    },
+    {
+      "edge": 3,
+      "denominator_flops": 1084680379047240,
+      "map_rows": 60792580,
+      "calibration_flops": {
+        "kv_map_u8_r4": 212678894548,
+        "kv_map_u16_r8": 379684533736,
+        "kv_map_u32_r16": 862526153532,
+        "kv_map_u64_r32": 1949099612984,
+        "kv_map_u128_r32": 3868910711528,
+        "kv_map_u256_r32": 7697507220396
+      },
+      "deployment_flops": {
+        "kv_map_u8_r4": 7003305216000,
+        "kv_map_u16_r8": 13228465408000,
+        "kv_map_u32_r16": 25678785792000,
+        "kv_map_u64_r32": 50579426560000,
+        "kv_map_u128_r32": 50579426560000,
+        "kv_map_u256_r32": 50579426560000
+      }
+    },
+    {
+      "edge": 4,
+      "denominator_flops": 1111175643778620,
+      "map_rows": 62328002,
+      "calibration_flops": {
+        "kv_map_u8_r4": 235264730388,
+        "kv_map_u16_r8": 402270369576,
+        "kv_map_u32_r16": 885111989372,
+        "kv_map_u64_r32": 1985429858764,
+        "kv_map_u128_r32": 3924734235388,
+        "kv_map_u256_r32": 7803902012016
+      },
+      "deployment_flops": {
+        "kv_map_u8_r4": 7180185830400,
+        "kv_map_u16_r8": 13562573235200,
+        "kv_map_u32_r16": 26327348044800,
+        "kv_map_u64_r32": 51856897664000,
+        "kv_map_u128_r32": 51856897664000,
+        "kv_map_u256_r32": 51856897664000
+      }
+    },
+    {
+      "edge": 5,
+      "denominator_flops": 1200006458287728,
+      "map_rows": 67346272,
+      "calibration_flops": {
+        "kv_map_u8_r4": 244756408948,
+        "kv_map_u16_r8": 412050304216,
+        "kv_map_u32_r16": 894891924012,
+        "kv_map_u64_r32": 2000567600184,
+        "kv_map_u128_r32": 3977946681048,
+        "kv_map_u256_r32": 7926529939036
+      },
+      "deployment_flops": {
+        "kv_map_u8_r4": 7758290534400,
+        "kv_map_u16_r8": 14654548787200,
+        "kv_map_u32_r16": 28447065292800,
+        "kv_map_u64_r32": 56032098304000,
+        "kv_map_u128_r32": 56032098304000,
+        "kv_map_u256_r32": 56032098304000
+      }
+    }
+  ]
+}

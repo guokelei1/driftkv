@@ -1,0 +1,174 @@
+{
+  "scope": "Prospective DEVELOPMENT supervision-coverage check on the existing 512-user cohort: one initial pass and one update pass. No population expansion, formal phi admission, serving transition, version chain, Reuse, final-user evaluation, or theta3 work.",
+  "status": "superseded_before_launch",
+  "superseded_by": "configs/recflow/window_development_seed17.json: latest user requests single seed, complete18-day/3-day windows and small-backbone validation before six-layer progression. This earlier partial-request/single-day proposal was never executed.",
+  "authorization": "This proposal is not launch authorization. The user requires both base and updated models to be substantially better than random; current evidence has not established that requirement. This bounded development experiment is specifically proposed to test whether completing initial supervision fixes that deficiency, so random superiority is not assumed as a prerequisite for this diagnostic itself. It still requires explicit user launch. Any larger-population training remains deferred until adequate learning evidence and separate authorization.",
+  "arguments": {
+    "data": "/home/gkl/work/evokv/data/processed/recflow_v1",
+    "output": "results/recflow/development/one_pass_6l_h192_c1024_k1m_seed17",
+    "device": "cuda:0",
+    "seed": 17,
+    "candidate_seed": 17,
+    "catalog_size": 1000000,
+    "cohort_users": 512,
+    "context": 1024,
+    "layers": 6,
+    "hidden": 192,
+    "heads": 6,
+    "train_requests": 150000,
+    "eval_requests": 512,
+    "steps": 4279,
+    "current_steps": 533,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "beam_width": 300,
+    "decoder": "exact",
+    "eval_precision": "fp32",
+    "history_categories": false,
+    "max_train_seconds": 1800,
+    "log_every": 100,
+    "sampled_distractors": [
+      1000
+    ],
+    "run_current": true,
+    "skip_day19": false,
+    "save_checkpoint": true,
+    "evaluate_checkpoint": null,
+    "eval_day": 19
+  },
+  "source_sha256": {
+    "scripts/recflow/development_probe.py": "8a17ae562f96ea83ef3968aa51e02c4e91f90347eb4ccb03ee04756522eaa5b7",
+    "scripts/recflow/random_baseline.py": "d0054328a1b2957e707fbd49fc025a6f0ec21c1b2825e97aeb95b2b07857a2c6",
+    "src/hstu_kvcache/recflow/data.py": "7b22901d066e1c66e152a2c605e4ec275a45eca1551b5cda2186ddcbf32dd5b7",
+    "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512",
+    "src/hstu_kvcache/recflow/metrics.py": "e71381b106237ed061102524cf5ab173ca12a70c73043a0c255f46026c0d2e0c",
+    "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+    "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+    "src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+    "src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+    "src/hstu_kvcache/models/attention.py": "009fc862905a9f0bdaa8840528d2cf26d9b9d6403ccc991ba9d5b5762e99e790",
+    "src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4"
+  },
+  "data_manifest_sha256": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128",
+  "repository_revision_reference": "7424dd52f81beaf33a42797a94fdcb2c559c4a12",
+  "data_and_objective": {
+    "role": "development_only",
+    "research_question": "Does one complete traversal of the already selected initial supervision pool produce a usable base model, and does one complete update traversal improve the same future panel? Change training coverage, not cohort, catalog, model, temporal windows, target definition, or candidate seed.",
+    "initialization": "Train the parent from the recorded random seed with fresh AdamW. Continue the same optimizer for current, as in the pilot. No checkpoint warm-start or implied restoration of missing optimizer state.",
+    "cohort_selection": "The same first 512 stable-hash-ranked D1-D18 development UIDs with >=1024 real exposure events used by the pilot; no future-activity selection.",
+    "cohort_sha256": "c8727e426dc492632b3345286224ba993385b6e7952b5c0400a02fc1873b8f54",
+    "catalog_selection": "Top1M D1-D18 development exposure count, raw item ID ascending tie break; item/category paths fixed thereafter.",
+    "catalog_sha256": "52dfdccd90c1d66217e08fae51940706e88391b21e15a25cbe634c246af3e4d1",
+    "parent_training_days": [
+      1,
+      18
+    ],
+    "current_training_days": [
+      19,
+      21
+    ],
+    "parent_selected_positive_requests": 150000,
+    "parent_known_positive_requests": 136928,
+    "current_selected_positive_requests": 29027,
+    "current_known_positive_requests": 17046,
+    "parent_request_selection_sha256": "fbfba9d4c7e4f7f803b79621034f52e02dca83e2df1b9d5be9080d92b6985b0a",
+    "current_request_selection_sha256": "d5010aaf16d9d4e089bb83afb632d93dec8559f0c74930aff1852822cc9a4fd7",
+    "evaluation_panels": [
+      {
+        "phase": "parent_day19",
+        "day": 19,
+        "requests": 512,
+        "role": "Immediate future base-qualification diagnostic",
+        "request_indices_sha256": "306a347ebb6f7b427df93228eefb157cdae0da998ec5936de83f892ad503b05f"
+      },
+      {
+        "phase": "parent_day22",
+        "day": 22,
+        "requests": 512,
+        "role": "Frozen parent on the shared update-comparison panel",
+        "request_indices_sha256": "d59788f3ac071ffb7a2d125352dbd3e5c91d730eca2b7ce5b2332f9591842bb1"
+      },
+      {
+        "phase": "current_day22",
+        "day": 22,
+        "requests": 512,
+        "role": "Updated model on the identical future panel",
+        "request_indices_sha256": "d59788f3ac071ffb7a2d125352dbd3e5c91d730eca2b7ce5b2332f9591842bb1"
+      }
+    ],
+    "panel_rule": "Stable-hash positive-request panels, including all-OOV requests. Entire same-user target timestamp block is excluded from history. D19 is not a held-out evaluation window for current, which fits D19-D21.",
+    "budget": "Parent: 4279 steps x32 =136928 requests exactly. Current: 532 full x32 batches plus one final22-request batch =17046 requests in533 steps. No second epoch. The 1800-second per-phase cap is a failure/stop bound, not an alternate accepted endpoint; a time-cap stop is incomplete coverage.",
+    "objective": "One uniformly sampled known distinct positive per request; equal request weighting. OOV targets cannot train the item decoder but remain in every evaluation denominator.",
+    "decoder": "FP32 exact bound-pruned ranking over the same fixed1M pilot catalog, with branch batches32. This is not the complete4.919M catalog. beam_width300 remains recorded but is unused for exact ranking.",
+    "sampled_diagnostics": "Both uniform1000 and popularity1000 use the same frozen candidate seed17 and include all known positives; actual pool size includes those positives. No sampler or K is selected after seeing this run."
+  },
+  "resource_estimate": {
+    "device_plan": "One NVIDIA A40 on GPU0 only; no parallel seed/release training.",
+    "measured_training_reference": "results/recflow/development/pilot_6l_h192_c1024_k1m_seed17/summary.json",
+    "approximate_training_requests_per_second": 97.9,
+    "parent_seconds_calculated": 1398.6516853932583,
+    "current_seconds_calculated": 174.1164453524004,
+    "total_training_minutes_calculated": 26.21280217909431,
+    "evaluation_reference": "results/recflow/development/population_eval_canary_seed17/summary.json",
+    "evaluation_probe_scope": "Existing same-model1M/context1024 current checkpoint; exact FP32 decoding plus uniform1000/popularity1000 scoring on eight D22 development requests.",
+    "evaluation_probe_requests": 8,
+    "evaluation_probe_seconds": 6.531245402991772,
+    "evaluation_seconds_per_request_calculated": 0.8164056753739715,
+    "evaluation_panels": 3,
+    "evaluation_requests_per_panel": 512,
+    "evaluation_seconds_calculated": 1253.9991173744202,
+    "evaluation_minutes_calculated": 20.89998528957367,
+    "total_calculated_minutes": 47.11278746866798,
+    "total_wall_minutes_budget": [
+      50,
+      60
+    ],
+    "estimate_limit": "Calculated from completed small probes, not a measured one-pass run. Parent/current branch counts, I/O, checkpoint writing and allocator state can change runtime. The three-panel evaluation timing includes both sampled diagnostics.",
+    "training_peak_allocated_bytes_measured": 11101715456,
+    "evaluation_canary_peak_allocated_bytes": 17615992832,
+    "evaluation_canary_peak_reserved_bytes": 39782973440,
+    "post_evaluation_peak_reserved_bytes_observed": 45434798080,
+    "evaluation_optimizer_margin_gib": 2,
+    "gpu_reported_memory_mib": 46068,
+    "memory_allowance": "Reserve the whole A40. Existing training live allocation was about10.34GiB; checkpoint-only exact+sampled FP32 evaluation used16.406GiB allocated and37.053GiB reserved. Allow about2GiB for live optimizer/memory variation. Prior42.31GiB reserved CUDA cache is not live training allocation.",
+    "execution_after_explicit_launch": "Expected total exceeds30minutes: detached tmux, retained log and exit status, and analysis resumed after completion. --check-contract only validates settings/hashes and returns before training.",
+    "exclusions": "No population expansion, extra seed, alternative sampling distribution, model variant, repeated epoch, formal admission, or automatic chained launch."
+  },
+  "prelaunch_evidence": {
+    "historical_scoped_tests": {
+      "command": "pytest -q tests/test_recflow_data.py tests/test_recflow_model.py tests/test_recflow_metrics.py",
+      "observed_result": "15 passed in the earlier scoped run before the new random-baseline test; historical evidence, not a new combined-suite result.",
+      "covers": "Request causality/heldout roles/rolling time deltas; teacher/free scoring, exact search, gradients and history-category variant; original OOV and candidate-panel metrics."
+    },
+    "later_random_metric_check": {
+      "command": "python -m pytest -q tests/test_recflow_metrics.py",
+      "observed_result": "3 passed: two existing metric tests plus the new exact-permutation random expectation regression. This overlaps the historical check and is not an observed combined16-pass run."
+    },
+    "completed_same_shape_training_canary": "results/recflow/development/pilot_6l_h192_c1024_k1m_seed17/summary.json",
+    "completed_exact_probe": "results/recflow/development/exact_c1024_k1m_parent_probe_seed17/summary.json",
+    "completed_same_shape_evaluation_canary": "results/recflow/development/population_eval_canary_seed17/summary.json",
+    "supervision_coverage_diagnostic": "results/recflow/development/supervision_coverage/summary.json",
+    "random_baseline_diagnostic": "results/recflow/development/random_baseline_three_seeds/summary.json",
+    "completed_expanded_free_retrieval": "results/recflow/development/free_fullpanel_comparison/summary.json",
+    "expanded_random_comparison": "results/recflow/development/random_baseline_fullpanel/summary.json",
+    "expanded_result": "On the same9039-request D22 panel, both stored Current models (seeds23/29) exceed random at all reported NDCG cutoffs; NDCG@50 is170.20x/61.06x the matched random expectation and above the random-policy99th percentile. Neither Parent exceeds that percentile. The two complete pairs were selected by checkpoint availability before reading this panel. These are FP32 beam300 results, not exact search or formal admission.",
+    "limits": "The completed shape/correctness canaries authorize no long launch. Expanded free retrieval establishes useful Current learning on this development panel, but the weak Parent still needs the proposed supervision-coverage control. The original512-request Current subset remains zero even in FP32, so its earlier sparse result was not rescued just by changing precision. No claim of an admitted base or version chain follows."
+  },
+  "development_decision": {
+    "hard_requirement": "A parent-to-current increase alone is insufficient. The base on D19 and the updated model on D22 must each show substantial superiority to uniform random ranking of the same allowed items; report parent D22 as well.",
+    "random_policy": "Uniform permutation of videos in the same allowed catalog or actual sampled candidate pool, not uniform taxonomy branches. Keep all observed positives including OOV in the main denominators. Preserve exact per-request expectations and the existing random-policy null procedure.",
+    "random_simulation": {
+      "script": "scripts/recflow/random_baseline.py",
+      "draws": 5000,
+      "seed": 20260918,
+      "ks": [20, 50, 100]
+    },
+    "random_criterion": "Use the already declared checks: metric at least2x its matched random expectation and above the fixed-panel random-policy99th percentile, reported separately and together. This is a development diagnostic; random-policy intervals are not training-seed confidence intervals. A sparse panel can remain inconclusive rather than passing by a large ratio alone.",
+    "primary_diagnostic": "Same fixed popularity1000 NDCG@50 diagnostic: inspect base D19 random superiority, parent/current D22 random comparisons, and positive current-minus-parent D22 difference.",
+    "companions": "All uniform1000 and popularity1000 NDCG/Recall@20/50/100; exact1M-catalog generation metrics; matched random expectations/null comparisons; target coverage and all-OOV counts. Sampled scores cannot establish free-generation superiority.",
+    "failure_rule": "Retain all D19/D22 outcomes, including unfavorable rows. A failure or inconclusive random comparison does not trigger K/pool/window/seed changes, cherry-picked subsets, automatic retraining, or larger-population training. Any later change is a separate prospective development experiment.",
+    "history_check": "Retain the existing original/short/empty-history diagnostic on the fixed development panel. Conditional teacher-forced history sensitivity is not free retrieval or proof of useful1024-history dependence.",
+    "admission": "No automatic admission, serving-parent switch, Reuse unlock, formal phi chain, final-user evaluation, or theta3 access.",
+    "authorization_boundary": "This proposal is permitted as a development test of an unmet random requirement; it does not declare that requirement satisfied. Population-scale training remains deferred."
+  }
+}

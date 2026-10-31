@@ -1,0 +1,41 @@
+# Large：固定 V0–V5 模型
+
+**当前选定 V5@1 epoch。** 10L/H320、10 heads、context1024、79,681用户，Yambda-500M，seed17。
+
+统一权重入口：`seed17/checkpoints/v0..v5/checkpoint_100.pt`。[当前完整清单](seed17/checkpoints/chain.v0_v5.manifest.json)是本轮V0–V5的路径、哈希和选择状态入口。
+
+| 版本 | Parent | 训练窗口（天） | Epoch | Global batch | 来源/状态 | Checkpoint |
+| --- | --- | --- | ---: | ---: | --- | --- |
+| V0 | — | [0,217) | 1 | 96 | 历史复用 | [权重](seed17/checkpoints/v0/checkpoint_100.pt) |
+| V1 | v0 | [217,231) | 1 | 96 | 历史复用 | [权重](seed17/checkpoints/v1/checkpoint_100.pt) |
+| V2 | v1 | [231,245) | 1 | 96 | 历史复用 | [权重](seed17/checkpoints/v2/checkpoint_100.pt) |
+| V3 | v2 | [245,259) | 1 | 96 | 历史复用 | [权重](seed17/checkpoints/v3/checkpoint_100.pt) |
+| V4 | v3 | [259,273) | 2 | 64 | 本轮重训，四项准入通过 | [权重](seed17/checkpoints/v4/checkpoint_100.pt) |
+| V5 | v4 | [273,287) | 1 | 64 | 本轮重训，用户选定 | [权重](seed17/checkpoints/v5/checkpoint_100.pt) |
+
+## E14 父子 AUC
+
+每行比较同一窗口中的parent/current；跨行绝对AUC不可直接比较。前三条边是历史结果，后两条为本轮重训结果。
+
+| 版本边 | E14窗口 | Parent AUC | Current AUC | 相对提升 |
+| --- | --- | ---: | ---: | ---: |
+| v0 → v1 | [231,245) | 0.630066 | 0.651462 | +3.396% |
+| v1 → v2 | [245,259) | 0.655420 | 0.668998 | +2.072% |
+| v2 → v3 | [259,273) | 0.684236 | 0.703051 | +2.750% |
+| v3 → v4 | [273,287) | 0.680587 | 0.689922 | +1.372% |
+| v4 → v5 | [287,301) | 0.674620 | 0.683919 | +1.378% |
+
+## V5 的选择与证据范围
+
+- 当前采用V5@1：相对AUC +1.378%，超过1%目标；但用户级平均loss改善的bootstrap置信区间下界未大于零，**原四项准入未全部通过**。这是用户选定的实验端点；历史清单中的 `tentative` 及原 admission 标记保留，不标为自动准入或服务推广。
+- V5在既定E14 [287,301)窗口评价；请求数和有效用户数见运行结果。
+- V5@2的[原评测结果](seed17/v5_epochs12_4gpu_b64_cpu14/summary.json)仍保留：AUC=0.716664，相对+6.232%，四项准入通过；它未被选入当前链，实体权重已按清单清理。两个端点的原始指标和封存记录均保留。
+
+## 配置、来源和保存方式
+
+- V0–V3为历史1 epoch/global96模型；V4为2 epochs/global64；V5采用连续2 epochs训练中的1 epoch端点/global64。均4卡，seed17。
+- 本轮V4/V5沿用CPU14、fresh AdamW、LR=5e-5、weight decay=1e-4和用户等权BCE；V5两个epoch间不重置优化器。
+- 六个模型的权重哈希、payload父哈希、训练窗口、epoch和配置已逐个核对。V4/V5实体权重移入统一目录，原路径保留相对符号链接；V5原多端点seal原样复制，选中条目为`v5_e1`。
+- 原[四版本前缀清单](seed17/checkpoints/chain.manifest.json)被训练合同按哈希引用，保持原样；当前完整链另存，避免破坏旧合同。
+- [V4训练评测](seed17/v4_2epoch_4gpu_b64_cpu14/summary.json)及[V5双端点训练评测](seed17/v5_epochs12_4gpu_b64_cpu14/summary.json)保留合同、必要配置、最终指标、seal和adjudication。原始评分Parquet已于2026-10-07清理，未选中权重及旧sweep分支已移除。
+- 本清单五条相邻边的 [Reuse 评价](../../unified_reuse_2026_09/README.md)已完成。

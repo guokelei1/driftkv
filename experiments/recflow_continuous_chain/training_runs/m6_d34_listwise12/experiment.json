@@ -1,0 +1,120 @@
+{
+  "created_at": "2026-10-29T18:30:06.689266+08:00",
+  "question": "Does one complete freshD34 update with unchangedlistwise1.2 from acceptedactualV6 produce a supported Rebuild-minus-Reuse NDCG10 gap on fullD35? Preserve fullAdamW/same dailyLR/seed17/history1024 and all outcomes; no nextmodel or replication automatic.",
+  "parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+  "parent_training_cutoff_day": 33,
+  "training_day": 34,
+  "training_date": "2024-02-15",
+  "listwise_weight": 1.2,
+  "training_output": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12/training",
+  "training_command": [
+    "/home/gkl/miniconda3/bin/python",
+    "-m",
+    "torch.distributed.run",
+    "--standalone",
+    "--nproc_per_node=4",
+    "-m",
+    "experiments.recflow_full_population.code.train",
+    "--budget-spent-seconds",
+    "0.0",
+    "--checkpoint-every",
+    "100000",
+    "--communication",
+    "rows",
+    "--config",
+    "/home/gkl/work/evokv/experiments/recflow_full_population/configs/full.json",
+    "--data",
+    "/home/gkl/work/evokv/experiments/recflow_full_population/data",
+    "--days",
+    "34",
+    "--dtype",
+    "bfloat16",
+    "--epochs",
+    "1",
+    "--global-batch",
+    "64",
+    "--listwise-weight",
+    "1.2",
+    "--log-every",
+    "50",
+    "--micro-batch",
+    "16",
+    "--output",
+    "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12/training",
+    "--parent",
+    "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+    "--phase",
+    "update",
+    "--scale",
+    "max",
+    "--seed",
+    "17",
+    "--wall-hours",
+    "2.0",
+    "--workers",
+    "4"
+  ],
+  "training_requests": 160322,
+  "training_steps": 2506,
+  "epochs": 1,
+  "baseline_plan": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m7_d34/plan.json",
+  "training_argument_changes": {
+    "listwise_weight": {
+      "original": 0.1,
+      "new": 1.2
+    },
+    "log_every": {
+      "original": 100,
+      "new": 50
+    },
+    "output": {
+      "original": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m7_d34",
+      "new": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12/training"
+    },
+    "parent": {
+      "original": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m6_d33/step_002450.pt",
+      "new": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt"
+    }
+  },
+  "training_selection": {
+    "path": "/home/gkl/work/evokv/experiments/recflow_full_population/data/selections/role0_d34_d34.npy",
+    "requests": 160322,
+    "active_users": 13033
+  },
+  "evaluation_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise12_pilot_4096",
+  "evaluation_day": 35,
+  "evaluation_date": "2024-02-16",
+  "evaluation_interval_ms_half_open": [
+    1708012800000,
+    1708099200000
+  ],
+  "evaluation_users": 4096,
+  "evaluation_seed": 20261029,
+  "evaluation_user_offset": 0,
+  "evaluation_selection_preview": {
+    "path": "/home/gkl/work/evokv/experiments/recflow_full_population/data/selections/role2_d35_d35.npy",
+    "requests": 193097,
+    "active_users": 16084,
+    "pilot_requests": 23571,
+    "pilot_active_users": 2137
+  },
+  "evaluation_rule": "All requests and all logged candidates of the fixed chosen users on the next complete day",
+  "source_label": "V6_listwise12",
+  "target_label": "V7_candidate_listwise12",
+  "physical_gpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "history_limit": 1024,
+  "optimizer": {
+    "state": "Existing trainer loads the actual parent model and complete AdamW state",
+    "daily_scheduler": "new_daily_schedule_and_explicit_update_lr_after_loading_parent_optimizer_state",
+    "learning_rate": 0.0001,
+    "warmup_fraction": 0.05
+  },
+  "preparation_limit": "CPU sidecars and request indices checked; checkpoint tensors are loaded by the trainer at execution",
+  "automatic_successors": false,
+  "claim": "One actual daily update and one development pilot; no replication or following model is automatic"
+}

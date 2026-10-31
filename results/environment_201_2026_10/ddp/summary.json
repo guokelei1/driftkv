@@ -1,0 +1,52 @@
+{
+  "status": "passed_two_gpu_ddp_smoke",
+  "host": "g201",
+  "torch": "2.12.1+cu130",
+  "cuda_runtime": "13.0",
+  "backend": "nccl",
+  "world_size": 2,
+  "devices": [
+    "NVIDIA A800 80GB PCIe",
+    "NVIDIA A800 80GB PCIe"
+  ],
+  "model": "Randomly initialized legacy HSTU 2L/H64, 2 heads, FP32, dropout=0, TF32 disabled",
+  "model_seed": 17,
+  "input_seed": 23,
+  "global_batch": 8,
+  "per_rank_batch": 4,
+  "history_rows": 32,
+  "candidates": 2,
+  "optimizer": "SGD lr=0.01 momentum=0.9",
+  "nccl_all_reduce_passed": true,
+  "steps": [
+    {
+      "step": 1,
+      "global_mean_loss": 0.6833826303482056,
+      "reference_loss": 0.6833826899528503,
+      "max_gradient_error": 2.9802322387695312e-08,
+      "max_parameter_error": 7.450580596923828e-09,
+      "max_replica_parameter_error": 0.0
+    },
+    {
+      "step": 2,
+      "global_mean_loss": 0.6598242521286011,
+      "reference_loss": 0.6598242521286011,
+      "max_gradient_error": 5.960464477539063e-08,
+      "max_parameter_error": 1.1920928955078125e-07,
+      "max_replica_parameter_error": 0.0
+    },
+    {
+      "step": 3,
+      "global_mean_loss": 0.6712939739227295,
+      "reference_loss": 0.6712938547134399,
+      "max_gradient_error": 1.1920928955078125e-07,
+      "max_parameter_error": 1.1920928955078125e-07,
+      "max_replica_parameter_error": 0.0
+    }
+  ],
+  "synthetic_inputs": true,
+  "foundation_weights_used": false,
+  "quality_claim": false,
+  "throughput_claim": false,
+  "command": "CUDA_VISIBLE_DEVICES=0,1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 .venv/bin/torchrun --standalone --nnodes=1 --nproc-per-node=2 sync/\u73af\u5883/ddp_smoke.py --output results/environment_201_2026_10/ddp/summary.json"
+}

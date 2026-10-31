@@ -1,0 +1,603 @@
+{
+  "status": "ready_authorized",
+  "formal_started": false,
+  "configuration": "config.json",
+  "points_per_edge": 29,
+  "edges": 5,
+  "total_method_edge_points": 145,
+  "total_population_edge_users": 981815,
+  "total_feedback_events": 4415668,
+  "selected_user_batch": 1,
+  "parallelism": "4 independent A40 UID shards per edge; CPU UID statistics overlap next edge",
+  "benchmark_users_per_gpu": 256,
+  "benchmark_total_users": 1024,
+  "benchmark_cases": [
+    {
+      "user_batch": 1,
+      "seconds": 68.20564388495404,
+      "steady_seconds": 66.86132615932729,
+      "counts": {
+        "users": 256,
+        "append_groups": 2248,
+        "requests": 1040,
+        "query_groups": 888
+      },
+      "graphs": {
+        "entries": 18,
+        "preparation_graph": true,
+        "replays": {
+          "append": 2044,
+          "score": 769
+        },
+        "capture_seconds": 1.3443177256267518
+      },
+      "gpu_peak_reserved_bytes": 23188209664,
+      "gpu_peak_allocated_bytes": 18717244416
+    },
+    {
+      "user_batch": 1,
+      "seconds": 64.35810070496518,
+      "steady_seconds": 62.72529633354861,
+      "counts": {
+        "users": 256,
+        "requests": 1069,
+        "append_groups": 2050,
+        "query_groups": 812
+      },
+      "graphs": {
+        "entries": 25,
+        "preparation_graph": true,
+        "replays": {
+          "append": 1866,
+          "score": 728
+        },
+        "capture_seconds": 1.6328043714165688
+      },
+      "gpu_peak_reserved_bytes": 23546822656,
+      "gpu_peak_allocated_bytes": 18904931328
+    },
+    {
+      "user_batch": 1,
+      "seconds": 50.10047089995351,
+      "steady_seconds": 48.55926132982131,
+      "counts": {
+        "users": 256,
+        "requests": 751,
+        "append_groups": 1688,
+        "query_groups": 622
+      },
+      "graphs": {
+        "entries": 22,
+        "preparation_graph": true,
+        "replays": {
+          "append": 1533,
+          "score": 552
+        },
+        "capture_seconds": 1.541209570132196
+      },
+      "gpu_peak_reserved_bytes": 23402119168,
+      "gpu_peak_allocated_bytes": 18723218432
+    },
+    {
+      "user_batch": 1,
+      "seconds": 53.55602576001547,
+      "steady_seconds": 52.56715108791832,
+      "counts": {
+        "users": 256,
+        "requests": 997,
+        "append_groups": 1790,
+        "query_groups": 680
+      },
+      "graphs": {
+        "entries": 13,
+        "preparation_graph": true,
+        "replays": {
+          "append": 1686,
+          "score": 618
+        },
+        "capture_seconds": 0.988874672097154
+      },
+      "gpu_peak_reserved_bytes": 19784531968,
+      "gpu_peak_allocated_bytes": 16149246976
+    }
+  ],
+  "maximum_score_error": 9.5367431640625e-07,
+  "benchmark_configuration_differences": [
+    "expected_requests"
+  ],
+  "configuration_difference_note": "Quality-only coverage assertion corrected; numerical settings and benchmark inputs unchanged. See feedback_coverage.json.",
+  "cost_basis": "Complete added analytical FLOPs / once-per-user Rebuild FLOPs; wall times below are scheduling-only",
+  "kv_map_points": [
+    {
+      "tag": "kv_map_u32_w40",
+      "method": "kv_map",
+      "fit_users": 32,
+      "width": 40,
+      "mean_cost_pct": 6.311759635478021,
+      "cost_pct_by_edge": [
+        6.306209871674365,
+        6.307721577301053,
+        6.312661327794402,
+        6.314457479618273,
+        6.317747921002008
+      ],
+      "min_cost_pct": 6.306209871674365,
+      "max_cost_pct": 6.317747921002008,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 1495897958244,
+          "fitting_flops": 943591968258,
+          "deployment_flops": 268999026370560,
+          "complete_added_flops": 271438516297062,
+          "rebuild_flops": 4304305150329420,
+          "steps": 32,
+          "training_rows": 213384
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 1532832432600,
+          "fitting_flops": 960050341378,
+          "deployment_flops": 275179191198720,
+          "complete_added_flops": 277672073972698,
+          "rebuild_flops": 4402097818837278,
+          "steps": 32,
+          "training_rows": 217136
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 1556602305516,
+          "fitting_flops": 977912413698,
+          "deployment_flops": 281088192793600,
+          "complete_added_flops": 283622707512814,
+          "rebuild_flops": 4492918165339146,
+          "steps": 32,
+          "training_rows": 221208
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 1631857176432,
+          "fitting_flops": 1009109628418,
+          "deployment_flops": 287801557488640,
+          "complete_added_flops": 290442524293490,
+          "rebuild_flops": 4599643361776950,
+          "steps": 32,
+          "training_rows": 228320
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 1670203388100,
+          "fitting_flops": 1034270936578,
+          "deployment_flops": 310701668920320,
+          "complete_added_flops": 313406143244998,
+          "rebuild_flops": 4960725675729258,
+          "steps": 32,
+          "training_rows": 234056
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u64_w64",
+      "method": "kv_map",
+      "fit_users": 64,
+      "width": 64,
+      "mean_cost_pct": 10.010238863705977,
+      "cost_pct_by_edge": [
+        10.004056816251019,
+        10.00510394090819,
+        10.012391010530266,
+        10.013747077599833,
+        10.015895473240581
+      ],
+      "min_cost_pct": 10.004056816251019,
+      "max_cost_pct": 10.015895473240581,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 2912313990684,
+          "fitting_flops": 2875912594050,
+          "deployment_flops": 424816906199040,
+          "complete_added_flops": 430605132783774,
+          "rebuild_flops": 4304305150329420,
+          "steps": 56,
+          "training_rows": 411000
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 2946109768752,
+          "fitting_flops": 2911416629890,
+          "deployment_flops": 434576935956480,
+          "complete_added_flops": 440434462355122,
+          "rebuild_flops": 4402097818837278,
+          "steps": 56,
+          "training_rows": 416096
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 2988033788928,
+          "fitting_flops": 2951769725570,
+          "deployment_flops": 443908730982400,
+          "complete_added_flops": 449848534496898,
+          "rebuild_flops": 4492918165339146,
+          "steps": 56,
+          "training_rows": 421888
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 3075877262544,
+          "fitting_flops": 3009958443650,
+          "deployment_flops": 454510817013760,
+          "complete_added_flops": 460596652719954,
+          "rebuild_flops": 4599643361776950,
+          "steps": 56,
+          "training_rows": 430240
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 3124919827440,
+          "fitting_flops": 3060344076930,
+          "deployment_flops": 490675834490880,
+          "complete_added_flops": 496861098395250,
+          "rebuild_flops": 4960725675729258,
+          "steps": 56,
+          "training_rows": 437472
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u96_w96",
+      "method": "kv_map",
+      "fit_users": 96,
+      "width": 96,
+      "mean_cost_pct": 14.952190511151253,
+      "cost_pct_by_edge": [
+        14.942088358875386,
+        14.944734089487538,
+        14.955711423527882,
+        14.958729834252471,
+        14.95968884961298
+      ],
+      "min_cost_pct": 14.942088358875386,
+      "max_cost_pct": 14.95968884961298,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 4298714500884,
+          "fitting_flops": 6280284993282,
+          "deployment_flops": 632574079303680,
+          "complete_added_flops": 643153078797846,
+          "rebuild_flops": 4304305150329420,
+          "steps": 80,
+          "training_rows": 601576
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 4385276865960,
+          "fitting_flops": 6389274218242,
+          "deployment_flops": 647107262300160,
+          "complete_added_flops": 657881813384362,
+          "rebuild_flops": 4402097818837278,
+          "steps": 80,
+          "training_rows": 612048
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 4429594841304,
+          "fitting_flops": 6515498561282,
+          "deployment_flops": 661002781900800,
+          "complete_added_flops": 671947875303386,
+          "rebuild_flops": 4492918165339146,
+          "steps": 80,
+          "training_rows": 624176
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 4590610378380,
+          "fitting_flops": 6667783735042,
+          "deployment_flops": 676789829713920,
+          "complete_added_flops": 688048223827342,
+          "rebuild_flops": 4599643361776950,
+          "steps": 80,
+          "training_rows": 638808
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 4667234716596,
+          "fitting_flops": 6800502470402,
+          "deployment_flops": 730641388584960,
+          "complete_added_flops": 742109125771958,
+          "rebuild_flops": 4960725675729258,
+          "steps": 80,
+          "training_rows": 651560
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u128_w128",
+      "method": "kv_map",
+      "fit_users": 128,
+      "width": 128,
+      "mean_cost_pct": 19.931825506854498,
+      "cost_pct_by_edge": [
+        19.918376898983635,
+        19.92243406564792,
+        19.937659561838654,
+        19.941188752134146,
+        19.939468255668135
+      ],
+      "min_cost_pct": 19.918376898983635,
+      "max_cost_pct": 19.941188752134146,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 5791185068784,
+          "fitting_flops": 11225285247874,
+          "deployment_flops": 840331252408320,
+          "complete_added_flops": 857347722724978,
+          "rebuild_flops": 4304305150329420,
+          "steps": 104,
+          "training_rows": 808672
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 5899428218508,
+          "fitting_flops": 11468018600834,
+          "deployment_flops": 859637588643840,
+          "complete_added_flops": 877005035463182,
+          "rebuild_flops": 4402097818837278,
+          "steps": 104,
+          "training_rows": 826200
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 5985668147532,
+          "fitting_flops": 11700227230594,
+          "deployment_flops": 878096832819200,
+          "complete_added_flops": 895782728197326,
+          "rebuild_flops": 4492918165339146,
+          "steps": 104,
+          "training_rows": 842968
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 6178337591412,
+          "fitting_flops": 11976384691458,
+          "deployment_flops": 899068842414080,
+          "complete_added_flops": 917223564696950,
+          "rebuild_flops": 4599643361776950,
+          "steps": 112,
+          "training_rows": 862888
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 6312383109756,
+          "fitting_flops": 12222995574018,
+          "deployment_flops": 970606942679040,
+          "complete_added_flops": 989142321362814,
+          "rebuild_flops": 4960725675729258,
+          "steps": 112,
+          "training_rows": 880696
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u192_w160",
+      "method": "kv_map",
+      "fit_users": 192,
+      "width": 160,
+      "mean_cost_pct": 25.05302564822278,
+      "cost_pct_by_edge": [
+        25.03716916387456,
+        25.04427844232433,
+        25.063630173980158,
+        25.067208603743012,
+        25.052841857191833
+      ],
+      "min_cost_pct": 25.03716916387456,
+      "max_cost_pct": 25.067208603743012,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 8625398474364,
+          "fitting_flops": 20962337830018,
+          "deployment_flops": 1048088425512960,
+          "complete_added_flops": 1077676161817342,
+          "rebuild_flops": 4304305150329420,
+          "steps": 152,
+          "training_rows": 1210424
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 8804243306916,
+          "fitting_flops": 21501476758658,
+          "deployment_flops": 1072167914987520,
+          "complete_added_flops": 1102473635053094,
+          "rebuild_flops": 4402097818837278,
+          "steps": 152,
+          "training_rows": 1241608
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 8959285741776,
+          "fitting_flops": 21938223500802,
+          "deployment_flops": 1095190883737600,
+          "complete_added_flops": 1126088392980178,
+          "rebuild_flops": 4492918165339146,
+          "steps": 160,
+          "training_rows": 1266848
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 9211695212844,
+          "fitting_flops": 22442646197762,
+          "deployment_flops": 1121347855114240,
+          "complete_added_flops": 1153002196524846,
+          "rebuild_flops": 4599643361776950,
+          "steps": 160,
+          "training_rows": 1296024
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 9394022040696,
+          "fitting_flops": 22836239695746,
+          "deployment_flops": 1210572496773120,
+          "complete_added_flops": 1242802758509562,
+          "rebuild_flops": 4960725675729258,
+          "steps": 168,
+          "training_rows": 1318768
+        }
+      ]
+    },
+    {
+      "tag": "kv_map_u256_w184",
+      "method": "kv_map",
+      "fit_users": 256,
+      "width": 184,
+      "mean_cost_pct": 29.01833896344764,
+      "cost_pct_by_edge": [
+        29.008653993358294,
+        29.01097985302069,
+        29.030865445859572,
+        29.03695055199049,
+        29.00424497300916
+      ],
+      "min_cost_pct": 29.00424497300916,
+      "max_cost_pct": 29.03695055199049,
+      "flop_breakdown_by_edge": [
+        {
+          "edge": 1,
+          "teacher_preparation_flops": 11776780179696,
+          "fitting_flops": 32937902356226,
+          "deployment_flops": 1203906305341440,
+          "complete_added_flops": 1248620987877362,
+          "rebuild_flops": 4304305150329420,
+          "steps": 208,
+          "training_rows": 1655520
+        },
+        {
+          "edge": 2,
+          "teacher_preparation_flops": 11948194308120,
+          "fitting_flops": 33577857279746,
+          "deployment_flops": 1231565659745280,
+          "complete_added_flops": 1277091711333146,
+          "rebuild_flops": 4402097818837278,
+          "steps": 208,
+          "training_rows": 1687728
+        },
+        {
+          "edge": 3,
+          "teacher_preparation_flops": 12141672082140,
+          "fitting_flops": 34179933163650,
+          "deployment_flops": 1258011421926400,
+          "complete_added_flops": 1304333027172190,
+          "rebuild_flops": 4492918165339146,
+          "steps": 216,
+          "training_rows": 1718008
+        },
+        {
+          "edge": 4,
+          "teacher_preparation_flops": 12493766873196,
+          "fitting_flops": 35045287014530,
+          "deployment_flops": 1288057114639360,
+          "complete_added_flops": 1335596168527086,
+          "rebuild_flops": 4599643361776950,
+          "steps": 216,
+          "training_rows": 1761560
+        },
+        {
+          "edge": 5,
+          "teacher_preparation_flops": 12700598591124,
+          "fitting_flops": 35573766492674,
+          "deployment_flops": 1390546662343680,
+          "complete_added_flops": 1438821027427478,
+          "rebuild_flops": 4960725675729258,
+          "steps": 224,
+          "training_rows": 1788136
+        }
+      ]
+    }
+  ],
+  "kv_training": {
+    "epochs": 8,
+    "batch_rows": 8192,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "beta1": 0.9,
+    "beta2": 0.999,
+    "epsilon": 1e-08,
+    "normalization_floor": 1e-05
+  },
+  "real_trajectory_numeric_resume": "passed on all four GPUs",
+  "checkpoint_generations": 2,
+  "checkpoint_seconds": 1800,
+  "checkpoint_timing": {
+    "seconds": 1.3427872370230034,
+    "bytes": 23983430,
+    "scope": "Synthetic final-size rank scalar checkpoint; temporary arrays removed"
+  },
+  "runtime_models": [
+    {
+      "features": [
+        "eligible_users",
+        "append_bands",
+        "query_groups"
+      ],
+      "coefficients": [
+        0.019213516672901148,
+        0.0,
+        0.07029926510245328
+      ],
+      "fitted_sample_seconds": [
+        67.34440767924121,
+        62.00166353145476,
+        48.644803161988634,
+        52.722160537930925
+      ],
+      "gpu_seconds_by_edge": [
+        13012.570422357465,
+        12581.671076911978,
+        12683.991657268598,
+        12932.253511977911,
+        13002.921848222153
+      ],
+      "total_gpu_seconds": 64213.408516738105
+    },
+    {
+      "features": [
+        "eligible_users",
+        "append_bands",
+        "requests"
+      ],
+      "coefficients": [
+        0.0,
+        0.02685943290671446,
+        0.005770649078044462
+      ],
+      "fitted_sample_seconds": [
+        66.38148021546034,
+        61.23066132319417,
+        49.6724802041454,
+        53.83172203382921
+      ],
+      "gpu_seconds_by_edge": [
+        12427.709596985014,
+        12109.529921032323,
+        12282.51630321068,
+        12494.993428085418,
+        12488.126435575516
+      ],
+      "total_gpu_seconds": 61802.875684888946
+    }
+  ],
+  "projected_gpu_hours": 17.502261694670423,
+  "projected_setup_minutes": 18.828429363125665,
+  "projected_statistics_all_edges_minutes": 87.27858683113784,
+  "projected_total_hours": 18.106997473492978,
+  "scheduling_range_hours": [
+    14.485597978794383,
+    25.34979646289017
+  ],
+  "assumptions": "Four A40 remain available; frozen full workload; projected from real-model probes on edges 1/2/3/5. Host statistics timing uses synthetic scalar arrays at actual dimensions. UID/workload skew, shape mix and input contention make this a scheduling estimate, not a measured full-run duration.",
+  "legacy_batch_comparison": [],
+  "retention": "Only core scripts/configuration/input fingerprints/costs/benchmark summaries; no full-population GPU quality run or trace outputs."
+}

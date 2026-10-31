@@ -1,0 +1,56 @@
+contract: yambda500m_medium_hstu_native_d14_cpu_parallelism_canary_v1
+date_frozen: 2026-08-28
+status: prospective_label_free_cpu_runtime_canary_v1
+purpose: >-
+  Select a larger CPU worker count for the not-yet-evaluated Medium D14 cells
+  without changing data, model, metric, batch, GPU, or release semantics.
+
+frozen_parent:
+  matrix_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+  matrix_contract_sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  execution_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_execution_admission_v1.yaml
+  execution_contract_sha256: d2e86f97e082779d64014da911d4214ae05cb6e90f0aa9fca2a8e1014e59aa72
+  manifest: data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/manifest.json
+  manifest_sha256: 122229a5f61849aafdc0faeaf0ab2c7080ac7bb006df67bb135c05dc46cff980
+
+scope:
+  applies_after_D7_full_only_complete: true
+  branches: [D14]
+  phases: [full_only, adjacent_reuse_if_separately_unlocked]
+  physical_gpus: [2, 3]
+  world_size: 2
+  quality_metric_read_for_selection: prohibited
+  model_score_construction_for_selection: prohibited
+
+canary:
+  workload: D14_edge1_E14_history_construction_only
+  days_half_open: [231, 245]
+  context: 1024
+  candidates_history_threads_per_rank: [4, 14, 20]
+  trial_order: [4, 14, 20, 4]
+  rank0_numa1_primary_cpus: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+  rank1_numa1_primary_cpus: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+  rank0_optional_sibling_cpus_for_20: [84, 85, 86, 87, 88, 89]
+  rank1_optional_sibling_cpus_for_20: [98, 99, 100, 101, 102, 103]
+  correctness_gate: identical_per_rank_history_digest_and_event_count
+  selection_rule: >-
+    Among 14 and 20 threads, select the smaller count when their maximum-rank
+    wall times differ by less than 5 percent; otherwise select the faster count.
+    Both must match the warmed four-thread reference digest and event count.
+
+runtime_after_selection:
+  arrow_cpu_threads_per_rank: selected_history_threads_per_rank
+  arrow_io_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+  affinity: disjoint_NUMA1_cpu_lists_from_canary
+  change_world_size_or_gpu_set: prohibited
+  change_numerical_or_data_semantics: prohibited
+
+authorization:
+  cpu_only_canary: authorized_by_user_2026_08_28
+  resume_D14_with_selected_cpu_runtime: authorized_by_user_2026_08_28
+  retrain_or_recompute_D7: prohibited
+
+outputs:
+  root: results/yambda500m_medium_seed17/full_reuse_matrix_v1/cpu_parallelism_canary_v1
+  selection: results/yambda500m_medium_seed17/full_reuse_matrix_v1/cpu_parallelism_canary_v1/selection.json

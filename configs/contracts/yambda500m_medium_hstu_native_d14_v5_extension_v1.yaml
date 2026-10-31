@@ -1,0 +1,114 @@
+contract: yambda500m_medium_hstu_native_d14_v5_extension_v1
+date_frozen: 2026-08-29
+status: prospective_medium_d14_v5_extension_v1
+purpose: >-
+  Extend the frozen Medium D14 candidate chain by exactly one direct-parent
+  update, v4 to v5. Train v5 on the complete [273,287) window, evaluate complete
+  E3/E7 windows, and retain nominal E14 only as an explicitly partial-tail
+  diagnostic because source day300 is incomplete.
+
+frozen_parent:
+  matrix_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_full_reuse_v1.yaml
+  matrix_contract_sha256: 727048c39ae3b723305aceb90a8d7af80eebe139e030823b47540639c10ae6a5
+  original_execution_contract: configs/contracts/yambda500m_medium_hstu_native_d7_d14_execution_admission_v1.yaml
+  original_execution_contract_sha256: d2e86f97e082779d64014da911d4214ae05cb6e90f0aa9fca2a8e1014e59aa72
+  v4_checkpoint: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v4/checkpoint_100.pt
+  v4_checkpoint_sha256: a8f2d57d3ebbcfbf294949ef628c310e06a22afb1ad9d7064f77a2ef35c397e6
+  v4_checkpoint_seal: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v4/checkpoint.seal.json
+  v4_checkpoint_seal_sha256: 07863e86e0cfbb0112c60e860d2920bece521a12eaba8cfd0bdb76a6e0a006e8
+  formal_d14_v1_v4_results_mutation: prohibited
+
+scope:
+  scale: EvoKV-HSTU-M
+  population_users: 30000
+  seed: 17
+  branches:
+    D14:
+      training_days: 14
+      versions: [v5]
+  expected_parent_version: v4
+  training_day_range_half_open: [273, 287]
+  complete_evaluation_windows:
+    E3: [287, 290]
+    E7: [287, 294]
+  partial_tail_diagnostic_window:
+    name: E14_partial
+    requested_range_half_open: [287, 301]
+    day300_source_status: incomplete
+    observed_day300_feedback_rows_before_grouping: 12962
+    observed_day300_feedback_max_second: 79995
+    interpretation_as_complete_E14: prohibited
+  versions_trained: [v5]
+  theta3_read_or_trained: false
+  recursive_reuse: prohibited
+
+frozen_inputs:
+  unified_scale_contract: configs/contracts/yambda500m_unified_scales_v1.yaml
+  unified_scale_contract_sha256: 7451d6042e86f24a15b24d31266b46c53d82035c2d1b5b1f5e96eb4d06f22fd0
+  dataset_manifest: data/processed/yambda500m_unified_v1/scales/medium/dataset.json
+  dataset_manifest_sha256: d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb
+  item_mapping: data/processed/yambda500m_unified_v1/scales/medium/item_mapping.parquet
+  item_mapping_sha256: 57b3e1e83625367777cc5cb1f932cb9a6df200352ba07cfdc7bb346a5504bbe7
+
+model:
+  num_behaviors: 4
+  hidden_size: 192
+  num_layers: 6
+  num_heads: 6
+  max_seq_len: 1024
+  num_query_types: 3
+  query_type_id: 2
+  num_query_actions: 1
+  query_action_id: 0
+  input_dropout: 0.1
+  oov_buckets: 256
+  known_items_from_dataset_manifest: 1380509
+
+manifest:
+  output: data/manifests/yambda500m_medium_hstu_native_d14_v5_extension_v1
+  blocks:
+    matrix_horizon: [217, 301]
+  request_group: [uid, timestamp, raw_item_id]
+  exact_duplicates_collapsed: true
+  conflicting_labels_excluded: true
+  strict_prior_listen_required: true
+  partial_day300_included_for_diagnostic_only: true
+  label_metrics_during_preparation: prohibited
+
+training:
+  objective: F_only_binary_cross_entropy
+  passes: 1
+  optimizer: fresh_AdamW
+  update_learning_rate: 0.00005
+  weight_decay: 0.0001
+  user_equal_window_weighting: true
+  direct_parent_warm_start: true
+  early_stopping: prohibited
+  checkpoint_selection: final_whole_pass_only
+  compute_dtype: bf16
+  reduction_and_optimizer_dtype: fp32
+
+evaluation:
+  paths: [parent_exact_rolling, current_exact_rolling, one_hop_reuse_rolling]
+  full_only_before_reuse_within_each_window: required
+  horizons: [E3, E7, E14_partial]
+  raw_scores_sealed_before_label_join: true
+  all_horizons_reported: true
+  partial_tail_must_remain_separate: true
+  serving_admission_from_partial_E14: prohibited
+  metrics: [ROC_AUC, dislike_PR_AUC, log_loss, Brier]
+
+failure_and_resume:
+  existing_complete_artifact: validate_hash_and_skip
+  existing_partial_directory: stop_for_audit
+  cuda_oom: stop_and_preserve_log_no_automatic_batch_downshift
+  failed_stage: stop_serial_queue
+
+outputs:
+  root: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1
+
+authorization:
+  data_manifest_and_code_preparation: authorized_by_user_2026_08_29
+  focused_four_gpu_canary: authorized_by_user_2026_08_29
+  v5_training_full_and_reuse_evaluation_after_canary: authorized_by_user_2026_08_29
+  serving_lineage_promotion: prohibited

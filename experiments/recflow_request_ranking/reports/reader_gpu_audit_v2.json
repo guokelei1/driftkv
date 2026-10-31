@@ -1,0 +1,107 @@
+{
+  "created_at": "2026-10-27T18:05:12.722243+08:00",
+  "scope": "synthetic_numerical_only_not_training_or_throughput",
+  "device": "cuda:1",
+  "gpu_name": "NVIDIA A40",
+  "torch": "2.12.1+cu130",
+  "history_width": 1024,
+  "true_lengths": [
+    1024,
+    733
+  ],
+  "layers": 2,
+  "hidden_size": 128,
+  "candidates": 17,
+  "candidate_chunk": 8,
+  "rows": [
+    {
+      "precision": "fp32",
+      "path": "shared_torch",
+      "reference": "native_torch",
+      "score_max_abs": 3.8743019104003906e-07,
+      "gradient_relative_l2": 1.714652626105817e-06,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.0001,
+        "gradient_relative_l2": 0.001
+      },
+      "passed": true
+    },
+    {
+      "precision": "fp32",
+      "path": "shared_triton_prefix",
+      "reference": "native_torch",
+      "score_max_abs": 4.470348358154297e-07,
+      "gradient_relative_l2": 1.6948370102909394e-06,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.0001,
+        "gradient_relative_l2": 0.001
+      },
+      "passed": true
+    },
+    {
+      "precision": "bf16",
+      "path": "shared_torch",
+      "reference": "native_torch",
+      "score_max_abs": 0.00390625,
+      "gradient_relative_l2": 0.031375035643577576,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.02,
+        "gradient_relative_l2": 0.08
+      },
+      "passed": true
+    },
+    {
+      "precision": "bf16",
+      "path": "shared_triton_prefix",
+      "reference": "native_torch",
+      "score_max_abs": 0.00390625,
+      "gradient_relative_l2": 0.031374622136354446,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.02,
+        "gradient_relative_l2": 0.08
+      },
+      "passed": true
+    },
+    {
+      "precision": "fp32",
+      "path": "checkpointed_257_candidates_chunk128",
+      "reference": "uncheckpointed_shared_triton_prefix",
+      "score_max_abs": 0.0,
+      "gradient_relative_l2": 2.7721352990894843e-11,
+      "limits": {
+        "score_max_abs": 1e-05,
+        "gradient_relative_l2": 0.0001
+      },
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "peak_allocated_bytes": 315267072,
+  "model_training": false,
+  "quality_result": null,
+  "source_sha256": {
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/__init__.py": "b1d7af4b2904f4d2798b104c67bca9627a84278ad8fe3e6a62f72783125491cb",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/protocol.py": "cc974d7a605bd4ec66940ee8094724d771b77f86726bb275b1d8f2d086a5275c",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/objective.py": "deff78eb4ff6659eecd460fb8bad778da15c53d9009b7f0638b554e0ebfb00ad",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/shared_reader.py": "0afa302bf96bc15b70e8b8550847eb03f65a1358df0060becffc3141e2473337",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/preflight.py": "645be40ed36f77ae08566abc96e8f81ae6d07f1138a1de737ebd35274d407ceb",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/check_reader_gpu.py": "23a91e37ca7a42937ab5bff702bbc6ec9f050812ee4bc59dec86b983c8327660",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/ingest_archive.py": "c44cb7f83031f1a2b4196bbcc762a964f1b8ba54ff882d4d5685be25ed5385d4",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/configuration.py": "d20c63210f113d128c861c3941fe64ceac967f8dc9ada3955280eb8e55a9d6ac",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/configs/proposal.json": "ce6f963dc7d615128bbf9aab2e7a5ef75fcac4b3313b0398c08e490b74481271",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/state_transition.py": "b3eaca9f73245bc358f1fd7bc278972d8d06435eac9f6c23d98168e218267749",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/rmsnorm.py": "2b6142386d76af1c08cf033f14d293a5438a6bcfb2cf2405f41048616b12ffb4",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/embeddings.py": "4a689e960d3a5951f8cbd48b402813af8cd326d9663f81d9f8d8835ca4600171",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/kv_cache.py": "53edaea74c3cbcd991d5d0a28b49b5bc8a6b52561fb7f936027b3793c37b3633",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/__init__.py": "d3963c0c951206de278a16e0ffbabaf7c54a459325cac34eed59b18ef1e554fa",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+    "/home/gkl/work/evokv/src/hstu_kvcache/models/backend_info.py": "8130a8cbbf4b6428cc07c75991115e4a531f6d1faba384af61625081af716895"
+  }
+}

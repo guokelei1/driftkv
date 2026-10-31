@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "status": "final_at_authorized_temporal_data_exhaustion",
+  "objective": "Prefer ten distinct actual released models with stable positive adjacent ancestry-linked NDCG gaps in strictly increasing future full-day windows. The explicit user revision permits a shorter final chain only at reviewed available-data exhaustion; report actual quality and all adverse outcomes.",
+  "protocol": "matched_causal_prefix_snapshot_complete_candidates",
+  "data": "/home/gkl/work/evokv/experiments/recflow_full_population/data",
+  "history_limit": 1024,
+  "model_scale": "max",
+  "primary_metric": "request_macro_observed_positive_ndcg@10",
+  "secondary_metric": "request_macro_observed_positive_recall@10",
+  "input_availability_cutoff_day": 27,
+  "minimum_future_evaluation_day": 28,
+  "new_edge_reliability_rule": {
+    "pilot_chosen_users": 4096,
+    "replication_chosen_users": 8192,
+    "require_disjoint_chosen_uids": true,
+    "require_both_positive_ndcg_point_estimates": true,
+    "ci_informational_not_universal_threshold": true,
+    "primary_metrics": "replication alone"
+  },
+  "nodes": [
+    {
+      "id": "V0",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.pt",
+      "label": "original_M0"
+    },
+    {
+      "id": "V1",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m1_d28/step_002484.pt",
+      "label": "original_M1"
+    },
+    {
+      "id": "V2",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m1_d29_listwise03/training/step_002526.pt",
+      "label": "new_M2_listwise03"
+    },
+    {
+      "id": "V3",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m2_d30_listwise03/training/step_002573.pt",
+      "label": "new_M3_listwise03"
+    },
+    {
+      "id": "V4",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise06/training/step_002570.pt",
+      "label": "new_M4_listwise06"
+    },
+    {
+      "id": "V5",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt",
+      "label": "new_M5_listwise06"
+    },
+    {
+      "id": "V6",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+      "label": "new_V6_listwise12"
+    },
+    {
+      "id": "V7",
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+      "label": "new_V7_interval2_listwise48"
+    },
+    {
+      "id": "V8",
+      "checkpoint": null,
+      "label": "not_yet_established_V8"
+    },
+    {
+      "id": "V9",
+      "checkpoint": null,
+      "label": "not_yet_established_V9"
+    }
+  ],
+  "edges": [
+    {
+      "id": "V0_to_V1",
+      "source": "V0",
+      "target": "V1",
+      "evaluation_day": 29,
+      "evidence": {
+        "kind": "original_full_population",
+        "directory": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m1_d29",
+        "supplemental_same_permutation_cohort_check": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/original_edge1_cohort_check.json",
+        "supplement_only_not_another_edge": true
+      }
+    },
+    {
+      "id": "V1_to_V2",
+      "source": "V1",
+      "target": "V2",
+      "evaluation_day": 30,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_pilot_4096",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_replication_8192"
+      },
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_replication_8192/combined_cohort_diagnostic.json"
+    },
+    {
+      "id": "V2_to_V3",
+      "source": "V2",
+      "target": "V3",
+      "evaluation_day": 31,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_listwise03_pilot_4096",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_lw03_replication_8192"
+      },
+      "interpretation_note": "Primary disjoint8192 NDCG loss1.21867% with positive nominalCI; pilot0.05355% CIcross0/mixed slices; replication first12h NDCGCIcross0 and RecallCIslightlycross0. Combined12288 descriptive loss0.85518% CIpositive. A weaker roughly1% effect, not uniformly significant slices.",
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_lw03_replication_8192/combined_cohort_diagnostic.json"
+    },
+    {
+      "id": "V3_to_V4",
+      "source": "V3",
+      "target": "V4",
+      "evaluation_day": 32,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise06_pilot_4096",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192"
+      },
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192/combined_cohort_diagnostic.json",
+      "interpretation_note": "Pilot1.83038% and replication1.89647% NDCG losses with positive nominal UID intervals; allfour replication NDCG slice intervals positive. Combined descriptive1.87505% CIpositive is not new confirmation. OverallRecall intervals cross0 in both cohorts. Same-parent0.3 sibling is retained as a weak counterexample; only listwiseweight changed."
+    },
+    {
+      "id": "V4_to_V5",
+      "source": "V4",
+      "target": "V5",
+      "evaluation_day": 33,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_listwise06_pilot_4096",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192"
+      },
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192/combined_cohort_diagnostic.json",
+      "full_population_sensitivity_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000",
+      "stability_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000/decision.json",
+      "interpretation_note": "Original8192 primary0.68805% CIcross0 retained. Terminal full30000 loss0.72403% has positive overall NDCG/Recall intervals; allthree disjoint-group points .659/.688/.754% agree. Full four slice points positive, but second12h NDCG CIcross0; pilot time reversal retained. Effect below1%, and expansion was adaptive development, not independent confirmation."
+    },
+    {
+      "id": "V5_to_V6",
+      "source": "V5",
+      "target": "V6",
+      "evaluation_day": 34,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise12_pilot_4096",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192"
+      },
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192/combined_cohort_diagnostic.json",
+      "full_population_sensitivity_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000",
+      "stability_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000/decision.json",
+      "interpretation_note": "Original8192primary0.41106% CIcrosszero retained; pilot1.42% positiveCI, remaining0.64141% positiveCI, terminalfull30000 loss0.66717% with positiveoverall NDCG/Recall intervals. Allfullslice pointspositive but evenUID/second12h NDCG intervals includezero. Small-effect below1%, adaptive development expansion; no independenttraining/temporal confirmation."
+    },
+    {
+      "id": "V6_to_V7",
+      "source": "V6",
+      "target": "V7",
+      "evaluation_day": 36,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_replication_8192"
+      },
+      "stability_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_replication_8192/decision.json",
+      "interpretation_note": "Two-day publication with one unpublished D34 intermediate. Pilot2.93321% and primary replication1.69807%; overall and all four NDCG slice intervals positive in each cohort. Recall overall positive but two slice intervals crosszero per cohort. Same-model/date adaptive development, not independent training/time confirmation; window effect not isolated."
+    },
+    {
+      "id": "V7_to_V8",
+      "source": "V7",
+      "target": "V8",
+      "evaluation_day": 37,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": null,
+        "replication": null
+      }
+    },
+    {
+      "id": "V8_to_V9",
+      "source": "V8",
+      "target": "V9",
+      "evaluation_day": 37,
+      "evidence": {
+        "kind": "pilot_replication",
+        "pilot": null,
+        "replication": null
+      }
+    }
+  ],
+  "incomplete_note": "Final actual chain is eight models/seven edges. User-authorized temporal-data-exhaustion termination has been independently reviewed. Preferred ten models and majority1–3% effects were not achieved; the final D36/D37 candidate remains unpublished. No pending experiments.",
+  "previous_pairs_are_not_this_chain": true,
+  "rejected_warm_edge": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/warm_m0_pilot_4096/completion.json",
+  "automatic_successors": false,
+  "previous_six_distinct_pairs": "/home/gkl/work/evokv/experiments/recflow_release_design/release_interval/model_groups.json",
+  "updated_at": "2026-10-29T22:32:10.098829+08:00",
+  "unaccepted_candidate_edges": [
+    {
+      "edge": "V3_to_V4",
+      "candidate_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise03",
+      "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise03_pilot_4096",
+      "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192",
+      "decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192/decision.json",
+      "status": "not_stably_positive",
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192/combined_cohort_diagnostic.json"
+    },
+    {
+      "edge": "V5_to_V6",
+      "candidate_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise06",
+      "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise06_pilot_4096",
+      "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw06_replication_8192",
+      "decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw06_replication_8192/decision.json",
+      "status": "not_stably_positive",
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw06_replication_8192/combined_cohort_diagnostic.json"
+    },
+    {
+      "edge": "V6_to_V7",
+      "candidate_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12",
+      "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise12_pilot_4096",
+      "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192",
+      "decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192/decision.json",
+      "status": "not_stably_positive",
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192/combined_cohort_diagnostic.json"
+    },
+    {
+      "edge": "V6_to_V7",
+      "candidate_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24",
+      "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise24_pilot_4096",
+      "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192",
+      "decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192/decision.json",
+      "status": "original_dual_cohort_direction_rule_not_met",
+      "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192/combined_cohort_diagnostic.json"
+    },
+    {
+      "edge": "V6_to_V7",
+      "candidate_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48",
+      "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise48_pilot_4096",
+      "replication": null,
+      "decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise48_pilot_4096/decision.json",
+      "status": "weak_pilot_unpublished_intermediate_no_replication",
+      "replication_not_performed_is_not_a_negative_result": true
+    },
+    {
+      "edge": "V7_to_V8",
+      "candidate_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48",
+      "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_listwise48_pilot_4096",
+      "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_lw48_replication_8192",
+      "decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_lw48_replication_8192/decision.json",
+      "status": "final_window_pilot_replication_disagree_not_stably_positive"
+    }
+  ],
+  "objective_revision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/objective_revision_2026_10_29.json",
+  "preferred_model_count": 10,
+  "allow_fewer_models_at_verified_data_exhaustion": true,
+  "planned_release_scenario": {
+    "status": "terminated_at_reviewed_temporal_data_exhaustion",
+    "current_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48",
+    "published_source": "V7",
+    "next_candidate_evaluation_day": null,
+    "last_available_following_evaluation_day": null,
+    "possible_final_model_count": 8,
+    "possible_final_edge_count": 7,
+    "old_null_evidence_slots_note": "Existing unfilled10-model preferredtarget slots are not actualscheduled releases. Consult thiscurrentplan andSTATUS; finalactualcount anddataexhaustionaudit will reflectuserrevisedobjective.",
+    "no_earlywarm_count_filler": true,
+    "actual_final_model_count": 8,
+    "actual_final_edge_count": 7,
+    "no_pending_work": true,
+    "preferred_target_achieved": false
+  },
+  "data_exhaustion_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/data_exhaustion_review.json",
+  "terminal_delivery_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/terminal_delivery_review.json",
+  "final_report": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/final_report.txt"
+}

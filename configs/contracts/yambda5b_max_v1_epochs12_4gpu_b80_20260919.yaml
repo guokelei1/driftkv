@@ -1,0 +1,132 @@
+contract: yambda5b_max_v1_epochs12_4gpu_b80_20260919
+date_frozen: '2026-09-19'
+status: prospective_release_chain_candidate_v1
+purpose: Warm start Max V1 from fixed V0, continuously train two epochs and evaluate
+  both endpoints on the same complete future E14
+scope:
+  scale: Max
+  versions:
+  - v1
+  expected_parent_version: v0
+  seed: 17
+  population_users: 200000
+  branch: D14
+  training_days_half_open:
+  - 217
+  - 231
+  theta3_read_or_trained: false
+  interpretation: development_Max_V1_two_predeclared_endpoints_after_V0_10pct_baseline_check
+frozen_inputs:
+  dataset_manifest: data/processed/yambda5b_max_200k_v1/scales/max/dataset.json
+  dataset_manifest_sha256: 183f84998309ef93b646e83f47a79c279079bc0f2659c2ea19ec2f3d73fbf7b0
+  item_mapping: data/processed/yambda5b_max_200k_v1/scales/max/item_mapping.parquet
+  item_mapping_sha256: f63ec48c9b350f3e128574d9706ea7ffcb77eb9aab37d1f274125a8deb9e45b0
+  request_manifest: data/manifests/yambda5b_max_200k_hstu_native_v1/manifest.json
+  request_manifest_sha256: 9d471a32c17f7306bbeb77a790675fe6250613cb302263f51d7567ff433e992e
+  requests_quality: data/manifests/yambda5b_max_200k_hstu_native_v1/requests_quality.parquet
+  requests_quality_sha256: 9817aaade124a331ffd989a0d6b50e18d7e9d80aee91b2ff7726ffb031d84958
+  requests_fidelity: data/manifests/yambda5b_max_200k_hstu_native_v1/requests_fidelity.parquet
+  requests_fidelity_sha256: f19a07119816cff9ee1b24480b970badd4bbc56ced2f9921b7fffec0e9358912
+  data_audit: results/unified_training_2026_09/max/preparation/data_audit.json
+  data_audit_sha256: 0f5168062dd11ebcacb4248d9baf156491a154ce198e8d084732a07aea6bf4ee
+  parent_v0_checkpoint: results/unified_training_2026_09/max/seed17/v0_1epoch_4gpu_b80_cpu14/checkpoint/checkpoint_100.pt
+  parent_v0_checkpoint_sha256: 83edf405eaf32d9413b2aefba05f921410eb51d583615289f20ac3a5c426d3ca
+  parent_checkpoint_seal: results/unified_training_2026_09/max/seed17/v0_1epoch_4gpu_b80_cpu14/checkpoint/checkpoint.seal.json
+  parent_checkpoint_seal_sha256: f43d6e3f860c1bd123485e8bfc898fdfa28eed107f30d453688b1fce9387a1bb
+model:
+  num_behaviors: 4
+  hidden_size: 320
+  num_layers: 16
+  num_heads: 10
+  max_seq_len: 1024
+  num_query_types: 3
+  query_type_id: 2
+  num_query_actions: 1
+  query_action_id: 0
+  input_dropout: 0.1
+  oov_buckets: 256
+  known_items_from_dataset_manifest: 3530650
+  total_parameters: 1138203521
+training:
+  objective: F_only_binary_cross_entropy
+  window: matrix_horizon
+  passes: 2
+  candidate_epoch_options:
+  - 2
+  optimizer: fresh_AdamW_from_V0_weights
+  update_learning_rate: 5.0e-05
+  weight_decay: 0.0001
+  user_equal_window_weighting: true
+  global_batch_size: 80
+  learning_rate_scales_with_batch: false
+  direct_parent_warm_start: true
+  early_stopping: prohibited
+  checkpoint_selection: report_both_predeclared_epochs_no_automatic_selection
+  fsdp: FULL_SHARD
+  compute_dtype: bf16
+  reduction_and_optimizer_dtype: fp32
+  checkpoint_epochs:
+  - 1
+  - 2
+  data_order: same_chronological_rank_local_order_restarted_at_each_whole_pass
+  optimizer_reset_between_endpoints: false
+  recovery:
+    first_step: 500
+    interval_steps: 4000
+    keep_complete_generations: 2
+    format: same_layout_local_FSDP_parameters_AdamW_rng_progress
+    release_candidate: false
+evaluation:
+  paths:
+  - parent_exact_request_local
+  - current_exact_request_local
+  windows_days_half_open:
+    E14:
+    - 231
+    - 245
+  primary_horizon: E14
+  batch_size_per_rank: 64
+  metrics:
+  - ROC_AUC
+  - dislike_PR_AUC
+  - log_loss
+  - Brier
+  auc_aggregation: pooled_requests_unweighted
+  raw_scores_sealed_before_label_join: true
+  all_horizons_reported: true
+  original_admission_gates:
+  - current_ROC_AUC_greater_than_parent
+  - current_log_loss_less_than_parent
+  - current_Brier_not_greater_than_parent
+  - paired_user_mean_log_loss_gain_bootstrap_95CI_lower_greater_than_zero
+  research_target_relative_auc_gain_percent_strictly_greater_than: 1.0
+  research_target_is_separate_from_original_admission: true
+  automatic_retry_or_additional_epochs_on_target_failure: prohibited
+  reuse_execution: not_in_this_run
+  serving_promotion: prohibited
+  completeness: complete
+  candidates:
+  - v1_e1
+  - v1_e2
+  all_candidates_reported_together: true
+  population: all eligible known-target requests within the fixed 200000-user population;
+    not the V0 10pct sample
+canary:
+  training_steps: 12
+  batch_candidates_per_rank:
+  - 20
+  gpu_memory_reserve_fraction: 0.15
+  maximum_batch_per_rank: 20
+  physical_probe_failure: stop_and_preserve_failure
+  evaluation_max_users_per_rank: 32
+  pass: finite_training_and_checkpoint_parameters_parent_lineage_match_complete_raw_seal_and_finite_scores
+  quality_metric_read: prohibited
+  resource_estimate: results/unified_training_2026_09/max/seed17/v1_epochs12_4gpu_b80_cpu14/resource_estimate.json
+authorization:
+  user_instruction_date: '2026-09-19'
+  scope: User explicitly requested Max V1 from fixed V0, save epochs1/2, evaluate
+    both, launch detached tmux; do not launch V2-V5 automatically
+  formal_launch: authorized_by_current_user_instruction_after_canary_and_resource_estimate
+  other_versions_or_seeds: not_authorized_by_this_contract
+outputs:
+  root: results/unified_training_2026_09/max/seed17/v1_epochs12_4gpu_b80_cpu14

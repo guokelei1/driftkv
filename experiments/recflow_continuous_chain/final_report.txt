@@ -1,0 +1,106 @@
+RecFlow 连续发布链最终交付：8 个接纳模型，7 条相邻边
+
+本轮已完成最后可用的 D36 训练 / D37 评测。最后候选没有稳定正向证据，未发布；用户允许数据时间范围用到末日后以少于10模型结束。终止条件的独立记录见 terminal_delivery_review.json 和 data_exhaustion_review.json；任务状态见 STATUS.json。
+优选的10模型/9边及多数边下降1–3%没有实现。7条主结果均为正，其中5条主差值95%区间排除零；另外2条在自适应补齐30,000人后显示较小正差，不能称7条同样稳定。
+
+固定任务与统计口径
+模型为 Max Transformer recommender：1,154,235,353可训练参数，16层、隐藏维320、10×32头；历史上限1024。固定30,000训练用户，评测同批用户后续自然日；没有要求每人的历史都必须满1024。
+所有评测窗口为北京时间00:00到次日00:00，且严格晚于目标训练截止日。每条边在同一完整请求、候选集、历史快照上对照目标模型Rebuild和前一发布模型缓存Reuse。属于matched causal prefix snapshot，不是长期在线持久缓存/FIFO实验。
+主指标是完整候选上的observed-positive NDCG@10，按有正反馈请求取均值；零正反馈请求保留在coverage中，不进入未定义NDCG分母。未知反馈没有被宣称为真实负反馈；结果受日志曝光/反馈可观测性限制。
+下降百分比=100×(Rebuild−Reuse)/Rebuild。区间是Rebuild−Reuse绝对差的配对UID cluster bootstrap名义95%区间，2000次、seed17；不是百分比区间。
+第一条主评测为全30,000人；后六条主评测均为预定8,192人复核，另有固定4,096人初测，二者无交叉。重复用户/日期/模型及自适应调参使其不构成独立多种子确认；区间未作选择后校正。
+
+完整主结果（primary不被合并值或全量补测值替换）
+边	评测日	目标新增训练日	Rebuild NDCG10	Reuse NDCG10	相对下降%	绝对差95%区间	全部请求/正请求/正UID
+V0_to_V1	2024-02-10 (D29)	[28]	0.043422745202	0.041371864646	4.72305596	[0.001671304808, 0.002429427263]	198948/117667/10505
+V1_to_V2	2024-02-11 (D30)	[29]	0.052915186890	0.051265102934	3.11835610	[0.001072528144, 0.002192314270]	55813/33414/2827
+V2_to_V3	2024-02-12 (D31)	[30]	0.053616072228	0.052962669447	1.21866961	[0.000238259528, 0.001076536283]	56546/34070/2877
+V3_to_V4	2024-02-13 (D32)	[31]	0.055977796060	0.054916192104	1.89647330	[0.000620263968, 0.001531737248]	55873/33382/2818
+V4_to_V5	2024-02-14 (D33)	[32]	0.058452200123	0.058050020265	0.68804914	[-0.000000360434, 0.000807392693]	53647/32237/2805
+V5_to_V6	2024-02-15 (D34)	[33]	0.060146581363	0.059899342619	0.41106034	[-0.000205511339, 0.000706423709]	55423/33304/2805
+V6_to_V7	2024-02-17 (D36)	[34, 35]	0.065800705144	0.064683360491	1.69807398	[0.000599935153, 0.001645318557]	55735/33693/2819
+
+按论文用途区分证据强度：V3→V4和V6→V7的主下降1.89647%/1.69807%在目标范围内，且复核四个预定NDCG切片区间均正，可优先作为机制案例。V0→V1与V1→V2信号较清楚但幅度4.72306%/3.11836%高于严格1–3%范围。V2→V3主复核正，但初测只有0.05355%且区间跨零、切片混合。V4→V5和V5→V6是小效应案例，不宜作为同样稳健的主证据。
+严格1–3%只有3/7；未加权主下降均值1.96481978%是描述性统计，不能推导多数边处于该范围。7条主下降均<5%，但首边部分初测/时间切片>5%的结果照实保留。
+
+补齐全量的两条小效应（看过初测/复核后的开发性补测，不是独立确认）
+V4_to_V5: 30,000人、194452请求；R=0.057900918218, U=0.057481696226, loss=0.72403341%；绝对差CI=[0.000216112275,0.000632534215]。原主值保持不变。附件 /home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000
+V5_to_V6: 30,000人、198384请求；R=0.060595211176, U=0.060190938479, loss=0.66716938%；绝对差CI=[0.000161247394,0.000643709728]。原主值保持不变。附件 /home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000
+
+训练继承和实际模型路径
+V0以D1–23曝光预热终点step064431为父，随后D24–27候选对齐；选中step010116为alignment第1轮末，不等于整个alignment训练过程只跑了一轮。
+之后每日更新均保持完整AdamW训练继承；学习率日内重置从1e-4降至5e-6，seed17，每日1轮。排序loss权重经过开发调整，因此不能把跨配置正差归结为单纯训练更充分。
+V0: 该保存阶段训练日[24, 25, 26, 27]，截止2024-02-08，listwise weight=0.1
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/warmup/step_064431.pt
+V1: 该保存阶段训练日[28]，截止2024-02-09，listwise weight=0.1
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m1_d28/step_002484.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.pt
+V2: 该保存阶段训练日[29]，截止2024-02-10，listwise weight=0.3
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m1_d29_listwise03/training/step_002526.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m1_d28/step_002484.pt
+V3: 该保存阶段训练日[30]，截止2024-02-11，listwise weight=0.3
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m2_d30_listwise03/training/step_002573.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m1_d29_listwise03/training/step_002526.pt
+V4: 该保存阶段训练日[31]，截止2024-02-12，listwise weight=0.6
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise06/training/step_002570.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m2_d30_listwise03/training/step_002573.pt
+V5: 该保存阶段训练日[32]，截止2024-02-13，listwise weight=0.6
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise06/training/step_002570.pt
+V6: 该保存阶段训练日[33]，截止2024-02-14，listwise weight=1.2
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt
+V7: 该保存阶段训练日[35]，截止2024-02-16，listwise weight=4.8
+  checkpoint: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt
+  actual optimizer parent: /home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt
+V6→V7的真实路径是D33发布V6→D34未发布中间态I34→D35发布V7；不是跳过D34、也不是将不同父模型分支拼接。两天分别单轮更新并保留每日学习率安排，只延长发布间隔。窗口、鲜数据、模型端点、评测日期共同改变，不能从这一条边单独证明扩大窗口必然有效。
+
+最后未接纳候选：D36训练、D37=2024-02-18整日评测
+初测4096: 22865全部请求/13007正请求/1330正UID；R=0.063132290963,U=0.063466563959；NDCGloss=-0.52948022%,CI=[-0.0009507460411309038, 0.0003183815296226044]；Recallloss=-1.50533081%,CI=[-0.0029810541032188917, -0.00011345706384937076]。
+不重叠复核8192: 54141全部请求/32661正请求/2779正UID；R=0.066065858181,U=0.065781352745；NDCGloss=0.43063913%,CI=[-0.00011979530149947469, 0.0006930315017688858]；Recallloss=0.73977003%,CI=[-0.00013875892148800572, 0.001644857605706002]。
+初测与复核NDCG方向不同、两者区间均跨零，未满足原先双正点规则；初测Recall反向区间排零也保留。不用前12小时的正结果替代全日指标，不改变指标，不再扩样或追加epoch。
+未发布模型仍保留：/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m7_d36_listwise48/training/step_002487.pt
+最终decision：/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_lw48_replication_8192/decision.json
+本地raw all_stage、realshow及processed数据均到D37；无D38候选或标签。D36是有次日可评的最后训练日。这里的耗尽指可继续向未来推进的时间窗口耗尽，不是所有用户都在所有窗口被评分，也不是穷尽所有可能超参。
+
+本轮完整探索记录（全部正反结果，不只接纳结果）
+共28项完成评测记录；其中15项被导出为非正点或区间跨零。每项完整依据见experiment_log.json/chain_report.json及相应run的analysis、audit、decision。
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/warm_m0_pilot_4096: loss=-5.8161786227897165%, gapCI=[-0.003955005226127145, -0.0003395529514049931]; nonpositive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_pilot_4096: loss=4.167995136171215%, gapCI=[0.0012734636770134352, 0.0031509620022157634]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_replication_8192: loss=3.118356095699141%, gapCI=[0.0010725281438201872, 0.00219231427033427]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_listwise03_pilot_4096: loss=0.05354771193190308%, gapCI=[-0.0006376811448032732, 0.0006679721705622462]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_lw03_replication_8192: loss=1.2186696142886175%, gapCI=[0.00023825952786536605, 0.0010765362834288972]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise03_pilot_4096: loss=0.09290421756208442%, gapCI=[-0.0005907952786034997, 0.0007098472683805543]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192: loss=0.6223133040987682%, gapCI=[-7.154191174406263e-05, 0.0007236791696356387]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise06_pilot_4096: loss=1.8303846085198192%, gapCI=[0.0004051126482933286, 0.0017471262327593963]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192: loss=1.896473299725955%, gapCI=[0.0006202639680651375, 0.0015317372483261244]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_listwise06_pilot_4096: loss=0.6593666215850467%, gapCI=[-0.00019269176631535328, 0.0009539676642549924]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192: loss=0.6880491367859431%, gapCI=[-3.604343649815817e-07, 0.0008073926934574463]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_remaining_17712: loss=0.7540016275669444%, gapCI=[0.00016141390713899698, 0.0007279827866438354]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000: loss=0.7240334092247257%, gapCI=[0.00021611227545784885, 0.0006325342153641697]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise06_pilot_4096: loss=0.26145641338136966%, gapCI=[-0.0004439815111201735, 0.0007304688649505605]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw06_replication_8192: loss=-0.30263337676314817%, gapCI=[-0.0005962460158328634, 0.0002558729329030608]; nonpositive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise12_pilot_4096: loss=1.4200028716872517%, gapCI=[0.00021390822774717226, 0.001481044862968855]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192: loss=0.4110603430265033%, gapCI=[-0.00020551133860871745, 0.000706423709216968]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_remaining_17712: loss=0.6414080431464178%, gapCI=[7.217643023900947e-05, 0.0007118816908505636]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000: loss=0.6671693832547256%, gapCI=[0.00016124739393004895, 0.0006437097283884123]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise12_pilot_4096: loss=-0.4061311529039978%, gapCI=[-0.0008897967460416702, 0.0003820288539023391]; nonpositive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192: loss=0.23167800598456345%, gapCI=[-0.00030857162603739147, 0.0006102479163451569]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise24_pilot_4096: loss=-0.06607392082246318%, gapCI=[-0.0006674866343627742, 0.0005781376956784033]; nonpositive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192: loss=0.9461586289612812%, gapCI=[0.00014780357679414796, 0.001076951156270464]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise48_pilot_4096: loss=0.3864204730660016%, gapCI=[-0.00041966803400720823, 0.000898336354659634]; positive_point_interval_inconclusive
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096: loss=2.933210719634409%, gapCI=[0.0010816762010193205, 0.0027318010951321954]; awaiting_disjoint_replication
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_replication_8192: loss=1.698073980615855%, gapCI=[0.0005999351530883725, 0.0016453185566489455]; positive_point
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_listwise48_pilot_4096: loss=-0.5294802247282815%, gapCI=[-0.0009507460411309038, 0.0003183815296226044]; negative_pilot_awaiting_final_diagnostic_replication
+/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_lw48_replication_8192: loss=0.43063912799521%, gapCI=[-0.00011979530149947469, 0.0006930315017688858]; final_available_window_not_stably_positive
+
+此前原始9条边、4个额外epoch反例及清理说明均通过chain_report.json的historical_references_only引用保存；这些不是本链的额外边，旧checkpoint删除记录也不被隐瞒。
+附表actual_chain_models.csv只含8个实际发布模型，actual_chain_edges.csv只含7条实际边，后者含完整中间训练路径、Recall、覆盖量、所有CI和补测指标。chain_models.csv/chain_edges.csv保留旧10/9占位兼容字段，空占位不是发布模型或已测结果。
+没有哈希执行保护；本轮未改论文，未删除模型或数据，没有自动后继队列。
+
+详细模型表：/home/gkl/work/evokv/experiments/recflow_continuous_chain/actual_chain_models.csv
+详细指标表：/home/gkl/work/evokv/experiments/recflow_continuous_chain/actual_chain_edges.csv
+全部探索和证据：/home/gkl/work/evokv/experiments/recflow_continuous_chain/chain_report.json
+逐边科学审查：/home/gkl/work/evokv/experiments/recflow_continuous_chain/current_edge_stability_review.json
+终局独立交付审查：/home/gkl/work/evokv/experiments/recflow_continuous_chain/terminal_delivery_review.json

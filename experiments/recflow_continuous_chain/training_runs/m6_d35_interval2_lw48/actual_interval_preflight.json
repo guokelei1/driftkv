@@ -1,0 +1,153 @@
+{
+  "status": "passed",
+  "checked_at": "2026-10-29T20:58:10.309852+08:00",
+  "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48",
+  "active_training_pid": 1678688,
+  "actual_four_rank_workers": [
+    {
+      "pid": 1678745,
+      "rank": 0,
+      "full_arguments_match": true
+    },
+    {
+      "pid": 1678746,
+      "rank": 1,
+      "full_arguments_match": true
+    },
+    {
+      "pid": 1678747,
+      "rank": 2,
+      "full_arguments_match": true
+    },
+    {
+      "pid": 1678748,
+      "rank": 3,
+      "full_arguments_match": true
+    }
+  ],
+  "training_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt",
+  "published_cache_source": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+  "training_parent_and_published_source_are_distinct": true,
+  "published_source_is_accepted_V6": true,
+  "training_parent_is_not_a_published_node": true,
+  "actual_existing_ancestry": [
+    {
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+      "train_days": [
+        33
+      ],
+      "train_end_day": 33,
+      "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt"
+    },
+    {
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt",
+      "train_days": [
+        34
+      ],
+      "train_end_day": 34,
+      "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt"
+    }
+  ],
+  "training": {
+    "day": 35,
+    "requests": 154820,
+    "planned_steps": 2420,
+    "epochs": 1,
+    "listwise_weight": 4.8,
+    "seed": 17,
+    "history_limit": 1024,
+    "same_semantic_model_configuration_as_parent_and_source": true,
+    "saved_selection_field_checks": {
+      "uid": {
+        "all_values_dtype_and_order_equal_original": true,
+        "records": 154820
+      },
+      "rid": {
+        "all_values_dtype_and_order_equal_original": true,
+        "records": 154820
+      },
+      "day": {
+        "all_values_dtype_and_order_equal_original": true,
+        "records": 154820
+      },
+      "ts": {
+        "all_values_dtype_and_order_equal_original": true,
+        "records": 154820
+      },
+      "history_length": {
+        "all_values_dtype_and_order_equal_original": true,
+        "records": 154820
+      }
+    },
+    "rank_sampler_checks": [
+      {
+        "rank": 0,
+        "batches": 2420,
+        "real_requests": 38708
+      },
+      {
+        "rank": 1,
+        "batches": 2420,
+        "real_requests": 38704
+      },
+      {
+        "rank": 2,
+        "batches": 2420,
+        "real_requests": 38704
+      },
+      {
+        "rank": 3,
+        "batches": 2420,
+        "real_requests": 38704
+      }
+    ],
+    "all_real_requests_exactly_once": true,
+    "padding_positions": 60,
+    "completed": false
+  },
+  "optimizer": {
+    "source": "Complete AdamW state and model loaded from actual unpublished D34 parent by existing trainer before plan publication",
+    "learning_rate": {
+      "state": "Existing trainer loads the actual parent model and complete AdamW state",
+      "daily_scheduler": "new_daily_schedule_and_explicit_update_lr_after_loading_parent_optimizer_state",
+      "learning_rate": 0.0001,
+      "warmup_fraction": 0.05
+    },
+    "tensor_equality_independently_rechecked": false
+  },
+  "future_evaluation_plan": {
+    "day": 36,
+    "uid_seed": 20261029,
+    "user_offset": 0,
+    "chosen_users": 4096,
+    "complete_day_requests": 24069,
+    "full_population_day_requests": 197656,
+    "day_interval_ms_half_open": [
+      1708099200000,
+      1708185600000
+    ],
+    "evaluation_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096",
+    "expected_target_endpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+    "target_endpoint_saved_or_verified": false,
+    "scoring_executed_or_verified": false,
+    "actual_future_selection_file_verified": false
+  },
+  "runner_source_review": {
+    "prepare_helper": "prepare_update.cache_source_path and run_train_pair.validate_dispatch_spec validate the actual published-source-to-training-parent path; direct CPU validation returned the distinct expected paths.",
+    "training_command": "--parent is the unpublished D34 checkpoint, verified in saved command and all four running worker commands.",
+    "posttraining_endpoint": "Runner requires full-epoch completion and recorded target parent equal training_parent; it retains true parent metadata.",
+    "evaluation_dispatch": "Runner prepare_command passes --source-checkpoint str(cache_source), not training_parent; target is saved latest endpoint. prepare_pair defaults evaluation day to target_cutoff+1, hence D36 here.",
+    "expected_evaluation_source_argument": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+    "future_call_not_yet_observed": true,
+    "no_automatic_successor": true
+  },
+  "limitations": [
+    "Metadata, sample arrays and actual process commands were inspected; no large checkpoint tensors were read.",
+    "All-rank sampler indices were reconstructed on CPU, not traced from every future minibatch.",
+    "D36 request count is a preflight preview only. Completion, saved endpoint ancestry, actual prepare/evaluate command, full candidate audit and quality must be verified after they execute.",
+    "This is a new two-day publication case, not a single-variable estimate of window length: model state, new-day data and evaluation day advance together."
+  ],
+  "new_gpu_or_successor_launched": false,
+  "active_source_modified": false,
+  "wall_seconds": 0.42309942888095975
+}

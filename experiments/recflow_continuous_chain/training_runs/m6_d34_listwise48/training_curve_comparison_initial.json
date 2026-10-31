@@ -1,0 +1,990 @@
+{
+  "status": "completed_cpu_initial_log_diagnostic",
+  "created_at": "2026-10-29T20:19:27.719546+08:00",
+  "candidate_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48",
+  "baseline_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24",
+  "candidate_listwise_weight": 4.8,
+  "baseline_listwise_weight": 2.4,
+  "declared_comparison_context": "Same accepted V6 parent, complete D34 single epoch; context from the existing experiment, not re-proven by scalar logs.",
+  "input_files": {
+    "candidate_training_log": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training.log",
+    "baseline_training_log": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24/training.log"
+  },
+  "snapshot": {
+    "last_candidate_step_seen_at_initial_inspection": 700,
+    "fixed_maximum_step": 700,
+    "matching_steps": [
+      50,
+      100,
+      150,
+      200,
+      250,
+      300,
+      350,
+      400,
+      450,
+      500,
+      550,
+      600,
+      650,
+      700
+    ],
+    "only_complete_newline_terminated_json_records": true,
+    "later_training_records_excluded": true,
+    "quality_results_read": false,
+    "waited_for_full_training": false
+  },
+  "log_semantics": {
+    "bce_listwise_requests": "Cumulative sums since this training invocation began, reduced across ranks and divided by cumulative active request count; not last50-step averages. Listwise includes zero contribution from no-positive active requests.",
+    "derived_intervals": "Reconstructed from differences of cumulative mean times cumulative requests. These are online training losses over the interval under evolving parameters, not fixed-checkpoint reevaluation or validation.",
+    "gradient_norm": "The globally averaged gradient norm at the one optimizer step that emitted this record, BEFORE clipping to norm1. It is not an interval or cumulative mean and includes the different listwise weights.",
+    "lr": "Recorded after optimizer.step and scheduler.step; the scheduler value for the following optimizer step, compared at identical logged step.",
+    "requests": "Cumulative global active requests, with DDP padding excluded; matching counts do not themselves prove identical individual request identity.",
+    "seconds_per_step": "Cumulative measured elapsed time since step10 divided by measured_steps, not a last50-step interval average.",
+    "source_references": {
+      "trainer": "/home/gkl/work/evokv/experiments/recflow_full_population/code/train.py",
+      "trainer_lines": [
+        167,
+        198,
+        206,
+        211,
+        217,
+        238,
+        244
+      ],
+      "gradient_implementation": "/home/gkl/work/evokv/experiments/recflow_full_population/code/communication.py:47"
+    }
+  },
+  "checks": {
+    "same_logged_steps_through_fixed_cutoff": true,
+    "same_cumulative_request_counts": true,
+    "requests_equal_step_times_64": true,
+    "same_logged_epoch": true,
+    "same_post_scheduler_lr": true,
+    "same_communicated_item_row_count": true,
+    "all_recorded_scalar_diagnostics_finite": true
+  },
+  "summary": {
+    "common_log_checkpoints": 14,
+    "fixed_last_step": 700,
+    "cumulative_requests": 44800,
+    "last_cumulative_components": {
+      "bce": {
+        "baseline": 0.5991929924488067,
+        "candidate": 0.6042769581611668,
+        "candidate_minus_baseline": 0.005083965712360028
+      },
+      "listwise": {
+        "baseline": 4.176413433636938,
+        "candidate": 4.173561169377395,
+        "candidate_minus_baseline": -0.0028522642595429915
+      }
+    },
+    "last_50_step_interval_components": {
+      "steps_start_exclusive": 650,
+      "steps_end_inclusive": 700,
+      "active_requests": 3200,
+      "baseline": {
+        "active_requests": 3200,
+        "bce": 0.5960384647548199,
+        "listwise": 4.1432357132434845,
+        "elapsed_seconds": 34.286092481110245
+      },
+      "candidate": {
+        "active_requests": 3200,
+        "bce": 0.6033540156483661,
+        "listwise": 4.139227912425995,
+        "elapsed_seconds": 34.339141661068425
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.0073155508935461855,
+        "listwise": -0.004007800817489304
+      }
+    },
+    "cumulative_bce_higher_at_log_checkpoints": 14,
+    "cumulative_listwise_lower_at_log_checkpoints": 14,
+    "derived_interval_bce_higher_count": 14,
+    "derived_interval_listwise_lower_count": 14,
+    "logged_preclip_gradient_norm_range": {
+      "baseline": [
+        1.7171236276626587,
+        2.733916997909546
+      ],
+      "candidate": [
+        3.174363136291504,
+        5.449511528015137
+      ]
+    },
+    "logged_norms_above_clip_threshold_1": {
+      "baseline": 14,
+      "candidate": 14
+    },
+    "last_logged_seconds_per_step_after_step10": {
+      "baseline": 0.6837510335002689,
+      "candidate": 0.6856917259755774
+    },
+    "last_recorded_peak_allocated_bytes": {
+      "baseline": 23451654656,
+      "candidate": 23451654656
+    }
+  },
+  "matched_records": [
+    {
+      "step": 50,
+      "baseline": {
+        "step": 50,
+        "epoch": 0,
+        "bce": 0.601649784296751,
+        "listwise": 4.2029874384403225,
+        "requests": 3200,
+        "gradient_norm": 2.005995035171509,
+        "lr": 4.08e-05,
+        "communicated_item_rows": 66182,
+        "elapsed_budget_seconds": 77.31831306801178,
+        "peak_allocated_bytes": 23451654144,
+        "measured_steps": 40,
+        "seconds_per_step": 0.6812489183270373
+      },
+      "candidate": {
+        "step": 50,
+        "epoch": 0,
+        "bce": 0.6023393696546555,
+        "listwise": 4.2028682637214665,
+        "requests": 3200,
+        "gradient_norm": 3.8582375049591064,
+        "lr": 4.08e-05,
+        "communicated_item_rows": 66182,
+        "elapsed_budget_seconds": 76.46360020409338,
+        "peak_allocated_bytes": 23451654144,
+        "measured_steps": 40,
+        "seconds_per_step": 0.6853772438538727
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.0006895853579045319,
+        "listwise": -0.00011917471885602993,
+        "gradient_norm": 1.8522424697875977,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.004128325526835397
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 0,
+        "steps_end_inclusive": 50,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.601649784296751,
+          "listwise": 4.2029874384403225,
+          "elapsed_seconds": null
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6023393696546555,
+          "listwise": 4.2028682637214665,
+          "elapsed_seconds": null
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.0006895853579045319,
+          "listwise": -0.00011917471885602993
+        }
+      }
+    },
+    {
+      "step": 100,
+      "baseline": {
+        "step": 100,
+        "epoch": 0,
+        "bce": 0.6012933460623026,
+        "listwise": 4.208808280229569,
+        "requests": 6400,
+        "gradient_norm": 1.9020283222198486,
+        "lr": 8.080000000000001e-05,
+        "communicated_item_rows": 61648,
+        "elapsed_budget_seconds": 111.36189775797538,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 90,
+        "seconds_per_step": 0.6810373241573365
+      },
+      "candidate": {
+        "step": 100,
+        "epoch": 0,
+        "bce": 0.6033077067881822,
+        "listwise": 4.208199644386768,
+        "requests": 6400,
+        "gradient_norm": 3.735581159591675,
+        "lr": 8.080000000000001e-05,
+        "communicated_item_rows": 61648,
+        "elapsed_budget_seconds": 110.6902525620535,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 90,
+        "seconds_per_step": 0.6849064694225995
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.0020143607258796825,
+        "listwise": -0.0006086358428003535,
+        "gradient_norm": 1.8335528373718262,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.003869145265262941
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 50,
+        "steps_end_inclusive": 100,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.6009369078278542,
+          "listwise": 4.214629122018815,
+          "elapsed_seconds": 34.04358468996361
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.604276043921709,
+          "listwise": 4.21353102505207,
+          "elapsed_seconds": 34.22665235796012
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.003339136093854722,
+          "listwise": -0.0010980969667446772
+        }
+      }
+    },
+    {
+      "step": 150,
+      "baseline": {
+        "step": 150,
+        "epoch": 0,
+        "bce": 0.5998169960578282,
+        "listwise": 4.207895427942276,
+        "requests": 9600,
+        "gradient_norm": 1.9662874937057495,
+        "lr": 9.997280045736894e-05,
+        "communicated_item_rows": 64283,
+        "elapsed_budget_seconds": 145.59839235804975,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 140,
+        "seconds_per_step": 0.6823558095792708
+      },
+      "candidate": {
+        "step": 150,
+        "epoch": 0,
+        "bce": 0.6025290677944819,
+        "listwise": 4.206829307277998,
+        "requests": 9600,
+        "gradient_norm": 3.8607635498046875,
+        "lr": 9.997280045736894e-05,
+        "communicated_item_rows": 64283,
+        "elapsed_budget_seconds": 145.0780833431054,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 140,
+        "seconds_per_step": 0.6859243942424655
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.002712071736653665,
+        "listwise": -0.0010661206642783583,
+        "gradient_norm": 1.894476056098938,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0035685846631947626
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 100,
+        "steps_end_inclusive": 150,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5968642960488796,
+          "listwise": 4.206069723367691,
+          "elapsed_seconds": 34.236494600074366
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6009717898070812,
+          "listwise": 4.204088633060455,
+          "elapsed_seconds": 34.38783078105189
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.00410749375820163,
+          "listwise": -0.001981090307236144
+        }
+      }
+    },
+    {
+      "step": 200,
+      "baseline": {
+        "step": 200,
+        "epoch": 0,
+        "bce": 0.5992076065018773,
+        "listwise": 4.197077007293701,
+        "requests": 12800,
+        "gradient_norm": 1.7691857814788818,
+        "lr": 9.975538163975285e-05,
+        "communicated_item_rows": 63842,
+        "elapsed_budget_seconds": 179.62470729392953,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 190,
+        "seconds_per_step": 0.6818739697373913
+      },
+      "candidate": {
+        "step": 200,
+        "epoch": 0,
+        "bce": 0.6023029388859868,
+        "listwise": 4.195710214227438,
+        "requests": 12800,
+        "gradient_norm": 3.322037935256958,
+        "lr": 9.975538163975285e-05,
+        "communicated_item_rows": 63842,
+        "elapsed_budget_seconds": 179.28389445203356,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 190,
+        "seconds_per_step": 0.6854484568950475
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.003095332384109528,
+        "listwise": -0.0013667930662633054,
+        "gradient_norm": 1.5528521537780762,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.003574487157656181
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 150,
+        "steps_end_inclusive": 200,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5973794378340245,
+          "listwise": 4.164621745347977,
+          "elapsed_seconds": 34.02631493587978
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6016245521605018,
+          "listwise": 4.1623529350757575,
+          "elapsed_seconds": 34.205811108928174
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.0042451143264773394,
+          "listwise": -0.002268810272219035
+        }
+      }
+    },
+    {
+      "step": 250,
+      "baseline": {
+        "step": 250,
+        "epoch": 0,
+        "bce": 0.5994487822651863,
+        "listwise": 4.202268565416336,
+        "requests": 16000,
+        "gradient_norm": 2.733916997909546,
+        "lr": 9.932148993794489e-05,
+        "communicated_item_rows": 64012,
+        "elapsed_budget_seconds": 213.8311325700488,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 240,
+        "seconds_per_step": 0.6823440319295817
+      },
+      "candidate": {
+        "step": 250,
+        "epoch": 0,
+        "bce": 0.6028877117931842,
+        "listwise": 4.200740727066994,
+        "requests": 16000,
+        "gradient_norm": 5.449511528015137,
+        "lr": 9.932148993794489e-05,
+        "communicated_item_rows": 64012,
+        "elapsed_budget_seconds": 213.59458011598326,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 240,
+        "seconds_per_step": 0.6856079518503975
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.003438929527997958,
+        "listwise": -0.0015278383493422254,
+        "gradient_norm": 2.715594530105591,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.003263919920815761
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 200,
+        "steps_end_inclusive": 250,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.6004134853184223,
+          "listwise": 4.223034797906876,
+          "elapsed_seconds": 34.20642527611926
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6052268034219739,
+          "listwise": 4.220862778425219,
+          "elapsed_seconds": 34.3106856639497
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.004813318103551567,
+          "listwise": -0.002172019481657017
+        }
+      }
+    },
+    {
+      "step": 300,
+      "baseline": {
+        "step": 300,
+        "epoch": 0,
+        "bce": 0.598492271800836,
+        "listwise": 4.193250561157862,
+        "requests": 19200,
+        "gradient_norm": 1.742728352546692,
+        "lr": 9.867301310328011e-05,
+        "communicated_item_rows": 63072,
+        "elapsed_budget_seconds": 248.0838801281061,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 290,
+        "seconds_per_step": 0.6828114465176096
+      },
+      "candidate": {
+        "step": 300,
+        "epoch": 0,
+        "bce": 0.6022106326868136,
+        "listwise": 4.191427649557591,
+        "requests": 19200,
+        "gradient_norm": 3.4835801124572754,
+        "lr": 9.867301310328011e-05,
+        "communicated_item_rows": 63072,
+        "elapsed_budget_seconds": 247.9586172660347,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 290,
+        "seconds_per_step": 0.685896257221185
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.0037183608859776562,
+        "listwise": -0.0018229116002714818,
+        "gradient_norm": 1.7408517599105835,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.003084810703575358
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 250,
+        "steps_end_inclusive": 300,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.593709719479084,
+          "listwise": 4.1481605398654935,
+          "elapsed_seconds": 34.25274755805731
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.5988252371549606,
+          "listwise": 4.144862262010574,
+          "elapsed_seconds": 34.364037150051445
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.005115517675876591,
+          "listwise": -0.00329827785491954
+        }
+      }
+    },
+    {
+      "step": 350,
+      "baseline": {
+        "step": 350,
+        "epoch": 0,
+        "bce": 0.5983139265647957,
+        "listwise": 4.186710611752101,
+        "requests": 22400,
+        "gradient_norm": 1.8272298574447632,
+        "lr": 9.781277249188332e-05,
+        "communicated_item_rows": 66233,
+        "elapsed_budget_seconds": 282.2068471170496,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 340,
+        "seconds_per_step": 0.682759672462228
+      },
+      "candidate": {
+        "step": 350,
+        "epoch": 0,
+        "bce": 0.6022702392510005,
+        "listwise": 4.18477263373988,
+        "requests": 22400,
+        "gradient_norm": 3.590625047683716,
+        "lr": 9.781277249188332e-05,
+        "communicated_item_rows": 66233,
+        "elapsed_budget_seconds": 282.0180928441696,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 340,
+        "seconds_per_step": 0.6852041584062938
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.003956312686204888,
+        "listwise": -0.0019379780122212864,
+        "gradient_norm": 1.7633951902389526,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0024444859440657662
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 300,
+        "steps_end_inclusive": 350,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5972438551485538,
+          "listwise": 4.147470915317536,
+          "elapsed_seconds": 34.12296698894352
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6026278786361218,
+          "listwise": 4.144842538833618,
+          "elapsed_seconds": 34.05947557813488
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.005384023487567946,
+          "listwise": -0.0026283764839174495
+        }
+      }
+    },
+    {
+      "step": 400,
+      "baseline": {
+        "step": 400,
+        "epoch": 0,
+        "bce": 0.5976271208561957,
+        "listwise": 4.185772002637386,
+        "requests": 25600,
+        "gradient_norm": 2.1873183250427246,
+        "lr": 9.674451078967334e-05,
+        "communicated_item_rows": 65109,
+        "elapsed_budget_seconds": 316.50731554604135,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 390,
+        "seconds_per_step": 0.6831762690001574
+      },
+      "candidate": {
+        "step": 400,
+        "epoch": 0,
+        "bce": 0.6017887889593839,
+        "listwise": 4.18371052376926,
+        "requests": 25600,
+        "gradient_norm": 4.262094020843506,
+        "lr": 9.674451078967334e-05,
+        "communicated_item_rows": 65109,
+        "elapsed_budget_seconds": 316.39737939601764,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 390,
+        "seconds_per_step": 0.6855094308027615
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.0041616681031881875,
+        "listwise": -0.002061478868126798,
+        "gradient_norm": 2.0747756958007812,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0023331618026041223
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 350,
+        "steps_end_inclusive": 400,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5928194808959967,
+          "listwise": 4.179201738834381,
+          "elapsed_seconds": 34.300468428991735
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.5984186369180674,
+          "listwise": 4.176275753974915,
+          "elapsed_seconds": 34.379286551848054
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.005599156022070728,
+          "listwise": -0.0029259848594662685
+        }
+      }
+    },
+    {
+      "step": 450,
+      "baseline": {
+        "step": 450,
+        "epoch": 0,
+        "bce": 0.5982059441837999,
+        "listwise": 4.186540288527807,
+        "requests": 28800,
+        "gradient_norm": 1.962911605834961,
+        "lr": 9.547287572889796e-05,
+        "communicated_item_rows": 66022,
+        "elapsed_budget_seconds": 350.7919357549399,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 440,
+        "seconds_per_step": 0.6834622335593766
+      },
+      "candidate": {
+        "step": 450,
+        "epoch": 0,
+        "bce": 0.6025352589289348,
+        "listwise": 4.184340767529275,
+        "requests": 28800,
+        "gradient_norm": 3.563500165939331,
+        "lr": 9.547287572889796e-05,
+        "communicated_item_rows": 66022,
+        "elapsed_budget_seconds": 350.71233935118653,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 440,
+        "seconds_per_step": 0.6855991321250754
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.004329314745134871,
+        "listwise": -0.00219952099853149,
+        "gradient_norm": 1.6005885601043701,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.002136898565698764
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 400,
+        "steps_end_inclusive": 450,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.6028365308046335,
+          "listwise": 4.192686575651173,
+          "elapsed_seconds": 34.28462020889856
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6085070186853414,
+          "listwise": 4.189382717609401,
+          "elapsed_seconds": 34.31495995516889
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.005670487880707897,
+          "listwise": -0.00330385804177169
+        }
+      }
+    },
+    {
+      "step": 500,
+      "baseline": {
+        "step": 500,
+        "epoch": 0,
+        "bce": 0.5999760604947806,
+        "listwise": 4.192574506402016,
+        "requests": 32000,
+        "gradient_norm": 1.8991241455078125,
+        "lr": 9.400339986704494e-05,
+        "communicated_item_rows": 64937,
+        "elapsed_budget_seconds": 384.906469715992,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 490,
+        "seconds_per_step": 0.6833426843839222
+      },
+      "candidate": {
+        "step": 500,
+        "epoch": 0,
+        "bce": 0.6044894229173661,
+        "listwise": 4.190251730144024,
+        "requests": 32000,
+        "gradient_norm": 3.5449531078338623,
+        "lr": 9.400339986704494e-05,
+        "communicated_item_rows": 64937,
+        "elapsed_budget_seconds": 384.87431603018194,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 490,
+        "seconds_per_step": 0.6853584012938473
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.004513362422585487,
+        "listwise": -0.002322776257991599,
+        "gradient_norm": 1.6458289623260498,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0020157169099250805
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 450,
+        "steps_end_inclusive": 500,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.6159071072936058,
+          "listwise": 4.246882467269893,
+          "elapsed_seconds": 34.114533961052075
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6220768988132477,
+          "listwise": 4.2434503936767625,
+          "elapsed_seconds": 34.161976678995416
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.006169791519641921,
+          "listwise": -0.003432073593130802
+        }
+      }
+    },
+    {
+      "step": 550,
+      "baseline": {
+        "step": 550,
+        "epoch": 0,
+        "bce": 0.5996681231124834,
+        "listwise": 4.187073267915032,
+        "requests": 35200,
+        "gradient_norm": 1.7593557834625244,
+        "lr": 9.234247651610547e-05,
+        "communicated_item_rows": 63414,
+        "elapsed_budget_seconds": 419.19113832805306,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 540,
+        "seconds_per_step": 0.6835602915854435
+      },
+      "candidate": {
+        "step": 550,
+        "epoch": 0,
+        "bce": 0.6043343371423808,
+        "listwise": 4.184607405825095,
+        "requests": 35200,
+        "gradient_norm": 3.296138048171997,
+        "lr": 9.234247651610547e-05,
+        "communicated_item_rows": 63414,
+        "elapsed_budget_seconds": 419.25089598214254,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 540,
+        "seconds_per_step": 0.6855596394260862
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.00466621402989742,
+        "listwise": -0.002465862089937154,
+        "gradient_norm": 1.5367822647094727,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0019993478406427068
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 500,
+        "steps_end_inclusive": 550,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5965887492895127,
+          "listwise": 4.132060883045196,
+          "elapsed_seconds": 34.28466861206107
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6027834793925285,
+          "listwise": 4.128164162635803,
+          "elapsed_seconds": 34.37657995196059
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.006194730103015855,
+          "listwise": -0.0038967204093927066
+        }
+      }
+    },
+    {
+      "step": 600,
+      "baseline": {
+        "step": 600,
+        "epoch": 0,
+        "bce": 0.5997599371522665,
+        "listwise": 4.183428144355615,
+        "requests": 38400,
+        "gradient_norm": 1.7171236276626587,
+        "lr": 9.049733192691617e-05,
+        "communicated_item_rows": 65992,
+        "elapsed_budget_seconds": 453.46576376701705,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 590,
+        "seconds_per_step": 0.6837240771765395
+      },
+      "candidate": {
+        "step": 600,
+        "epoch": 0,
+        "bce": 0.604577086729308,
+        "listwise": 4.180805449932814,
+        "requests": 38400,
+        "gradient_norm": 3.174363136291504,
+        "lr": 9.049733192691617e-05,
+        "communicated_item_rows": 65992,
+        "elapsed_budget_seconds": 453.6510512731038,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 590,
+        "seconds_per_step": 0.6857667278932502
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.004817149577041491,
+        "listwise": -0.00262269442280072,
+        "gradient_norm": 1.4572395086288452,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0020426507167107255
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 550,
+        "steps_end_inclusive": 600,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.60076989158988,
+          "listwise": 4.143331785202026,
+          "elapsed_seconds": 34.274625438963994
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6072473321855069,
+          "listwise": 4.138983935117722,
+          "elapsed_seconds": 34.400155290961266
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.006477440595626827,
+          "listwise": -0.004347850084304383
+        }
+      }
+    },
+    {
+      "step": 650,
+      "baseline": {
+        "step": 650,
+        "epoch": 0,
+        "bce": 0.5994356484252673,
+        "listwise": 4.178965565974896,
+        "requests": 41600,
+        "gradient_norm": 1.9500582218170166,
+        "lr": 8.847599384959791e-05,
+        "communicated_item_rows": 64242,
+        "elapsed_budget_seconds": 487.5706683259923,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 640,
+        "seconds_per_step": 0.6835970489406463
+      },
+      "candidate": {
+        "step": 650,
+        "epoch": 0,
+        "bce": 0.6043479537390746,
+        "listwise": 4.176202189142887,
+        "requests": 41600,
+        "gradient_norm": 3.90346360206604,
+        "lr": 8.847599384959791e-05,
+        "communicated_item_rows": 64242,
+        "elapsed_budget_seconds": 487.8368629110046,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 640,
+        "seconds_per_step": 0.6856065319549088
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.004912305313807264,
+        "listwise": -0.0027633768320090013,
+        "gradient_norm": 1.9534053802490234,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.002009483014262514
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 600,
+        "steps_end_inclusive": 650,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5955441837012768,
+          "listwise": 4.125414625406266,
+          "elapsed_seconds": 34.10490455897525
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6015983578562737,
+          "listwise": 4.120963059663772,
+          "elapsed_seconds": 34.18581163790077
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.006054174154996872,
+          "listwise": -0.00445156574249328
+        }
+      }
+    },
+    {
+      "step": 700,
+      "baseline": {
+        "step": 700,
+        "epoch": 0,
+        "bce": 0.5991929924488067,
+        "listwise": 4.176413433636938,
+        "requests": 44800,
+        "gradient_norm": 1.805967926979065,
+        "lr": 8.628725660687726e-05,
+        "communicated_item_rows": 66860,
+        "elapsed_budget_seconds": 521.8567608071025,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 690,
+        "seconds_per_step": 0.6837510335002689
+      },
+      "candidate": {
+        "step": 700,
+        "epoch": 0,
+        "bce": 0.6042769581611668,
+        "listwise": 4.173561169377395,
+        "requests": 44800,
+        "gradient_norm": 3.60624098777771,
+        "lr": 8.628725660687726e-05,
+        "communicated_item_rows": 66860,
+        "elapsed_budget_seconds": 522.176004572073,
+        "peak_allocated_bytes": 23451654656,
+        "measured_steps": 690,
+        "seconds_per_step": 0.6856917259755774
+      },
+      "differences_candidate_minus_baseline": {
+        "bce": 0.005083965712360028,
+        "listwise": -0.0028522642595429915,
+        "gradient_norm": 1.800273060798645,
+        "lr": 0.0,
+        "requests": 0,
+        "seconds_per_step": 0.0019406924753084809
+      },
+      "derived_interval_means": {
+        "steps_start_exclusive": 650,
+        "steps_end_inclusive": 700,
+        "active_requests": 3200,
+        "baseline": {
+          "active_requests": 3200,
+          "bce": 0.5960384647548199,
+          "listwise": 4.1432357132434845,
+          "elapsed_seconds": 34.286092481110245
+        },
+        "candidate": {
+          "active_requests": 3200,
+          "bce": 0.6033540156483661,
+          "listwise": 4.139227912425995,
+          "elapsed_seconds": 34.339141661068425
+        },
+        "differences_candidate_minus_baseline": {
+          "bce": 0.0073155508935461855,
+          "listwise": -0.004007800817489304
+        }
+      }
+    }
+  ],
+  "interpretation": {
+    "optimization_anomaly_detected_in_snapshot": false,
+    "observed_tradeoff": "At all14 common logged checkpoints lambda4.8 has higher cumulative BCE and lower unweighted cumulative listwise loss than lambda2.4; this is an observed training-component tradeoff, not a quality result.",
+    "gradient_interpretation": "All recorded norms are finite. Larger preclip norms with higher lambda are not by themselves divergence; both runs clip at the observed log steps. No per-component gradient decomposition is available.",
+    "weighted_total_losses_compared": false,
+    "quality_or_cache_gap_inference": "None. No NDCG/Recall/cache score is read or estimated; this snapshot cannot establish convergence, release acceptance, or final quality.",
+    "limitations": [
+      "Only the first700 of planned2506 steps are compared.",
+      "Logs sample gradient norms every50 steps; no independent all-step tensor audit was performed.",
+      "Online component means mix changing parameters and changing training requests; their time trend is not a held-out learning curve.",
+      "Matching scalar request/LR/row-count logs are consistency evidence, not a new proof of exact input sequence or bitwise trajectory."
+    ]
+  },
+  "model_acceptance_changed": false,
+  "gpu_started": false,
+  "automatic_successors": false,
+  "source_files_modified": false
+}

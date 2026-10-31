@@ -1,0 +1,2578 @@
+{
+  "generated_at": "2026-10-29T13:04:10.954227+08:00",
+  "status": "completed_cpu_diagnostic",
+  "scope": "All9original adjacent model edges; metrics selected from existing independently audited score CSVs; no rescoring or new model training.",
+  "population": {
+    "original_training_users": 30000,
+    "seed": 20261029,
+    "pilot_positions_half_open": [
+      0,
+      4096
+    ],
+    "replication_positions_half_open": [
+      4096,
+      12288
+    ],
+    "pilot_users": 4096,
+    "replication_users": 8192,
+    "chosen_uid_intersection": 0,
+    "selection_rule": "One fixed permutation of sorted original training UIDs, identical to continuous-chain studies; retain every chosen-user request and its complete candidate set.",
+    "future_activity_selection": false,
+    "outcome_based_population_or_window_selection": false
+  },
+  "metric": "positive-request macro observed-positive NDCG@10; Recall@10 secondary",
+  "uncertainty": "Paired UID-cluster bootstrap,2000 draws seed17; nominal intervals, no multiplicity adjustment.",
+  "windows": [
+    "complete target next-day window",
+    "predetermined first12h",
+    "predetermined second12h"
+  ],
+  "all_nine_edges_retained": true,
+  "edges": [
+    {
+      "original_edge": 1,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/alignment/step_010116.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m1_d28/step_002484.pt",
+      "evaluation_day": 29,
+      "evaluation_date": "2024-02-10",
+      "existing_full_population_relative_loss_pct": 4.723055963424107,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m1_d29",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2199,
+            "requests": 25575,
+            "positive_users": 1402,
+            "positive_requests": 14679,
+            "zero_positive_requests": 10896,
+            "candidate_instances": 10115916,
+            "timestamp_interval_ms_half_open": [
+              1707494400000,
+              1707580800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.042786187974981696,
+                "reuse": 0.04050984948811163,
+                "difference": 0.002276338486870066,
+                "relative_loss_pct": 5.320264773765557,
+                "ci95": [
+                  0.0013036629594836628,
+                  0.0032812713657429755
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06675914842172762,
+                "reuse": 0.06373466251863963,
+                "difference": 0.0030244859030879876,
+                "relative_loss_pct": 4.530444103303796,
+                "ci95": [
+                  0.0013941235792797435,
+                  0.004715196843044901
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1694,
+            "requests": 10838,
+            "positive_users": 984,
+            "positive_requests": 6006,
+            "zero_positive_requests": 4832,
+            "candidate_instances": 4282559,
+            "timestamp_interval_ms_half_open": [
+              1707494400000,
+              1707537600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04329185141666462,
+                "reuse": 0.040635182551177665,
+                "difference": 0.002656668865486961,
+                "relative_loss_pct": 6.136648765417114,
+                "ci95": [
+                  0.0010835884571830973,
+                  0.004366297261828333
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06811290561290562,
+                "reuse": 0.06412562305419449,
+                "difference": 0.00398728255871113,
+                "relative_loss_pct": 5.853931091078934,
+                "ci95": [
+                  0.0013688279162561356,
+                  0.0068090157224005585
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1785,
+            "requests": 14737,
+            "positive_users": 1111,
+            "positive_requests": 8673,
+            "zero_positive_requests": 6064,
+            "candidate_instances": 5833357,
+            "timestamp_interval_ms_half_open": [
+              1707537600000,
+              1707580800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04243601910253298,
+                "reuse": 0.04042305710061311,
+                "difference": 0.002012962001919869,
+                "relative_loss_pct": 4.743522235335492,
+                "ci95": [
+                  0.0008052469897456212,
+                  0.003252907834227354
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06582167976149297,
+                "reuse": 0.06346392471435709,
+                "difference": 0.002357755047135884,
+                "relative_loss_pct": 3.5820341499628805,
+                "ci95": [
+                  0.00011493950094962586,
+                  0.0046451986848625205
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4420,
+            "requests": 55543,
+            "positive_users": 2895,
+            "positive_requests": 33187,
+            "zero_positive_requests": 22356,
+            "candidate_instances": 21985623,
+            "timestamp_interval_ms_half_open": [
+              1707494400000,
+              1707580800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04321485977443235,
+                "reuse": 0.04140708148023763,
+                "difference": 0.001807778294194717,
+                "relative_loss_pct": 4.183233044445215,
+                "ci95": [
+                  0.0010876385757468084,
+                  0.0025529988302783187
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06779203560774658,
+                "reuse": 0.06568456954602132,
+                "difference": 0.002107466061725259,
+                "relative_loss_pct": 3.108722201409216,
+                "ci95": [
+                  0.0007402212988593476,
+                  0.003514908286106187
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3410,
+            "requests": 24140,
+            "positive_users": 2009,
+            "positive_requests": 14294,
+            "zero_positive_requests": 9846,
+            "candidate_instances": 9556442,
+            "timestamp_interval_ms_half_open": [
+              1707494400000,
+              1707537600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.045373699230442814,
+                "reuse": 0.04336259835910159,
+                "difference": 0.0020111008713412206,
+                "relative_loss_pct": 4.432305290179872,
+                "ci95": [
+                  0.0009086323689749273,
+                  0.0031592607264379446
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07026291417644433,
+                "reuse": 0.06746561994043454,
+                "difference": 0.002797294236009781,
+                "relative_loss_pct": 3.981181635855882,
+                "ci95": [
+                  0.0006398744855038256,
+                  0.005029839139758433
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3605,
+            "requests": 31403,
+            "positive_users": 2312,
+            "positive_requests": 18893,
+            "zero_positive_requests": 12510,
+            "candidate_instances": 12429181,
+            "timestamp_interval_ms_half_open": [
+              1707537600000,
+              1707580800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04158153255354559,
+                "reuse": 0.03992758334513567,
+                "difference": 0.001653949208409923,
+                "relative_loss_pct": 3.977605217604933,
+                "ci95": [
+                  0.0007102928999460355,
+                  0.002653891565679997
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06592262692405602,
+                "reuse": 0.06433706865480537,
+                "difference": 0.001585558269250642,
+                "relative_loss_pct": 2.4051806537946856,
+                "ci95": [
+                  -0.00016073918132949576,
+                  0.0034568261711507837
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": true
+    },
+    {
+      "original_edge": 2,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m1_d28/step_002484.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m2_d29/step_002526.pt",
+      "evaluation_day": 30,
+      "evaluation_date": "2024-02-11",
+      "existing_full_population_relative_loss_pct": 0.4589136953268466,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m2_d30",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2152,
+            "requests": 25367,
+            "positive_users": 1359,
+            "positive_requests": 14455,
+            "zero_positive_requests": 10912,
+            "candidate_instances": 10028034,
+            "timestamp_interval_ms_half_open": [
+              1707580800000,
+              1707667200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04448550582477476,
+                "reuse": 0.04428408268040522,
+                "difference": 0.0002014231443695285,
+                "relative_loss_pct": 0.45278375649569985,
+                "ci95": [
+                  -0.0005286421175382393,
+                  0.0009388352385642864
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06932046910773994,
+                "reuse": 0.0703761262374199,
+                "difference": -0.001055657129679959,
+                "relative_loss_pct": -1.5228649535525,
+                "ci95": [
+                  -0.002464743345164016,
+                  0.0003726326632311561
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1563,
+            "requests": 10431,
+            "positive_users": 879,
+            "positive_requests": 5768,
+            "zero_positive_requests": 4663,
+            "candidate_instances": 4121705,
+            "timestamp_interval_ms_half_open": [
+              1707580800000,
+              1707624000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04800598727119749,
+                "reuse": 0.04716784521627465,
+                "difference": 0.0008381420549228222,
+                "relative_loss_pct": 1.7459115051377947,
+                "ci95": [
+                  -0.0003269423460365038,
+                  0.0020635324011754066
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07354327653391453,
+                "reuse": 0.07319529753649032,
+                "difference": 0.0003479789974242124,
+                "relative_loss_pct": 0.4731622166218575,
+                "ci95": [
+                  -0.002038805489002425,
+                  0.0027031373386764085
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1773,
+            "requests": 14936,
+            "positive_users": 1108,
+            "positive_requests": 8687,
+            "zero_positive_requests": 6249,
+            "candidate_instances": 5906329,
+            "timestamp_interval_ms_half_open": [
+              1707624000000,
+              1707667200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.042147974227794635,
+                "reuse": 0.04236932012637105,
+                "difference": -0.00022134589857641333,
+                "relative_loss_pct": -0.525163789320261,
+                "ci95": [
+                  -0.0011308044913831896,
+                  0.0006622354602366218
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06651660664265706,
+                "reuse": 0.0685042510154747,
+                "difference": -0.00198764437281762,
+                "relative_loss_pct": -2.9881926832132546,
+                "ci95": [
+                  -0.0038111313769027075,
+                  -0.00017288694013815875
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4421,
+            "requests": 55813,
+            "positive_users": 2827,
+            "positive_requests": 33414,
+            "zero_positive_requests": 22399,
+            "candidate_instances": 22093118,
+            "timestamp_interval_ms_half_open": [
+              1707580800000,
+              1707667200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04566694824244744,
+                "reuse": 0.045400432751438506,
+                "difference": 0.0002665154910089338,
+                "relative_loss_pct": 0.5836069657950289,
+                "ci95": [
+                  -0.00018601293675545418,
+                  0.0007312951327825994
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07199890550581876,
+                "reuse": 0.07224505981239686,
+                "difference": -0.00024615430657808107,
+                "relative_loss_pct": -0.34188617847557073,
+                "ci95": [
+                  -0.0012417374715090782,
+                  0.000741117419465352
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3199,
+            "requests": 21782,
+            "positive_users": 1854,
+            "positive_requests": 13072,
+            "zero_positive_requests": 8710,
+            "candidate_instances": 8635620,
+            "timestamp_interval_ms_half_open": [
+              1707580800000,
+              1707624000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04515808146516088,
+                "reuse": 0.04511152138309282,
+                "difference": 4.65600820680524e-05,
+                "relative_loss_pct": 0.1031046505019775,
+                "ci95": [
+                  -0.0006859363306820776,
+                  0.0007536405774468849
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07159677901148219,
+                "reuse": 0.07140425555166986,
+                "difference": 0.00019252345981232157,
+                "relative_loss_pct": 0.26889961038812377,
+                "ci95": [
+                  -0.0013990360721927695,
+                  0.0018756993425396713
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3734,
+            "requests": 34031,
+            "positive_users": 2340,
+            "positive_requests": 20342,
+            "zero_positive_requests": 13689,
+            "candidate_instances": 13457498,
+            "timestamp_interval_ms_half_open": [
+              1707624000000,
+              1707667200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04599395180712593,
+                "reuse": 0.0455860904747211,
+                "difference": 0.0004078613324048243,
+                "relative_loss_pct": 0.886771665359778,
+                "ci95": [
+                  -0.00019878522716464838,
+                  0.0009981526716275546
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07225731655360011,
+                "reuse": 0.07278537017009143,
+                "difference": -0.0005280536164913316,
+                "relative_loss_pct": -0.730796051773697,
+                "ci95": [
+                  -0.0016960900824577714,
+                  0.0006003327090330364
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": true
+    },
+    {
+      "original_edge": 3,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m2_d29/step_002526.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m3_d30/step_002573.pt",
+      "evaluation_day": 31,
+      "evaluation_date": "2024-02-12",
+      "existing_full_population_relative_loss_pct": 1.4451686649882216,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m3_d31",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2161,
+            "requests": 25712,
+            "positive_users": 1362,
+            "positive_requests": 15299,
+            "zero_positive_requests": 10413,
+            "candidate_instances": 10171305,
+            "timestamp_interval_ms_half_open": [
+              1707667200000,
+              1707753600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.0461725490650512,
+                "reuse": 0.045001323665758104,
+                "difference": 0.0011712253992930987,
+                "relative_loss_pct": 2.5366271150483644,
+                "ci95": [
+                  0.00038779113392806283,
+                  0.002003955465556852
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07352807061774969,
+                "reuse": 0.07093709828529098,
+                "difference": 0.0025909723324587033,
+                "relative_loss_pct": 3.5237866445978008,
+                "ci95": [
+                  0.001051316156775741,
+                  0.004087739623897574
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1565,
+            "requests": 10841,
+            "positive_users": 880,
+            "positive_requests": 6535,
+            "zero_positive_requests": 4306,
+            "candidate_instances": 4283168,
+            "timestamp_interval_ms_half_open": [
+              1707667200000,
+              1707710400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.05078148292818323,
+                "reuse": 0.04983149463494253,
+                "difference": 0.0009499882932406943,
+                "relative_loss_pct": 1.8707375965845614,
+                "ci95": [
+                  -0.00044610982554757944,
+                  0.0024995477179957596
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.08117699566437134,
+                "reuse": 0.07941869785404598,
+                "difference": 0.0017582978103253548,
+                "relative_loss_pct": 2.16600503127153,
+                "ci95": [
+                  -0.0008323958491609879,
+                  0.00450349589242268
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1804,
+            "requests": 14871,
+            "positive_users": 1123,
+            "positive_requests": 8764,
+            "zero_positive_requests": 6107,
+            "candidate_instances": 5888137,
+            "timestamp_interval_ms_half_open": [
+              1707710400000,
+              1707753600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04273583263470345,
+                "reuse": 0.04139963867219122,
+                "difference": 0.0013361939625122295,
+                "relative_loss_pct": 3.1266360806251825,
+                "ci95": [
+                  0.0004619308645045065,
+                  0.0022125267752889184
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06782454195735803,
+                "reuse": 0.06461267414313968,
+                "difference": 0.003211867814218339,
+                "relative_loss_pct": 4.735554006745335,
+                "ci95": [
+                  0.0013281825903221419,
+                  0.0050803213363079455
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4460,
+            "requests": 56546,
+            "positive_users": 2877,
+            "positive_requests": 34070,
+            "zero_positive_requests": 22476,
+            "candidate_instances": 22383471,
+            "timestamp_interval_ms_half_open": [
+              1707667200000,
+              1707753600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04584978553244334,
+                "reuse": 0.045231899558331616,
+                "difference": 0.0006178859741117277,
+                "relative_loss_pct": 1.3476311108903904,
+                "ci95": [
+                  0.00017408739377857161,
+                  0.0010451192529097918
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07224981480704992,
+                "reuse": 0.07119449452807244,
+                "difference": 0.0010553202789774553,
+                "relative_loss_pct": 1.4606546491444852,
+                "ci95": [
+                  9.989215627316673e-05,
+                  0.0019695406084243128
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3288,
+            "requests": 22846,
+            "positive_users": 1931,
+            "positive_requests": 13809,
+            "zero_positive_requests": 9037,
+            "candidate_instances": 9053689,
+            "timestamp_interval_ms_half_open": [
+              1707667200000,
+              1707710400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.0473147169159479,
+                "reuse": 0.04686031193151715,
+                "difference": 0.00045440498443075094,
+                "relative_loss_pct": 0.9603882555991562,
+                "ci95": [
+                  -0.0002824188186972799,
+                  0.0011237736686808006
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07409781060660922,
+                "reuse": 0.07358606705771598,
+                "difference": 0.0005117435488932338,
+                "relative_loss_pct": 0.6906324825305815,
+                "ci95": [
+                  -0.000898220791331289,
+                  0.0018477681867253124
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3690,
+            "requests": 33700,
+            "positive_users": 2336,
+            "positive_requests": 20261,
+            "zero_positive_requests": 13439,
+            "candidate_instances": 13329782,
+            "timestamp_interval_ms_half_open": [
+              1707710400000,
+              1707753600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04485135320063275,
+                "reuse": 0.044122045826466505,
+                "difference": 0.0007293073741662466,
+                "relative_loss_pct": 1.626054337544397,
+                "ci95": [
+                  0.00021142641925603854,
+                  0.001247053089304419
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.0709903027397228,
+                "reuse": 0.06956450464298053,
+                "difference": 0.0014257980967422753,
+                "relative_loss_pct": 2.0084406485344743,
+                "ci95": [
+                  0.0002573753107145416,
+                  0.0025624450039506788
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": true
+    },
+    {
+      "original_edge": 4,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m3_d30/step_002573.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m4_d31/step_002570.pt",
+      "evaluation_day": 32,
+      "evaluation_date": "2024-02-13",
+      "existing_full_population_relative_loss_pct": 0.929899538732488,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m4_d32",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2145,
+            "requests": 25469,
+            "positive_users": 1352,
+            "positive_requests": 15208,
+            "zero_positive_requests": 10261,
+            "candidate_instances": 10084594,
+            "timestamp_interval_ms_half_open": [
+              1707753600000,
+              1707840000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04551347993288945,
+                "reuse": 0.04486795996735328,
+                "difference": 0.0006455199655361756,
+                "relative_loss_pct": 1.4183050087314968,
+                "ci95": [
+                  1.0642484531383175e-06,
+                  0.0012454600720307586
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07057472362081778,
+                "reuse": 0.06927356007281045,
+                "difference": 0.0013011635480073144,
+                "relative_loss_pct": 1.8436679327264185,
+                "ci95": [
+                  -2.695559292382756e-06,
+                  0.002557044242866601
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1543,
+            "requests": 10371,
+            "positive_users": 884,
+            "positive_requests": 6375,
+            "zero_positive_requests": 3996,
+            "candidate_instances": 4106509,
+            "timestamp_interval_ms_half_open": [
+              1707753600000,
+              1707796800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.047401067348561525,
+                "reuse": 0.04664272508257863,
+                "difference": 0.0007583422659828871,
+                "relative_loss_pct": 1.599842173186635,
+                "ci95": [
+                  -0.00021717353565963227,
+                  0.001766061326277555
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07404506691565514,
+                "reuse": 0.0720506691565515,
+                "difference": 0.0019943977591036412,
+                "relative_loss_pct": 2.693491737100411,
+                "ci95": [
+                  -3.426878204887972e-05,
+                  0.004032972268993428
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1800,
+            "requests": 15098,
+            "positive_users": 1109,
+            "positive_requests": 8833,
+            "zero_positive_requests": 6265,
+            "candidate_instances": 5978085,
+            "timestamp_interval_ms_half_open": [
+              1707796800000,
+              1707840000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04415116024819461,
+                "reuse": 0.04358706699672476,
+                "difference": 0.0005640932514698577,
+                "relative_loss_pct": 1.2776408327636737,
+                "ci95": [
+                  -0.00013406472816666776,
+                  0.0012756204626726741
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06807008889823335,
+                "reuse": 0.06726925005256262,
+                "difference": 0.0008008388456707258,
+                "relative_loss_pct": 1.1764915525055386,
+                "ci95": [
+                  -0.0008387478349627692,
+                  0.002454201778557284
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4433,
+            "requests": 55873,
+            "positive_users": 2818,
+            "positive_requests": 33382,
+            "zero_positive_requests": 22491,
+            "candidate_instances": 22107289,
+            "timestamp_interval_ms_half_open": [
+              1707753600000,
+              1707840000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.043809416260599456,
+                "reuse": 0.043548989633965814,
+                "difference": 0.00026042662663364213,
+                "relative_loss_pct": 0.5944535418698561,
+                "ci95": [
+                  -0.00012714092385939917,
+                  0.0006831241174921067
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07023770295368763,
+                "reuse": 0.069630945961753,
+                "difference": 0.0006067569919346325,
+                "relative_loss_pct": 0.8638622369736487,
+                "ci95": [
+                  -0.00029785425041835886,
+                  0.0015104975407397724
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3156,
+            "requests": 21411,
+            "positive_users": 1809,
+            "positive_requests": 12794,
+            "zero_positive_requests": 8617,
+            "candidate_instances": 8486542,
+            "timestamp_interval_ms_half_open": [
+              1707753600000,
+              1707796800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.045338894808885435,
+                "reuse": 0.0455914914447961,
+                "difference": -0.00025259663591066164,
+                "relative_loss_pct": -0.5571301130638902,
+                "ci95": [
+                  -0.0008981151419645701,
+                  0.000426534051820255
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07111620402420778,
+                "reuse": 0.07149454357325234,
+                "difference": -0.0003783395490445672,
+                "relative_loss_pct": -0.5320018893525045,
+                "ci95": [
+                  -0.0018778285113895538,
+                  0.0010522388476719923
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3748,
+            "requests": 34462,
+            "positive_users": 2361,
+            "positive_requests": 20588,
+            "zero_positive_requests": 13874,
+            "candidate_instances": 13620747,
+            "timestamp_interval_ms_half_open": [
+              1707796800000,
+              1707840000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04285895246874153,
+                "reuse": 0.04227971781699656,
+                "difference": 0.0005792346517449606,
+                "relative_loss_pct": 1.3514904550395064,
+                "ci95": [
+                  6.054607306401607e-05,
+                  0.0010982783665469242
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06969177606927753,
+                "reuse": 0.06847285057407458,
+                "difference": 0.0012189254952029384,
+                "relative_loss_pct": 1.749023434258955,
+                "ci95": [
+                  -2.402755102568252e-07,
+                  0.0023756910241699986
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": true
+    },
+    {
+      "original_edge": 5,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m4_d31/step_002570.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m5_d32/step_002494.pt",
+      "evaluation_day": 33,
+      "evaluation_date": "2024-02-14",
+      "existing_full_population_relative_loss_pct": -0.17725577513094243,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m5_d33",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2163,
+            "requests": 24547,
+            "positive_users": 1349,
+            "positive_requests": 14439,
+            "zero_positive_requests": 10108,
+            "candidate_instances": 9717197,
+            "timestamp_interval_ms_half_open": [
+              1707840000000,
+              1707926400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.044158088924834096,
+                "reuse": 0.04449002870558944,
+                "difference": -0.0003319397807553464,
+                "relative_loss_pct": -0.7517077591839953,
+                "ci95": [
+                  -0.0008845706546751075,
+                  0.00020647563593655902
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07010980512434907,
+                "reuse": 0.07035418295027686,
+                "difference": -0.0002443778259277947,
+                "relative_loss_pct": -0.34856440621159634,
+                "ci95": [
+                  -0.0014832127953655397,
+                  0.0009550944822605028
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1593,
+            "requests": 10175,
+            "positive_users": 898,
+            "positive_requests": 6006,
+            "zero_positive_requests": 4169,
+            "candidate_instances": 4034388,
+            "timestamp_interval_ms_half_open": [
+              1707840000000,
+              1707883200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04491376466652745,
+                "reuse": 0.0449441544864758,
+                "difference": -3.038981994834284e-05,
+                "relative_loss_pct": -0.06766259781155962,
+                "ci95": [
+                  -0.0008457825790955275,
+                  0.0007889470779578014
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07157485371771086,
+                "reuse": 0.07213104355961499,
+                "difference": -0.0005561898419041275,
+                "relative_loss_pct": -0.7770743676231936,
+                "ci95": [
+                  -0.0025970989584415856,
+                  0.0014046981757250623
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1785,
+            "requests": 14372,
+            "positive_users": 1078,
+            "positive_requests": 8433,
+            "zero_positive_requests": 5939,
+            "candidate_instances": 5682809,
+            "timestamp_interval_ms_half_open": [
+              1707883200000,
+              1707926400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04361989510239719,
+                "reuse": 0.044166599387434155,
+                "difference": -0.000546704285036962,
+                "relative_loss_pct": -1.25333700081942,
+                "ci95": [
+                  -0.0012934434413659009,
+                  0.0001734005361789295
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06906639449328884,
+                "reuse": 0.06908869915806949,
+                "difference": -2.230466478065179e-05,
+                "relative_loss_pct": -0.03229452607782954,
+                "ci95": [
+                  -0.0016613017812605157,
+                  0.0016592592329101785
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4370,
+            "requests": 53647,
+            "positive_users": 2805,
+            "positive_requests": 32237,
+            "zero_positive_requests": 21410,
+            "candidate_instances": 21231266,
+            "timestamp_interval_ms_half_open": [
+              1707840000000,
+              1707926400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.046424780945295355,
+                "reuse": 0.04635097043357609,
+                "difference": 7.381051171926513e-05,
+                "relative_loss_pct": 0.15898946686736068,
+                "ci95": [
+                  -0.00028603799979037234,
+                  0.00044016089388995656
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07287651574573434,
+                "reuse": 0.07245057808463212,
+                "difference": 0.0004259376611022236,
+                "relative_loss_pct": 0.5844649085424407,
+                "ci95": [
+                  -0.00042840557783754423,
+                  0.0012570293527597361
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3228,
+            "requests": 21988,
+            "positive_users": 1874,
+            "positive_requests": 13087,
+            "zero_positive_requests": 8901,
+            "candidate_instances": 8705722,
+            "timestamp_interval_ms_half_open": [
+              1707840000000,
+              1707883200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04634449331402941,
+                "reuse": 0.04629908395954719,
+                "difference": 4.540935448221984e-05,
+                "relative_loss_pct": 0.09798220076445095,
+                "ci95": [
+                  -0.0005408898228579791,
+                  0.0006255414962232517
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.0721908691649656,
+                "reuse": 0.07239144989393327,
+                "difference": -0.0002005807289676778,
+                "relative_loss_pct": -0.2778477822580644,
+                "ci95": [
+                  -0.0015316971783272508,
+                  0.0011852091472221223
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3654,
+            "requests": 31659,
+            "positive_users": 2298,
+            "positive_requests": 19150,
+            "zero_positive_requests": 12509,
+            "candidate_instances": 12525544,
+            "timestamp_interval_ms_half_open": [
+              1707883200000,
+              1707926400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.046479649051320286,
+                "reuse": 0.04638642935188503,
+                "difference": 9.321969943525532e-05,
+                "relative_loss_pct": 0.20056024806109707,
+                "ci95": [
+                  -0.00035685818221508204,
+                  0.0005717578554523114
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07334508268059182,
+                "reuse": 0.07249098595051597,
+                "difference": 0.0008540967300758424,
+                "relative_loss_pct": 1.1644907863766698,
+                "ci95": [
+                  -0.0001393951986273144,
+                  0.0019266902824181206
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": false
+    },
+    {
+      "original_edge": 6,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m5_d32/step_002494.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m6_d33/step_002450.pt",
+      "evaluation_day": 34,
+      "evaluation_date": "2024-02-15",
+      "existing_full_population_relative_loss_pct": -0.19027319633616857,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m6_d34",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2157,
+            "requests": 24185,
+            "positive_users": 1347,
+            "positive_requests": 14032,
+            "zero_positive_requests": 10153,
+            "candidate_instances": 9578244,
+            "timestamp_interval_ms_half_open": [
+              1707926400000,
+              1708012800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04398294928926454,
+                "reuse": 0.044178957240413215,
+                "difference": -0.0001960079511486687,
+                "relative_loss_pct": -0.4456453110035319,
+                "ci95": [
+                  -0.0007649653123185747,
+                  0.0003775174786495352
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06818606789922353,
+                "reuse": 0.06881295134929684,
+                "difference": -0.0006268834500733018,
+                "relative_loss_pct": -0.9193717564118996,
+                "ci95": [
+                  -0.0019366891379798406,
+                  0.0006276303388669382
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1541,
+            "requests": 9596,
+            "positive_users": 869,
+            "positive_requests": 5644,
+            "zero_positive_requests": 3952,
+            "candidate_instances": 3803527,
+            "timestamp_interval_ms_half_open": [
+              1707926400000,
+              1707969600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.045893563866063934,
+                "reuse": 0.045843621483363586,
+                "difference": 4.994238270035093e-05,
+                "relative_loss_pct": 0.10882219312081122,
+                "ci95": [
+                  -0.0009376224247905111,
+                  0.0010216031297773033
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07080949849819446,
+                "reuse": 0.07128260942931389,
+                "difference": -0.0004731109311194357,
+                "relative_loss_pct": -0.6681461402123888,
+                "ci95": [
+                  -0.002727979278760308,
+                  0.0018019578795090644
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1805,
+            "requests": 14589,
+            "positive_users": 1090,
+            "positive_requests": 8388,
+            "zero_positive_requests": 6201,
+            "candidate_instances": 5774717,
+            "timestamp_interval_ms_half_open": [
+              1707969600000,
+              1708012800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04269736170325409,
+                "reuse": 0.04305886127150383,
+                "difference": -0.0003614995682497496,
+                "relative_loss_pct": -0.8466555164746834,
+                "ci95": [
+                  -0.0010941573033070582,
+                  0.0003935749002758039
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06642085064831846,
+                "reuse": 0.06715120239798351,
+                "difference": -0.0007303517496650544,
+                "relative_loss_pct": -1.0995820477098095,
+                "ci95": [
+                  -0.0024175295980003297,
+                  0.0009408182352442515
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4414,
+            "requests": 55423,
+            "positive_users": 2805,
+            "positive_requests": 33304,
+            "zero_positive_requests": 22119,
+            "candidate_instances": 21958997,
+            "timestamp_interval_ms_half_open": [
+              1707926400000,
+              1708012800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04652698961103794,
+                "reuse": 0.04652380234968478,
+                "difference": 3.1872613531685717e-06,
+                "relative_loss_pct": 0.006850349398948507,
+                "ci95": [
+                  -0.0003893858218527942,
+                  0.0003921101736412023
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07278344228635485,
+                "reuse": 0.0726975810141496,
+                "difference": 8.586127220525482e-05,
+                "relative_loss_pct": 0.11796813878003645,
+                "ci95": [
+                  -0.0007763077973748742,
+                  0.0009406693635083981
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3201,
+            "requests": 21949,
+            "positive_users": 1830,
+            "positive_requests": 13102,
+            "zero_positive_requests": 8847,
+            "candidate_instances": 8706656,
+            "timestamp_interval_ms_half_open": [
+              1707926400000,
+              1707969600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04737964550493913,
+                "reuse": 0.04763908813963797,
+                "difference": -0.00025944263469882684,
+                "relative_loss_pct": -0.547582473304451,
+                "ci95": [
+                  -0.000892129322304244,
+                  0.000359875470458918
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07326053456033611,
+                "reuse": 0.07347733170508318,
+                "difference": -0.0002167971447470761,
+                "relative_loss_pct": -0.29592623920663,
+                "ci95": [
+                  -0.0015419281983159693,
+                  0.0011253662892287159
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3729,
+            "requests": 33474,
+            "positive_users": 2333,
+            "positive_requests": 20202,
+            "zero_positive_requests": 13272,
+            "candidate_instances": 13252341,
+            "timestamp_interval_ms_half_open": [
+              1707969600000,
+              1708012800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04597399993071454,
+                "reuse": 0.045800484142578216,
+                "difference": 0.00017351578813632097,
+                "relative_loss_pct": 0.37742156087749434,
+                "ci95": [
+                  -0.0003173845881100669,
+                  0.0006682914694035066
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07247402425973855,
+                "reuse": 0.07219187397758826,
+                "difference": 0.00028215028215028214,
+                "relative_loss_pct": 0.38931228813662677,
+                "ci95": [
+                  -0.000834763894425394,
+                  0.001399558328935144
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": false
+    },
+    {
+      "original_edge": 7,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m6_d33/step_002450.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m7_d34/step_002506.pt",
+      "evaluation_day": 35,
+      "evaluation_date": "2024-02-16",
+      "existing_full_population_relative_loss_pct": -0.571979163432875,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m7_d35",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2137,
+            "requests": 23571,
+            "positive_users": 1337,
+            "positive_requests": 13531,
+            "zero_positive_requests": 10040,
+            "candidate_instances": 9342557,
+            "timestamp_interval_ms_half_open": [
+              1708012800000,
+              1708099200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04704163508887395,
+                "reuse": 0.04730434569820485,
+                "difference": -0.0002627106093308981,
+                "relative_loss_pct": -0.5584640262494471,
+                "ci95": [
+                  -0.0009209964464403837,
+                  0.0003583128045390754
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07231603971128026,
+                "reuse": 0.0725777843470549,
+                "difference": -0.0002617446357746409,
+                "relative_loss_pct": -0.3619454782364313,
+                "ci95": [
+                  -0.0016959417704706678,
+                  0.0010926432756487514
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1525,
+            "requests": 9735,
+            "positive_users": 845,
+            "positive_requests": 5621,
+            "zero_positive_requests": 4114,
+            "candidate_instances": 3857051,
+            "timestamp_interval_ms_half_open": [
+              1708012800000,
+              1708056000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.05095762486130951,
+                "reuse": 0.050985888353593176,
+                "difference": -2.826349228365736e-05,
+                "relative_loss_pct": -0.0554646971097684,
+                "ci95": [
+                  -0.0010851829448554238,
+                  0.0010215603805096207
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07666658195033929,
+                "reuse": 0.07600240594369753,
+                "difference": 0.0006641760066417601,
+                "relative_loss_pct": 0.8663174876792857,
+                "ci95": [
+                  -0.0016230543561736145,
+                  0.0028789585804148733
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1777,
+            "requests": 13836,
+            "positive_users": 1097,
+            "positive_requests": 7910,
+            "zero_positive_requests": 5926,
+            "candidate_instances": 5485506,
+            "timestamp_interval_ms_half_open": [
+              1708056000000,
+              1708099200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04425885651607239,
+                "reuse": 0.044688169811234205,
+                "difference": -0.0004293132951618135,
+                "relative_loss_pct": -0.9700053931712186,
+                "ci95": [
+                  -0.0012423853514848865,
+                  0.0004659864437882221
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.06922445969538257,
+                "reuse": 0.07014418156643189,
+                "difference": -0.0009197218710493045,
+                "relative_loss_pct": -1.3286082334141383,
+                "ci95": [
+                  -0.002688946485581917,
+                  0.0009417644280376693
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4447,
+            "requests": 53978,
+            "positive_users": 2840,
+            "positive_requests": 31951,
+            "zero_positive_requests": 22027,
+            "candidate_instances": 21387419,
+            "timestamp_interval_ms_half_open": [
+              1708012800000,
+              1708099200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04918557013165163,
+                "reuse": 0.04955936280423367,
+                "difference": -0.0003737926725820327,
+                "relative_loss_pct": -0.759964094309627,
+                "ci95": [
+                  -0.0008144400606053631,
+                  9.834378923339152e-05
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07645294406663378,
+                "reuse": 0.07769032988509687,
+                "difference": -0.001237385818463093,
+                "relative_loss_pct": -1.6184933537479338,
+                "ci95": [
+                  -0.002152973730494652,
+                  -0.0003280429056449915
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3216,
+            "requests": 21232,
+            "positive_users": 1850,
+            "positive_requests": 12554,
+            "zero_positive_requests": 8678,
+            "candidate_instances": 8416319,
+            "timestamp_interval_ms_half_open": [
+              1708012800000,
+              1708056000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.05380053589228638,
+                "reuse": 0.05449168490170716,
+                "difference": -0.0006911490094207777,
+                "relative_loss_pct": -1.284650790104622,
+                "ci95": [
+                  -0.0014620417873011731,
+                  6.566640726328812e-05
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.08227545890641319,
+                "reuse": 0.08462853172706607,
+                "difference": -0.0023530728206528745,
+                "relative_loss_pct": -2.859993553277474,
+                "ci95": [
+                  -0.0039347343794570175,
+                  -0.0007787384247456497
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3757,
+            "requests": 32746,
+            "positive_users": 2346,
+            "positive_requests": 19397,
+            "zero_positive_requests": 13349,
+            "candidate_instances": 12971100,
+            "timestamp_interval_ms_half_open": [
+              1708056000000,
+              1708099200000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04619870205107172,
+                "reuse": 0.04636709742238688,
+                "difference": -0.00016839537131515603,
+                "relative_loss_pct": -0.3645023860821856,
+                "ci95": [
+                  -0.000732008557899353,
+                  0.0003379241425974003
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07268453393627389,
+                "reuse": 0.07319983208007128,
+                "difference": -0.0005152981437973964,
+                "relative_loss_pct": -0.7089515690493161,
+                "ci95": [
+                  -0.0016742354254951574,
+                  0.0005809530475509987
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": false
+    },
+    {
+      "original_edge": 8,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m7_d34/step_002506.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m8_d35/step_002420.pt",
+      "evaluation_day": 36,
+      "evaluation_date": "2024-02-17",
+      "existing_full_population_relative_loss_pct": 0.014285024117611641,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m8_d36",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2147,
+            "requests": 24069,
+            "positive_users": 1321,
+            "positive_requests": 13905,
+            "zero_positive_requests": 10164,
+            "candidate_instances": 9534084,
+            "timestamp_interval_ms_half_open": [
+              1708099200000,
+              1708185600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04403205165182476,
+                "reuse": 0.04415736341255641,
+                "difference": -0.00012531176073165204,
+                "relative_loss_pct": -0.2845921460179312,
+                "ci95": [
+                  -0.0006966069224503962,
+                  0.0004151741174860492
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07139158576051781,
+                "reuse": 0.0710241262992072,
+                "difference": 0.000367459461310594,
+                "relative_loss_pct": 0.5147097622165618,
+                "ci95": [
+                  -0.0008112259545683459,
+                  0.001518420500886256
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1556,
+            "requests": 9375,
+            "positive_users": 847,
+            "positive_requests": 5400,
+            "zero_positive_requests": 3975,
+            "candidate_instances": 3721949,
+            "timestamp_interval_ms_half_open": [
+              1708099200000,
+              1708142400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04523579616717161,
+                "reuse": 0.04564927464867976,
+                "difference": -0.0004134784815081511,
+                "relative_loss_pct": -0.9140515179176165,
+                "ci95": [
+                  -0.0012855111647062639,
+                  0.00043863795223349054
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07294731040564373,
+                "reuse": 0.07320039682539682,
+                "difference": -0.00025308641975308637,
+                "relative_loss_pct": -0.3469441413888041,
+                "ci95": [
+                  -0.0019460174171267999,
+                  0.0014654413540951255
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1790,
+            "requests": 14694,
+            "positive_users": 1095,
+            "positive_requests": 8505,
+            "zero_positive_requests": 6189,
+            "candidate_instances": 5812135,
+            "timestamp_interval_ms_half_open": [
+              1708142400000,
+              1708185600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.0432677694198585,
+                "reuse": 0.043210118183271744,
+                "difference": 5.765123658676017e-05,
+                "relative_loss_pct": 0.13324291351219997,
+                "ci95": [
+                  -0.0006110896869399953,
+                  0.0007601832317972986
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07040382408107275,
+                "reuse": 0.06964236723495983,
+                "difference": 0.0007614568461129307,
+                "relative_loss_pct": 1.0815560888227937,
+                "ci95": [
+                  -0.0006363918103181445,
+                  0.0022780943342039068
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4388,
+            "requests": 55735,
+            "positive_users": 2819,
+            "positive_requests": 33693,
+            "zero_positive_requests": 22042,
+            "candidate_instances": 22078326,
+            "timestamp_interval_ms_half_open": [
+              1708099200000,
+              1708185600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04722727602852822,
+                "reuse": 0.04749283096209649,
+                "difference": -0.00026555493356827497,
+                "relative_loss_pct": -0.5622914465951059,
+                "ci95": [
+                  -0.0006226791512870812,
+                  0.00012489082952939933
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07537120894123832,
+                "reuse": 0.07636894338657314,
+                "difference": -0.0009977344453348368,
+                "relative_loss_pct": -1.3237607029929703,
+                "ci95": [
+                  -0.001758652826043176,
+                  -0.00017669362376350958
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3212,
+            "requests": 22640,
+            "positive_users": 1858,
+            "positive_requests": 13775,
+            "zero_positive_requests": 8865,
+            "candidate_instances": 8971349,
+            "timestamp_interval_ms_half_open": [
+              1708099200000,
+              1708142400000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04888322959568042,
+                "reuse": 0.048977496900489595,
+                "difference": -9.426730480916432e-05,
+                "relative_loss_pct": -0.1928418101440136,
+                "ci95": [
+                  -0.0007111201029151869,
+                  0.0004861715446759753
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07859424423126782,
+                "reuse": 0.0799851352519229,
+                "difference": -0.001390891020655086,
+                "relative_loss_pct": -1.7697110446947155,
+                "ci95": [
+                  -0.0028087746253155034,
+                  -9.401484899721614e-05
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3740,
+            "requests": 33095,
+            "positive_users": 2365,
+            "positive_requests": 19918,
+            "zero_positive_requests": 13177,
+            "candidate_instances": 13106977,
+            "timestamp_interval_ms_half_open": [
+              1708142400000,
+              1708185600000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.046082042551897955,
+                "reuse": 0.04646605752594001,
+                "difference": -0.000384014974042055,
+                "relative_loss_pct": -0.8333288907703565,
+                "ci95": [
+                  -0.0008397092927749239,
+                  5.106201306223905e-05
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07314220446688566,
+                "reuse": 0.07386803752528222,
+                "difference": -0.0007258330583965687,
+                "relative_loss_pct": -0.9923587396455651,
+                "ci95": [
+                  -0.0016733998273235917,
+                  0.00023890341882665427
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": false,
+                "ci_entirely_positive": false
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": false
+    },
+    {
+      "original_edge": 9,
+      "source_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m8_d35/step_002420.pt",
+      "target_checkpoint": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/training/m9_d36/step_002487.pt",
+      "evaluation_day": 37,
+      "evaluation_date": "2024-02-18",
+      "existing_full_population_relative_loss_pct": 2.1201603363271664,
+      "original_evidence": "/home/gkl/work/evokv/experiments/recflow_full_population/runs/attempt_1/evaluations/m9_d37",
+      "original_audit_status": "passed",
+      "cohorts": {
+        "pilot4096": {
+          "full_day": {
+            "chosen_users": 4096,
+            "active_users": 2171,
+            "requests": 22865,
+            "positive_users": 1330,
+            "positive_requests": 13007,
+            "zero_positive_requests": 9858,
+            "candidate_instances": 9055149,
+            "timestamp_interval_ms_half_open": [
+              1708185600000,
+              1708272000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04444064021611944,
+                "reuse": 0.04347769965778492,
+                "difference": 0.0009629405583345276,
+                "relative_loss_pct": 2.1668017239437773,
+                "ci95": [
+                  0.00037265931023408697,
+                  0.0015894099555301036
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07153693798577322,
+                "reuse": 0.06979245607676451,
+                "difference": 0.0017444819090087025,
+                "relative_loss_pct": 2.4385750328811016,
+                "ci95": [
+                  0.000379391404979115,
+                  0.003253079526997891
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1579,
+            "requests": 9436,
+            "positive_users": 863,
+            "positive_requests": 5296,
+            "zero_positive_requests": 4140,
+            "candidate_instances": 3741270,
+            "timestamp_interval_ms_half_open": [
+              1708185600000,
+              1708228800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04990846730698774,
+                "reuse": 0.04897192603753847,
+                "difference": 0.0009365412694492687,
+                "relative_loss_pct": 1.876517793440919,
+                "ci95": [
+                  -2.4279010153436003e-05,
+                  0.001918401547239093
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              },
+              "recall@10": {
+                "rebuild": 0.07845139188605955,
+                "reuse": 0.07737196086893972,
+                "difference": 0.0010794310171198388,
+                "relative_loss_pct": 1.3759233471441423,
+                "ci95": [
+                  -0.001194364327667042,
+                  0.003497865491537085
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": false
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 4096,
+            "active_users": 1807,
+            "requests": 13429,
+            "positive_users": 1090,
+            "positive_requests": 7711,
+            "zero_positive_requests": 5718,
+            "candidate_instances": 5313879,
+            "timestamp_interval_ms_half_open": [
+              1708228800000,
+              1708272000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04068527615526632,
+                "reuse": 0.03970420427363567,
+                "difference": 0.0009810718816306413,
+                "relative_loss_pct": 2.4113683728889987,
+                "ci95": [
+                  0.0001744515712839984,
+                  0.0017682770021309286
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.06678801464821436,
+                "reuse": 0.06458676843840894,
+                "difference": 0.002201246209805411,
+                "relative_loss_pct": 3.295870106934318,
+                "ci95": [
+                  0.0005104623749918651,
+                  0.0038830481812845864
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          }
+        },
+        "replication8192": {
+          "full_day": {
+            "chosen_users": 8192,
+            "active_users": 4357,
+            "requests": 54141,
+            "positive_users": 2779,
+            "positive_requests": 32661,
+            "zero_positive_requests": 21480,
+            "candidate_instances": 21432958,
+            "timestamp_interval_ms_half_open": [
+              1708185600000,
+              1708272000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.047479414567558775,
+                "reuse": 0.04634862267619801,
+                "difference": 0.0011307918913607727,
+                "relative_loss_pct": 2.3816466602631787,
+                "ci95": [
+                  0.0007185607815642029,
+                  0.0015259704761736842
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07523644772198093,
+                "reuse": 0.07324047465959838,
+                "difference": 0.0019959730623825417,
+                "relative_loss_pct": 2.6529336815026183,
+                "ci95": [
+                  0.001113310513426933,
+                  0.002856709589197835
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "first_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3180,
+            "requests": 21955,
+            "positive_users": 1814,
+            "positive_requests": 13366,
+            "zero_positive_requests": 8589,
+            "candidate_instances": 8701912,
+            "timestamp_interval_ms_half_open": [
+              1708185600000,
+              1708228800000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.04981092401414574,
+                "reuse": 0.04872833203300095,
+                "difference": 0.001082591981144792,
+                "relative_loss_pct": 2.173402727557008,
+                "ci95": [
+                  0.00045264810287473005,
+                  0.0016756828817598118
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07818719138111627,
+                "reuse": 0.07644538737236627,
+                "difference": 0.001741804008749991,
+                "relative_loss_pct": 2.2277357428785587,
+                "ci95": [
+                  0.00047979703719516667,
+                  0.0029740633383814317
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          },
+          "second_12_hours": {
+            "chosen_users": 8192,
+            "active_users": 3619,
+            "requests": 32186,
+            "positive_users": 2286,
+            "positive_requests": 19295,
+            "zero_positive_requests": 12891,
+            "candidate_instances": 12731046,
+            "timestamp_interval_ms_half_open": [
+              1708228800000,
+              1708272000000
+            ],
+            "metrics": {
+              "ndcg@10": {
+                "rebuild": 0.0458643352587699,
+                "reuse": 0.04470015440654119,
+                "difference": 0.001164180852228707,
+                "relative_loss_pct": 2.5383140203827534,
+                "ci95": [
+                  0.0006705863879197583,
+                  0.0016820880147226153
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              },
+              "recall@10": {
+                "rebuild": 0.07319241352928837,
+                "reuse": 0.071020372906872,
+                "difference": 0.0021720406224163672,
+                "relative_loss_pct": 2.9675761703734667,
+                "ci95": [
+                  0.0010505153743673372,
+                  0.0033430003821938326
+                ],
+                "bootstrap_replicates": 2000,
+                "bootstrap_seed": 17,
+                "point_positive": true,
+                "ci_entirely_positive": true
+              }
+            }
+          }
+        }
+      },
+      "both_cohort_full_day_ndcg_point_positive": true
+    }
+  ],
+  "source_consistency_checks": [
+    {
+      "edge": 1,
+      "full_csv_requests": 198948,
+      "full_metrics_maximum_error_against_original_summary": 6.938893903907228e-18,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 2,
+      "full_csv_requests": 201946,
+      "full_metrics_maximum_error_against_original_summary": 6.938893903907228e-18,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 3,
+      "full_csv_requests": 202432,
+      "full_metrics_maximum_error_against_original_summary": 2.0816681711721685e-17,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 4,
+      "full_csv_requests": 197750,
+      "full_metrics_maximum_error_against_original_summary": 0.0,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 5,
+      "full_csv_requests": 194452,
+      "full_metrics_maximum_error_against_original_summary": 6.938893903907228e-18,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 6,
+      "full_csv_requests": 198384,
+      "full_metrics_maximum_error_against_original_summary": 1.3877787807814457e-17,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 7,
+      "full_csv_requests": 193097,
+      "full_metrics_maximum_error_against_original_summary": 1.3877787807814457e-17,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 8,
+      "full_csv_requests": 197656,
+      "full_metrics_maximum_error_against_original_summary": 1.3877787807814457e-17,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    },
+    {
+      "edge": 9,
+      "full_csv_requests": 189676,
+      "full_metrics_maximum_error_against_original_summary": 6.938893903907228e-18,
+      "chosen_request_join": "exact one_to_one complete-user day; actual positive/candidate/history counts match"
+    }
+  ],
+  "both_cohort_full_day_positive_edges": [
+    1,
+    2,
+    3,
+    4,
+    9
+  ],
+  "elapsed_cpu_seconds": 8.337581722065806,
+  "limitations": [
+    "Both cohorts were already contained in the original full30000 evaluation; this is a fixed-cohort diagnostic, not newly unseen confirmation.",
+    "The same fixed users recur across edges and share models; intervals are per edge, not independent experiments.",
+    "No population, window, training plan, chain acceptance or background process was changed.",
+    "Time slices are reported in full and do not replace full-day evaluation."
+  ]
+}

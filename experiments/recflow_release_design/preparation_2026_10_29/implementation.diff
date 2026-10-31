@@ -1,0 +1,225 @@
+--- experiments/recflow_full_population/code/train.py
++++ experiments/recflow_release_design/code/extend.py
+@@ -12,13 +12,13 @@
+ import torch.distributed as dist
+ from torch.utils.data import DataLoader
+ 
+-from .batches import GlobalBatchSampler, RequestBatches
+-from .communication import synchronize_and_clip
+-from .configuration import DEFAULT_CONFIG, load_proposal
+-from .data_common import json_save, sha256
+-from .model import RequestRanker
+-from .objective import ranking_loss
+-from .runtime import (
++from experiments.recflow_full_population.code.batches import GlobalBatchSampler, RequestBatches
++from experiments.recflow_full_population.code.communication import synchronize_and_clip
++from experiments.recflow_full_population.code.configuration import DEFAULT_CONFIG, load_proposal
++from experiments.recflow_full_population.code.data_common import json_save, sha256
++from experiments.recflow_full_population.code.model import RequestRanker
++from experiments.recflow_full_population.code.objective import ranking_loss
++from experiments.recflow_full_population.code.runtime import (
+     distributed_init,
+     load_checkpoint,
+     restore_rng,
+@@ -26,6 +26,9 @@
+     source_binding,
+     to_device,
+ )
++
++
++from .common import load_spec, release_metadata, verify_saved_state, verify_selection
+ 
+ 
+ def main():
+@@ -57,7 +60,16 @@
+     p.add_argument("--diagnostic-state", action="store_true", help="Forbid quality use even when testing an actual update phase")
+     p.add_argument("--budget-spent-seconds", type=float, default=0.,
+                    help="Already spent cumulative budget, including external validation; can only increase saved elapsed time")
++    p.add_argument("--branch-spec", type=Path, required=True)
+     args = p.parse_args()
++    spec = load_spec(args.branch_spec, args.data)
++    if (args.phase != "update" or args.scale != "max" or args.days != [spec["train_day"]]
++            or args.epochs != 1 or args.seed != 18 or args.max_steps is not None
++            or args.request_limit is not None or args.pilot or args.global_batch != 64
++            or args.micro_batch != 16 or args.listwise_weight != .1):
++        raise ValueError("The branch must run one complete extra pass under the fixed recipe")
++    if not args.resume and (not args.parent or args.parent.resolve() != Path(spec["first_pass_checkpoint_path"]).resolve()):
++        raise ValueError("Extra pass must start from the declared first-pass state")
+     rank, world, device = distributed_init(args.seed)
+     config = load_proposal(args.config)
+     if args.epochs < 1 or args.log_every < 1 or args.checkpoint_every < 1 or args.budget_spent_seconds < 0:
+@@ -82,6 +94,9 @@
+     dataset = RequestBatches(args.data, args.days, role=0, pilot=args.pilot, limit=args.request_limit)
+     if not len(dataset):
+         raise ValueError("No eligible training requests")
++    selection_check = verify_selection(dataset, spec)
++    if rank == 0:
++        json_save(args.output / "selection_check.json", selection_check)
+     steps_per_epoch = math.ceil(len(dataset)/args.global_batch)
+     planned_steps = min(steps_per_epoch*args.epochs, args.max_steps or 2**60)
+     vocabulary_name = "vocabulary_max" if args.scale == "max" else "vocabulary"
+@@ -109,6 +124,11 @@
+             raise ValueError("Parent/resume proposal differs from the current frozen configuration")
+         model.load_state_dict(payload["model"], strict=True)
+         optimizer.load_state_dict(payload["optimizer"])
++        restoration = verify_saved_state(model, optimizer, payload)
++        restoration.update(rank=rank, checkpoint_sha256=sidecar["checkpoint_sha256"])
++        json_save(args.output / f"restored_{sidecar['checkpoint_sha256'][:12]}_rank_{rank}.json", restoration)
++        if not args.resume:
++            restore_rng(payload, rank, world)
+         parent_digest = sidecar["checkpoint_sha256"]
+         if args.resume:
+             # A recovery point is inside the same version, not a new release
+@@ -132,8 +152,9 @@
+             prior_elapsed = max(prior_elapsed, sidecar["elapsed_budget_seconds"])
+             restore_rng(payload, rank, world)
+         else:
+-            if args.phase == "update" and max(payload["days"]) != args.days[0]-1:
+-                raise ValueError("Update must continue the immediately previous daily cutoff")
++            if (payload["days"] != args.days or sidecar["checkpoint_sha256"] != spec["first_pass_checkpoint_sha256"]
++                    or payload["parent_checkpoint_sha256"] != spec["previous_published_checkpoint_sha256"]):
++                raise ValueError("Extra pass changes optimizer ancestry or update day")
+             if args.phase == "alignment":
+                 prior_elapsed = max(prior_elapsed, sidecar["elapsed_budget_seconds"])
+                 completed = args.parent.parent / "completion.json"
+@@ -153,6 +174,7 @@
+             "requests": len(dataset), "planned_steps": planned_steps, "world_size": world,
+             "trainable_parameters": sum(p.numel() for p in parameters), "vocabulary_sha256": vocab_hash,
+             "parent_checkpoint_sha256": parent_digest, "history_limit": 1024,
++            "release_branch": release_metadata(args.branch_spec),
+             "global_batch": args.global_batch, "loss_normalization": "global_active_request_mean",
+             "selection": "endpoint only; native pre-release validation is run separately",
+             "budget_seconds": args.wall_hours*3600, "budget_already_spent_seconds": prior_elapsed}
+@@ -238,7 +260,7 @@
+                 elapsed = prior_elapsed+time.monotonic()-started
+                 if rank == 0:
+                     vals = reduced.cpu().tolist()
+-                    progress = {"step": total_step, "epoch": epoch, "bce": vals[0]/max(1, vals[2]),
++                    progress = {"step": total_step, "epoch": epoch, "cumulative_update_epoch": epoch+2, "bce": vals[0]/max(1, vals[2]),
+                                 "listwise": vals[1]/max(1, vals[2]), "requests": int(vals[2]),
+                                 "gradient_norm": float(norm), "lr": scheduler.get_last_lr()[0],
+                                 "communicated_item_rows": communicated_rows,
+@@ -248,7 +270,7 @@
+                     print(json.dumps(progress), flush=True)
+                     json_save(args.output / "progress.json", progress)
+             if budget_stop or requested_stop or total_step % args.checkpoint_every == 0 or total_step == planned_steps:
+-                metadata = {"scale": args.scale, "vocabulary_sha256": vocab_hash, "source_binding": binding,
++                metadata = {"release_branch": release_metadata(args.branch_spec), "scale": args.scale, "vocabulary_sha256": vocab_hash, "source_binding": binding,
+                             "arguments": arguments, "parent_checkpoint_sha256": parent_digest,
+                             "total_step": total_step, "next_epoch": next_epoch, "next_step": next_step,
+                             "phase": args.phase, "days": args.days, "proposal": config,
+@@ -270,7 +292,8 @@
+         json_save(args.output / "completion.json", {"status": stop_reason, "steps": total_step,
+                   "next_epoch": next_epoch, "next_step": next_step,
+                   "elapsed_budget_seconds": prior_elapsed+time.monotonic()-started,
+-                  "world_size": world, "optimizer_state_preserved": bool(args.parent or args.resume)})
++                  "world_size": world, "optimizer_state_preserved": bool(args.parent or args.resume),
++                  "release_branch": release_metadata(args.branch_spec)})
+     if world > 1:
+         dist.destroy_process_group()
+ 
+--- experiments/recflow_full_population/code/evaluate.py
++++ experiments/recflow_release_design/code/evaluate.py
+@@ -12,12 +12,12 @@
+ import torch.distributed as dist
+ from torch.utils.data import DataLoader
+ 
+-from .batches import RequestBatches
+-from .data_common import json_save, sha256
+-from .configuration import DEFAULT_CONFIG, load_proposal
+-from .model import RequestRanker
+-from .protocol import paired_uid_interval, request_metrics
+-from .runtime import distributed_init, load_checkpoint, source_binding, to_device
++from experiments.recflow_full_population.code.batches import RequestBatches
++from experiments.recflow_full_population.code.data_common import json_save, sha256
++from experiments.recflow_full_population.code.configuration import DEFAULT_CONFIG, load_proposal
++from experiments.recflow_full_population.code.model import RequestRanker
++from experiments.recflow_full_population.code.protocol import paired_uid_interval, request_metrics
++from experiments.recflow_full_population.code.runtime import distributed_init, load_checkpoint, source_binding, to_device
+ 
+ 
+ def baseline_metrics(ids, labels, popularity):
+@@ -50,6 +50,9 @@
+             [r["uid"] for r in valid], [r["current_ndcg@10"] for r in valid],
+             [r[f"{method}_ndcg@10"] for r in valid]) for method in methods if method != "current"}
+     return result
++
++
++from .common import load_spec, release_metadata, validate_extension
+ 
+ 
+ def main():
+@@ -69,7 +72,19 @@
+     p.add_argument("--batch-size", type=int, default=16)
+     p.add_argument("--workers", type=int, default=2)
+     p.add_argument("--history-limit", type=int, choices=[128, 1024], default=1024)
++    p.add_argument("--branch-spec", type=Path, required=True)
++    p.add_argument("--baseline-parity", action="store_true")
++    p.add_argument("--diagnostic-batches", type=int)
+     args = p.parse_args()
++    spec = load_spec(args.branch_spec, args.data)
++    if (args.initialize or args.role != 2 or args.days != [spec["eval_day"]]
++            or not args.parent or args.parent.resolve() != Path(spec["previous_published_checkpoint"]).resolve()
++            or args.limit is not None or args.first_only):
++        raise ValueError("Branch evaluation must use the declared published parent and complete next day")
++    if args.diagnostic_batches is not None and (not args.baseline_parity or args.diagnostic_batches != 1):
++        raise ValueError("Only the fixed first-batch baseline parity diagnostic may be truncated")
++    if args.baseline_parity and args.diagnostic_batches != 1:
++        raise ValueError("Baseline parity is a diagnostic, not another quality result")
+     if bool(args.checkpoint) == bool(args.initialize):
+         raise ValueError("Specify either checkpoint or untrained initialization")
+     if args.initialize and (args.role != 1 or args.parent):
+@@ -99,7 +114,8 @@
+             raise ValueError("Checkpoint numerical sources or data binding changed")
+         model = RequestRanker(args.data / vocabulary, payload["scale"], payload["proposal"]).to(device)
+         model.load_state_dict(payload["model"], strict=True)
+-        expected_parent = payload.get("parent_checkpoint_sha256")
++        actual_optimizer_parent = payload.get("parent_checkpoint_sha256")
++        expected_parent = validate_extension(payload, sidecar, args.branch_spec, baseline=args.baseline_parity)
+         current_proposal = payload["proposal"]
+         del payload
+     model.eval()
+@@ -121,6 +137,9 @@
+                              limit=args.limit, allow_confirmation=args.allow_confirmation, history_limit=args.history_limit)
+     local_indices = np.arange(rank, len(dataset), world)
+     batches = [local_indices[i:i+args.batch_size].tolist() for i in range(0, len(local_indices), args.batch_size)]
++    if args.diagnostic_batches:
++        batches = batches[:args.diagnostic_batches]
++    expected_requests = min(len(dataset), args.batch_size*world) if args.diagnostic_batches else len(dataset)
+     options = {"multiprocessing_context": "spawn", "persistent_workers": True, "prefetch_factor": 2} if args.workers else {}
+     loader = DataLoader(dataset, batch_size=None, sampler=batches, num_workers=args.workers, pin_memory=True,
+                         generator=torch.Generator().manual_seed(17+rank), **options)
+@@ -134,6 +153,10 @@
+             batch = to_device(cpu, device)
+             current_cache = model.encode_history(batch)
+             scores = {"current": model.read(batch, current_cache).cpu().numpy()}
++            if args.diagnostic_batches:
++                repeated = model.read(batch, current_cache).cpu().numpy()
++                if not np.array_equal(repeated, scores["current"]):
++                    raise ValueError("Same-version cache read is not bit-identical")
+             if parent is not None:
+                 parent_cache = parent.encode_history(batch)
+                 scores["parent"] = parent.read(batch, parent_cache).cpu().numpy()
+@@ -178,7 +201,7 @@
+                     all_rows.append({key: (int(value) if key in columns[:7] else float(value)) if value else None
+                                      for key, value in row.items()})
+         keys = {(r["uid"], r["day"], r["rid"]) for r in all_rows}
+-        if len(all_rows) != len(dataset) or len(keys) != len(dataset):
++        if len(all_rows) != expected_requests or len(keys) != expected_requests:
+             raise ValueError("Distributed evaluation omitted or duplicated requests")
+         summary = summarize(all_rows, methods)
+         summary.update(status="passed", checkpoint_sha256=sidecar["checkpoint_sha256"],
+@@ -189,7 +212,12 @@
+                        wall_seconds=time.monotonic()-started,
+                        arguments={key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items()})
+         summary["initialization_seed"] = 17 if args.initialize else None
+-        summary["population_scope"] = "heldout prerelease UID validation" if args.role == 1 else "fixed training users, next-day targets"
++        summary["release_branch"] = release_metadata(args.branch_spec)
++        summary["actual_optimizer_parent_sha256"] = actual_optimizer_parent
++        summary["diagnostic_only"] = bool(args.diagnostic_batches)
++        if args.diagnostic_batches:
++            summary["same_version_repeated_read_bitwise_equal"] = True
++        summary["population_scope"] = "first64 baseline parity diagnostic, not quality" if args.diagnostic_batches else "fixed training users, complete next-day targets"
+         slices = {}
+         for name, lo, hi in [("empty",0,0),("1_127",1,127),("128_511",128,511),("512_1023",512,1023),("1024",1024,1024)]:
+             subset = [row for row in all_rows if lo <= row["history_length"] <= hi]

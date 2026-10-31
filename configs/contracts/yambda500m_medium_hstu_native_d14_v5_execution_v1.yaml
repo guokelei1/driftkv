@@ -1,0 +1,68 @@
+contract: yambda500m_medium_hstu_native_d14_v5_execution_v1
+date_frozen: 2026-08-29
+status: prospective_medium_d14_v5_four_gpu_execution_v1
+purpose: >-
+  Execute the single D14 v5 extension and its three Full/Reuse windows on one
+  serial four-rank GPU0/1/2/3 queue while preserving global train batch 32.
+
+frozen_parent:
+  contract: configs/contracts/yambda500m_medium_hstu_native_d14_v5_extension_v1.yaml
+  contract_sha256: b302e40cec074e7a299f0841afb764d2606864d2b94f52ba3f6c3143b7821517
+  proven_reuse_runtime_contract: configs/contracts/yambda500m_medium_hstu_native_d14_reuse_4gpu_runtime_v3.yaml
+  proven_reuse_runtime_contract_sha256: b192292b19e08016e7a84150a93eac55d49e5025ea16638fdbdaf7833ca3735a
+
+execution_amendment:
+  world_size: 4
+  physical_gpus: [0, 1, 2, 3]
+  global_train_batch_size: 32
+  local_batch_sizes_by_rank: [8, 8, 8, 8]
+  fsdp_jobs_concurrent: 1
+  training_and_evaluation_serial: true
+  focused_correctness_canary:
+    training_steps: 2
+    quality_metric_read: prohibited
+    pass_gate: no_OOM_complete_checkpoint_and_raw_seals
+  automatic_batch_or_world_size_change: prohibited
+
+full_only_runtime:
+  batch_size_per_rank: 128
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+
+reuse_runtime:
+  cohort_size_per_rank: 32
+  query_chunk_size_per_rank: 256
+  history_threads_per_rank: 14
+  arrow_cpu_threads_per_rank: 14
+  arrow_io_threads_per_rank: 4
+  torch_cpu_threads_per_rank: 4
+  omp_num_threads_per_rank: 4
+
+cpu_affinity:
+  rank0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  rank1: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+  rank2: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
+  rank3: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]
+
+canary:
+  training_output: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/canary/train_v5
+  full_only_window: E14_partial
+  reuse_window: E14_partial
+  maximum_users_per_rank: 64
+  maximum_peak_reserved_mib_per_rank: 45500
+  raw_quality_read: prohibited
+
+invariants:
+  model_or_optimizer_change: prohibited
+  global_training_batch_change: prohibited
+  parent_checkpoint_change: prohibited
+  data_or_window_change: prohibited
+  selected_horizon_reporting: prohibited
+  partial_E14_as_qualification: prohibited
+
+authorization:
+  four_gpu_canary: authorized_by_user_2026_08_29
+  full_queue_after_canary: authorized_by_user_2026_08_29

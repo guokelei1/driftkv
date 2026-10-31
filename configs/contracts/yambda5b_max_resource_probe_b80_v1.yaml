@@ -1,0 +1,62 @@
+contract: yambda5b_max_resource_probe_b80_v1
+status: prospective_release_chain_candidate_v1
+scope:
+  scale: Max
+  versions:
+  - v0
+  seed: 17
+  population_users: 200000
+  theta3_read_or_trained: false
+  purpose: resource_probes_only_not_a_trained_V0
+frozen_inputs:
+  dataset_manifest: data/processed/yambda5b_max_200k_v1/scales/max/dataset.json
+  dataset_manifest_sha256: 183f84998309ef93b646e83f47a79c279079bc0f2659c2ea19ec2f3d73fbf7b0
+  item_mapping: data/processed/yambda5b_max_200k_v1/scales/max/item_mapping.parquet
+  item_mapping_sha256: f63ec48c9b350f3e128574d9706ea7ffcb77eb9aab37d1f274125a8deb9e45b0
+  request_manifest: data/manifests/yambda5b_max_200k_hstu_native_v1/manifest.json
+  request_manifest_sha256: 9d471a32c17f7306bbeb77a790675fe6250613cb302263f51d7567ff433e992e
+  requests_quality: data/manifests/yambda5b_max_200k_hstu_native_v1/requests_quality.parquet
+  requests_quality_sha256: 9817aaade124a331ffd989a0d6b50e18d7e9d80aee91b2ff7726ffb031d84958
+  requests_fidelity: data/manifests/yambda5b_max_200k_hstu_native_v1/requests_fidelity.parquet
+  requests_fidelity_sha256: f19a07119816cff9ee1b24480b970badd4bbc56ced2f9921b7fffec0e9358912
+model:
+  num_behaviors: 4
+  hidden_size: 320
+  num_layers: 16
+  num_heads: 10
+  max_seq_len: 1024
+  num_query_types: 3
+  query_type_id: 2
+  num_query_actions: 1
+  query_action_id: 0
+  input_dropout: 0.1
+  oov_buckets: 256
+  known_items_from_dataset_manifest: 3530650
+  total_parameters: 1138203521
+training:
+  window: foundation
+  passes: 1
+  candidate_epoch_options:
+  - 1
+  foundation_learning_rate: 0.0002
+  update_learning_rate: 5.0e-05
+  weight_decay: 0.0001
+  user_equal_window_weighting: true
+  resource_probe_global_batches:
+  - 80
+resource_probe:
+  training_days_half_open:
+  - 203
+  - 217
+  steps: 12
+  context: 1024
+  quality_metrics_read: false
+  minimum_reserved_memory_headroom: 0.15
+  later_window_used_for_long_history_stress_only: true
+  reason: batch96 retained only12.1pct memory headroom; test middle80 before selecting,
+    no quality read
+authorization:
+  focused_resource_probes: true
+  formal_training: false
+outputs:
+  root: results/unified_training_2026_09/max/preparation

@@ -1,0 +1,70 @@
+contract: yambda500m_streaming_windows_v1
+date_frozen: 2026-08-24
+status: prospective_time_only_planning_interface_no_training_authorization
+depends_on: [yambda500m_unified_scales_v1]
+
+scope:
+  scales: [EvoKV-HSTU-M, EvoKV-HSTU-L]
+  small: frozen_Yambda_50M_reference_not_rewindowed
+  physical_partition: aligned_half_open_daily_slices
+  logical_windows_compose_physical_slices: true
+  event_materialization: false
+  label_access: false
+  training_authorized: false
+
+coverage_seconds:
+  observed_start: 0
+  observed_end_inclusive: 26000000
+  planner_end_exclusive: 26000001
+  complete_day_end_exclusive: 25920000
+  partial_tail: [25920000, 26000001]
+  theta0_cutoff: 18748800
+  complete_stream_days_after_theta0: 83
+
+blind_boundary:
+  lock_from_update_index: 3
+  first_locked_version_name: theta3
+  planning_boundaries_only: true
+  labels_requests_training_and_metrics: prohibited
+  this_is_not_the_theta3_qualification_contract: true
+
+recipes:
+  uniform_main_14d_fixed_endpoint:
+    train_days: 14
+    admission_days: 0
+    cadence_days: 14
+    evaluation_days: 7
+    fixed_endpoint: true
+    role: primary_scale_reproduction
+  dense_2d_fixed_endpoint:
+    train_days: 2
+    admission_days: 0
+    cadence_days: 2
+    evaluation_days: 1
+    fixed_endpoint: true
+    role: prospective_frequency_sensitivity_not_primary_model_selection
+
+capacity_views:
+  full_complete_stream: {usable_end_day: 300, reserved_tail_days: 0}
+  reserve_final_7d: {usable_end_day: 293, reserved_tail_days: 7}
+  capacity_is_calendar_only_not_authorization: true
+  equal_allocation_examples:
+    total_versions_including_theta0: [4, 5, 6]
+    admission_days_per_update: 0
+    final_evaluation_days: 7
+    role: capacity_examples_not_primary_recipe
+
+invariants:
+  - half_open_windows
+  - train_and_admission_strictly_precede_cutover
+  - evaluation_starts_at_cutover
+  - no_event_or_label_sampling_in_planner
+  - no_overlapping_update_data
+  - no_theta3_loader_or_training_command
+  - locked_slot_F_counts_are_not_read_or_materialized
+  - no_performance_admission_or_checkpoint_selection_window
+  - final_checkpoint_is_fixed_before_training
+  - changing_recipe_creates_a_new_contract_not_a_silent_manifest_rewrite
+
+output: data/manifests/yambda500m_streaming_v1/window_plan.json
+unlocked_F_coverage_reference: results/data_audit/yambda500m_scale_v1/population_audit.json

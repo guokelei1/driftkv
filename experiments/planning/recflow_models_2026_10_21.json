@@ -1,0 +1,3477 @@
+{
+  "status": "cpu_planning_statistics_not_training_or_quality_results",
+  "inputs": {
+    "configuration": "experiments/configs/recflow_models_2026_10_21.json",
+    "configuration_sha256": "c1d3b64ee50c1e8152ed3743d731465a1e1d85c2a1ef1a025a4761a16087c8e2",
+    "script_sha256": "ccb1d750718fa7c29a0c0031c930ad26cc9fec1e4ea651b0e97c54a1b120f77c",
+    "prepared_manifest_sha256": "19947e4c5e57b4441728ddbf796feea8600e164a7a348260279b0a6b49a06128"
+  },
+  "input_shapes": {
+    "events": 38245315,
+    "requests": 7440759,
+    "initial_catalog_videos": 4919032,
+    "initial_videos_with_eligible_development_targets": 4280964
+  },
+  "catalogs": {
+    "large": {
+      "known_videos": 2200000,
+      "smallest_training_support": 1,
+      "known_videos_seen_once": 529893,
+      "known_video_ids_sha256": "f7f80ac0899382ae2e0b4ff0b1e108ed4c923bc9f5e04d120ccaccf63f51c98d",
+      "initial_tail_unique_videos": 2080964,
+      "oov_buckets": 65536,
+      "oov_buckets_with_direct_training_targets": 65536,
+      "initial_tail_unique_ids_per_nonempty_bucket_mean": 31.75299072265625
+    },
+    "max": {
+      "known_videos": 3500000,
+      "smallest_training_support": 1,
+      "known_videos_seen_once": 1829893,
+      "known_video_ids_sha256": "6b9f91e3c1b0b5c6bd11c432886ee5384da1ff03250336a10db2891190765ccc",
+      "initial_tail_unique_videos": 780964,
+      "oov_buckets": 65536,
+      "oov_buckets_with_direct_training_targets": 65536,
+      "initial_tail_unique_ids_per_nonempty_bucket_mean": 11.91656494140625
+    }
+  },
+  "models": {
+    "large": {
+      "model_config": {
+        "num_items": 2265536,
+        "num_behaviors": 4,
+        "num_prediction_items": 2265536,
+        "hidden_size": 320,
+        "num_layers": 10,
+        "num_heads": 10,
+        "head_dim": 32,
+        "max_seq_len": 1024,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "elu_plus1",
+        "norm_eps": 1e-06,
+        "input_dropout": 0.1,
+        "tie_item_embeddings": true,
+        "block_variant": "legacy",
+        "relative_position_bias": false,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 3,
+        "num_query_actions": 1,
+        "query_type_id": 2,
+        "query_action_id": 0
+      },
+      "parameters": 730211201,
+      "item_embedding_parameters": 724971840,
+      "other_parameters": 5239361,
+      "reference_yambda_parameters": 717260481,
+      "difference_percent": 1.8055811442370562,
+      "nonembedding_matches_yambda": true,
+      "fp32_weights_gb": 2.920844804,
+      "fp32_weights_six_endpoints_gb": 17.525068824,
+      "fp32_model_adam_recovery_gb_each": 8.762534412,
+      "fp32_weights_grad_adam_state_gb_unsharded": 11.683379216,
+      "full_1024_native_kv_bytes_per_user_fp32": 26214400,
+      "initial_actual_rows_native_kv_gb_all_residents_fp32": 267.8396416,
+      "initial_actual_rows_native_kv_gb_final_role_fp32": 26.897792,
+      "training_plan": [
+        {
+          "name": "v0",
+          "fit_days_inclusive": [
+            1,
+            18
+          ],
+          "evaluate_day": 19,
+          "requests_per_epoch": 3023919,
+          "targets_per_epoch": 15515819,
+          "epochs": 2,
+          "ideal_request_steps": 63000
+        },
+        {
+          "name": "v1",
+          "fit_days_inclusive": [
+            19,
+            19
+          ],
+          "evaluate_day": 20,
+          "requests_per_epoch": 161078,
+          "targets_per_epoch": 833795,
+          "epochs": 2,
+          "ideal_request_steps": 3356
+        },
+        {
+          "name": "v2",
+          "fit_days_inclusive": [
+            20,
+            20
+          ],
+          "evaluate_day": 21,
+          "requests_per_epoch": 154410,
+          "targets_per_epoch": 795375,
+          "epochs": 2,
+          "ideal_request_steps": 3218
+        },
+        {
+          "name": "v3",
+          "fit_days_inclusive": [
+            21,
+            21
+          ],
+          "evaluate_day": 22,
+          "requests_per_epoch": 151335,
+          "targets_per_epoch": 776072,
+          "epochs": 2,
+          "ideal_request_steps": 3154
+        },
+        {
+          "name": "v4",
+          "fit_days_inclusive": [
+            22,
+            22
+          ],
+          "evaluate_day": 23,
+          "requests_per_epoch": 157312,
+          "targets_per_epoch": 806088,
+          "epochs": 2,
+          "ideal_request_steps": 3278
+        },
+        {
+          "name": "v5",
+          "fit_days_inclusive": [
+            23,
+            23
+          ],
+          "evaluate_day": 24,
+          "requests_per_epoch": 154968,
+          "targets_per_epoch": 794688,
+          "epochs": 2,
+          "ideal_request_steps": 3230
+        }
+      ],
+      "permanent_epoch_checkpoint_count": 12,
+      "permanent_epoch_model_adam_gb": 165.497057424,
+      "permanent_epochs_plus_two_rolling_model_adam_gb": 193.079900328,
+      "training_request_visits": 7606044,
+      "training_target_visits": 39043674,
+      "ideal_optimizer_steps": 79236,
+      "conditional_4xa40_training_hours": [
+        13.206,
+        26.412
+      ],
+      "conditional_4xa40_schedule_hours": [
+        16.5075,
+        33.015
+      ],
+      "conditional_4xa40_ungrouped_schedule_hours": [
+        84.73166666666665,
+        169.4633333333333
+      ]
+    },
+    "max": {
+      "model_config": {
+        "num_items": 3565536,
+        "num_behaviors": 4,
+        "num_prediction_items": 3565536,
+        "hidden_size": 320,
+        "num_layers": 16,
+        "num_heads": 10,
+        "head_dim": 32,
+        "max_seq_len": 1024,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "elu_plus1",
+        "norm_eps": 1e-06,
+        "input_dropout": 0.1,
+        "tie_item_embeddings": true,
+        "block_variant": "legacy",
+        "relative_position_bias": false,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 3,
+        "num_query_actions": 1,
+        "query_type_id": 2,
+        "query_action_id": 0
+      },
+      "parameters": 1149285121,
+      "item_embedding_parameters": 1140971840,
+      "other_parameters": 8313281,
+      "reference_yambda_parameters": 1138203521,
+      "difference_percent": 0.9736044385334486,
+      "nonembedding_matches_yambda": true,
+      "fp32_weights_gb": 4.597140484,
+      "fp32_weights_six_endpoints_gb": 27.582842904,
+      "fp32_model_adam_recovery_gb_each": 13.791421452,
+      "fp32_weights_grad_adam_state_gb_unsharded": 18.388561936,
+      "full_1024_native_kv_bytes_per_user_fp32": 41943040,
+      "initial_actual_rows_native_kv_gb_all_residents_fp32": 428.54342656,
+      "initial_actual_rows_native_kv_gb_final_role_fp32": 43.0364672,
+      "training_plan": [
+        {
+          "name": "v0",
+          "fit_days_inclusive": [
+            1,
+            18
+          ],
+          "evaluate_day": 19,
+          "requests_per_epoch": 3023919,
+          "targets_per_epoch": 15515819,
+          "epochs": 2,
+          "ideal_request_steps": 75598
+        },
+        {
+          "name": "v1",
+          "fit_days_inclusive": [
+            19,
+            19
+          ],
+          "evaluate_day": 20,
+          "requests_per_epoch": 161078,
+          "targets_per_epoch": 833795,
+          "epochs": 2,
+          "ideal_request_steps": 4028
+        },
+        {
+          "name": "v2",
+          "fit_days_inclusive": [
+            20,
+            20
+          ],
+          "evaluate_day": 21,
+          "requests_per_epoch": 154410,
+          "targets_per_epoch": 795375,
+          "epochs": 2,
+          "ideal_request_steps": 3862
+        },
+        {
+          "name": "v3",
+          "fit_days_inclusive": [
+            21,
+            21
+          ],
+          "evaluate_day": 22,
+          "requests_per_epoch": 151335,
+          "targets_per_epoch": 776072,
+          "epochs": 2,
+          "ideal_request_steps": 3784
+        },
+        {
+          "name": "v4",
+          "fit_days_inclusive": [
+            22,
+            22
+          ],
+          "evaluate_day": 23,
+          "requests_per_epoch": 157312,
+          "targets_per_epoch": 806088,
+          "epochs": 2,
+          "ideal_request_steps": 3934
+        },
+        {
+          "name": "v5",
+          "fit_days_inclusive": [
+            23,
+            23
+          ],
+          "evaluate_day": 24,
+          "requests_per_epoch": 154968,
+          "targets_per_epoch": 794688,
+          "epochs": 2,
+          "ideal_request_steps": 3876
+        }
+      ],
+      "permanent_epoch_checkpoint_count": 12,
+      "permanent_epoch_model_adam_gb": 165.497057424,
+      "permanent_epochs_plus_two_rolling_model_adam_gb": 193.079900328,
+      "training_request_visits": 7606044,
+      "training_target_visits": 39043674,
+      "ideal_optimizer_steps": 95082,
+      "conditional_4xa40_training_hours": [
+        21.129333333333335,
+        42.25866666666667
+      ],
+      "conditional_4xa40_schedule_hours": [
+        26.41166666666667,
+        52.82333333333334
+      ],
+      "conditional_4xa40_ungrouped_schedule_hours": [
+        135.57,
+        271.14
+      ]
+    }
+  },
+  "roles": {
+    "development": {
+      "pool_users": 26277,
+      "pool_users_ge1024_at_cutoff": 4569,
+      "periods": {
+        "d1_d18": {
+          "active_users": 23668,
+          "eligible_requests": 3023919,
+          "exposure_targets": 15515819,
+          "positive_targets": 5936963,
+          "negative_targets": 9578856,
+          "requests_with_history_ge1024": 1295114,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            253.0,
+            791.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 13434855,
+            "max": 14734855
+          },
+          "known_target_coverage": {
+            "large": 0.8658811371800612,
+            "max": 0.9496665951052922
+          },
+          "empty_history_requests": 26277,
+          "empty_history_exposure_targets": 89921
+        },
+        "d19_d23": {
+          "active_users": 18404,
+          "eligible_requests": 779103,
+          "exposure_targets": 4006018,
+          "positive_targets": 1515405,
+          "negative_targets": 2490613,
+          "requests_with_history_ge1024": 551802,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            846.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 1582195,
+            "max": 1605462
+          },
+          "known_target_coverage": {
+            "large": 0.3949545408932261,
+            "max": 0.4007625527394036
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d19_d24": {
+          "active_users": 18942,
+          "eligible_requests": 916384,
+          "exposure_targets": 4708725,
+          "positive_targets": 1779590,
+          "negative_targets": 2929135,
+          "requests_with_history_ge1024": 653583,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            865.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 1785155,
+            "max": 1810372
+          },
+          "known_target_coverage": {
+            "large": 0.37911642748302354,
+            "max": 0.384471805000292
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d20_d24": {
+          "active_users": 18213,
+          "eligible_requests": 755306,
+          "exposure_targets": 3874930,
+          "positive_targets": 1465379,
+          "negative_targets": 2409551,
+          "requests_with_history_ge1024": 544110,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            893.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 1315793,
+            "max": 1332691
+          },
+          "known_target_coverage": {
+            "large": 0.33956561795955026,
+            "max": 0.34392647092979745
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d25_d37": {
+          "active_users": 20190,
+          "eligible_requests": 1822825,
+          "exposure_targets": 9363764,
+          "positive_targets": 3448234,
+          "negative_targets": 5915530,
+          "requests_with_history_ge1024": 1449151,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            1024.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 2089658,
+            "max": 2107689
+          },
+          "known_target_coverage": {
+            "large": 0.22316431725532596,
+            "max": 0.22508993178384248
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        }
+      }
+    },
+    "admission": {
+      "pool_users": 3291,
+      "pool_users_ge1024_at_cutoff": 522,
+      "periods": {
+        "d1_d18": {
+          "active_users": 2919,
+          "eligible_requests": 351772,
+          "exposure_targets": 1806993,
+          "positive_targets": 690011,
+          "negative_targets": 1116982,
+          "requests_with_history_ge1024": 145361,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            238.0,
+            751.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 1456090,
+            "max": 1502908
+          },
+          "known_target_coverage": {
+            "large": 0.8058083235518898,
+            "max": 0.8317176657574213
+          },
+          "empty_history_requests": 3291,
+          "empty_history_exposure_targets": 11464
+        },
+        "d19_d23": {
+          "active_users": 2211,
+          "eligible_requests": 89769,
+          "exposure_targets": 465975,
+          "positive_targets": 176343,
+          "negative_targets": 289632,
+          "requests_with_history_ge1024": 62506,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            826.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 185271,
+            "max": 188175
+          },
+          "known_target_coverage": {
+            "large": 0.3975985836150008,
+            "max": 0.40383067761145985
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d19_d24": {
+          "active_users": 2286,
+          "eligible_requests": 105556,
+          "exposure_targets": 547125,
+          "positive_targets": 207603,
+          "negative_targets": 339522,
+          "requests_with_history_ge1024": 74312,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            851.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 209626,
+            "max": 212754
+          },
+          "known_target_coverage": {
+            "large": 0.3831409641306831,
+            "max": 0.3888581220013708
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d20_d24": {
+          "active_users": 2189,
+          "eligible_requests": 86950,
+          "exposure_targets": 450270,
+          "positive_targets": 171327,
+          "negative_targets": 278943,
+          "requests_with_history_ge1024": 62108,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            889.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 154557,
+            "max": 156659
+          },
+          "known_target_coverage": {
+            "large": 0.3432540475714571,
+            "max": 0.3479223576964932
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d25_d37": {
+          "active_users": 2486,
+          "eligible_requests": 210646,
+          "exposure_targets": 1091502,
+          "positive_targets": 403733,
+          "negative_targets": 687769,
+          "requests_with_history_ge1024": 165048,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            1024.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 252525,
+            "max": 254752
+          },
+          "known_target_coverage": {
+            "large": 0.23135550828124915,
+            "max": 0.23339581604064857
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        }
+      }
+    },
+    "final": {
+      "pool_users": 3210,
+      "pool_users_ge1024_at_cutoff": 597,
+      "periods": {
+        "d1_d18": {
+          "active_users": 2921,
+          "eligible_requests": 376551,
+          "exposure_targets": 1958399,
+          "positive_targets": 736228,
+          "negative_targets": 1222171,
+          "requests_with_history_ge1024": 163743,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            266.0,
+            818.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 1553470,
+            "max": 1607179
+          },
+          "known_target_coverage": {
+            "large": 0.793234677918034,
+            "max": 0.8206596306472788
+          },
+          "empty_history_requests": 3210,
+          "empty_history_exposure_targets": 11177
+        },
+        "d19_d23": {
+          "active_users": 2267,
+          "eligible_requests": 98200,
+          "exposure_targets": 514782,
+          "positive_targets": 197415,
+          "negative_targets": 317367,
+          "requests_with_history_ge1024": 71457,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            909.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 204954,
+            "max": 207997
+          },
+          "known_target_coverage": {
+            "large": 0.39813746401389327,
+            "max": 0.4040487041116434
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d19_d24": {
+          "active_users": 2323,
+          "eligible_requests": 115308,
+          "exposure_targets": 603315,
+          "positive_targets": 231110,
+          "negative_targets": 372205,
+          "requests_with_history_ge1024": 84528,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            937.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 229642,
+            "max": 232930
+          },
+          "known_target_coverage": {
+            "large": 0.38063366566387374,
+            "max": 0.3860835550251527
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d20_d24": {
+          "active_users": 2239,
+          "eligible_requests": 94809,
+          "exposure_targets": 495268,
+          "positive_targets": 189506,
+          "negative_targets": 305762,
+          "requests_with_history_ge1024": 70347,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            977.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 168919,
+            "max": 171097
+          },
+          "known_target_coverage": {
+            "large": 0.3410658471776897,
+            "max": 0.34546346624453833
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        },
+        "d25_d37": {
+          "active_users": 2524,
+          "eligible_requests": 233392,
+          "exposure_targets": 1223123,
+          "positive_targets": 446657,
+          "negative_targets": 776466,
+          "requests_with_history_ge1024": 188336,
+          "history_length_quantiles_capped1024": [
+            1.0,
+            1024.0,
+            1024.0,
+            1024.0,
+            1024.0
+          ],
+          "known_targets": {
+            "large": 264802,
+            "max": 267137
+          },
+          "known_target_coverage": {
+            "large": 0.21649662380643647,
+            "max": 0.2184056713838265
+          },
+          "empty_history_requests": 0,
+          "empty_history_exposure_targets": 0
+        }
+      }
+    }
+  },
+  "admission_reservations": {
+    "foundation_validation_users": {
+      "users": 2048,
+      "uids_sha256": "cc06af84a5ed085ea76fcdfa565fd4cf6b233a17b71560917da564012bd9d72f",
+      "d19_d24": {
+        "active_users": 1421,
+        "eligible_requests": 65327,
+        "exposure_targets": 337587,
+        "positive_targets": 128373,
+        "negative_targets": 209214,
+        "requests_with_history_ge1024": 46270,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          856.5,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 131123,
+          "max": 133065
+        },
+        "known_target_coverage": {
+          "large": 0.38841246848960415,
+          "max": 0.3941650596735064
+        }
+      }
+    },
+    "correction_fit_pool_users": {
+      "users": 1024,
+      "uids_sha256": "c83c4d7a3a62105f4fe2f6f7ec55efe3038557af0ddd7187b8addaf470456ff5",
+      "d19_d24": {
+        "active_users": 714,
+        "eligible_requests": 32686,
+        "exposure_targets": 168633,
+        "positive_targets": 63140,
+        "negative_targets": 105493,
+        "requests_with_history_ge1024": 22478,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          821.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 63014,
+          "max": 63990
+        },
+        "known_target_coverage": {
+          "large": 0.3736753778916345,
+          "max": 0.3794630944121257
+        }
+      }
+    },
+    "correction_validation_users": {
+      "users": 128,
+      "uids_sha256": "d7d27afdc957239ed4a91a800d6e51e2dc3a1feb6e7c6cab6c90b4404da0b02e",
+      "d19_d24": {
+        "active_users": 89,
+        "eligible_requests": 4345,
+        "exposure_targets": 23274,
+        "positive_targets": 8764,
+        "negative_targets": 14510,
+        "requests_with_history_ge1024": 3105,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          886.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 8307,
+          "max": 8417
+        },
+        "known_target_coverage": {
+          "large": 0.35692188708430006,
+          "max": 0.36164819111454843
+        }
+      }
+    },
+    "unused_reserved_users": {
+      "users": 91,
+      "uids_sha256": "324f94ebfba83e4fc4a06af2dc0f19d71173a538cc1aa15c539ffd827988a6a4",
+      "d19_d24": {
+        "active_users": 62,
+        "eligible_requests": 3198,
+        "exposure_targets": 17631,
+        "positive_targets": 7326,
+        "negative_targets": 10305,
+        "requests_with_history_ge1024": 2459,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 7182,
+          "max": 7282
+        },
+        "known_target_coverage": {
+          "large": 0.40735068912710565,
+          "max": 0.4130225171572798
+        }
+      }
+    }
+  },
+  "daily": [
+    {
+      "day": 1,
+      "development": {
+        "active_users": 10080,
+        "eligible_requests": 153517,
+        "exposure_targets": 810262,
+        "positive_targets": 322312,
+        "negative_targets": 487950,
+        "requests_with_history_ge1024": 1197,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          25.0,
+          73.0,
+          172.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 687529,
+          "max": 810262
+        },
+        "known_target_coverage": {
+          "large": 0.8485267728216306,
+          "max": 1.0
+        }
+      },
+      "admission": {
+        "active_users": 1248,
+        "eligible_requests": 18724,
+        "exposure_targets": 98407,
+        "positive_targets": 39204,
+        "negative_targets": 59203,
+        "requests_with_history_ge1024": 111,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          25.0,
+          72.0,
+          170.25,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 76681,
+          "max": 79730
+        },
+        "known_target_coverage": {
+          "large": 0.7792230227524465,
+          "max": 0.8102065909945431
+        }
+      },
+      "final": {
+        "active_users": 1246,
+        "eligible_requests": 19049,
+        "exposure_targets": 101571,
+        "positive_targets": 41201,
+        "negative_targets": 60370,
+        "requests_with_history_ge1024": 50,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          26.0,
+          73.0,
+          164.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 78711,
+          "max": 82001
+        },
+        "known_target_coverage": {
+          "large": 0.7749357592226127,
+          "max": 0.8073268944875998
+        }
+      }
+    },
+    {
+      "day": 2,
+      "development": {
+        "active_users": 11681,
+        "eligible_requests": 164928,
+        "exposure_targets": 847556,
+        "positive_targets": 338415,
+        "negative_targets": 509141,
+        "requests_with_history_ge1024": 6753,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          75.0,
+          191.0,
+          391.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 728783,
+          "max": 847556
+        },
+        "known_target_coverage": {
+          "large": 0.8598641269721411,
+          "max": 1.0
+        }
+      },
+      "admission": {
+        "active_users": 1432,
+        "eligible_requests": 19362,
+        "exposure_targets": 99079,
+        "positive_targets": 40579,
+        "negative_targets": 58500,
+        "requests_with_history_ge1024": 849,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          73.0,
+          190.0,
+          394.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 78982,
+          "max": 81979
+        },
+        "known_target_coverage": {
+          "large": 0.7971618607373914,
+          "max": 0.8274104502467727
+        }
+      },
+      "final": {
+        "active_users": 1439,
+        "eligible_requests": 19915,
+        "exposure_targets": 104291,
+        "positive_targets": 41667,
+        "negative_targets": 62624,
+        "requests_with_history_ge1024": 470,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          78.0,
+          187.0,
+          363.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 81739,
+          "max": 85024
+        },
+        "known_target_coverage": {
+          "large": 0.7837589053705497,
+          "max": 0.8152573088761255
+        }
+      }
+    },
+    {
+      "day": 3,
+      "development": {
+        "active_users": 11519,
+        "eligible_requests": 152516,
+        "exposure_targets": 761656,
+        "positive_targets": 295685,
+        "negative_targets": 465971,
+        "requests_with_history_ge1024": 13643,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          111.0,
+          283.0,
+          572.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 652494,
+          "max": 710361
+        },
+        "known_target_coverage": {
+          "large": 0.8566780803932484,
+          "max": 0.932653323810224
+        }
+      },
+      "admission": {
+        "active_users": 1443,
+        "eligible_requests": 17575,
+        "exposure_targets": 86993,
+        "positive_targets": 33628,
+        "negative_targets": 53365,
+        "requests_with_history_ge1024": 1987,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          105.0,
+          273.0,
+          606.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 69196,
+          "max": 71736
+        },
+        "known_target_coverage": {
+          "large": 0.795420321175267,
+          "max": 0.8246180727184946
+        }
+      },
+      "final": {
+        "active_users": 1438,
+        "eligible_requests": 18846,
+        "exposure_targets": 95146,
+        "positive_targets": 36882,
+        "negative_targets": 58264,
+        "requests_with_history_ge1024": 1568,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          118.0,
+          283.0,
+          541.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 74948,
+          "max": 77794
+        },
+        "known_target_coverage": {
+          "large": 0.7877157211023059,
+          "max": 0.8176276459336178
+        }
+      }
+    },
+    {
+      "day": 4,
+      "development": {
+        "active_users": 11791,
+        "eligible_requests": 155425,
+        "exposure_targets": 779532,
+        "positive_targets": 303169,
+        "negative_targets": 476363,
+        "requests_with_history_ge1024": 24651,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          158.0,
+          393.0,
+          783.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 668837,
+          "max": 726728
+        },
+        "known_target_coverage": {
+          "large": 0.857998132212661,
+          "max": 0.9322619212553173
+        }
+      },
+      "admission": {
+        "active_users": 1466,
+        "eligible_requests": 18071,
+        "exposure_targets": 89259,
+        "positive_targets": 34764,
+        "negative_targets": 54495,
+        "requests_with_history_ge1024": 3012,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          148.0,
+          371.0,
+          765.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 71157,
+          "max": 73697
+        },
+        "known_target_coverage": {
+          "large": 0.7971969213188586,
+          "max": 0.8256534355079039
+        }
+      },
+      "final": {
+        "active_users": 1456,
+        "eligible_requests": 18020,
+        "exposure_targets": 91159,
+        "positive_targets": 35754,
+        "negative_targets": 55405,
+        "requests_with_history_ge1024": 2408,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          156.0,
+          364.0,
+          728.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 71817,
+          "max": 74573
+        },
+        "known_target_coverage": {
+          "large": 0.7878212793031956,
+          "max": 0.8180541690891738
+        }
+      }
+    },
+    {
+      "day": 5,
+      "development": {
+        "active_users": 12141,
+        "eligible_requests": 162267,
+        "exposure_targets": 817691,
+        "positive_targets": 318975,
+        "negative_targets": 498716,
+        "requests_with_history_ge1024": 40155,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          208.0,
+          506.0,
+          1017.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 701217,
+          "max": 762365
+        },
+        "known_target_coverage": {
+          "large": 0.8575574391793477,
+          "max": 0.9323387440977092
+        }
+      },
+      "admission": {
+        "active_users": 1484,
+        "eligible_requests": 19168,
+        "exposure_targets": 94702,
+        "positive_targets": 37471,
+        "negative_targets": 57231,
+        "requests_with_history_ge1024": 3959,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          190.0,
+          476.0,
+          919.25,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 75778,
+          "max": 78413
+        },
+        "known_target_coverage": {
+          "large": 0.8001731748009546,
+          "max": 0.8279972967835949
+        }
+      },
+      "final": {
+        "active_users": 1492,
+        "eligible_requests": 19646,
+        "exposure_targets": 100698,
+        "positive_targets": 38886,
+        "negative_targets": 61812,
+        "requests_with_history_ge1024": 4383,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          216.0,
+          499.0,
+          956.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 78733,
+          "max": 81811
+        },
+        "known_target_coverage": {
+          "large": 0.7818725297423981,
+          "max": 0.8124391745615603
+        }
+      }
+    },
+    {
+      "day": 6,
+      "development": {
+        "active_users": 12306,
+        "eligible_requests": 164811,
+        "exposure_targets": 829838,
+        "positive_targets": 322332,
+        "negative_targets": 507506,
+        "requests_with_history_ge1024": 52312,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          255.0,
+          625.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 714143,
+          "max": 774248
+        },
+        "known_target_coverage": {
+          "large": 0.8605812218770411,
+          "max": 0.9330110214282787
+        }
+      },
+      "admission": {
+        "active_users": 1498,
+        "eligible_requests": 19116,
+        "exposure_targets": 96850,
+        "positive_targets": 36874,
+        "negative_targets": 59976,
+        "requests_with_history_ge1024": 6024,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          240.0,
+          599.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 77015,
+          "max": 79797
+        },
+        "known_target_coverage": {
+          "large": 0.7951987609705731,
+          "max": 0.8239235931853381
+        }
+      },
+      "final": {
+        "active_users": 1494,
+        "eligible_requests": 20968,
+        "exposure_targets": 105656,
+        "positive_targets": 39702,
+        "negative_targets": 65954,
+        "requests_with_history_ge1024": 6572,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          280.0,
+          648.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 82188,
+          "max": 85492
+        },
+        "known_target_coverage": {
+          "large": 0.777882940864693,
+          "max": 0.8091542363897933
+        }
+      }
+    },
+    {
+      "day": 7,
+      "development": {
+        "active_users": 12715,
+        "eligible_requests": 168169,
+        "exposure_targets": 853461,
+        "positive_targets": 330713,
+        "negative_targets": 522748,
+        "requests_with_history_ge1024": 61326,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          286.0,
+          718.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 736951,
+          "max": 795989
+        },
+        "known_target_coverage": {
+          "large": 0.8634852676337876,
+          "max": 0.932660074684139
+        }
+      },
+      "admission": {
+        "active_users": 1544,
+        "eligible_requests": 19424,
+        "exposure_targets": 99233,
+        "positive_targets": 38065,
+        "negative_targets": 61168,
+        "requests_with_history_ge1024": 6583,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          269.0,
+          671.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 80341,
+          "max": 82883
+        },
+        "known_target_coverage": {
+          "large": 0.8096197837412957,
+          "max": 0.8352362621305413
+        }
+      },
+      "final": {
+        "active_users": 1548,
+        "eligible_requests": 21164,
+        "exposure_targets": 108599,
+        "positive_targets": 40204,
+        "negative_targets": 68395,
+        "requests_with_history_ge1024": 7455,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          297.0,
+          715.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 85599,
+          "max": 88632
+        },
+        "known_target_coverage": {
+          "large": 0.788211677823921,
+          "max": 0.8161401117874013
+        }
+      }
+    },
+    {
+      "day": 8,
+      "development": {
+        "active_users": 12686,
+        "eligible_requests": 176321,
+        "exposure_targets": 915905,
+        "positive_targets": 356301,
+        "negative_targets": 559604,
+        "requests_with_history_ge1024": 72423,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          328.0,
+          805.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 794420,
+          "max": 856677
+        },
+        "known_target_coverage": {
+          "large": 0.8673606978889732,
+          "max": 0.9353339047171922
+        }
+      },
+      "admission": {
+        "active_users": 1549,
+        "eligible_requests": 20438,
+        "exposure_targets": 106422,
+        "positive_targets": 42099,
+        "negative_targets": 64323,
+        "requests_with_history_ge1024": 7830,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          307.0,
+          741.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 86470,
+          "max": 89164
+        },
+        "known_target_coverage": {
+          "large": 0.8125199676758565,
+          "max": 0.8378342823852211
+        }
+      },
+      "final": {
+        "active_users": 1580,
+        "eligible_requests": 21695,
+        "exposure_targets": 114264,
+        "positive_targets": 44646,
+        "negative_targets": 69618,
+        "requests_with_history_ge1024": 8461,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          335.5,
+          754.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 91229,
+          "max": 94354
+        },
+        "known_target_coverage": {
+          "large": 0.7984054470349367,
+          "max": 0.8257543933347335
+        }
+      }
+    },
+    {
+      "day": 9,
+      "development": {
+        "active_users": 12710,
+        "eligible_requests": 174715,
+        "exposure_targets": 901204,
+        "positive_targets": 348644,
+        "negative_targets": 552560,
+        "requests_with_history_ge1024": 80446,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          376.0,
+          923.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 784922,
+          "max": 843319
+        },
+        "known_target_coverage": {
+          "large": 0.8709703907217455,
+          "max": 0.9357692597902362
+        }
+      },
+      "admission": {
+        "active_users": 1542,
+        "eligible_requests": 20285,
+        "exposure_targets": 105346,
+        "positive_targets": 40432,
+        "negative_targets": 64914,
+        "requests_with_history_ge1024": 9151,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          380.0,
+          896.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 85986,
+          "max": 88618
+        },
+        "known_target_coverage": {
+          "large": 0.8162246312152336,
+          "max": 0.8412089685417576
+        }
+      },
+      "final": {
+        "active_users": 1569,
+        "eligible_requests": 21638,
+        "exposure_targets": 113290,
+        "positive_targets": 43494,
+        "negative_targets": 69796,
+        "requests_with_history_ge1024": 10004,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          421.0,
+          933.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 91232,
+          "max": 94257
+        },
+        "known_target_coverage": {
+          "large": 0.8052961426427752,
+          "max": 0.8319975284667667
+        }
+      }
+    },
+    {
+      "day": 10,
+      "development": {
+        "active_users": 12644,
+        "eligible_requests": 168710,
+        "exposure_targets": 859510,
+        "positive_targets": 324850,
+        "negative_targets": 534660,
+        "requests_with_history_ge1024": 86011,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          418.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 744355,
+          "max": 803004
+        },
+        "known_target_coverage": {
+          "large": 0.86602250119254,
+          "max": 0.9342578911240125
+        }
+      },
+      "admission": {
+        "active_users": 1574,
+        "eligible_requests": 20232,
+        "exposure_targets": 105345,
+        "positive_targets": 38768,
+        "negative_targets": 66577,
+        "requests_with_history_ge1024": 10246,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          409.75,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 84594,
+          "max": 87488
+        },
+        "known_target_coverage": {
+          "large": 0.8030186529972946,
+          "max": 0.8304902937965731
+        }
+      },
+      "final": {
+        "active_users": 1532,
+        "eligible_requests": 21698,
+        "exposure_targets": 112400,
+        "positive_targets": 42102,
+        "negative_targets": 70298,
+        "requests_with_history_ge1024": 11543,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          465.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 89603,
+          "max": 92764
+        },
+        "known_target_coverage": {
+          "large": 0.7971797153024911,
+          "max": 0.8253024911032029
+        }
+      }
+    },
+    {
+      "day": 11,
+      "development": {
+        "active_users": 12623,
+        "eligible_requests": 164751,
+        "exposure_targets": 837700,
+        "positive_targets": 317696,
+        "negative_targets": 520004,
+        "requests_with_history_ge1024": 89171,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          464.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 726195,
+          "max": 837700
+        },
+        "known_target_coverage": {
+          "large": 0.8668914885997374,
+          "max": 1.0
+        }
+      },
+      "admission": {
+        "active_users": 1536,
+        "eligible_requests": 19782,
+        "exposure_targets": 101329,
+        "positive_targets": 37922,
+        "negative_targets": 63407,
+        "requests_with_history_ge1024": 10605,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          455.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 81664,
+          "max": 84240
+        },
+        "known_target_coverage": {
+          "large": 0.8059292009197762,
+          "max": 0.8313513406823319
+        }
+      },
+      "final": {
+        "active_users": 1517,
+        "eligible_requests": 20411,
+        "exposure_targets": 105234,
+        "positive_targets": 39606,
+        "negative_targets": 65628,
+        "requests_with_history_ge1024": 11418,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          552.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 83993,
+          "max": 86741
+        },
+        "known_target_coverage": {
+          "large": 0.7981545888211035,
+          "max": 0.8242678221867458
+        }
+      }
+    },
+    {
+      "day": 12,
+      "development": {
+        "active_users": 12766,
+        "eligible_requests": 169109,
+        "exposure_targets": 867149,
+        "positive_targets": 332614,
+        "negative_targets": 534535,
+        "requests_with_history_ge1024": 95065,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          487.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 753397,
+          "max": 867149
+        },
+        "known_target_coverage": {
+          "large": 0.86882069863426,
+          "max": 1.0
+        }
+      },
+      "admission": {
+        "active_users": 1540,
+        "eligible_requests": 19384,
+        "exposure_targets": 99868,
+        "positive_targets": 38622,
+        "negative_targets": 61246,
+        "requests_with_history_ge1024": 10214,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          437.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 81154,
+          "max": 83708
+        },
+        "known_target_coverage": {
+          "large": 0.8126126486962791,
+          "max": 0.8381864060559939
+        }
+      },
+      "final": {
+        "active_users": 1559,
+        "eligible_requests": 21754,
+        "exposure_targets": 113309,
+        "positive_targets": 40534,
+        "negative_targets": 72775,
+        "requests_with_history_ge1024": 12653,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          571.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 89517,
+          "max": 92583
+        },
+        "known_target_coverage": {
+          "large": 0.7900255054761758,
+          "max": 0.8170842563256229
+        }
+      }
+    },
+    {
+      "day": 13,
+      "development": {
+        "active_users": 12901,
+        "eligible_requests": 174988,
+        "exposure_targets": 900082,
+        "positive_targets": 339581,
+        "negative_targets": 560501,
+        "requests_with_history_ge1024": 103755,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          547.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 788233,
+          "max": 862833
+        },
+        "known_target_coverage": {
+          "large": 0.8757346552869627,
+          "max": 0.9586159927651037
+        }
+      },
+      "admission": {
+        "active_users": 1528,
+        "eligible_requests": 20455,
+        "exposure_targets": 106223,
+        "positive_targets": 40037,
+        "negative_targets": 66186,
+        "requests_with_history_ge1024": 12075,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          546.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 87229,
+          "max": 89783
+        },
+        "known_target_coverage": {
+          "large": 0.8211875017651544,
+          "max": 0.8452312587669337
+        }
+      },
+      "final": {
+        "active_users": 1558,
+        "eligible_requests": 22225,
+        "exposure_targets": 116561,
+        "positive_targets": 42140,
+        "negative_targets": 74421,
+        "requests_with_history_ge1024": 13904,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          690.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 93543,
+          "max": 96541
+        },
+        "known_target_coverage": {
+          "large": 0.8025240003088512,
+          "max": 0.8282444385343297
+        }
+      }
+    },
+    {
+      "day": 14,
+      "development": {
+        "active_users": 12996,
+        "eligible_requests": 180063,
+        "exposure_targets": 929695,
+        "positive_targets": 346791,
+        "negative_targets": 582904,
+        "requests_with_history_ge1024": 109734,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          581.5,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 812910,
+          "max": 869563
+        },
+        "known_target_coverage": {
+          "large": 0.8743835343849327,
+          "max": 0.9353207234630713
+        }
+      },
+      "admission": {
+        "active_users": 1525,
+        "eligible_requests": 20503,
+        "exposure_targets": 106992,
+        "positive_targets": 38961,
+        "negative_targets": 68031,
+        "requests_with_history_ge1024": 12518,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          591.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 87052,
+          "max": 89733
+        },
+        "known_target_coverage": {
+          "large": 0.8136309256766862,
+          "max": 0.8386888739344998
+        }
+      },
+      "final": {
+        "active_users": 1590,
+        "eligible_requests": 23265,
+        "exposure_targets": 122261,
+        "positive_targets": 43539,
+        "negative_targets": 78722,
+        "requests_with_history_ge1024": 14899,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          679.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 97799,
+          "max": 100965
+        },
+        "known_target_coverage": {
+          "large": 0.7999198436132536,
+          "max": 0.825815264066219
+        }
+      }
+    },
+    {
+      "day": 15,
+      "development": {
+        "active_users": 13034,
+        "eligible_requests": 181837,
+        "exposure_targets": 945489,
+        "positive_targets": 352605,
+        "negative_targets": 592884,
+        "requests_with_history_ge1024": 116479,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          636.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 822826,
+          "max": 882186
+        },
+        "known_target_coverage": {
+          "large": 0.8702650163037328,
+          "max": 0.9330473437554535
+        }
+      },
+      "admission": {
+        "active_users": 1553,
+        "eligible_requests": 21247,
+        "exposure_targets": 110877,
+        "positive_targets": 40921,
+        "negative_targets": 69956,
+        "requests_with_history_ge1024": 13150,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          630.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 90301,
+          "max": 92894
+        },
+        "known_target_coverage": {
+          "large": 0.8144249934612228,
+          "max": 0.8378112683423974
+        }
+      },
+      "final": {
+        "active_users": 1586,
+        "eligible_requests": 22760,
+        "exposure_targets": 120302,
+        "positive_targets": 42828,
+        "negative_targets": 77474,
+        "requests_with_history_ge1024": 14821,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          742.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 96294,
+          "max": 99371
+        },
+        "known_target_coverage": {
+          "large": 0.8004355704809563,
+          "max": 0.8260128676164985
+        }
+      }
+    },
+    {
+      "day": 16,
+      "development": {
+        "active_users": 13030,
+        "eligible_requests": 182386,
+        "exposure_targets": 949056,
+        "positive_targets": 351247,
+        "negative_targets": 597809,
+        "requests_with_history_ge1024": 120179,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          690.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 829160,
+          "max": 887779
+        },
+        "known_target_coverage": {
+          "large": 0.8736681502461393,
+          "max": 0.935433736260031
+        }
+      },
+      "admission": {
+        "active_users": 1563,
+        "eligible_requests": 19856,
+        "exposure_targets": 102193,
+        "positive_targets": 37750,
+        "negative_targets": 64443,
+        "requests_with_history_ge1024": 12467,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          662.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 83244,
+          "max": 85577
+        },
+        "known_target_coverage": {
+          "large": 0.8145763408452634,
+          "max": 0.8374056931492372
+        }
+      },
+      "final": {
+        "active_users": 1613,
+        "eligible_requests": 22705,
+        "exposure_targets": 119627,
+        "positive_targets": 43647,
+        "negative_targets": 75980,
+        "requests_with_history_ge1024": 15148,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          732.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 96473,
+          "max": 99366
+        },
+        "known_target_coverage": {
+          "large": 0.8064483770386284,
+          "max": 0.8306318807627041
+        }
+      }
+    },
+    {
+      "day": 17,
+      "development": {
+        "active_users": 12770,
+        "eligible_requests": 171505,
+        "exposure_targets": 894555,
+        "positive_targets": 331009,
+        "negative_targets": 563546,
+        "requests_with_history_ge1024": 115160,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          712.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 780973,
+          "max": 836557
+        },
+        "known_target_coverage": {
+          "large": 0.8730296068995199,
+          "max": 0.9351655292296169
+        }
+      },
+      "admission": {
+        "active_users": 1555,
+        "eligible_requests": 19176,
+        "exposure_targets": 99480,
+        "positive_targets": 37631,
+        "negative_targets": 61849,
+        "requests_with_history_ge1024": 12106,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          635.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 81493,
+          "max": 83611
+        },
+        "known_target_coverage": {
+          "large": 0.8191897868918375,
+          "max": 0.8404804985926819
+        }
+      },
+      "final": {
+        "active_users": 1584,
+        "eligible_requests": 21179,
+        "exposure_targets": 111471,
+        "positive_targets": 40965,
+        "negative_targets": 70506,
+        "requests_with_history_ge1024": 14821,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          834.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 89283,
+          "max": 91863
+        },
+        "known_target_coverage": {
+          "large": 0.8009527141588395,
+          "max": 0.8240977473961838
+        }
+      }
+    },
+    {
+      "day": 18,
+      "development": {
+        "active_users": 12679,
+        "eligible_requests": 157901,
+        "exposure_targets": 815478,
+        "positive_targets": 304024,
+        "negative_targets": 511454,
+        "requests_with_history_ge1024": 106654,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          729.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 707510,
+          "max": 760579
+        },
+        "known_target_coverage": {
+          "large": 0.867601578460731,
+          "max": 0.9326787479245302
+        }
+      },
+      "admission": {
+        "active_users": 1562,
+        "eligible_requests": 18974,
+        "exposure_targets": 98395,
+        "positive_targets": 36283,
+        "negative_targets": 62112,
+        "requests_with_history_ge1024": 12474,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          671.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 77753,
+          "max": 79857
+        },
+        "known_target_coverage": {
+          "large": 0.7902129173230347,
+          "max": 0.8115961176889069
+        }
+      },
+      "final": {
+        "active_users": 1530,
+        "eligible_requests": 19613,
+        "exposure_targets": 102560,
+        "positive_targets": 38431,
+        "negative_targets": 64129,
+        "requests_with_history_ge1024": 13165,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          692.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 80769,
+          "max": 83047
+        },
+        "known_target_coverage": {
+          "large": 0.7875292511700468,
+          "max": 0.8097406396255851
+        }
+      }
+    },
+    {
+      "day": 19,
+      "development": {
+        "active_users": 12615,
+        "eligible_requests": 161078,
+        "exposure_targets": 833795,
+        "positive_targets": 314211,
+        "negative_targets": 519584,
+        "requests_with_history_ge1024": 109473,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          749.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 469362,
+          "max": 477681
+        },
+        "known_target_coverage": {
+          "large": 0.5629225409123345,
+          "max": 0.5728998135033192
+        }
+      },
+      "admission": {
+        "active_users": 1489,
+        "eligible_requests": 18606,
+        "exposure_targets": 96855,
+        "positive_targets": 36276,
+        "negative_targets": 60579,
+        "requests_with_history_ge1024": 12204,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          732.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 55069,
+          "max": 56095
+        },
+        "known_target_coverage": {
+          "large": 0.5685715760673171,
+          "max": 0.5791647307831295
+        }
+      },
+      "final": {
+        "active_users": 1555,
+        "eligible_requests": 20499,
+        "exposure_targets": 108047,
+        "positive_targets": 41604,
+        "negative_targets": 66443,
+        "requests_with_history_ge1024": 14181,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          795.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 60723,
+          "max": 61833
+        },
+        "known_target_coverage": {
+          "large": 0.5620054235656705,
+          "max": 0.5722787305524447
+        }
+      }
+    },
+    {
+      "day": 20,
+      "development": {
+        "active_users": 12505,
+        "eligible_requests": 154410,
+        "exposure_targets": 795375,
+        "positive_targets": 303891,
+        "negative_targets": 491484,
+        "requests_with_history_ge1024": 107177,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          806.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 338886,
+          "max": 343718
+        },
+        "known_target_coverage": {
+          "large": 0.42607072135785007,
+          "max": 0.43214584315574417
+        }
+      },
+      "admission": {
+        "active_users": 1535,
+        "eligible_requests": 17952,
+        "exposure_targets": 93570,
+        "positive_targets": 35965,
+        "negative_targets": 57605,
+        "requests_with_history_ge1024": 12085,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          745.75,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 40086,
+          "max": 40705
+        },
+        "known_target_coverage": {
+          "large": 0.4284065405578711,
+          "max": 0.43502190873143104
+        }
+      },
+      "final": {
+        "active_users": 1510,
+        "eligible_requests": 19939,
+        "exposure_targets": 104837,
+        "positive_targets": 40044,
+        "negative_targets": 64793,
+        "requests_with_history_ge1024": 14384,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          885.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 45890,
+          "max": 46538
+        },
+        "known_target_coverage": {
+          "large": 0.43772713831948645,
+          "max": 0.443908162194645
+        }
+      }
+    },
+    {
+      "day": 21,
+      "development": {
+        "active_users": 12257,
+        "eligible_requests": 151335,
+        "exposure_targets": 776072,
+        "positive_targets": 293051,
+        "negative_targets": 483021,
+        "requests_with_history_ge1024": 106788,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          837.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 281690,
+          "max": 285557
+        },
+        "known_target_coverage": {
+          "large": 0.3629688997928027,
+          "max": 0.3679516848952159
+        }
+      },
+      "admission": {
+        "active_users": 1485,
+        "eligible_requests": 17250,
+        "exposure_targets": 88165,
+        "positive_targets": 33260,
+        "negative_targets": 54905,
+        "requests_with_history_ge1024": 11765,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          801.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 31777,
+          "max": 32238
+        },
+        "known_target_coverage": {
+          "large": 0.36042647309022857,
+          "max": 0.36565530539329666
+        }
+      },
+      "final": {
+        "active_users": 1515,
+        "eligible_requests": 19173,
+        "exposure_targets": 100653,
+        "positive_targets": 38946,
+        "negative_targets": 61707,
+        "requests_with_history_ge1024": 13882,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          877.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 37401,
+          "max": 37911
+        },
+        "known_target_coverage": {
+          "large": 0.3715835593573962,
+          "max": 0.3766504724151292
+        }
+      }
+    },
+    {
+      "day": 22,
+      "development": {
+        "active_users": 12261,
+        "eligible_requests": 157312,
+        "exposure_targets": 806088,
+        "positive_targets": 302729,
+        "negative_targets": 503359,
+        "requests_with_history_ge1024": 114717,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          928.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 252950,
+          "max": 256320
+        },
+        "known_target_coverage": {
+          "large": 0.3137994859122081,
+          "max": 0.31798017089945513
+        }
+      },
+      "admission": {
+        "active_users": 1426,
+        "eligible_requests": 17885,
+        "exposure_targets": 93635,
+        "positive_targets": 35862,
+        "negative_targets": 57773,
+        "requests_with_history_ge1024": 12976,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          912.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 30115,
+          "max": 30545
+        },
+        "known_target_coverage": {
+          "large": 0.32162118865808725,
+          "max": 0.3262134885459497
+        }
+      },
+      "final": {
+        "active_users": 1483,
+        "eligible_requests": 19448,
+        "exposure_targets": 101965,
+        "positive_targets": 39269,
+        "negative_targets": 62696,
+        "requests_with_history_ge1024": 14669,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 32015,
+          "max": 32412
+        },
+        "known_target_coverage": {
+          "large": 0.31398028735350364,
+          "max": 0.3178737802187025
+        }
+      }
+    },
+    {
+      "day": 23,
+      "development": {
+        "active_users": 12352,
+        "eligible_requests": 154968,
+        "exposure_targets": 794688,
+        "positive_targets": 301523,
+        "negative_targets": 493165,
+        "requests_with_history_ge1024": 113647,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          945.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 239307,
+          "max": 242186
+        },
+        "known_target_coverage": {
+          "large": 0.301133274945639,
+          "max": 0.30475608037368124
+        }
+      },
+      "admission": {
+        "active_users": 1415,
+        "eligible_requests": 18076,
+        "exposure_targets": 93750,
+        "positive_targets": 34980,
+        "negative_targets": 58770,
+        "requests_with_history_ge1024": 13476,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1006.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 28224,
+          "max": 28592
+        },
+        "known_target_coverage": {
+          "large": 0.301056,
+          "max": 0.3049813333333333
+        }
+      },
+      "final": {
+        "active_users": 1519,
+        "eligible_requests": 19141,
+        "exposure_targets": 99280,
+        "positive_targets": 37552,
+        "negative_targets": 61728,
+        "requests_with_history_ge1024": 14341,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1021.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 28925,
+          "max": 29303
+        },
+        "known_target_coverage": {
+          "large": 0.29134770346494765,
+          "max": 0.29515511684125706
+        }
+      }
+    },
+    {
+      "day": 24,
+      "development": {
+        "active_users": 11732,
+        "eligible_requests": 137281,
+        "exposure_targets": 702707,
+        "positive_targets": 264185,
+        "negative_targets": 438522,
+        "requests_with_history_ge1024": 101781,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          983.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 202960,
+          "max": 204910
+        },
+        "known_target_coverage": {
+          "large": 0.28882592602606777,
+          "max": 0.29160090905597924
+        }
+      },
+      "admission": {
+        "active_users": 1388,
+        "eligible_requests": 15787,
+        "exposure_targets": 81150,
+        "positive_targets": 31260,
+        "negative_targets": 49890,
+        "requests_with_history_ge1024": 11806,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1015.5,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 24355,
+          "max": 24579
+        },
+        "known_target_coverage": {
+          "large": 0.3001232285890327,
+          "max": 0.3028835489833641
+        }
+      },
+      "final": {
+        "active_users": 1460,
+        "eligible_requests": 17108,
+        "exposure_targets": 88533,
+        "positive_targets": 33695,
+        "negative_targets": 54838,
+        "requests_with_history_ge1024": 13071,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 24688,
+          "max": 24933
+        },
+        "known_target_coverage": {
+          "large": 0.2788564715981611,
+          "max": 0.2816238012944326
+        }
+      }
+    },
+    {
+      "day": 25,
+      "development": {
+        "active_users": 11742,
+        "eligible_requests": 135769,
+        "exposure_targets": 694745,
+        "positive_targets": 266766,
+        "negative_targets": 427979,
+        "requests_with_history_ge1024": 101992,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 189782,
+          "max": 191599
+        },
+        "known_target_coverage": {
+          "large": 0.27316785295324186,
+          "max": 0.27578320103059395
+        }
+      },
+      "admission": {
+        "active_users": 1393,
+        "eligible_requests": 15906,
+        "exposure_targets": 82364,
+        "positive_targets": 31517,
+        "negative_targets": 50847,
+        "requests_with_history_ge1024": 11728,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          958.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 23091,
+          "max": 23310
+        },
+        "known_target_coverage": {
+          "large": 0.28035306687387695,
+          "max": 0.28301199553202855
+        }
+      },
+      "final": {
+        "active_users": 1464,
+        "eligible_requests": 17798,
+        "exposure_targets": 93020,
+        "positive_targets": 35432,
+        "negative_targets": 57588,
+        "requests_with_history_ge1024": 13808,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 24515,
+          "max": 24754
+        },
+        "known_target_coverage": {
+          "large": 0.2635454740915932,
+          "max": 0.26611481401849063
+        }
+      }
+    },
+    {
+      "day": 26,
+      "development": {
+        "active_users": 11785,
+        "eligible_requests": 147958,
+        "exposure_targets": 760363,
+        "positive_targets": 290542,
+        "negative_targets": 469821,
+        "requests_with_history_ge1024": 114060,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 199537,
+          "max": 201214
+        },
+        "known_target_coverage": {
+          "large": 0.26242334253507865,
+          "max": 0.26462886805381114
+        }
+      },
+      "admission": {
+        "active_users": 1424,
+        "eligible_requests": 17410,
+        "exposure_targets": 90195,
+        "positive_targets": 34181,
+        "negative_targets": 56014,
+        "requests_with_history_ge1024": 13639,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 24461,
+          "max": 24703
+        },
+        "known_target_coverage": {
+          "large": 0.27120128610233385,
+          "max": 0.27388436166084595
+        }
+      },
+      "final": {
+        "active_users": 1473,
+        "eligible_requests": 18848,
+        "exposure_targets": 98459,
+        "positive_targets": 37200,
+        "negative_targets": 61259,
+        "requests_with_history_ge1024": 14423,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 25371,
+          "max": 25585
+        },
+        "known_target_coverage": {
+          "large": 0.2576808620847256,
+          "max": 0.25985435562010584
+        }
+      }
+    },
+    {
+      "day": 27,
+      "development": {
+        "active_users": 11604,
+        "eligible_requests": 145198,
+        "exposure_targets": 743726,
+        "positive_targets": 282144,
+        "negative_targets": 461582,
+        "requests_with_history_ge1024": 113580,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 186979,
+          "max": 188460
+        },
+        "known_target_coverage": {
+          "large": 0.251408448810449,
+          "max": 0.25339977357252536
+        }
+      },
+      "admission": {
+        "active_users": 1407,
+        "eligible_requests": 17258,
+        "exposure_targets": 89559,
+        "positive_targets": 34453,
+        "negative_targets": 55106,
+        "requests_with_history_ge1024": 13359,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 23757,
+          "max": 23953
+        },
+        "known_target_coverage": {
+          "large": 0.2652664723813352,
+          "max": 0.2674549738161435
+        }
+      },
+      "final": {
+        "active_users": 1429,
+        "eligible_requests": 17413,
+        "exposure_targets": 89335,
+        "positive_targets": 33721,
+        "negative_targets": 55614,
+        "requests_with_history_ge1024": 13585,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 21861,
+          "max": 22033
+        },
+        "known_target_coverage": {
+          "large": 0.24470812111714332,
+          "max": 0.24663345833100128
+        }
+      }
+    },
+    {
+      "day": 28,
+      "development": {
+        "active_users": 11570,
+        "eligible_requests": 138963,
+        "exposure_targets": 699620,
+        "positive_targets": 251294,
+        "negative_targets": 448326,
+        "requests_with_history_ge1024": 108990,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 160575,
+          "max": 161844
+        },
+        "known_target_coverage": {
+          "large": 0.22951745233126555,
+          "max": 0.23133129413109974
+        }
+      },
+      "admission": {
+        "active_users": 1392,
+        "eligible_requests": 16269,
+        "exposure_targets": 82982,
+        "positive_targets": 30848,
+        "negative_targets": 52134,
+        "requests_with_history_ge1024": 12829,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 20046,
+          "max": 20201
+        },
+        "known_target_coverage": {
+          "large": 0.24157046106384517,
+          "max": 0.24343833602468004
+        }
+      },
+      "final": {
+        "active_users": 1419,
+        "eligible_requests": 16992,
+        "exposure_targets": 88140,
+        "positive_targets": 32216,
+        "negative_targets": 55924,
+        "requests_with_history_ge1024": 13539,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 19632,
+          "max": 19757
+        },
+        "known_target_coverage": {
+          "large": 0.2227365554799183,
+          "max": 0.2241547538007715
+        }
+      }
+    },
+    {
+      "day": 29,
+      "development": {
+        "active_users": 11771,
+        "eligible_requests": 139452,
+        "exposure_targets": 718113,
+        "positive_targets": 259784,
+        "negative_targets": 458329,
+        "requests_with_history_ge1024": 108222,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 161717,
+          "max": 162900
+        },
+        "known_target_coverage": {
+          "large": 0.22519714863816698,
+          "max": 0.22684452168391325
+        }
+      },
+      "admission": {
+        "active_users": 1438,
+        "eligible_requests": 17006,
+        "exposure_targets": 89072,
+        "positive_targets": 33238,
+        "negative_targets": 55834,
+        "requests_with_history_ge1024": 13089,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 21563,
+          "max": 21720
+        },
+        "known_target_coverage": {
+          "large": 0.2420850547871385,
+          "max": 0.24384767379198852
+        }
+      },
+      "final": {
+        "active_users": 1477,
+        "eligible_requests": 18128,
+        "exposure_targets": 95146,
+        "positive_targets": 34313,
+        "negative_targets": 60833,
+        "requests_with_history_ge1024": 14098,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 21177,
+          "max": 21322
+        },
+        "known_target_coverage": {
+          "large": 0.2225737287957455,
+          "max": 0.22409770247829652
+        }
+      }
+    },
+    {
+      "day": 30,
+      "development": {
+        "active_users": 11576,
+        "eligible_requests": 144377,
+        "exposure_targets": 746164,
+        "positive_targets": 267642,
+        "negative_targets": 478522,
+        "requests_with_history_ge1024": 113477,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 175162,
+          "max": 176385
+        },
+        "known_target_coverage": {
+          "large": 0.23475000134018795,
+          "max": 0.23638905120054035
+        }
+      },
+      "admission": {
+        "active_users": 1380,
+        "eligible_requests": 16368,
+        "exposure_targets": 84813,
+        "positive_targets": 30611,
+        "negative_targets": 54202,
+        "requests_with_history_ge1024": 12827,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 20591,
+          "max": 20747
+        },
+        "known_target_coverage": {
+          "large": 0.24278117741383987,
+          "max": 0.24462051808095456
+        }
+      },
+      "final": {
+        "active_users": 1421,
+        "eligible_requests": 18202,
+        "exposure_targets": 96325,
+        "positive_targets": 34510,
+        "negative_targets": 61815,
+        "requests_with_history_ge1024": 14442,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 21868,
+          "max": 22026
+        },
+        "known_target_coverage": {
+          "large": 0.2270230988839865,
+          "max": 0.2286633791850506
+        }
+      }
+    },
+    {
+      "day": 31,
+      "development": {
+        "active_users": 11439,
+        "eligible_requests": 142579,
+        "exposure_targets": 737638,
+        "positive_targets": 270028,
+        "negative_targets": 467610,
+        "requests_with_history_ge1024": 113666,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 164252,
+          "max": 165497
+        },
+        "known_target_coverage": {
+          "large": 0.2226729100181932,
+          "max": 0.22436072978886662
+        }
+      },
+      "admission": {
+        "active_users": 1378,
+        "eligible_requests": 16263,
+        "exposure_targets": 84489,
+        "positive_targets": 30788,
+        "negative_targets": 53701,
+        "requests_with_history_ge1024": 12677,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 19509,
+          "max": 19670
+        },
+        "known_target_coverage": {
+          "large": 0.23090579838795583,
+          "max": 0.23281137189456616
+        }
+      },
+      "final": {
+        "active_users": 1421,
+        "eligible_requests": 18741,
+        "exposure_targets": 98387,
+        "positive_targets": 34953,
+        "negative_targets": 63434,
+        "requests_with_history_ge1024": 15029,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 21321,
+          "max": 21472
+        },
+        "known_target_coverage": {
+          "large": 0.21670545905454988,
+          "max": 0.21824021466250623
+        }
+      }
+    },
+    {
+      "day": 32,
+      "development": {
+        "active_users": 11279,
+        "eligible_requests": 139898,
+        "exposure_targets": 721920,
+        "positive_targets": 264463,
+        "negative_targets": 457457,
+        "requests_with_history_ge1024": 112048,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 158174,
+          "max": 159473
+        },
+        "known_target_coverage": {
+          "large": 0.21910183953900708,
+          "max": 0.22090120789007092
+        }
+      },
+      "admission": {
+        "active_users": 1352,
+        "eligible_requests": 14790,
+        "exposure_targets": 76113,
+        "positive_targets": 28050,
+        "negative_targets": 48063,
+        "requests_with_history_ge1024": 11455,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 16760,
+          "max": 16899
+        },
+        "known_target_coverage": {
+          "large": 0.22019891477145823,
+          "max": 0.22202514682117377
+        }
+      },
+      "final": {
+        "active_users": 1398,
+        "eligible_requests": 18108,
+        "exposure_targets": 95449,
+        "positive_targets": 34344,
+        "negative_targets": 61105,
+        "requests_with_history_ge1024": 14647,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 20269,
+          "max": 20431
+        },
+        "known_target_coverage": {
+          "large": 0.2123542415321271,
+          "max": 0.21405148299091661
+        }
+      }
+    },
+    {
+      "day": 33,
+      "development": {
+        "active_users": 11380,
+        "eligible_requests": 137420,
+        "exposure_targets": 712070,
+        "positive_targets": 259444,
+        "negative_targets": 452626,
+        "requests_with_history_ge1024": 110920,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 148238,
+          "max": 149506
+        },
+        "known_target_coverage": {
+          "large": 0.20817897116856487,
+          "max": 0.20995969497380876
+        }
+      },
+      "admission": {
+        "active_users": 1364,
+        "eligible_requests": 15487,
+        "exposure_targets": 80209,
+        "positive_targets": 29637,
+        "negative_targets": 50572,
+        "requests_with_history_ge1024": 11973,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 17329,
+          "max": 17490
+        },
+        "known_target_coverage": {
+          "large": 0.21604807440561533,
+          "max": 0.21805533044920147
+        }
+      },
+      "final": {
+        "active_users": 1397,
+        "eligible_requests": 18163,
+        "exposure_targets": 96766,
+        "positive_targets": 34341,
+        "negative_targets": 62425,
+        "requests_with_history_ge1024": 15007,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 19426,
+          "max": 19591
+        },
+        "known_target_coverage": {
+          "large": 0.2007523303639708,
+          "max": 0.20245747473286071
+        }
+      }
+    },
+    {
+      "day": 34,
+      "development": {
+        "active_users": 11475,
+        "eligible_requests": 140129,
+        "exposure_targets": 724395,
+        "positive_targets": 264239,
+        "negative_targets": 460156,
+        "requests_with_history_ge1024": 113186,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 149698,
+          "max": 151116
+        },
+        "known_target_coverage": {
+          "large": 0.20665244790480333,
+          "max": 0.20860994347006812
+        }
+      },
+      "admission": {
+        "active_users": 1384,
+        "eligible_requests": 16703,
+        "exposure_targets": 87996,
+        "positive_targets": 31648,
+        "negative_targets": 56348,
+        "requests_with_history_ge1024": 13311,
+        "history_length_quantiles_capped1024": [
+          2.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 18282,
+          "max": 18431
+        },
+        "known_target_coverage": {
+          "large": 0.20775944361107324,
+          "max": 0.20945270239556343
+        }
+      },
+      "final": {
+        "active_users": 1403,
+        "eligible_requests": 17920,
+        "exposure_targets": 94278,
+        "positive_targets": 34579,
+        "negative_targets": 59699,
+        "requests_with_history_ge1024": 14918,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 18783,
+          "max": 18974
+        },
+        "known_target_coverage": {
+          "large": 0.19922993699484504,
+          "max": 0.20125586032796622
+        }
+      }
+    },
+    {
+      "day": 35,
+      "development": {
+        "active_users": 11364,
+        "eligible_requests": 135554,
+        "exposure_targets": 697892,
+        "positive_targets": 254975,
+        "negative_targets": 442917,
+        "requests_with_history_ge1024": 110751,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 137370,
+          "max": 138720
+        },
+        "known_target_coverage": {
+          "large": 0.19683561353332607,
+          "max": 0.19877001025946708
+        }
+      },
+      "admission": {
+        "active_users": 1377,
+        "eligible_requests": 16321,
+        "exposure_targets": 85396,
+        "positive_targets": 30120,
+        "negative_targets": 55276,
+        "requests_with_history_ge1024": 13177,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 17448,
+          "max": 17603
+        },
+        "known_target_coverage": {
+          "large": 0.20431870345215233,
+          "max": 0.20613377675769357
+        }
+      },
+      "final": {
+        "active_users": 1389,
+        "eligible_requests": 17562,
+        "exposure_targets": 92247,
+        "positive_targets": 33247,
+        "negative_targets": 59000,
+        "requests_with_history_ge1024": 14803,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 17530,
+          "max": 17726
+        },
+        "known_target_coverage": {
+          "large": 0.19003328021507473,
+          "max": 0.19215801055860895
+        }
+      }
+    },
+    {
+      "day": 36,
+      "development": {
+        "active_users": 11278,
+        "eligible_requests": 140506,
+        "exposure_targets": 717056,
+        "positive_targets": 261744,
+        "negative_targets": 455312,
+        "requests_with_history_ge1024": 116336,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 133063,
+          "max": 134504
+        },
+        "known_target_coverage": {
+          "large": 0.18556849116387006,
+          "max": 0.18757809710817566
+        }
+      },
+      "admission": {
+        "active_users": 1373,
+        "eligible_requests": 16044,
+        "exposure_targets": 82595,
+        "positive_targets": 29672,
+        "negative_targets": 52923,
+        "requests_with_history_ge1024": 13130,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 15441,
+          "max": 15610
+        },
+        "known_target_coverage": {
+          "large": 0.18694836249167626,
+          "max": 0.18899449119196077
+        }
+      },
+      "final": {
+        "active_users": 1399,
+        "eligible_requests": 17773,
+        "exposure_targets": 92825,
+        "positive_targets": 33574,
+        "negative_targets": 59251,
+        "requests_with_history_ge1024": 15104,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 16630,
+          "max": 16850
+        },
+        "known_target_coverage": {
+          "large": 0.17915432265014813,
+          "max": 0.18152437382170752
+        }
+      }
+    },
+    {
+      "day": 37,
+      "development": {
+        "active_users": 11290,
+        "eligible_requests": 135022,
+        "exposure_targets": 690062,
+        "positive_targets": 255169,
+        "negative_targets": 434893,
+        "requests_with_history_ge1024": 111923,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 125111,
+          "max": 126471
+        },
+        "known_target_coverage": {
+          "large": 0.1813039987711249,
+          "max": 0.18327483617414086
+        }
+      },
+      "admission": {
+        "active_users": 1372,
+        "eligible_requests": 14821,
+        "exposure_targets": 75719,
+        "positive_targets": 28970,
+        "negative_targets": 46749,
+        "requests_with_history_ge1024": 11854,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 14247,
+          "max": 14415
+        },
+        "known_target_coverage": {
+          "large": 0.18815620914169495,
+          "max": 0.1903749389188975
+        }
+      },
+      "final": {
+        "active_users": 1388,
+        "eligible_requests": 17744,
+        "exposure_targets": 92746,
+        "positive_targets": 34227,
+        "negative_targets": 58519,
+        "requests_with_history_ge1024": 14933,
+        "history_length_quantiles_capped1024": [
+          1.0,
+          1024.0,
+          1024.0,
+          1024.0,
+          1024.0
+        ],
+        "known_targets": {
+          "large": 16419,
+          "max": 16616
+        },
+        "known_target_coverage": {
+          "large": 0.17703189355875185,
+          "max": 0.1791559743816445
+        }
+      }
+    }
+  ],
+  "timing_note": "4xA40 conditional assumptions, not measured RecFlow training time; 201/A800 time remains unmeasured. Grouped prefix/query adapter is not implemented by this script."
+}

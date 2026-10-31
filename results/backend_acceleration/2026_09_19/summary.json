@@ -1,0 +1,3625 @@
+{
+  "scope": "Backend validation only; no fitting, admission, final-role data, or checkpoint writes.",
+  "torch": "2.12.1+cu130",
+  "python": "3.13.12",
+  "gpu": "NVIDIA A40",
+  "device": "cuda:1",
+  "seed": 17,
+  "timing": "Warmed synchronous wall time; first call separate and may include compilation. Synthetic forward/backward excludes optimizer/data/head; RecFlow scoring includes its existing Python decoder.",
+  "source_sha256": {
+    "scripts/benchmark_hstu_backends.py": "2d7b185d55c315646f0c35ce7e36d93709a742efa44629c6ae9046613b391218",
+    "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+    "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+    "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+    "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+    "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512"
+  },
+  "synthetic": [
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "legacy",
+      "precision": "float32",
+      "backend": "torch",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "elu_plus1",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "legacy",
+        "relative_position_bias": false,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 223.5834589228034,
+        "warmed_wall_ms": 30.086293630301952,
+        "peak_allocated_bytes": 733527040,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 98.99711143225431,
+        "warmed_wall_ms": 67.98912668600678,
+        "peak_allocated_bytes": 3058795520,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 0.0,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "legacy",
+      "precision": "float32",
+      "backend": "triton",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "elu_plus1",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "legacy",
+        "relative_position_bias": false,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 1214.2654620110989,
+        "warmed_wall_ms": 6.401372700929642,
+        "peak_allocated_bytes": 194674688,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 1777.0848609507084,
+        "warmed_wall_ms": 22.300320211797953,
+        "peak_allocated_bytes": 459115008,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 1.592189073562622e-05,
+          "relative_l2": 1.4044809004813273e-06,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 5.4836273193359375e-06,
+          "relative_l2": 9.309989543870379e-07,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 5.692243576049805e-06,
+          "relative_l2": 9.331269253133564e-07,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 2.438710371626454e-06,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 2.561137080192566e-09,
+              "relative_l2": 2.438710371626454e-06,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 2.9685907065868378e-09,
+              "relative_l2": 2.1025890482691473e-06,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 2.9685907065868378e-09,
+              "relative_l2": 2.072431373476554e-06,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 4.423782229423523e-09,
+              "relative_l2": 2.0859823998624174e-06,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 4.889443516731262e-09,
+              "relative_l2": 1.955504840444591e-06,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 3.4124241210520267e-09,
+              "relative_l2": 2.0906643051163948e-06,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 1.775333657860756e-09,
+              "relative_l2": 1.7279382825603665e-06,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 1.6298145055770874e-09,
+              "relative_l2": 2.123959082547295e-06,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 1.4842953532934189e-09,
+              "relative_l2": 2.1338977342246785e-06,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 3.092281986027956e-09,
+              "relative_l2": 1.918842107371325e-06,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 4.260073183104396e-09,
+              "relative_l2": 1.8679116703048248e-06,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 2.8230715543031693e-09,
+              "relative_l2": 1.984206947120218e-06,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 1.367880031466484e-09,
+              "relative_l2": 1.959284262310618e-06,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 9.740688255988061e-10,
+              "relative_l2": 2.1698445327151547e-06,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 1.1932570487260818e-09,
+              "relative_l2": 2.1870790735791545e-06,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 3.4051481634378433e-09,
+              "relative_l2": 1.8992727238755284e-06,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 2.9631337383762e-09,
+              "relative_l2": 1.9018949768400898e-06,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 2.4156179279088974e-09,
+              "relative_l2": 1.9184162591381302e-06,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 7.8580342233181e-10,
+              "relative_l2": 1.989363339369615e-06,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 8.221832104027271e-10,
+              "relative_l2": 2.204725153653732e-06,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 8.585629984736443e-10,
+              "relative_l2": 2.2207424283501845e-06,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 2.0081643015146255e-09,
+              "relative_l2": 1.8860597422562877e-06,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 2.0372681319713593e-09,
+              "relative_l2": 1.8180623384027716e-06,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 1.760781742632389e-09,
+              "relative_l2": 1.902242084462555e-06,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 8.440110832452774e-10,
+              "relative_l2": 1.8133587366825753e-06,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 5.784386303275824e-10,
+              "relative_l2": 2.28533370775867e-06,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 7.34871719032526e-10,
+              "relative_l2": 2.240501440478401e-06,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 1.6152625903487206e-09,
+              "relative_l2": 1.8711111851323967e-06,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 1.1932570487260818e-09,
+              "relative_l2": 1.827858267769111e-06,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 1.1204974725842476e-09,
+              "relative_l2": 1.8420260850540542e-06,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 7.057678885757923e-10,
+              "relative_l2": 1.7260216790211323e-06,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 5.093170329928398e-10,
+              "relative_l2": 2.3181809258892874e-06,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 5.056790541857481e-10,
+              "relative_l2": 2.328733361148055e-06,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 8.87666828930378e-10,
+              "relative_l2": 1.7043328927519948e-06,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 7.930793799459934e-10,
+              "relative_l2": 1.7203468962776419e-06,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 9.981704351957887e-10,
+              "relative_l2": 1.8371173136345867e-06,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 4.6566128730773926e-09,
+              "relative_l2": 1.3102676888128244e-07,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "legacy",
+      "precision": "bfloat16",
+      "backend": "torch",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "elu_plus1",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "legacy",
+        "relative_position_bias": false,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 137.7735948190093,
+        "warmed_wall_ms": 20.460504014045,
+        "peak_allocated_bytes": 406470656,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 49.73939061164856,
+        "warmed_wall_ms": 48.89753879979253,
+        "peak_allocated_bytes": 1957758976,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 0.0,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "legacy",
+      "precision": "bfloat16",
+      "backend": "triton",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "elu_plus1",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "legacy",
+        "relative_position_bias": false,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 257.633026689291,
+        "warmed_wall_ms": 3.2984924502670765,
+        "peak_allocated_bytes": 121389056,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 641.8656129390001,
+        "warmed_wall_ms": 11.042706947773695,
+        "peak_allocated_bytes": 367872512,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 0.003664804842411442,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 4.826695658266544e-06,
+              "relative_l2": 0.003027346063376244,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.003664804842411442,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.0035419442286739643,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 1.52587890625e-05,
+              "relative_l2": 0.0032922754664100403,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 1.52587890625e-05,
+              "relative_l2": 0.0028615994943186752,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.003237649235206324,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 1.414562575519085e-06,
+              "relative_l2": 0.0016074990579459801,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 1.9073486328125e-06,
+              "relative_l2": 0.0030736815238147836,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 3.814697265625e-06,
+              "relative_l2": 0.0029986719772720914,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.0023944963820046634,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.00209859565120916,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.002388515355965483,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 6.459158612415195e-07,
+              "relative_l2": 0.0009260761219489784,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 1.9073486328125e-06,
+              "relative_l2": 0.002315331122978153,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 1.9073486328125e-06,
+              "relative_l2": 0.0022690645258477637,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.0017720049983043628,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 7.62939453125e-06,
+              "relative_l2": 0.001162048389070777,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 3.814697265625e-06,
+              "relative_l2": 0.0012561300154496071,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 1.2798045645467937e-07,
+              "relative_l2": 0.00024109788274892313,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0008245406672040973,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 1.9073486328125e-06,
+              "relative_l2": 0.0011043945881129614,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 3.814697265625e-06,
+              "relative_l2": 0.0007095188319586009,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 1.9073486328125e-06,
+              "relative_l2": 0.0002721765594425997,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 3.814697265625e-06,
+              "relative_l2": 0.00026125613114155055,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 1.4981196727603674e-08,
+              "relative_l2": 2.0026060993527518e-05,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.00013003056069096856,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 2.384185791015625e-07,
+              "relative_l2": 0.0001237468372246504,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 2.384185791015625e-07,
+              "relative_l2": 2.1028106743497395e-05,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 1.0477378964424133e-09,
+              "relative_l2": 8.080655172245155e-07,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "hstu_reference",
+      "precision": "float32",
+      "backend": "torch",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "silu",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "hstu_reference",
+        "relative_position_bias": true,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 57.81977903097868,
+        "warmed_wall_ms": 47.47343743219972,
+        "peak_allocated_bytes": 565154816,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 101.1402690783143,
+        "warmed_wall_ms": 97.80744826421142,
+        "peak_allocated_bytes": 3229258752,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 0.0,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "hstu_reference",
+      "precision": "float32",
+      "backend": "triton",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "silu",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "hstu_reference",
+        "relative_position_bias": true,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 746.3228469714522,
+        "warmed_wall_ms": 7.110819034278393,
+        "peak_allocated_bytes": 194991104,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 2177.4811446666718,
+        "warmed_wall_ms": 29.288244526833296,
+        "peak_allocated_bytes": 579591680,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 2.384185791015625e-06,
+          "relative_l2": 3.449323992450125e-07,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 1.7881393432617188e-06,
+          "relative_l2": 3.326229518703538e-07,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 1.9073486328125e-06,
+          "relative_l2": 3.322165999578409e-07,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 1.1023183651126554e-06,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 1.1641532182693481e-10,
+              "relative_l2": 8.439153383499867e-07,
+              "finite": true
+            },
+            "blocks.0.norm.bias": {
+              "max_abs": 2.9103830456733704e-10,
+              "relative_l2": 7.546184339303409e-07,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 1.7189449863508344e-10,
+              "relative_l2": 8.335084913633234e-07,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 1.1641532182693481e-10,
+              "relative_l2": 8.466319011467151e-07,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 1.2005330063402653e-10,
+              "relative_l2": 8.470985255319795e-07,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 1.6189005691558123e-10,
+              "relative_l2": 8.595505741626838e-07,
+              "finite": true
+            },
+            "blocks.0.attn.position_bias.weight": {
+              "max_abs": 2.546585164964199e-11,
+              "relative_l2": 7.775167596289762e-07,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.weight": {
+              "max_abs": 6.45741238258779e-11,
+              "relative_l2": 9.706767303936172e-07,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.bias": {
+              "max_abs": 5.093170329928398e-11,
+              "relative_l2": 6.886140774481635e-07,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 1.5279510989785194e-10,
+              "relative_l2": 9.201123359918605e-07,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 9.413270163349807e-11,
+              "relative_l2": 8.688929769655836e-07,
+              "finite": true
+            },
+            "blocks.1.norm.bias": {
+              "max_abs": 2.3283064365386963e-10,
+              "relative_l2": 7.77239361324349e-07,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 1.6007106751203537e-10,
+              "relative_l2": 8.93289385751885e-07,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 1.127773430198431e-10,
+              "relative_l2": 9.287645149768474e-07,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 1.4551915228366852e-10,
+              "relative_l2": 9.337228248658367e-07,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 1.7280399333685637e-10,
+              "relative_l2": 9.391429914750936e-07,
+              "finite": true
+            },
+            "blocks.1.attn.position_bias.weight": {
+              "max_abs": 2.000888343900442e-11,
+              "relative_l2": 8.321174199935411e-07,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.weight": {
+              "max_abs": 6.548361852765083e-11,
+              "relative_l2": 1.1023183651126554e-06,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.bias": {
+              "max_abs": 5.911715561524034e-11,
+              "relative_l2": 7.886133256964204e-07,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 1.6007106751203537e-10,
+              "relative_l2": 9.6656196942394e-07,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 1.3460521586239338e-10,
+              "relative_l2": 9.41320612679889e-07,
+              "finite": true
+            },
+            "blocks.2.norm.bias": {
+              "max_abs": 2.473825588822365e-10,
+              "relative_l2": 7.159745348539251e-07,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 1.5279510989785194e-10,
+              "relative_l2": 9.199847544002443e-07,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 1.0959411156363785e-10,
+              "relative_l2": 9.345874885734211e-07,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 1.2369127944111824e-10,
+              "relative_l2": 9.130172325910494e-07,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 1.837179297581315e-10,
+              "relative_l2": 9.661762439175119e-07,
+              "finite": true
+            },
+            "blocks.2.attn.position_bias.weight": {
+              "max_abs": 1.9554136088117957e-11,
+              "relative_l2": 8.454327063961904e-07,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.weight": {
+              "max_abs": 5.275069270282984e-11,
+              "relative_l2": 9.423911055103528e-07,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.bias": {
+              "max_abs": 4.9112713895738125e-11,
+              "relative_l2": 6.813031719481819e-07,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 1.673470251262188e-10,
+              "relative_l2": 9.924645464615978e-07,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 1.1641532182693481e-10,
+              "relative_l2": 9.706839809980045e-07,
+              "finite": true
+            },
+            "blocks.3.norm.bias": {
+              "max_abs": 2.0372681319713593e-10,
+              "relative_l2": 6.982323892728094e-07,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 1.418811734765768e-10,
+              "relative_l2": 9.256915518874242e-07,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 1.1368683772161603e-10,
+              "relative_l2": 9.565219973711081e-07,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 1.0732037480920553e-10,
+              "relative_l2": 9.269724084691765e-07,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 1.4006218407303095e-10,
+              "relative_l2": 9.79291571267263e-07,
+              "finite": true
+            },
+            "blocks.3.attn.position_bias.weight": {
+              "max_abs": 2.000888343900442e-11,
+              "relative_l2": 8.443659682990532e-07,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.weight": {
+              "max_abs": 4.9112713895738125e-11,
+              "relative_l2": 9.067759284739694e-07,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.bias": {
+              "max_abs": 4.18367562815547e-11,
+              "relative_l2": 6.125155980681223e-07,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 1.4915713109076023e-10,
+              "relative_l2": 9.834315052973823e-07,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 1.3096723705530167e-10,
+              "relative_l2": 9.195512863340209e-07,
+              "finite": true
+            },
+            "blocks.4.norm.bias": {
+              "max_abs": 1.8917489796876907e-10,
+              "relative_l2": 6.616564644049852e-07,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 1.3642420526593924e-10,
+              "relative_l2": 9.425027428265164e-07,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 1.0368239600211382e-10,
+              "relative_l2": 9.732629434765128e-07,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 1.418811734765768e-10,
+              "relative_l2": 9.529279709521288e-07,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 1.5643308870494366e-10,
+              "relative_l2": 9.903898881129955e-07,
+              "finite": true
+            },
+            "blocks.4.attn.position_bias.weight": {
+              "max_abs": 2.000888343900442e-11,
+              "relative_l2": 8.352497187321564e-07,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.weight": {
+              "max_abs": 5.6843418860808015e-11,
+              "relative_l2": 1.0628797757327504e-06,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.bias": {
+              "max_abs": 3.637978807091713e-11,
+              "relative_l2": 6.699609210295651e-07,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 1.4551915228366852e-10,
+              "relative_l2": 9.901633246073502e-07,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 1.2005330063402653e-10,
+              "relative_l2": 9.339679798282298e-07,
+              "finite": true
+            },
+            "blocks.5.norm.bias": {
+              "max_abs": 2.4010660126805305e-10,
+              "relative_l2": 6.500674575606898e-07,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 1.4551915228366852e-10,
+              "relative_l2": 9.462474986990312e-07,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 1.0186340659856796e-10,
+              "relative_l2": 9.514304472463259e-07,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 1.1641532182693481e-10,
+              "relative_l2": 9.173699162335325e-07,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 1.6007106751203537e-10,
+              "relative_l2": 9.937850298924779e-07,
+              "finite": true
+            },
+            "blocks.5.attn.position_bias.weight": {
+              "max_abs": 2.000888343900442e-11,
+              "relative_l2": 8.119704776712128e-07,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.weight": {
+              "max_abs": 5.4569682106375694e-11,
+              "relative_l2": 9.723547133456893e-07,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.bias": {
+              "max_abs": 2.9103830456733704e-11,
+              "relative_l2": 5.567271852624625e-07,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 1.5825207810848951e-10,
+              "relative_l2": 9.921115215860415e-07,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 1.862645149230957e-09,
+              "relative_l2": 5.762105331167707e-08,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "hstu_reference",
+      "precision": "bfloat16",
+      "backend": "torch",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "silu",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "hstu_reference",
+        "relative_position_bias": true,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 30.901524238288403,
+        "warmed_wall_ms": 30.20346499979496,
+        "peak_allocated_bytes": 420418560,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 68.88144370168447,
+        "warmed_wall_ms": 68.36611945182085,
+        "peak_allocated_bytes": 2080269312,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 0.0,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.position_bias.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "scope": "synthetic_six_layer_backbone",
+      "variant": "hstu_reference",
+      "precision": "bfloat16",
+      "backend": "triton",
+      "configuration": {
+        "num_items": 4096,
+        "num_behaviors": 4,
+        "num_prediction_items": 4096,
+        "hidden_size": 192,
+        "num_layers": 6,
+        "num_heads": 6,
+        "head_dim": null,
+        "max_seq_len": 1027,
+        "temporal_num_freqs": 16,
+        "temporal_max_period": 86400.0,
+        "gating": "silu_gate",
+        "qk_scale": 1.0,
+        "attn_dropout": 0.0,
+        "activation": "silu",
+        "norm_eps": 1e-06,
+        "input_dropout": 0,
+        "tie_item_embeddings": true,
+        "block_variant": "hstu_reference",
+        "relative_position_bias": true,
+        "causal_diagonal": "inclusive",
+        "num_query_types": 1,
+        "num_query_actions": 1,
+        "query_type_id": 0,
+        "query_action_id": 0
+      },
+      "shape": [
+        8,
+        1024,
+        192
+      ],
+      "last_row_length": 512,
+      "forward_kv": {
+        "first_call_ms": 427.33260802924633,
+        "warmed_wall_ms": 3.999076969921589,
+        "peak_allocated_bytes": 121705472,
+        "iterations": 10
+      },
+      "forward_backward": {
+        "first_call_ms": 1240.3284404426813,
+        "warmed_wall_ms": 14.181764237582684,
+        "peak_allocated_bytes": 450600448,
+        "iterations": 10
+      },
+      "parity": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "gradients": {
+          "finite": true,
+          "worst_relative_l2": 0.004587619945974235,
+          "parameters": {
+            "blocks.0.norm.weight": {
+              "max_abs": 4.4367698137648404e-07,
+              "relative_l2": 0.003212001186914032,
+              "finite": true
+            },
+            "blocks.0.norm.bias": {
+              "max_abs": 6.806221790611744e-07,
+              "relative_l2": 0.0020258711836289483,
+              "finite": true
+            },
+            "blocks.0.attn.q_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.004587619945974235,
+              "finite": true
+            },
+            "blocks.0.attn.k_proj.weight": {
+              "max_abs": 5.960464477539062e-07,
+              "relative_l2": 0.0045522582522175194,
+              "finite": true
+            },
+            "blocks.0.attn.v_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.004330242621835662,
+              "finite": true
+            },
+            "blocks.0.attn.out_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.003153360433664187,
+              "finite": true
+            },
+            "blocks.0.attn.position_bias.weight": {
+              "max_abs": 8.682445695740171e-08,
+              "relative_l2": 0.003681359071273059,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.weight": {
+              "max_abs": 1.5425939636770636e-07,
+              "relative_l2": 0.0021827756127579187,
+              "finite": true
+            },
+            "blocks.0.attn_output_norm.bias": {
+              "max_abs": 1.5366276784334332e-07,
+              "relative_l2": 0.0021074300264006234,
+              "finite": true
+            },
+            "blocks.0.gate_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.003953352142209246,
+              "finite": true
+            },
+            "blocks.1.norm.weight": {
+              "max_abs": 3.4635377232916653e-07,
+              "relative_l2": 0.002463740311598713,
+              "finite": true
+            },
+            "blocks.1.norm.bias": {
+              "max_abs": 7.209418981801718e-07,
+              "relative_l2": 0.001877425510731072,
+              "finite": true
+            },
+            "blocks.1.attn.q_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.003985926172031185,
+              "finite": true
+            },
+            "blocks.1.attn.k_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.004061515834632066,
+              "finite": true
+            },
+            "blocks.1.attn.v_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.003738178842181633,
+              "finite": true
+            },
+            "blocks.1.attn.out_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0026166926323433395,
+              "finite": true
+            },
+            "blocks.1.attn.position_bias.weight": {
+              "max_abs": 7.778908184263855e-08,
+              "relative_l2": 0.002999383185576054,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.weight": {
+              "max_abs": 1.0242183634545654e-07,
+              "relative_l2": 0.0016246065205779054,
+              "finite": true
+            },
+            "blocks.1.attn_output_norm.bias": {
+              "max_abs": 1.0386611393187195e-07,
+              "relative_l2": 0.0016377077694472396,
+              "finite": true
+            },
+            "blocks.1.gate_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.003329062388057969,
+              "finite": true
+            },
+            "blocks.2.norm.weight": {
+              "max_abs": 2.022061380557716e-07,
+              "relative_l2": 0.0016982138870628083,
+              "finite": true
+            },
+            "blocks.2.norm.bias": {
+              "max_abs": 2.866217982955277e-07,
+              "relative_l2": 0.0008902148501628579,
+              "finite": true
+            },
+            "blocks.2.attn.q_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0030833621149416956,
+              "finite": true
+            },
+            "blocks.2.attn.k_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0032386454576391723,
+              "finite": true
+            },
+            "blocks.2.attn.v_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.002948619089529958,
+              "finite": true
+            },
+            "blocks.2.attn.out_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0018203701382369338,
+              "finite": true
+            },
+            "blocks.2.attn.position_bias.weight": {
+              "max_abs": 6.567097443621606e-08,
+              "relative_l2": 0.0023830561747960693,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.weight": {
+              "max_abs": 7.058406481519341e-08,
+              "relative_l2": 0.0009097443976820751,
+              "finite": true
+            },
+            "blocks.2.attn_output_norm.bias": {
+              "max_abs": 5.260153557173908e-08,
+              "relative_l2": 0.0008810862242374901,
+              "finite": true
+            },
+            "blocks.2.gate_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0025616114163227966,
+              "finite": true
+            },
+            "blocks.3.norm.weight": {
+              "max_abs": 1.0112853487953544e-07,
+              "relative_l2": 0.0009070762227277467,
+              "finite": true
+            },
+            "blocks.3.norm.bias": {
+              "max_abs": 1.2222881196066737e-07,
+              "relative_l2": 0.0003843080267572121,
+              "finite": true
+            },
+            "blocks.3.attn.q_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0018391879774810522,
+              "finite": true
+            },
+            "blocks.3.attn.k_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.002165568300229193,
+              "finite": true
+            },
+            "blocks.3.attn.v_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.0018343161491609652,
+              "finite": true
+            },
+            "blocks.3.attn.out_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.000698963706420713,
+              "finite": true
+            },
+            "blocks.3.attn.position_bias.weight": {
+              "max_abs": 4.283856469555758e-08,
+              "relative_l2": 0.0018223614870357498,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.weight": {
+              "max_abs": 2.3151642380980775e-08,
+              "relative_l2": 0.0003136708856238605,
+              "finite": true
+            },
+            "blocks.3.attn_output_norm.bias": {
+              "max_abs": 2.3206666810438037e-08,
+              "relative_l2": 0.0002703431246171946,
+              "finite": true
+            },
+            "blocks.3.gate_proj.weight": {
+              "max_abs": 9.5367431640625e-07,
+              "relative_l2": 0.0013648331926814565,
+              "finite": true
+            },
+            "blocks.4.norm.weight": {
+              "max_abs": 1.3467797543853521e-08,
+              "relative_l2": 0.0001255532187297361,
+              "finite": true
+            },
+            "blocks.4.norm.bias": {
+              "max_abs": 1.529406290501356e-08,
+              "relative_l2": 4.718366682518447e-05,
+              "finite": true
+            },
+            "blocks.4.attn.q_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.0003284791198839571,
+              "finite": true
+            },
+            "blocks.4.attn.k_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.0005816115554094409,
+              "finite": true
+            },
+            "blocks.4.attn.v_proj.weight": {
+              "max_abs": 4.76837158203125e-07,
+              "relative_l2": 0.00035677911742696355,
+              "finite": true
+            },
+            "blocks.4.attn.out_proj.weight": {
+              "max_abs": 2.384185791015625e-07,
+              "relative_l2": 6.70192798831924e-05,
+              "finite": true
+            },
+            "blocks.4.attn.position_bias.weight": {
+              "max_abs": 3.356035449542105e-08,
+              "relative_l2": 0.0016110856121900519,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.weight": {
+              "max_abs": 4.905814421363175e-09,
+              "relative_l2": 2.3888879635784648e-05,
+              "finite": true
+            },
+            "blocks.4.attn_output_norm.bias": {
+              "max_abs": 2.621163730509579e-09,
+              "relative_l2": 1.8680583483401756e-05,
+              "finite": true
+            },
+            "blocks.4.gate_proj.weight": {
+              "max_abs": 2.384185791015625e-07,
+              "relative_l2": 0.00015667927693962177,
+              "finite": true
+            },
+            "blocks.5.norm.weight": {
+              "max_abs": 2.4119799491018057e-09,
+              "relative_l2": 7.64151004115012e-06,
+              "finite": true
+            },
+            "blocks.5.norm.bias": {
+              "max_abs": 1.862645149230957e-09,
+              "relative_l2": 2.3398237980918897e-06,
+              "finite": true
+            },
+            "blocks.5.attn.q_proj.weight": {
+              "max_abs": 5.960464477539063e-08,
+              "relative_l2": 9.797226867609816e-06,
+              "finite": true
+            },
+            "blocks.5.attn.k_proj.weight": {
+              "max_abs": 5.960464477539063e-08,
+              "relative_l2": 1.6681644958267198e-05,
+              "finite": true
+            },
+            "blocks.5.attn.v_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.out_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn.position_bias.weight": {
+              "max_abs": 3.406057658139616e-08,
+              "relative_l2": 0.0016456315518626559,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.attn_output_norm.bias": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "blocks.5.gate_proj.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            },
+            "final_norm.weight": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "finite": true
+            }
+          }
+        }
+      }
+    }
+  ],
+  "yambda_checkpoint": {
+    "checkpoint": "/home/gkl/work/evokv/results/unified_training_2026_09/medium/seed17/checkpoints/v0/checkpoint_100.pt",
+    "checkpoint_sha256": "4a51957fe7c7d89132b315ba9b34c442c77c9cb07fc8b09e70f3b5e8c3750586",
+    "configuration": {
+      "num_items": 1380765,
+      "num_behaviors": 4,
+      "num_prediction_items": 1380765,
+      "hidden_size": 192,
+      "num_layers": 6,
+      "num_heads": 6,
+      "head_dim": null,
+      "max_seq_len": 1024,
+      "temporal_num_freqs": 16,
+      "temporal_max_period": 86400.0,
+      "gating": "silu_gate",
+      "qk_scale": 1.0,
+      "attn_dropout": 0.0,
+      "activation": "elu_plus1",
+      "norm_eps": 1e-06,
+      "input_dropout": 0.1,
+      "tie_item_embeddings": true,
+      "block_variant": "legacy",
+      "relative_position_bias": false,
+      "causal_diagonal": "inclusive",
+      "num_query_types": 3,
+      "num_query_actions": 1,
+      "query_type_id": 2,
+      "query_action_id": 0
+    },
+    "strict_load": true,
+    "input_scope": "synthetic IDs; no Yambda held-out data read",
+    "backends": {
+      "torch": {
+        "hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "scores": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "cached_hidden": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "cached_k": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "cached_v": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "top50_same_order": true
+      },
+      "triton": {
+        "hidden": {
+          "max_abs": 1.6927719116210938e-05,
+          "relative_l2": 3.215418116761244e-07,
+          "finite": true
+        },
+        "k": {
+          "max_abs": 8.106231689453125e-06,
+          "relative_l2": 2.0413013019787088e-07,
+          "finite": true
+        },
+        "v": {
+          "max_abs": 7.62939453125e-06,
+          "relative_l2": 1.8559044608545166e-07,
+          "finite": true
+        },
+        "scores": {
+          "max_abs": 2.384185791015625e-06,
+          "relative_l2": 2.7580171944665165e-07,
+          "finite": true
+        },
+        "cached_hidden": {
+          "max_abs": 1.430511474609375e-06,
+          "relative_l2": 1.454138642755152e-07,
+          "finite": true
+        },
+        "cached_k": {
+          "max_abs": 8.106231689453125e-06,
+          "relative_l2": 2.040070771771924e-07,
+          "finite": true
+        },
+        "cached_v": {
+          "max_abs": 7.62939453125e-06,
+          "relative_l2": 1.8547831700411677e-07,
+          "finite": true
+        },
+        "top50_same_order": true
+      }
+    }
+  },
+  "recflow_checkpoint": {
+    "checkpoint": "/home/gkl/work/evokv/results/recflow/development/window_6l_full_seed17/A/A_epoch3/checkpoint.pt",
+    "checkpoint_sha256": "8dcdfb2d909a086354fdd19f6101ace925236e775dcbd0c3bde3c7812e681052",
+    "configuration": {
+      "num_items": 1000001,
+      "num_behaviors": 4,
+      "num_prediction_items": 1000000,
+      "hidden_size": 192,
+      "num_layers": 6,
+      "num_heads": 6,
+      "head_dim": null,
+      "max_seq_len": 1027,
+      "temporal_num_freqs": 16,
+      "temporal_max_period": 86400.0,
+      "gating": "silu_gate",
+      "qk_scale": 1.0,
+      "attn_dropout": 0.0,
+      "activation": "silu",
+      "norm_eps": 1e-06,
+      "input_dropout": 0.0,
+      "tie_item_embeddings": true,
+      "block_variant": "hstu_reference",
+      "relative_position_bias": true,
+      "causal_diagonal": "inclusive",
+      "num_query_types": 1,
+      "num_query_actions": 1,
+      "query_type_id": 0,
+      "query_action_id": 0
+    },
+    "strict_load": true,
+    "day": 19,
+    "role": "development",
+    "request_indices": [
+      3595171,
+      4696738,
+      3569538,
+      6949094,
+      2451945,
+      1657206,
+      2434231,
+      6244181
+    ],
+    "histories": [
+      1024,
+      1024,
+      1024,
+      1024,
+      1024,
+      1024,
+      1024,
+      1024
+    ],
+    "candidate_count": 1000,
+    "candidate_seed": 17,
+    "precision": "float32",
+    "backends": {
+      "torch": {
+        "parity": {
+          "log_probs": {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "finite": true
+          },
+          "k": {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "finite": true
+          },
+          "v": {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "finite": true
+          },
+          "scores": {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "finite": true
+          },
+          "loss": {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "finite": true
+          },
+          "gradients": {
+            "finite": true,
+            "worst_relative_l2": 0.0,
+            "parameters": {
+              "rec_token": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "leaf_bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.item_emb.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.behavior_emb.embed.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.temporal_enc.proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.in_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.q_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.k_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.v_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.out_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.position_bias.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn_output_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.attn_output_norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.0.gate_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.q_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.k_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.v_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.out_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.position_bias.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn_output_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.attn_output_norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.1.gate_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.q_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.k_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.v_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.out_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.position_bias.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn_output_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.attn_output_norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.2.gate_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.q_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.k_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.v_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.out_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.position_bias.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn_output_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.attn_output_norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.3.gate_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.q_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.k_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.v_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.out_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.position_bias.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn_output_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.attn_output_norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.4.gate_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.q_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.k_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.v_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.out_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.position_bias.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn_output_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.attn_output_norm.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.blocks.5.gate_proj.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "backbone.final_norm.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "c1_embedding.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "c2_embedding.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "c1_head.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "c1_head.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "c2_head.weight": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              },
+              "c2_head.bias": {
+                "max_abs": 0.0,
+                "relative_l2": 0.0,
+                "finite": true
+              }
+            }
+          },
+          "top50_same_order": true
+        },
+        "candidate_scoring": {
+          "first_call_ms": 433.0940591171384,
+          "warmed_wall_ms": 394.96881728991866,
+          "peak_allocated_bytes": 21677632000,
+          "iterations": 10
+        },
+        "bf16_forward_backward": {
+          "first_call_ms": 102.88377851247787,
+          "warmed_wall_ms": 87.37717112526298,
+          "peak_allocated_bytes": 3717720064,
+          "iterations": 10
+        },
+        "bf16_loss": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        }
+      },
+      "triton": {
+        "parity": {
+          "log_probs": {
+            "max_abs": 3.0994415283203125e-06,
+            "relative_l2": 1.5727727357427277e-07,
+            "finite": true
+          },
+          "k": {
+            "max_abs": 2.3603439331054688e-05,
+            "relative_l2": 2.582990782973124e-07,
+            "finite": true
+          },
+          "v": {
+            "max_abs": 3.1948089599609375e-05,
+            "relative_l2": 3.0286748152764936e-07,
+            "finite": true
+          },
+          "scores": {
+            "max_abs": 3.814697265625e-06,
+            "relative_l2": 5.146225273083039e-08,
+            "finite": true
+          },
+          "loss": {
+            "max_abs": 9.5367431640625e-07,
+            "relative_l2": 6.92860872428239e-08,
+            "finite": true
+          },
+          "gradients": {
+            "finite": true,
+            "worst_relative_l2": 6.112389316534203e-06,
+            "parameters": {
+              "rec_token": {
+                "max_abs": 2.421438694000244e-08,
+                "relative_l2": 1.8239207659442538e-06,
+                "finite": true
+              },
+              "leaf_bias": {
+                "max_abs": 5.587935447692871e-09,
+                "relative_l2": 2.719712979851512e-08,
+                "finite": true
+              },
+              "backbone.item_emb.weight": {
+                "max_abs": 6.705522537231445e-08,
+                "relative_l2": 6.864787373967262e-07,
+                "finite": true
+              },
+              "backbone.behavior_emb.embed.weight": {
+                "max_abs": 1.8440186977386475e-07,
+                "relative_l2": 6.112389316534203e-06,
+                "finite": true
+              },
+              "backbone.temporal_enc.proj.weight": {
+                "max_abs": 3.6368146538734436e-07,
+                "relative_l2": 5.171841288186281e-06,
+                "finite": true
+              },
+              "backbone.in_proj.weight": {
+                "max_abs": 1.9371509552001953e-07,
+                "relative_l2": 5.194898890674615e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.norm.weight": {
+                "max_abs": 8.288770914077759e-08,
+                "relative_l2": 3.923889149235329e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.norm.bias": {
+                "max_abs": 6.752088665962219e-08,
+                "relative_l2": 5.148171655876396e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.q_proj.weight": {
+                "max_abs": 7.171183824539185e-08,
+                "relative_l2": 3.494044489883285e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.k_proj.weight": {
+                "max_abs": 5.8673322200775146e-08,
+                "relative_l2": 3.0329857316705892e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.v_proj.weight": {
+                "max_abs": 1.3131648302078247e-07,
+                "relative_l2": 2.7140688665541975e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.out_proj.weight": {
+                "max_abs": 1.878943294286728e-07,
+                "relative_l2": 1.3435610475070614e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn.position_bias.weight": {
+                "max_abs": 7.23048287909478e-11,
+                "relative_l2": 3.1973424718385616e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn_output_norm.weight": {
+                "max_abs": 1.6763806343078613e-07,
+                "relative_l2": 1.932954411827396e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.attn_output_norm.bias": {
+                "max_abs": 2.980232238769531e-07,
+                "relative_l2": 3.2221068697066676e-06,
+                "finite": true
+              },
+              "backbone.blocks.0.gate_proj.weight": {
+                "max_abs": 2.60770320892334e-07,
+                "relative_l2": 3.915093500022129e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.norm.weight": {
+                "max_abs": 9.12696123123169e-08,
+                "relative_l2": 2.8550357386109967e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.norm.bias": {
+                "max_abs": 6.798654794692993e-08,
+                "relative_l2": 3.238852326486065e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.q_proj.weight": {
+                "max_abs": 1.043081283569336e-07,
+                "relative_l2": 2.095919568868971e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.k_proj.weight": {
+                "max_abs": 8.940696716308594e-08,
+                "relative_l2": 2.0967410318768663e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.v_proj.weight": {
+                "max_abs": 2.682209014892578e-07,
+                "relative_l2": 2.870446726549557e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.out_proj.weight": {
+                "max_abs": 2.112938091158867e-07,
+                "relative_l2": 1.1450816124767017e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn.position_bias.weight": {
+                "max_abs": 6.298250809777528e-11,
+                "relative_l2": 2.3209892824950863e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn_output_norm.weight": {
+                "max_abs": 4.76837158203125e-07,
+                "relative_l2": 1.918862593537581e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.attn_output_norm.bias": {
+                "max_abs": 3.501772880554199e-07,
+                "relative_l2": 3.5956731074944907e-06,
+                "finite": true
+              },
+              "backbone.blocks.1.gate_proj.weight": {
+                "max_abs": 3.948807716369629e-07,
+                "relative_l2": 3.3575747676193694e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.norm.weight": {
+                "max_abs": 4.1443854570388794e-08,
+                "relative_l2": 2.2604094046026095e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.norm.bias": {
+                "max_abs": 1.955777406692505e-08,
+                "relative_l2": 2.167058596349183e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.q_proj.weight": {
+                "max_abs": 6.332993507385254e-08,
+                "relative_l2": 2.4511547080998486e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.k_proj.weight": {
+                "max_abs": 2.9802322387695312e-08,
+                "relative_l2": 2.2302989101806168e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.v_proj.weight": {
+                "max_abs": 7.846392691135406e-08,
+                "relative_l2": 2.806760736521772e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.out_proj.weight": {
+                "max_abs": 8.381903171539307e-08,
+                "relative_l2": 1.2239361864954467e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn.position_bias.weight": {
+                "max_abs": 8.549250196665525e-11,
+                "relative_l2": 2.9835292295090663e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn_output_norm.weight": {
+                "max_abs": 8.940696716308594e-08,
+                "relative_l2": 1.8394611552935458e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.attn_output_norm.bias": {
+                "max_abs": 7.82310962677002e-08,
+                "relative_l2": 2.459546866567674e-06,
+                "finite": true
+              },
+              "backbone.blocks.2.gate_proj.weight": {
+                "max_abs": 5.960464477539063e-08,
+                "relative_l2": 1.1890798065687602e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.norm.weight": {
+                "max_abs": 4.284083843231201e-08,
+                "relative_l2": 2.8014206790025302e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.norm.bias": {
+                "max_abs": 1.862645149230957e-08,
+                "relative_l2": 2.0634340770625062e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.q_proj.weight": {
+                "max_abs": 4.0978193283081055e-08,
+                "relative_l2": 2.08098541178147e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.k_proj.weight": {
+                "max_abs": 2.898741513490677e-08,
+                "relative_l2": 1.992036886734351e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.v_proj.weight": {
+                "max_abs": 1.2060627341270447e-07,
+                "relative_l2": 3.3044981398364815e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.out_proj.weight": {
+                "max_abs": 9.12696123123169e-08,
+                "relative_l2": 8.682858352835395e-07,
+                "finite": true
+              },
+              "backbone.blocks.3.attn.position_bias.weight": {
+                "max_abs": 1.1641532182693481e-10,
+                "relative_l2": 6.480260761767012e-07,
+                "finite": true
+              },
+              "backbone.blocks.3.attn_output_norm.weight": {
+                "max_abs": 2.0489096641540527e-07,
+                "relative_l2": 4.758932018152184e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.attn_output_norm.bias": {
+                "max_abs": 1.2665987014770508e-07,
+                "relative_l2": 3.7875076029078893e-06,
+                "finite": true
+              },
+              "backbone.blocks.3.gate_proj.weight": {
+                "max_abs": 1.4156103134155273e-07,
+                "relative_l2": 1.3110588144188827e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.norm.weight": {
+                "max_abs": 4.284083843231201e-08,
+                "relative_l2": 2.170795599566651e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.norm.bias": {
+                "max_abs": 2.0023435354232788e-08,
+                "relative_l2": 1.7916083739071148e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.q_proj.weight": {
+                "max_abs": 2.782326191663742e-08,
+                "relative_l2": 1.395606058425891e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.k_proj.weight": {
+                "max_abs": 1.6763806343078613e-08,
+                "relative_l2": 1.7316102238943046e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.v_proj.weight": {
+                "max_abs": 1.2293457984924316e-07,
+                "relative_l2": 1.9628265517891526e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.out_proj.weight": {
+                "max_abs": 9.685754776000977e-08,
+                "relative_l2": 1.1250111159160352e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn.position_bias.weight": {
+                "max_abs": 7.275957614183426e-12,
+                "relative_l2": 1.5560426529437592e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn_output_norm.weight": {
+                "max_abs": 7.82310962677002e-08,
+                "relative_l2": 2.566361928668786e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.attn_output_norm.bias": {
+                "max_abs": 2.7474015951156616e-08,
+                "relative_l2": 1.5406384773235357e-06,
+                "finite": true
+              },
+              "backbone.blocks.4.gate_proj.weight": {
+                "max_abs": 1.825392246246338e-07,
+                "relative_l2": 2.129030864463833e-06,
+                "finite": true
+              },
+              "backbone.blocks.5.norm.weight": {
+                "max_abs": 1.1641532182693481e-08,
+                "relative_l2": 7.019889018393546e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.norm.bias": {
+                "max_abs": 6.984919309616089e-09,
+                "relative_l2": 8.627473605896328e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.q_proj.weight": {
+                "max_abs": 1.257285475730896e-08,
+                "relative_l2": 8.773158304963349e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.k_proj.weight": {
+                "max_abs": 6.984919309616089e-09,
+                "relative_l2": 1.14695452753947e-06,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.v_proj.weight": {
+                "max_abs": 3.818422555923462e-08,
+                "relative_l2": 6.900186220070466e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.out_proj.weight": {
+                "max_abs": 3.725290298461914e-08,
+                "relative_l2": 7.301745868160953e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.attn.position_bias.weight": {
+                "max_abs": 3.211653165635653e-12,
+                "relative_l2": 1.2687095479928078e-06,
+                "finite": true
+              },
+              "backbone.blocks.5.attn_output_norm.weight": {
+                "max_abs": 2.7939677238464355e-08,
+                "relative_l2": 6.796293492741326e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.attn_output_norm.bias": {
+                "max_abs": 2.8870999813079834e-08,
+                "relative_l2": 8.360139947721672e-07,
+                "finite": true
+              },
+              "backbone.blocks.5.gate_proj.weight": {
+                "max_abs": 6.961636245250702e-08,
+                "relative_l2": 1.0913157646518245e-06,
+                "finite": true
+              },
+              "backbone.final_norm.weight": {
+                "max_abs": 1.1920928955078125e-07,
+                "relative_l2": 2.1674871506353928e-07,
+                "finite": true
+              },
+              "c1_embedding.weight": {
+                "max_abs": 6.658956408500671e-08,
+                "relative_l2": 1.1529230225185977e-06,
+                "finite": true
+              },
+              "c2_embedding.weight": {
+                "max_abs": 7.078051567077637e-08,
+                "relative_l2": 1.1294188322145997e-06,
+                "finite": true
+              },
+              "c1_head.weight": {
+                "max_abs": 4.172325134277344e-07,
+                "relative_l2": 7.945503389749553e-07,
+                "finite": true
+              },
+              "c1_head.bias": {
+                "max_abs": 5.960464477539063e-08,
+                "relative_l2": 2.746337787235721e-07,
+                "finite": true
+              },
+              "c2_head.weight": {
+                "max_abs": 8.940696716308594e-08,
+                "relative_l2": 3.1949116587073897e-07,
+                "finite": true
+              },
+              "c2_head.bias": {
+                "max_abs": 1.4901161193847656e-08,
+                "relative_l2": 9.035266562258804e-08,
+                "finite": true
+              }
+            }
+          },
+          "top50_same_order": true
+        },
+        "candidate_scoring": {
+          "first_call_ms": 2477.97301504761,
+          "warmed_wall_ms": 387.3418850824237,
+          "peak_allocated_bytes": 21677640704,
+          "iterations": 10
+        },
+        "bf16_forward_backward": {
+          "first_call_ms": 1768.0893782526255,
+          "warmed_wall_ms": 28.647589683532715,
+          "peak_allocated_bytes": 2454376448,
+          "iterations": 10
+        },
+        "bf16_loss": {
+          "max_abs": 9.5367431640625e-07,
+          "relative_l2": 6.927718814423456e-08,
+          "finite": true
+        }
+      }
+    },
+    "gradient_scope": "All parameters; item embedding gradient compared on fixed history/target/candidate rows."
+  },
+  "source_sha256_after": {
+    "scripts/benchmark_hstu_backends.py": "2d7b185d55c315646f0c35ce7e36d93709a742efa44629c6ae9046613b391218",
+    "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+    "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c",
+    "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+    "src/hstu_kvcache/models/block.py": "d1af23674e5c75e7e9d4551bbcf2366082d5c21dc53f24dd761610d7e3f773a2",
+    "src/hstu_kvcache/recflow/model.py": "566483b576c2748d625a49e1840f0005aefd7b08f2580c09fd35b0c0350fd512"
+  },
+  "sources_unchanged_during_probe": true,
+  "acceptance": {
+    "scope": "This bounded fixture only; no claim of bitwise training reproducibility or all-request ranking parity.",
+    "fp32_relative_l2_tolerance": 1e-05,
+    "bf16_relative_l2_tolerance": 0.02,
+    "retained_checkpoint_bf16_loss_relative_tolerance": 0.001,
+    "retained_checkpoint_fp32_top50_same_order_required": true,
+    "passed": true
+  }
+}

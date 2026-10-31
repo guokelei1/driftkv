@@ -1,0 +1,79 @@
+{
+  "created_at": "2026-10-27T17:51:23.594275+08:00",
+  "scope": "synthetic_numerical_only_not_training_or_throughput",
+  "device": "cuda:1",
+  "gpu_name": "NVIDIA A40",
+  "torch": "2.12.1+cu130",
+  "history_width": 1024,
+  "true_lengths": [
+    1024,
+    733
+  ],
+  "layers": 2,
+  "hidden_size": 128,
+  "candidates": 17,
+  "candidate_chunk": 8,
+  "rows": [
+    {
+      "precision": "fp32",
+      "path": "shared_torch",
+      "reference": "native_torch",
+      "score_max_abs": 3.8743019104003906e-07,
+      "gradient_relative_l2": 1.714652626105817e-06,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.0001,
+        "gradient_relative_l2": 0.001
+      },
+      "passed": true
+    },
+    {
+      "precision": "fp32",
+      "path": "shared_triton_prefix",
+      "reference": "native_torch",
+      "score_max_abs": 4.470348358154297e-07,
+      "gradient_relative_l2": 1.6948370102909394e-06,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.0001,
+        "gradient_relative_l2": 0.001
+      },
+      "passed": true
+    },
+    {
+      "precision": "bf16",
+      "path": "shared_torch",
+      "reference": "native_torch",
+      "score_max_abs": 0.00390625,
+      "gradient_relative_l2": 0.031375035643577576,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.02,
+        "gradient_relative_l2": 0.08
+      },
+      "passed": true
+    },
+    {
+      "precision": "bf16",
+      "path": "shared_triton_prefix",
+      "reference": "native_torch",
+      "score_max_abs": 0.00390625,
+      "gradient_relative_l2": 0.031374622136354446,
+      "finite": true,
+      "limits": {
+        "score_max_abs": 0.02,
+        "gradient_relative_l2": 0.08
+      },
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "peak_allocated_bytes": 315267072,
+  "model_training": false,
+  "quality_result": null,
+  "source_sha256": {
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/check_reader_gpu.py": "b4687a19fc67c6871d9fa29b079ec362a9f1c36780845609dff1e7b3c29bbed7",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/objective.py": "19ed83b5bd57e88b0d20e9c9710e3b32aa90940b87d552a00a46c693a1a0e25a",
+    "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/shared_reader.py": "48a4ac34cd5f976ca6d936b94addc3c3df0d87661278362cc06beb0c64cafdef"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "config": {
+    "status": "speed_and_recovery_preparation_only_waiting_for_user_launch",
+    "training_authorized": false,
+    "design": "experiments/configs/recflow_models_2026_10_21.json",
+    "data": "data/processed/recflow_feedback_large_v1",
+    "machine": "g202",
+    "physical_gpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "global_batch": 384,
+    "microbatch": 96,
+    "cuda_graphs": true,
+    "checkpoint_seconds": 3600,
+    "keep_recovery_generations": 2,
+    "stop_after": "v1",
+    "metrics_frozen_before_training": [
+      "ROC_AUC",
+      "effective_view_PR_AUC",
+      "ineffective_view_PR_AUC",
+      "log_loss",
+      "Brier",
+      "user_macro_AUC",
+      "within_exposure_request_NDCG@1",
+      "within_exposure_request_NDCG@3",
+      "within_exposure_request_NDCG@5"
+    ],
+    "paired_evaluation": {
+      "day": 20,
+      "role": "final",
+      "all_eligible_targets": true,
+      "known_and_hashed_oov_strata": true,
+      "primary": "ROC_AUC"
+    },
+    "metric_selection_scope": "Report every frozen metric, including regressions; choosing a future headline based on this result is exploratory and needs another window."
+  },
+  "binding": {
+    "configuration_sha256": "742578a97c31b016856e84aaa95a6265b1faba3be778b4dbdccee47af4c9c86e",
+    "data_manifest_sha256": "1e03bd49869d466f64d2d0395851b6693f58eeda309426ef97de43441d6ed6dd",
+    "world_size": 4,
+    "source_sha256": {
+      "/home/gkl/work/evokv/scripts/recflow/train_feedback.py": "de92c56adf51c703eaca95a379f74a7d5e499278e0c8c10303bbb9761cc2dfc2",
+      "src/hstu_kvcache/recflow/feedback.py": "62d0163d714fe00358d512701aa965eea3afbe0b0448dd512ff2ffb9f91b33db",
+      "src/hstu_kvcache/recflow/feedback_embedding.py": "f3936c61318b47e95e98cdf5f9fbf11098b43e139a4c71e75a71dc0da064ca64",
+      "src/hstu_kvcache/recflow/feedback_embedding_cuda.py": "24dd02426963e342d66d56003893b54544ec2d4fa3c250f9a74f71e4b07a0879",
+      "src/hstu_kvcache/models/hstu.py": "b8dfcdd0fc103412eb8a32c8b91e5c5d61d2fc5fa10ea41c7fd02bb5ee9c2036",
+      "src/hstu_kvcache/models/attention.py": "b90a260b87db5d027c80d8baf4d9edbf7b92028018444eee2a3eccf5556290fc",
+      "src/hstu_kvcache/models/triton_attention.py": "c113467de74327535651d35720703a6bc1ebe81853ae290a9b1a453b13997f3c"
+    }
+  },
+  "model": {
+    "num_items": 2265536,
+    "num_behaviors": 4,
+    "num_prediction_items": 2265536,
+    "hidden_size": 320,
+    "num_layers": 10,
+    "num_heads": 10,
+    "head_dim": 32,
+    "max_seq_len": 1024,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "elu_plus1",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.1,
+    "tie_item_embeddings": true,
+    "block_variant": "legacy",
+    "relative_position_bias": false,
+    "causal_diagonal": "inclusive",
+    "num_query_types": 3,
+    "num_query_actions": 1,
+    "query_type_id": 2,
+    "query_action_id": 0
+  },
+  "mode": "benchmark"
+}

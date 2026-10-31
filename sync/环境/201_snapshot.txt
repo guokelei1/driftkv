@@ -1,0 +1,51 @@
+Snapshot date: 2026-10-21T07:16:06+08:00
+Host: g201
+OS: Ubuntu 20.04.6 LTS
+Kernel: 5.15.20-gids-p2pdma-09a2-iommuoff
+libc: ('glibc', '2.35')
+CPU: Intel Xeon Gold 5420+, 112 logical CPUs; RAM approximately 1 TiB
+Python: 3.13.16
+Environment: /data/gkl/work/evokv/.venv (uv-managed, no sudo)
+PyTorch: 2.12.1+cu130
+PyTorch CUDA runtime: 13.0
+cuDNN: 92000
+NCCL: (2, 29, 7)
+CUDA available: True
+Compiled CUDA architectures: ['sm_75', 'sm_80', 'sm_86', 'sm_90', 'sm_100', 'sm_120']
+System CUDA toolkit: 12.2 (not used to build PyTorch/Triton)
+Topology: GPU0 <-> GPU1 NV8 (nvidia-smi topo -m)
+
+GPU 0: NVIDIA A800 80GB PCIe, 81176 MiB, capability 8.0
+GPU 1: NVIDIA A800 80GB PCIe, 81176 MiB, capability 8.0
+NVIDIA driver: 610.43.03 (both GPUs)
+
+Python packages:
+torch 2.12.1
+triton 3.7.1
+numpy 2.4.3
+pandas 3.0.1
+scipy 1.17.1
+pyarrow 24.0.0
+duckdb 1.5.6
+scikit-learn 1.8.0
+PyYAML 6.0.3
+jsonschema 4.26.0
+pytest 9.1.1
+ruff 0.17.1
+
+Full package pins: 201_requirements.txt
+At initial snapshot: foundation checkpoints and processed Yambda data not yet present on 201.
+At initial snapshot: no DDP or cross-machine timing comparison validated.
+
+Update 2026-10-21: selected Yambda Medium metadata, all 43 shared listen
+partitions and Medium v2 checkpoint copied from g202 over SSH (47 files,
+3,806,520,706 bytes); all SHA-256 hashes match. Real single-GPU Yambda
+smoke passed on A800 GPU0: 6L_H192, UID 60, 512 history rows, score
+2.489431142807007. See results/environment_201_2026_10/yambda/summary.json.
+
+Update 2026-10-21: two-GPU NCCL/DDP smoke passed on both A800s.
+Random HSTU 2L/H64, synthetic global batch 8 (4/rank), SGD lr=0.01,
+momentum=0.9, 3 updates. Both replicas match exactly; maximum gradient
+and parameter differences versus single-process global-batch reference
+are 1.1920928955078125e-7. No foundation model weights used or saved.
+See results/environment_201_2026_10/ddp/summary.json.

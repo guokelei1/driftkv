@@ -1,0 +1,60 @@
+contract: yambda500m_medium_hstu_native_d14_direct_long_age_reuse_reporting_v2
+date_frozen: 2026-09-01
+status: prospective_execution_and_reporting_amendment_after_first_cell
+purpose: >-
+  Remove the unnecessary cross-run Current equality gate and resume all ten
+  predeclared Medium D14/E14 direct long-age cells. Every new cell keeps the
+  already-frozen two-path computation and is interpreted only through its
+  within-run Current Exact versus Direct Reuse comparison.
+
+frozen_parent:
+  contract: configs/contracts/yambda500m_medium_hstu_native_d14_direct_long_age_reuse_v1.yaml
+  contract_sha256: 2c9029d0f0aa6e415813e73b91171d3318acfe81eecd816c6e3b0329125f4d2f
+
+timing_and_scope:
+  adopted_after_completed_new_cells: 1
+  completed_cell: v0_to_v2
+  remaining_cells_must_all_run: 9
+  original_ten_cell_list_unchanged: true
+  data_model_checkpoint_window_runtime_and_metrics_unchanged: true
+  result_based_cell_selection: prohibited
+  serving_or_cache_lineage_promotion: prohibited
+
+completed_before_amendment:
+  edge: v0_to_v2
+  raw_sha256: ddf4c76447c26c071d0922dd6a0f86b31d6bff5803a2f09c273e65e390113910
+  raw_seal_sha256: 8bc40187f9e91412ae9b9bc0194604f6eb6d79b68335fa80a3b0c95b08a50d38
+  adjudication_sha256: 5b107b29171fa815a08dfd493244f2c33b5539b8a889a59e65dddb4a06e0ca9d
+  cell_seal_sha256: d48dc3faff1e7fd9cee2af5fa7d1403287bc78856c27de1b26aa389fb58dcb34
+  canary_pass_sha256: 096c7928869c046d0aad23c742e137a886b46b0b55f90644e29473f411959c3a
+  preserve_and_skip_on_resume: true
+
+reporting_policy:
+  primary_comparison: within_run_current_exact_vs_direct_reuse
+  old_path_in_new_cells: not_computed
+  cross_run_current_equality_gate: prohibited
+  cross_run_current_drift: record_only
+  different_current_absolute_metrics_across_runs: allowed
+  quality_direction_stops_queue: false
+  all_predeclared_cells_reported: required
+  outputs:
+    - current_exact_ROC_AUC
+    - direct_reuse_ROC_AUC
+    - current_minus_reuse_ROC_AUC_pp
+    - reuse_AUC_change_vs_current_percent
+    - current_exact_log_loss
+    - direct_reuse_log_loss
+    - reuse_minus_current_log_loss
+    - reuse_log_loss_change_vs_current_percent
+
+failure_policy:
+  cross_run_metric_drift: continue_and_record
+  unfavorable_quality_result: continue_and_report
+  completed_cell: validate_hash_and_skip
+  sealed_raw_without_adjudication: resume_label_join
+  OOM_or_runtime_failure: stop_and_preserve
+  corrupted_or_hash_mismatched_evidence: stop_for_audit
+
+authorization:
+  reporting_change_and_nine_cell_resume: authorized_by_user_2026_09_01
+  detached_tmux_execution: required_by_user_2026_09_01

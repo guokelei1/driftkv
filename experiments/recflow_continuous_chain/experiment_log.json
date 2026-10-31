@@ -1,0 +1,3492 @@
+{
+  "completed_experiments": [
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/warm_m0_pilot_4096",
+      "decision": {
+        "question": "Can actual warmup->M0 on earliest causal D28 supply an extra first release edge?",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.003955005226127145,
+              -0.0003395529514049931
+            ],
+            "difference": -0.0021456486240024417,
+            "relative_loss_pct": -5.8161786227897165,
+            "requests": 14309,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1287
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "elapsed": {
+          "cpu_analyzer_wall_seconds": 9.02509366418235,
+          "cpu_candidate_audit_wall_seconds": 7.170807813992724,
+          "cpu_native_comparison_wall_seconds": 1.0719881120603532,
+          "gpu_evaluator_wall_seconds": 266.47874337015674,
+          "scoring_plus_analysis_wall_seconds": 275.5038370343391
+        },
+        "interpretation": "Reuse exceeds Rebuild by5.8162%; allfixedUID/timehalvesnegative; nominalNDCGgapCIbelow0. Do not include this edge in the chain and do not expand sample to pursue a sign reversal.",
+        "next_action": "Return to originalM0 asfoundation, retainM0->M1; repairfirstweakM1->M2 withonefreshD29pass,listwiseweight0.3 versusoriginal0.1. Alllateracceptedtargets must followthenewtraininglineage."
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m1_d29_listwise03",
+      "decision": {
+        "question": "Does increasing listwise weight from 0.1 to 0.3 on the same fresh D29 pass expose a supported positive cache gap?",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0012734636770134352,
+              0.0031509620022157634
+            ],
+            "difference": 0.0021672613259899223,
+            "relative_loss_pct": 4.167995136171215,
+            "requests": 14455,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1359
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "interpretation": "Positive NDCG and Recall gaps with positive user-cluster intervals and all four predetermined slices positive. Native NDCG rises16.89% versus matched original recipe. This is one exploratory fit, not an accepted complete chain.",
+        "next_action": "Replicate this same saved model and D30 window on8192 disjoint fixed users; no next model until replication is inspected.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_replication_8192",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_replication_8192",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0010725281438201872,
+              0.00219231427033427
+            ],
+            "difference": 0.001650083955945597,
+            "relative_loss_pct": 3.118356095699141,
+            "requests": 33414,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2827
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Accept actual V1->V2 edge based on disjoint8192-UID replication and positive4096 pilot; all four predetermined NDCG slice intervals positive.",
+        "primary_evidence": "replication alone",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m1_m2_lw03_pilot_4096",
+        "scope": "Same trained model and D30, different users; not independent training replication.",
+        "next_action": "One full D30 update from this actual newV2 with unchanged listwise0.3, then D31 pilot. Do not attach originalM3.",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_listwise03_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m2_d30_listwise03",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0006376811448032732,
+              0.0006679721705622462
+            ],
+            "difference": 2.8990935188809935e-05,
+            "relative_loss_pct": 0.05354771193190308,
+            "requests": 15299,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1362
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "interpretation": "NDCG gap nearlyzero0.05355%, nominalCIcrosses0; UID/time slices mixed and Recallnegative. Not a supported third chain edge. Training and fullcandidate/metric audits pass.",
+        "next_action": "One diagnostic8192 disjoint replication to assess sampling uncertainty, using the same saved model and fullD31. No expansion beyond this declared cohort and no new training yet.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_lw03_replication_8192",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_lw03_replication_8192",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00023825952786536605,
+              0.0010765362834288972
+            ],
+            "difference": 0.0006534027806164893,
+            "relative_loss_pct": 1.2186696142886175,
+            "requests": 34070,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2877
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Accept actual V2->V3 with weaker-effect qualification: both predefined cohorts pointpositive, primary8192 NDCGCIpositive and allreplication fixedslice pointpositive.",
+        "primary_evidence": "predetermined8192 replication alone",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_listwise03_pilot_4096",
+        "weaknesses": [
+          "Pilot NDCG only0.05355%,CIcross0,two slice points negative.",
+          "Replication first12h NDCGCIcross0; overallRecallCIslightlycross0.",
+          "Combined12288 descriptive NDCG loss0.85518%,belowideal1–3% band; CIpositive."
+        ],
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m2_d30_lw03_replication_8192/combined_cohort_diagnostic.json",
+        "next_action": "Continue one actual-child freshD31 update from this newV3 with unchanged listwise0.3, followed by D32pilot. No lambda0.6 candidate is needed or launched.",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise03_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise03",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0005907952786034997,
+              0.0007098472683805543
+            ],
+            "difference": 5.085845481210173e-05,
+            "relative_loss_pct": 0.09290421756208442,
+            "requests": 15208,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1352
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "interpretation": "Complete D32 pilot NDCG loss only0.09290%, CI across0, fixed UID/time slice signs mixed, Recall loss-0.57661% CI across0. No supported fourth edge yet; full actual-data and candidate metric audits passed.",
+        "next_action": "One fixed8192 disjoint diagnostic replication, same actual models and completeD32. No further sample expansion and no next model before review.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -7.154191174406263e-05,
+              0.0007236791696356387
+            ],
+            "difference": 0.0003273949521443266,
+            "relative_loss_pct": 0.6223133040987682,
+            "requests": 33382,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2818
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Do not accept candidateV4 as a stable fourth edge: primary8192 NDCG loss0.62231% CIcross0, pilot0.09290% CIcross0, and combined0.45206% CIcross0. Allreplication slices also CIcross0; Recall nearzero. Preserve complete evidence.",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise03_pilot_4096",
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw03_replication_8192/combined_cohort_diagnostic.json",
+        "next_action": "One same-parent newV3/fullD31/singleepoch sibling changes only listwise0.3->0.6, followed by the same4096 D32pilot. No extraepoch or automatic weight sweep.",
+        "next_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise06",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise06_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m3_d31_listwise06",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0004051126482933286,
+              0.0017471262327593963
+            ],
+            "difference": 0.0010785431356597542,
+            "relative_loss_pct": 1.8303846085198192,
+            "requests": 15208,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1352
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "interpretation": "NDCG loss1.83038% with nominal positive UID interval and allfour fixedslice points positive. Matched0.3 sibling native NDCG improves7.64% with positive paired interval, and cache gap increases with positive paired interval. Pilot oddUID NDCGCIcross0 and overallRecallCIcross0 are retained. Not yet an accepted fourth release edge.",
+        "recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise06_pilot_4096/recipe_comparison.json",
+        "same_parent_baseline": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise03_pilot_4096",
+        "native_ndcg_relative_change_pct": 7.638449370360534,
+        "next_action": "Same saved model/fullD32 on the fixed8192 disjoint-UID population; compare matched0.3 sibling there. No next model until complete evidence review.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0006202639680651375,
+              0.0015317372483261244
+            ],
+            "difference": 0.00106160395605531,
+            "relative_loss_pct": 1.896473299725955,
+            "requests": 33382,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2818
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Accept actualV3->V4_listwise06: both fixed disjoint cohorts have positive NDCG intervals; replication allfour predefined NDCGslice intervals positive.",
+        "primary_evidence": "fixed8192 replication alone",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_listwise06_pilot_4096",
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192/combined_cohort_diagnostic.json",
+        "recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m3_d31_lw06_replication_8192/recipe_comparison.json",
+        "native_ndcg_vs_same_parent03_gain_pct": 6.402762150671082,
+        "weaknesses": [
+          "Pilot oddUID NDCG interval crosses0.",
+          "Pilot and replication overallRecall gaps cross0; replication allRecall slice intervals cross0.",
+          "Single fitted model and repeated development protocol; no independent training-seed replication."
+        ],
+        "interpretation": "A ranking-loss-weight update release; this does not establish that every ordinary daily update necessarily harms cache reuse. The weak0.3 same-parent sibling remains retained.",
+        "next_action": "One actual child from this accepted0.6 endpoint, freshfullD32 singleepoch with unchanged listwise0.6, then fixed4096 fullD33pilot only.",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_listwise06_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00019269176631535328,
+              0.0009539676642549924
+            ],
+            "difference": 0.00037384065474056066,
+            "relative_loss_pct": 0.6593666215850467,
+            "requests": 14439,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1349
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Not accepted yet: positive pilot point but overall NDCG and Recall intervals include zero; second12h points negative.",
+        "all_signs_retained": true,
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0004672440134703153,
+                  0.001218436921702724
+                ],
+                "difference": 0.00035239942822075284,
+                "relative_loss_pct": 0.6338750738107355,
+                "requests": 7292,
+                "samples": 2000,
+                "seed": 17,
+                "users": 700
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0008491576596757932,
+                  0.002727094767022845
+                ],
+                "difference": 0.0008832249301256432,
+                "relative_loss_pct": 0.9975384218241494,
+                "requests": 7292,
+                "samples": 2000,
+                "seed": 17,
+                "users": 700
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00044178756359480176,
+                  0.0012318518925700335
+                ],
+                "difference": 0.0003957168858560552,
+                "relative_loss_pct": 0.6843734834841017,
+                "requests": 7147,
+                "samples": 2000,
+                "seed": 17,
+                "users": 649
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.000682867942540703,
+                  0.00284013570577003
+                ],
+                "difference": 0.0010563872953686863,
+                "relative_loss_pct": 1.1691874313272916,
+                "requests": 7147,
+                "samples": 2000,
+                "seed": 17,
+                "users": 649
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00013892754413838347,
+                  0.0019529338874590295
+                ],
+                "difference": 0.0010661005059912616,
+                "relative_loss_pct": 1.7740997833202188,
+                "requests": 6006,
+                "samples": 2000,
+                "seed": 17,
+                "users": 898
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0012056627156728954,
+                  0.005172169716908168
+                ],
+                "difference": 0.0031968031968031972,
+                "relative_loss_pct": 3.397041911173084,
+                "requests": 6006,
+                "samples": 2000,
+                "seed": 17,
+                "users": 898
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00092353766392931,
+                  0.0006692362817843692
+                ],
+                "difference": -0.00011918823967562692,
+                "relative_loss_pct": -0.2195859788766865,
+                "requests": 8433,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1078
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0023381929595236834,
+                  0.001030068115246571
+                ],
+                "difference": -0.0006177545131653989,
+                "relative_loss_pct": -0.7173805772815275,
+                "requests": 8433,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1078
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "next_action": "One fixed8192 disjoint-user fullD33 replication of the identical checkpoint, then review; no model or window change.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192",
+        "same_parent_recipe_comparator_available": false,
+        "limitation": "OriginalM5 has a different parent; no single-factor comparison against it."
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192",
+      "decision": {
+        "created_at": "2026-10-29T16:26:27.106393+08:00",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -3.604343649815817e-07,
+              0.0008073926934574463
+            ],
+            "difference": 0.0004021798583817379,
+            "relative_loss_pct": 0.6880491367859431,
+            "requests": 32237,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2805
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Do not yet accept V5 as a stable edge. Complete the remaining original fixed population once, then review all evidence.",
+        "rationale": "Pilot and replication losses .659%/.688% are consistent and all replication slice points are positive. A terminal full30000 census is cheaper than a new sibling and resolves the original population directly; not an assertion that the primary interval excludes zero.",
+        "primary_evidence_retained": "Original fixed8192 replication remains reported with its interval crossing zero.",
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192/combined_cohort_diagnostic.json",
+        "limitations": [
+          "Pilot and replication overall NDCG intervals include zero.",
+          "All replication NDCG slice intervals and Recall intervals include zero.",
+          "Pilot second12h NDCG and Recall points are negative.",
+          "Additional population completion was chosen after inspecting earlier results; all are development evidence from the same fitted model, not independent confirmation."
+        ],
+        "terminal_population_completion": {
+          "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_remaining_17712",
+          "users": 17712,
+          "offset": 12288,
+          "requests": 116258,
+          "union_users": 30000,
+          "union_requests": 194452,
+          "same_models_day_history_seed": true,
+          "no_further_population_window_seed_or_bootstrap_search": true
+        },
+        "next_model_dispatched": false,
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_remaining_17712",
+      "decision": {
+        "created_at": "2026-10-29T16:41:23.641128+08:00",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00016141390713899698,
+              0.0007279827866438354
+            ],
+            "difference": 0.0004365318997132176,
+            "relative_loss_pct": 0.7540016275669444,
+            "requests": 69593,
+            "samples": 2000,
+            "seed": 17,
+            "users": 6065
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Terminal remaining-population result retained alongside both previous groups and the complete30000 aggregate.",
+        "full_population_decision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000/decision.json",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000",
+      "decision": {
+        "created_at": "2026-10-29T16:41:23.641128+08:00",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00021611227545784885,
+              0.0006325342153641697
+            ],
+            "difference": 0.0004192219921491798,
+            "relative_loss_pct": 0.7240334092247257,
+            "requests": 116269,
+            "samples": 2000,
+            "seed": 17,
+            "users": 10219
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Accept actual V4_listwise06 -> V5_listwise06 as a small-effect positive edge supported by the terminal complete original30000 population and consistent directions/magnitudes across all three disjoint user groups.",
+        "acceptance_scope": "This actual model pair on fullD33; not every within-day slice or unseen dates/seeds.",
+        "primary_evidence_retained": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_replication_8192",
+        "full_population_supplement": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_full_30000",
+        "remaining_population": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_lw06_remaining_17712",
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m4_d32_listwise06_pilot_4096",
+        "weaknesses": [
+          "Pilot and original8192 primary NDCG intervals include zero; these are retained, not replaced by the full aggregate.",
+          "Pilot second12h NDCG/Recall points are negative.",
+          "Full30000 second12h NDCG interval includes zero, and Recall oddUID/second12h intervals include zero.",
+          "Full NDCG loss0.72403% is below the desired1–3% range; this is a small-effect edge.",
+          "Population completion was chosen after pilot/replication; this is same-model single-day development evidence, not independent training or temporal confirmation."
+        ],
+        "next_action": "One actual V6 child from accepted V5 on fresh fullD33; unchanged listwise0.6, oneepoch, complete AdamW and original LR/seed; then fixed4096 fullD34pilot only.",
+        "all_signs_retained": true
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise06_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise06",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0004439815111201735,
+              0.0007304688649505605
+            ],
+            "difference": 0.00014902070747069025,
+            "relative_loss_pct": 0.26145641338136966,
+            "requests": 14032,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1347
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Not accepted: pilot NDCG loss0.26146% and all four fixed NDCG slice points positive, but all nominal intervals include zero. Recall overall uncertain and evenUID/second12h points negative.",
+        "all_signs_retained": true,
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007501910638381364,
+                  0.0009941791245579761
+                ],
+                "difference": 0.00011124936734836466,
+                "relative_loss_pct": 0.19189894213338987,
+                "requests": 6884,
+                "samples": 2000,
+                "seed": 17,
+                "users": 678
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0022937251975298227,
+                  0.001713828221782491
+                ],
+                "difference": -0.0002991754517030518,
+                "relative_loss_pct": -0.332678232843995,
+                "requests": 6884,
+                "samples": 2000,
+                "seed": 17,
+                "users": 678
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005797991058642103,
+                  0.0009268379057770322
+                ],
+                "difference": 0.0001853970232796004,
+                "relative_loss_pct": 0.33073569673417685,
+                "requests": 7148,
+                "samples": 2000,
+                "seed": 17,
+                "users": 669
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0003692771298262605,
+                  0.0029286901306541796
+                ],
+                "difference": 0.0012694193514003252,
+                "relative_loss_pct": 1.459320158223849,
+                "requests": 7148,
+                "samples": 2000,
+                "seed": 17,
+                "users": 669
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007177867302121693,
+                  0.000998248364072083
+                ],
+                "difference": 0.00014987755107962134,
+                "relative_loss_pct": 0.2571446540889306,
+                "requests": 5644,
+                "samples": 2000,
+                "seed": 17,
+                "users": 869
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0003356075429741604,
+                  0.003640610183393311
+                ],
+                "difference": 0.0016389085754783838,
+                "relative_loss_pct": 1.8358161348627862,
+                "requests": 5644,
+                "samples": 2000,
+                "seed": 17,
+                "users": 869
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005854113881365086,
+                  0.0009071170984361177
+                ],
+                "difference": 0.00014844416653974043,
+                "relative_loss_pct": 0.26446910016022607,
+                "requests": 8388,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1090
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0019610615441736623,
+                  0.0013885377566872712
+                ],
+                "difference": -0.0002665372300565433,
+                "relative_loss_pct": -0.3033558131082663,
+                "requests": 8388,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1090
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "next_action": "One fixed8192 disjoint-user fullD34 replication of identical checkpoints; no training or window change, no automatic expansion or successor.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw06_replication_8192",
+        "same_parent_recipe_comparator_available": false,
+        "limitation": "OriginalM6 has a different parent and is not a single-factor comparator."
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw06_replication_8192",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0005962460158328634,
+              0.0002558729329030608
+            ],
+            "difference": -0.00017809131332061838,
+            "relative_loss_pct": -0.30263337676314817,
+            "requests": 33304,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2805
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Do not accept candidateV6_listwise06: pilot+0.26146% and fixed disjoint replication-0.30263% both uncertain; replication UID halves and second12h negative. No full population expansion.",
+        "all_signs_retained": true,
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0008255973298192098,
+                  0.0003506835087725509
+                ],
+                "difference": -0.0002309112083776649,
+                "relative_loss_pct": -0.4010472883503833,
+                "requests": 16488,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1371
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0011777056262168154,
+                  0.0011458303517124014
+                ],
+                "difference": -3.140812365703187e-05,
+                "relative_loss_pct": -0.034733783515106705,
+                "requests": 16488,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1371
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007088023270444304,
+                  0.0004419533881001553
+                ],
+                "difference": -0.00012630168262957501,
+                "relative_loss_pct": -0.21017842143690887,
+                "requests": 16816,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1434
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0019666276245470455,
+                  0.0004208250451077432
+                ],
+                "difference": -0.0008026652621086495,
+                "relative_loss_pct": -0.8542339883866974,
+                "requests": 16816,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1434
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00045213878873742426,
+                  0.0009078758483532757
+                ],
+                "difference": 0.0001987469994867144,
+                "relative_loss_pct": 0.3178430852523868,
+                "requests": 13102,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1830
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.000568115770794839,
+                  0.002193343805857866
+                ],
+                "difference": 0.0007654229452428201,
+                "relative_loss_pct": 0.7765672849828628,
+                "requests": 13102,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1830
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0009513639979913801,
+                  8.070307233699512e-05
+                ],
+                "difference": -0.00042248966865185644,
+                "relative_loss_pct": -0.7483149557943894,
+                "requests": 20202,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2333
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0023149836133411327,
+                  -0.0001565591194877557
+                ],
+                "difference": -0.0011901815473244043,
+                "relative_loss_pct": -1.35107834742588,
+                "requests": 20202,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2333
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0012696786313823143,
+              0.00042414581944606657
+            ],
+            "difference": -0.0004208346201800441,
+            "relative_loss_pct": -0.4563790337773981,
+            "requests": 33304,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2805
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise06_pilot_4096",
+        "next_action": "One same-parent fullD33 single-epoch sibling with listwise0.6->1.2 only; then identical4096 fullD34 pilot and paired native/gap comparison. No further weight sweep or successor automatic.",
+        "next_training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12",
+        "limitation": "Same model/date development experiment; no claim every daily update harms cache or all additional epochs are ineffective."
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise12_pilot_4096",
+      "training_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00021390822774717226,
+              0.001481044862968855
+            ],
+            "difference": 0.0008398417728982069,
+            "relative_loss_pct": 1.4200028716872517,
+            "requests": 14032,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1347
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Promising pilot only, not acceptedV6 yet: NDCG/Recall overall intervals positive and four fixedNDCG points positive; evenUID/first12h NDCG intervals includezero.",
+        "all_signs_retained": true,
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0006335981160331814,
+                  0.0011275229835736953
+                ],
+                "difference": 0.0002541780768014087,
+                "relative_loss_pct": 0.4210183856860278,
+                "requests": 6884,
+                "samples": 2000,
+                "seed": 17,
+                "users": 678
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007972147857267217,
+                  0.002801536861847784
+                ],
+                "difference": 0.0009682562740377965,
+                "relative_loss_pct": 1.030057288772946,
+                "requests": 6884,
+                "samples": 2000,
+                "seed": 17,
+                "users": 678
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00045376239465710086,
+                  0.0023428093419236872
+                ],
+                "difference": 0.001403874912787737,
+                "relative_loss_pct": 2.422123331855248,
+                "requests": 7148,
+                "samples": 2000,
+                "seed": 17,
+                "users": 669
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  4.8069985826953656e-05,
+                  0.004215185082856181
+                ],
+                "difference": 0.0021844272124070664,
+                "relative_loss_pct": 2.419511043308067,
+                "requests": 7148,
+                "samples": 2000,
+                "seed": 17,
+                "users": 669
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0002755556872152049,
+                  0.0018092050449308823
+                ],
+                "difference": 0.0007697498107808642,
+                "relative_loss_pct": 1.2429388921774407,
+                "requests": 5644,
+                "samples": 2000,
+                "seed": 17,
+                "users": 869
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.000842192289424984,
+                  0.00358382035127799
+                ],
+                "difference": 0.0013824204380547401,
+                "relative_loss_pct": 1.462309932060822,
+                "requests": 5644,
+                "samples": 2000,
+                "seed": 17,
+                "users": 869
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  5.645131842284153e-05,
+                  0.0017292428551105863
+                ],
+                "difference": 0.0008870042710134053,
+                "relative_loss_pct": 1.548839490789336,
+                "requests": 8388,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1090
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -3.945962780633822e-05,
+                  0.003441344403474995
+                ],
+                "difference": 0.0017259633944183303,
+                "relative_loss_pct": 1.9077275436890162,
+                "requests": 8388,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1090
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "same_parent_recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise12_pilot_4096/recipe_comparison.json",
+        "native_ndcg_change_pct": 3.7673982841579967,
+        "native_ndcg_change_ci95": [
+          0.0013337563085837687,
+          0.0030002567460794046
+        ],
+        "change_in_cache_loss_ci95": [
+          -1.4774803615838103e-06,
+          0.0014060722409933786
+        ],
+        "limitations": [
+          "Same-parent0.6-to1.2 gap increment interval very slightly includeszero; do not claim established incremental gap effect yet.",
+          "Adaptive recipe development with same trainedmodel and date; not independent retraining confirmation.",
+          "Preserve0.6 pilot/replication weakness and reverse replication."
+        ],
+        "next_action": "One fixed8192 zero-overlap sameD34 replication, no model/window change or automatic successor.",
+        "replication": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00020551133860871745,
+              0.000706423709216968
+            ],
+            "difference": 0.0002472387436684567,
+            "relative_loss_pct": 0.4110603430265033,
+            "requests": 33304,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2805
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Not yet accepted: replication0.41106% nominal interval includeszero; pilot1.420% intervalpositive but larger. Fixed evenUID point-0.03688% nearzero, otherthreepoints positive/allCIcrosszero.",
+        "all_signs_retained": true,
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0006767389976733479,
+                  0.00062113739454363
+                ],
+                "difference": -2.152966132613639e-05,
+                "relative_loss_pct": -0.036877478442509035,
+                "requests": 16488,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1371
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0009208024235733308,
+                  0.001929343382251735
+                ],
+                "difference": 0.0005298947575148447,
+                "relative_loss_pct": 0.5751333017776704,
+                "requests": 16488,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1371
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00013257166074728412,
+                  0.001167659860543539
+                ],
+                "difference": 0.0005107647582706721,
+                "relative_loss_pct": 0.8254498746869676,
+                "requests": 16816,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1434
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0002346358702339245,
+                  0.0022651367978992767
+                ],
+                "difference": 0.0010273662271759322,
+                "relative_loss_pct": 1.0558750877652512,
+                "requests": 16816,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1434
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005356997520053039,
+                  0.0010330034959319726
+                ],
+                "difference": 0.0002590624449321854,
+                "relative_loss_pct": 0.39892002657745196,
+                "requests": 13102,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1830
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0002772822440811983,
+                  0.0029559338184075084
+                ],
+                "difference": 0.0013905546953936509,
+                "relative_loss_pct": 1.3634265982221285,
+                "requests": 13102,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1830
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0003445339046569975,
+                  0.0007819267539018236
+                ],
+                "difference": 0.00023957048636930958,
+                "relative_loss_pct": 0.42002500012270716,
+                "requests": 20202,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2333
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007687417606892735,
+                  0.001558029322164266
+                ],
+                "difference": 0.0003858057429486,
+                "relative_loss_pct": 0.4284711101047061,
+                "requests": 20202,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2333
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00019397024057611444,
+              0.001800565875635449
+            ],
+            "difference": 0.0007810802077256558,
+            "relative_loss_pct": 0.8244238635073121,
+            "requests": 33304,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2805
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_listwise12_pilot_4096",
+        "same_parent_recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192/recipe_comparison.json",
+        "native_ndcg_change_pct": 2.208034065088227,
+        "change_in_cache_loss_ci95": [
+          -9.406248684397472e-05,
+          0.0009177692926476322
+        ],
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192/combined_cohort_diagnostic.json",
+        "combined_relative_ndcg_loss_pct": 0.7066190394554506,
+        "next_action": "One terminal completion of remaining17712 originalUIDs on identicalD34/modelpair; then aggregate original30000. Do not replace8192 primary, change window/seed/bootstrap, or automatically expand/trainV7.",
+        "next_evaluation_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_remaining_17712",
+        "reason_for_population_completion": "Both overallcohort pointspositive and pooled descriptiveNDCG/Recall intervalspositive, nativequality alsoimproved; fullpopulation resolves magnitude/support of existing modelpair more cheaply than newtraining. Current signals alone do not establishstableedge.",
+        "limitations": [
+          "Adaptive development expansion chosen after two cohorts; not independent confirmation.",
+          "Native quality improvement and cachegap increment are different conclusions; NDCGgap increment interval includeszero in both cohorts.",
+          "Effect may remain below1% or vanish; preserve everynegative/uncertain outcome."
+        ]
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_remaining_17712",
+      "decision": {
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              7.217643023900947e-05,
+              0.0007118816908505636
+            ],
+            "difference": 0.0003918517807104928,
+            "relative_loss_pct": 0.6414080431464178,
+            "requests": 71013,
+            "samples": 2000,
+            "seed": 17,
+            "users": 6167
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "decision": "Completed terminal remaining population, positiveNDCG interval; combined fullpopulation decision is separate.",
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00023794370893649732,
+              0.0015782254824898314
+            ],
+            "difference": 0.0009125089772295213,
+            "relative_loss_pct": 0.9542097810008614,
+            "requests": 71013,
+            "samples": 2000,
+            "seed": 17,
+            "users": 6167
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0002607304693331034,
+                  0.0006352062217191583
+                ],
+                "difference": 0.00019351499295509764,
+                "relative_loss_pct": 0.3132529210526305,
+                "requests": 35846,
+                "samples": 2000,
+                "seed": 17,
+                "users": 3097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00031295296183053543,
+                  0.0014973048830760542
+                ],
+                "difference": 0.0005878320753062704,
+                "relative_loss_pct": 0.6086072189985396,
+                "requests": 35846,
+                "samples": 2000,
+                "seed": 17,
+                "users": 3097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00011265218800566719,
+                  0.0010415787449048874
+                ],
+                "difference": 0.0005940180301454716,
+                "relative_loss_pct": 0.9835433993195253,
+                "requests": 35167,
+                "samples": 2000,
+                "seed": 17,
+                "users": 3070
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0002904967678085229,
+                  0.002187025948731684
+                ],
+                "difference": 0.0012434546998200424,
+                "relative_loss_pct": 1.3136745490398087,
+                "requests": 35167,
+                "samples": 2000,
+                "seed": 17,
+                "users": 3070
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00017896430475394098,
+                  0.0011940372630996213
+                ],
+                "difference": 0.0006845223328274258,
+                "relative_loss_pct": 1.0293006004633998,
+                "requests": 28948,
+                "samples": 2000,
+                "seed": 17,
+                "users": 4089
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0004025182335402958,
+                  0.0025066065519106047
+                ],
+                "difference": 0.0014604594774209256,
+                "relative_loss_pct": 1.4248656502511796,
+                "requests": 28948,
+                "samples": 2000,
+                "seed": 17,
+                "users": 4089
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0002269826448297854,
+                  0.0006000629405206159
+                ],
+                "difference": 0.00019044378968039713,
+                "relative_loss_pct": 0.3319652685340751,
+                "requests": 42065,
+                "samples": 2000,
+                "seed": 17,
+                "users": 5088
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00028920852131792264,
+                  0.0014310888507325472
+                ],
+                "difference": 0.0005354242017738988,
+                "relative_loss_pct": 0.5890043391034459,
+                "requests": 42065,
+                "samples": 2000,
+                "seed": 17,
+                "users": 5088
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "full_population_aggregate": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000",
+        "all_signs_retained": true,
+        "next_action": "No more population expansion; refer to fullpopulation separate acceptance decision."
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000",
+      "decision": {
+        "accepted": true,
+        "accepted_model_version": "V6",
+        "accepted_edge": "V5_to_V6",
+        "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+        "decision": "Accept this saved actualV5-to-V6 pair on fullD34 as a small-positive-effect development edge, supported by terminal fullpopulation, with all limitations retained.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00016124739393004895,
+              0.0006437097283884123
+            ],
+            "difference": 0.00040427269668553306,
+            "relative_loss_pct": 0.6671693832547256,
+            "requests": 118349,
+            "samples": 2000,
+            "seed": 17,
+            "users": 10319
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0004390880093865382,
+              0.0014597396069603286
+            ],
+            "difference": 0.0009555877712769616,
+            "relative_loss_pct": 1.0062795283055441,
+            "requests": 118349,
+            "samples": 2000,
+            "seed": 17,
+            "users": 10319
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "primary_replication_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_replication_8192",
+        "primary_replication_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00020551133860871745,
+              0.000706423709216968
+            ],
+            "difference": 0.0002472387436684567,
+            "relative_loss_pct": 0.4110603430265033,
+            "requests": 33304,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2805
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "full_population_supplement": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000",
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m5_d33_lw12_full_30000/independent_review.json",
+        "rationale": [
+          "All three disjoint cohort overallNDCG points positive:1.42000%,0.41106%,0.64141%.",
+          "Original30000 users and198384 completeD34 requests are accounted for exactly once.",
+          "FullNDCG andRecall overall UID intervals positive; allfour fullpopulation NDCG slice pointspositive.",
+          "Actual optimizer ancestry, next-day window, allcandidates and perrequest metrics audited; independent fullrecomputation exactly matches."
+        ],
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0002258402324212629,
+                  0.00048512456862206987
+                ],
+                "difference": 0.00014069234459495404,
+                "relative_loss_pct": 0.23190656138841717,
+                "requests": 59218,
+                "samples": 2000,
+                "seed": 17,
+                "users": 5146
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00013087165180376012,
+                  0.0013528442979004625
+                ],
+                "difference": 0.000615924373059028,
+                "relative_loss_pct": 0.6480264185298584,
+                "requests": 59218,
+                "samples": 2000,
+                "seed": 17,
+                "users": 5146
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00031455736250865995,
+                  0.0010060798707703562
+                ],
+                "difference": 0.0006682408570430427,
+                "relative_loss_pct": 1.1041173536357691,
+                "requests": 59131,
+                "samples": 2000,
+                "seed": 17,
+                "users": 5173
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0005486809793071221,
+                  0.001984756647936062
+                ],
+                "difference": 0.0012957509194677515,
+                "relative_loss_pct": 1.3656934108829526,
+                "requests": 59131,
+                "samples": 2000,
+                "seed": 17,
+                "users": 5173
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00017417448654195484,
+                  0.0009751846502065261
+                ],
+                "difference": 0.0005777300410164173,
+                "relative_loss_pct": 0.8815851498521553,
+                "requests": 47694,
+                "samples": 2000,
+                "seed": 17,
+                "users": 6788
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0005796926486941723,
+                  0.00222246544337015
+                ],
+                "difference": 0.0014320209989476564,
+                "relative_loss_pct": 1.4120228147931078,
+                "requests": 47694,
+                "samples": 2000,
+                "seed": 17,
+                "users": 6788
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -7.108521361119122e-06,
+                  0.0005970840705402734
+                ],
+                "difference": 0.00028718438615524933,
+                "relative_loss_pct": 0.5015269219200487,
+                "requests": 70655,
+                "samples": 2000,
+                "seed": 17,
+                "users": 8511
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  2.9058013979404616e-06,
+                  0.0012845791898530338
+                ],
+                "difference": 0.0006339826993000865,
+                "relative_loss_pct": 0.699714147483534,
+                "requests": 70655,
+                "samples": 2000,
+                "seed": 17,
+                "users": 8511
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "weaknesses": [
+          "Original8192 primary0.41106% NDCG interval includeszero and is retained, not replaced by fullaggregation.",
+          "Pilot1.42000% is larger than replication0.41106% and remaining0.64141%; magnitude is not uniformly reproduced.",
+          "Replication evenUID NDCG point-0.03688% is retained.",
+          "Fullpopulation NDCG evenUID and second12h intervals includezero; fullRecall evenUID interval includeszero.",
+          "Fullpopulation NDCG loss0.66717% is below desired1–3%; this is a small-effect edge.",
+          "Population completion was chosen after pilot/replication; this is same-model same-day development evidence, not independent training/time confirmation.",
+          "NDCG gap increment versus the0.6 sibling has intervals crossingzero in both pilot and replication, even though nativequality improves."
+        ],
+        "all_signs_retained": true,
+        "primary_evidence_unchanged": true,
+        "no_more_population_or_window_expansion": true,
+        "next_action": "One complete freshD34 update from this actualV6 with unchangedlistwise1.2, thenD35 fixed4096pilot only; no automatic furthermodel or replication.",
+        "decided_at": "2026-10-29T18:29:37.490097+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise12_pilot_4096",
+      "decision": {
+        "accepted": false,
+        "decision": "Pilot direction is weakly negative and uncertain; retain complete result and run only the fixed nonoverlapping8192 diagnostic replication before changing the training recipe.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0008897967460416702,
+              0.0003820288539023391
+            ],
+            "difference": -0.00025332840659760686,
+            "relative_loss_pct": -0.4061311529039978,
+            "requests": 13531,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1337
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.001885183339065649,
+              0.00087117039503807
+            ],
+            "difference": -0.0005125795791674146,
+            "relative_loss_pct": -0.5247863832976332,
+            "requests": 13531,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1337
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.001560245146815458,
+                  0.00018916990349088166
+                ],
+                "difference": -0.0006904788496252795,
+                "relative_loss_pct": -1.109485327420153,
+                "requests": 6762,
+                "samples": 2000,
+                "seed": 17,
+                "users": 679
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.003217951379157935,
+                  0.00034598449391174047
+                ],
+                "difference": -0.0013857199194377541,
+                "relative_loss_pct": -1.4368015421292628,
+                "requests": 6762,
+                "samples": 2000,
+                "seed": 17,
+                "users": 679
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007923022935371608,
+                  0.0011218562685907678
+                ],
+                "difference": 0.00018336996771959279,
+                "relative_loss_pct": 0.2933088151087236,
+                "requests": 6769,
+                "samples": 2000,
+                "seed": 17,
+                "users": 658
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.001792374814936214,
+                  0.0024829074408370478
+                ],
+                "difference": 0.000359657823832739,
+                "relative_loss_pct": 0.36365123623637874,
+                "requests": 6769,
+                "samples": 2000,
+                "seed": 17,
+                "users": 658
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0011908029366125455,
+                  0.0009249477442525726
+                ],
+                "difference": -0.00012091033426611967,
+                "relative_loss_pct": -0.17696137075383991,
+                "requests": 5621,
+                "samples": 2000,
+                "seed": 17,
+                "users": 845
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.001961989962316501,
+                  0.0019880684245893476
+                ],
+                "difference": -1.0377750103777503e-05,
+                "relative_loss_pct": -0.009851365017199683,
+                "requests": 5621,
+                "samples": 2000,
+                "seed": 17,
+                "users": 845
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0011362409841994545,
+                  0.0004809483068003453
+                ],
+                "difference": -0.0003474272668473273,
+                "relative_loss_pct": -0.5974884424716671,
+                "requests": 7910,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0026442427079855432,
+                  0.0010302642286551724
+                ],
+                "difference": -0.0008694539762807774,
+                "relative_loss_pct": -0.9427634703226149,
+                "requests": 7910,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "next_action": "same actualV6-to-candidateV7, sameD35, fixed8192 users at offset4096, full requests and all candidates; no automatic fullpopulation, next model or new lossweight.",
+        "rationale": "A small negative point with interval spanning zero does not resolve population direction; one prespecified-size disjoint-user check is cheaper and more informative than immediately retraining. This is development evidence, not independent training/time confirmation.",
+        "all_signs_retained": true,
+        "decided_at": "2026-10-29T19:05:42.214353+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192",
+      "decision": {
+        "accepted": false,
+        "decision": "Do not accept V7 lambda1.2: pilot and replication overall directions differ, replication interval includeszero, and descriptive combined estimate is nearzero. No further population or window expansion for this candidate.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00030857162603739147,
+              0.0006102479163451569
+            ],
+            "difference": 0.000147838007856559,
+            "relative_loss_pct": 0.23167800598456345,
+            "requests": 31951,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2840
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.000801597003172701,
+              0.0010220500966402076
+            ],
+            "difference": 0.00011610039778172229,
+            "relative_loss_pct": 0.11646345778361616,
+            "requests": 31951,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2840
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0003772703643817238,
+                  0.0008888007134526881
+                ],
+                "difference": 0.00027578469573090805,
+                "relative_loss_pct": 0.42599770263433245,
+                "requests": 15602,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1411
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0010326711696685004,
+                  0.0016969925249406992
+                ],
+                "difference": 0.00036526147441414715,
+                "relative_loss_pct": 0.3659735569388189,
+                "requests": 15602,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1411
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005902467286289507,
+                  0.0006294186810639978
+                ],
+                "difference": 2.5737315201620214e-05,
+                "relative_loss_pct": 0.040899955797218106,
+                "requests": 16349,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1429
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0014164684687955759,
+                  0.0011646757413919327
+                ],
+                "difference": -0.00012167629300175642,
+                "relative_loss_pct": -0.1221938438483091,
+                "requests": 16349,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1429
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0012927776958587577,
+                  0.00016244607338654118
+                ],
+                "difference": -0.0005504146807371519,
+                "relative_loss_pct": -0.7668531896338406,
+                "requests": 12554,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1850
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.002639843953222121,
+                  0.00048610218218717976
+                ],
+                "difference": -0.0010433972856308369,
+                "relative_loss_pct": -0.9422269771095565,
+                "requests": 12554,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1850
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  3.669056865918728e-05,
+                  0.0011586317716132963
+                ],
+                "difference": 0.0005997565649842307,
+                "relative_loss_pct": 1.022472222696817,
+                "requests": 19397,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2346
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00035191710585742524,
+                  0.0020742518306100318
+                ],
+                "difference": 0.0008665429361928821,
+                "relative_loss_pct": 0.9364272108410403,
+                "requests": 19397,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2346
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "pilot": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise12_pilot_4096",
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192/combined_cohort_diagnostic.json",
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw12_replication_8192/independent_review.json",
+        "all_signs_retained": true,
+        "next_action": "One sibling from the same acceptedV6 checkpoint on the same completeD34 singleepoch, changing only listwise weight1.2to2.4, then identical4096D35pilot; no automated sweep or following model.",
+        "rationale": [
+          "Earlier same-parent lossweight increases improved native quality; the latest0.6to1.2 gap increment was not established, so2.4 is an exploratory hypothesis only.",
+          "Same parent/data/seed/scheduler/optimizer/singlepass permits direct paired native-quality and cachegap comparison against retained1.2 sibling.",
+          "No extraepoch, no changed window, no changed population, no newseed."
+        ],
+        "decided_at": "2026-10-29T19:15:51.538928+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise24_pilot_4096",
+      "decision": {
+        "accepted": false,
+        "decision": "Nearzero pilot cachegap with all four slice intervals spanningzero; run only one fixed zero-overlap8192 diagnostic replication and same-parent recipe comparison, without automatic fullpopulation or nextmodel.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0006674866343627742,
+              0.0005781376956784033
+            ],
+            "difference": -4.18477004559453e-05,
+            "relative_loss_pct": -0.06607392082246318,
+            "requests": 13531,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1337
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0014100049538670718,
+              0.0013096458487428467
+            ],
+            "difference": -4.82138018166397e-05,
+            "relative_loss_pct": -0.04888911093189065,
+            "requests": 13531,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1337
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0008457315204667626,
+                  0.0009012966723697519
+                ],
+                "difference": 1.693476213666777e-05,
+                "relative_loss_pct": 0.02659764180019479,
+                "requests": 6762,
+                "samples": 2000,
+                "seed": 17,
+                "users": 679
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.002733569528056659,
+                  0.0010525327084310466
+                ],
+                "difference": -0.0008593188828326361,
+                "relative_loss_pct": -0.880242954990568,
+                "requests": 6762,
+                "samples": 2000,
+                "seed": 17,
+                "users": 679
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.001053742596294313,
+                  0.0008045264604571408
+                ],
+                "difference": -0.00010056937456604262,
+                "relative_loss_pct": -0.1596351307985041,
+                "requests": 6769,
+                "samples": 2000,
+                "seed": 17,
+                "users": 658
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0012565600220402352,
+                  0.0025134376920522704
+                ],
+                "difference": 0.000762052494213818,
+                "relative_loss_pct": 0.7650097634525548,
+                "requests": 6769,
+                "samples": 2000,
+                "seed": 17,
+                "users": 658
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0009282258755785183,
+                  0.0010117809458836087
+                ],
+                "difference": 4.116534425718576e-05,
+                "relative_loss_pct": 0.05949046224623598,
+                "requests": 5621,
+                "samples": 2000,
+                "seed": 17,
+                "users": 845
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0009871591977692162,
+                  0.002689123908830682
+                ],
+                "difference": 0.0008804144322735322,
+                "relative_loss_pct": 0.8319773923102636,
+                "requests": 5621,
+                "samples": 2000,
+                "seed": 17,
+                "users": 845
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0009157569788868923,
+                  0.0007250567424675693
+                ],
+                "difference": -0.00010083838621226752,
+                "relative_loss_pct": -0.17042403836336792,
+                "requests": 7910,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0025439107874428188,
+                  0.0010962890987389203
+                ],
+                "difference": -0.0007081151044488592,
+                "relative_loss_pct": -0.7573428453233878,
+                "requests": 7910,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise24_pilot_4096/recipe_comparison.json",
+        "native_ndcg_relative_change_pct": 1.5369075679309796,
+        "native_ndcg_change": {
+          "ci95": [
+            0.0002933990156339583,
+            0.0016252627014797418
+          ],
+          "difference": 0.0009586616108806404,
+          "requests": 13531,
+          "samples": 2000,
+          "seed": 17,
+          "users": 1337
+        },
+        "cachegap_change": {
+          "ci95": [
+            -0.0004552493643208142,
+            0.0008859477062644784
+          ],
+          "difference": 0.00021148070614166156,
+          "requests": 13531,
+          "samples": 2000,
+          "seed": 17,
+          "users": 1337
+        },
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise24_pilot_4096/independent_review.json",
+        "interpretation": "Native ranking improvement is supported on this pilot; it does not establish a positive cachegap or a positive gapincrement. This is adaptive development, not independent retraining/time confirmation.",
+        "all_signs_retained": true,
+        "next_action": "Same actualV6/targetV7lambda2.4, fullD35, fixed8192 offset4096; compare with retainedsame-parentlambda1.2 on exact same requests.",
+        "decided_at": "2026-10-29T19:52:20.053354+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192",
+      "decision": {
+        "accepted": false,
+        "decision": "Positive primary replication, but pilot point is slightly negative and the predeclared both-positive point rule is not met. Retain all evidence, do not expand this candidate to the fullpopulation or alter the rule.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00014780357679414796,
+              0.001076951156270464
+            ],
+            "difference": 0.0006148876500529328,
+            "relative_loss_pct": 0.9461586289612812,
+            "requests": 31951,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2840
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0001400491131552252,
+              0.002139815223868677
+            ],
+            "difference": 0.0011260173688579685,
+            "relative_loss_pct": 1.1145083135438645,
+            "requests": 31951,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2840
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00014250757179238197,
+                  0.0011764474170878462
+                ],
+                "difference": 0.0005227467236032514,
+                "relative_loss_pct": 0.7936092789522549,
+                "requests": 15602,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1411
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0006194662212326478,
+                  0.002200114924078496
+                ],
+                "difference": 0.0007607388552139226,
+                "relative_loss_pct": 0.7522546891422563,
+                "requests": 15602,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1411
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  5.162226573026264e-05,
+                  0.00132028232568494
+                ],
+                "difference": 0.0007028185776000566,
+                "relative_loss_pct": 1.0956486085523767,
+                "requests": 16349,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1429
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -5.6801956641159425e-06,
+                  0.002874129889229747
+                ],
+                "difference": 0.0014746059901726912,
+                "relative_loss_pct": 1.4608472591891168,
+                "requests": 16349,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1429
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00038839235192272413,
+                  0.0011127183935433426
+                ],
+                "difference": 0.0003363319405247415,
+                "relative_loss_pct": 0.45486574555939985,
+                "requests": 12554,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1850
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.000774496769994189,
+                  0.002441075913613343
+                ],
+                "difference": 0.0008105934742863212,
+                "relative_loss_pct": 0.7108829346791061,
+                "requests": 12554,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1850
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00021614154395131353,
+                  0.0013600341969868452
+                ],
+                "difference": 0.0007951726620350388,
+                "relative_loss_pct": 1.3433510986866477,
+                "requests": 19397,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2346
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  7.840943093383565e-05,
+                  0.0026252290256196607
+                ],
+                "difference": 0.0013301639674274616,
+                "relative_loss_pct": 1.4361054659209047,
+                "requests": 19397,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2346
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "pilot_relative_loss_pct": -0.06607392082246318,
+        "pilot_is_proven_negative": false,
+        "replication_positive_gap_ci": true,
+        "original_both_positive_point_rule_passed": false,
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192/independent_review.json",
+        "combined_descriptive_sensitivity": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192/combined_cohort_diagnostic.json",
+        "recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_lw24_replication_8192/recipe_comparison.json",
+        "native_ndcg_relative_change_pct": 1.8428445041121178,
+        "native_ndcg_change": {
+          "ci95": [
+            0.0007310902245535089,
+            0.0016418517946412805
+          ],
+          "difference": 0.0011759530608852617,
+          "requests": 31951,
+          "samples": 2000,
+          "seed": 17,
+          "users": 2840
+        },
+        "cachegap_change": {
+          "ci95": [
+            8.757358585996263e-07,
+            0.0009545548111128962
+          ],
+          "difference": 0.0004670496421963737,
+          "requests": 31951,
+          "samples": 2000,
+          "seed": 17,
+          "users": 2840
+        },
+        "limitations": [
+          "Pilot and replication magnitude/direction differ; do not call this uniformly reproduced.",
+          "NDCG evenUID and first12h intervals includezero.",
+          "Replication loss0.94616% is slightly below strict1–3%; pooled0.65044% does not replace primary.",
+          "Native improvement in both cohorts does not establish a general causal cachegap improvement; pilot gapincrement interval includeszero and replication lowerbound barely exceedszero.",
+          "Adaptive development on the same daily window, not independent training or temporal confirmation."
+        ],
+        "all_signs_retained": true,
+        "next_action": "Review one bounded alternative before dispatch; no automatic weight sweep or successor.",
+        "decided_at": "2026-10-29T20:04:38.542028+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise48_pilot_4096",
+      "decision": {
+        "accepted": false,
+        "decision": "Weak positive pilot with overall andallfixedslice intervals crossingzero; do not accept as a stable release edge. Underlatestuserauthorization, retain as unpublishedintermediate and prioritize freshD35update withtwo-daypublication onD36 ratherthananother higherweightcandidate.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00041966803400720823,
+              0.000898336354659634
+            ],
+            "difference": 0.0002482843557701349,
+            "relative_loss_pct": 0.3864204730660016,
+            "requests": 13531,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1337
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0013048733524325116,
+              0.0015799251086810458
+            ],
+            "difference": 7.267262828566506e-05,
+            "relative_loss_pct": 0.0732470803146255,
+            "requests": 13531,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1337
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00033675912401365807,
+                  0.0014393043447159522
+                ],
+                "difference": 0.0005199212193845454,
+                "relative_loss_pct": 0.8056149769246012,
+                "requests": 6762,
+                "samples": 2000,
+                "seed": 17,
+                "users": 679
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.002572718386461475,
+                  0.0012103910745527807
+                ],
+                "difference": -0.0006977014408247771,
+                "relative_loss_pct": -0.7125032361994075,
+                "requests": 6762,
+                "samples": 2000,
+                "seed": 17,
+                "users": 679
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0010739657758869299,
+                  0.0010325128676096143
+                ],
+                "difference": -2.307160105667012e-05,
+                "relative_loss_pct": -0.036067481854008224,
+                "requests": 6769,
+                "samples": 2000,
+                "seed": 17,
+                "users": 658
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.001420057641487324,
+                  0.0031037718513710843
+                ],
+                "difference": 0.0008422500334156416,
+                "relative_loss_pct": 0.8379966473134763,
+                "requests": 6769,
+                "samples": 2000,
+                "seed": 17,
+                "users": 658
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0007387029777066553,
+                  0.0013519938572243042
+                ],
+                "difference": 0.0003106675343718007,
+                "relative_loss_pct": 0.44363516918550666,
+                "requests": 5621,
+                "samples": 2000,
+                "seed": 17,
+                "users": 845
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0017860185196357126,
+                  0.002429044608992571
+                ],
+                "difference": 0.0003234045797646582,
+                "relative_loss_pct": 0.30475696280847425,
+                "requests": 5621,
+                "samples": 2000,
+                "seed": 17,
+                "users": 845
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.000690473414585583,
+                  0.0010822659880467098
+                ],
+                "difference": 0.00020395365451603088,
+                "relative_loss_pct": 0.3390845250718603,
+                "requests": 7910,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00210179614671319,
+                  0.0019077278532687908
+                ],
+                "difference": -0.0001055023779423274,
+                "relative_loss_pct": -0.11186735499932181,
+                "requests": 7910,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1097
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise48_pilot_4096/independent_review.json",
+        "recipe_comparison": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d34_listwise48_pilot_4096/recipe_comparison.json",
+        "native_ndcg_relative_change_pct": 1.4489854477485187,
+        "native_ndcg_change": {
+          "ci95": [
+            0.00034998721328854173,
+            0.001484862797575177
+          ],
+          "difference": 0.0009177101680605875,
+          "requests": 13531,
+          "samples": 2000,
+          "seed": 17,
+          "users": 1337
+        },
+        "cachegap_change": {
+          "ci95": [
+            -0.00032612999176603706,
+            0.0009088952085982642
+          ],
+          "difference": 0.00029013205622608024,
+          "requests": 13531,
+          "samples": 2000,
+          "seed": 17,
+          "users": 1337
+        },
+        "original_dual_cohort_rule_status": "incomplete; no8192replicationcomputed forlambda4.8",
+        "replication_dispatched": false,
+        "not_a_proof_of_no_effect": true,
+        "all_signs_retained": true,
+        "reason_for_intermediate_choice": "Actual4.8 endpoint has the highest nativeNDCG amongthree sameparentD34pilots; paired nativegain versus2.4 haspositiveCI. Thisisadaptivedevelopment evidence, not independentconfirmation.",
+        "next_action": "Fromactual4.8D34endpoint, train fullfreshD35 once withunchangedlambda4.8; sourcepublishedcache remainsacceptedV6/D33; evaluatecompleteD36fixed4096pilot. No automaticfollowingmodel.",
+        "updated_user_objective": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/objective_revision_2026_10_29.json",
+        "decided_at": "2026-10-29T20:47:26.618377+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096",
+      "decision": {
+        "accepted": false,
+        "status": "awaiting_disjoint_replication",
+        "decision": "Clear positive development pilot; perform the predefined disjoint 8192-user replication on the same pair and D36. Do not yet accept or train a following release.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0010816762010193205,
+              0.0027318010951321954
+            ],
+            "difference": 0.001918193422287131,
+            "relative_loss_pct": 2.933210719634409,
+            "requests": 13905,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1321
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0005178825358279298,
+              0.003633235336018828
+            ],
+            "difference": 0.0021517610999811647,
+            "relative_loss_pct": 2.1818999449598317,
+            "requests": 13905,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1321
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0007527581578034932,
+                  0.0029731034615338493
+                ],
+                "difference": 0.0018799575120829874,
+                "relative_loss_pct": 2.86909675891873,
+                "requests": 7202,
+                "samples": 2000,
+                "seed": 17,
+                "users": 673
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0014629877767815271,
+                  0.0030494292312816876
+                ],
+                "difference": 0.000843185094087621,
+                "relative_loss_pct": 0.8596094767689738,
+                "requests": 7202,
+                "samples": 2000,
+                "seed": 17,
+                "users": 673
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0007400772895378175,
+                  0.003195123901602163
+                ],
+                "difference": 0.0019592757772461415,
+                "relative_loss_pct": 3.0023793765131814,
+                "requests": 6703,
+                "samples": 2000,
+                "seed": 17,
+                "users": 648
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00135960913177123,
+                  0.005779128251570919
+                ],
+                "difference": 0.0035577531027329626,
+                "relative_loss_pct": 3.5868979385006017,
+                "requests": 6703,
+                "samples": 2000,
+                "seed": 17,
+                "users": 648
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.000740594259155215,
+                  0.0034830295464472034
+                ],
+                "difference": 0.002098732926318443,
+                "relative_loss_pct": 3.0004328464347516,
+                "requests": 5400,
+                "samples": 2000,
+                "seed": 17,
+                "users": 847
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  7.302817009444004e-05,
+                  0.0056214742257278735
+                ],
+                "difference": 0.0027328042328042326,
+                "relative_loss_pct": 2.6131665988570028,
+                "requests": 5400,
+                "samples": 2000,
+                "seed": 17,
+                "users": 847
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0008032132256815083,
+                  0.0029010232499161524
+                ],
+                "difference": 0.001803565165759314,
+                "relative_loss_pct": 2.885448289816317,
+                "requests": 8505,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1095
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0001836974706465088,
+                  0.003867536292056671
+                ],
+                "difference": 0.0017828448251728675,
+                "relative_loss_pct": 1.8799472782313118,
+                "requests": 8505,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1095
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096/independent_review.json",
+        "all_signs_retained": true,
+        "weaknesses": [
+          "One adaptive development pilot, not independent retraining or temporal confirmation.",
+          "Recall even-UID and second-half-day intervals include zero.",
+          "Window, fresh training data, target checkpoint and evaluation day all changed; this does not isolate interval length as the causal factor."
+        ],
+        "next_action": "Same published V6 source, same D35 target, D36 full day, fixed UID permutation seed20261029 offset4096 count8192. No automatic full-population completion or next training.",
+        "decided_at": "2026-10-29T21:31:02.943162+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_replication_8192",
+      "decision": {
+        "accepted": true,
+        "edge": "V6_to_V7",
+        "decision": "Accept this real two-day publication edge in the development chain: both predefined disjoint cohorts have positive overall and all four predetermined-slice NDCG intervals; preserve secondary uncertainty and all earlier failed siblings.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.0005999351530883725,
+              0.0016453185566489455
+            ],
+            "difference": 0.0011173446531161785,
+            "relative_loss_pct": 1.698073980615855,
+            "requests": 33693,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2819
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              0.00037893101394968184,
+              0.002591162011441062
+            ],
+            "difference": 0.0014934570272474288,
+            "relative_loss_pct": 1.4687475893261095,
+            "requests": 33693,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2819
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0003896244094682793,
+                  0.001996819196028524
+                ],
+                "difference": 0.0011537885236309873,
+                "relative_loss_pct": 1.7484192477128624,
+                "requests": 17105,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1395
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.00043177683391183995,
+                  0.003595602965126392
+                ],
+                "difference": 0.002040826269122089,
+                "relative_loss_pct": 1.9969340799958595,
+                "requests": 17105,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1395
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0003692967770724683,
+                  0.0018088106831495917
+                ],
+                "difference": 0.001079764932525643,
+                "relative_loss_pct": 1.6458547319642929,
+                "requests": 16588,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1424
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0006271733912639034,
+                  0.002496396823335982
+                ],
+                "difference": 0.000929027868683041,
+                "relative_loss_pct": 0.9184596555332848,
+                "requests": 16588,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1424
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0004827300405212711,
+                  0.0022291935588148624
+                ],
+                "difference": 0.001335162675835174,
+                "relative_loss_pct": 1.8616089989976603,
+                "requests": 13775,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1858
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0004861887297312173,
+                  0.003966003626354819
+                ],
+                "difference": 0.002259096015901823,
+                "relative_loss_pct": 2.0275715603225803,
+                "requests": 13775,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1858
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  0.0003306584460399517,
+                  0.0016692312849680624
+                ],
+                "difference": 0.0009667048668447572,
+                "relative_loss_pct": 1.5666204532205215,
+                "requests": 19918,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2365
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0004071400953860039,
+                  0.0024041997588208925
+                ],
+                "difference": 0.0009639522040365496,
+                "relative_loss_pct": 1.0152341780398952,
+                "requests": 19918,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2365
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "primary_evidence": "replication alone",
+        "pilot_result": {
+          "ci95": [
+            0.0010816762010193205,
+            0.0027318010951321954
+          ],
+          "difference": 0.001918193422287131,
+          "relative_loss_pct": 2.933210719634409,
+          "requests": 13905,
+          "samples": 2000,
+          "seed": 17,
+          "users": 1321
+        },
+        "pilot_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096",
+        "replication_directory": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_replication_8192",
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_replication_8192/independent_review.json",
+        "pilot_independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m6_d35_interval2_lw48_pilot_4096/independent_review.json",
+        "actual_training_path": [
+          {
+            "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt",
+            "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+            "train_days": [
+              33
+            ],
+            "train_end_day": 33
+          },
+          {
+            "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+            "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt",
+            "train_days": [
+              34
+            ],
+            "train_end_day": 34
+          },
+          {
+            "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt",
+            "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d35_interval2_lw48/training/step_002420.pt",
+            "train_days": [
+              35
+            ],
+            "train_end_day": 35
+          }
+        ],
+        "weaknesses": [
+          "Pilot and replication use disjoint users but the same models/date, after adaptive development; not independent training or temporal confirmation.",
+          "Pilot loss2.93321% and replication1.69807% have different magnitudes, both retained; the primary is replication alone.",
+          "Recall odd-UID and second-half-day intervals include zero in replication; even-UID and second-half-day intervals include zero in pilot.",
+          "Window, fresh data, endpoint and evaluation date changed jointly; no isolated causal claim about release interval length.",
+          "This is a matched-prefix snapshot experiment, not persistent serving over two days."
+        ],
+        "all_signs_retained": true,
+        "full_population_expansion_required_for_this_decision": false,
+        "next_action": "Review and launch one unchanged-weight complete D36 update from accepted V7, then the fixed complete-D37 pilot. No automatic successor.",
+        "decided_at": "2026-10-29T21:41:35.423282+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_listwise48_pilot_4096",
+      "decision": {
+        "accepted": false,
+        "status": "negative_pilot_awaiting_final_diagnostic_replication",
+        "decision": "The final daily-update pilot does not support positive NDCG cache loss, and Recall has a negative nominal interval. Preserve the counterexample and run the fixed disjoint8192 diagnostic replication on the identical pair/day before the terminal data-window review. This is not a positive confirmation.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0009507460411309038,
+              0.0003183815296226044
+            ],
+            "difference": -0.00033427299606716813,
+            "relative_loss_pct": -0.5294802247282815,
+            "requests": 13007,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1330
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0029810541032188917,
+              -0.00011345706384937076
+            ],
+            "difference": -0.0014509586413176787,
+            "relative_loss_pct": -1.5053308062488366,
+            "requests": 13007,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1330
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0014709802349350222,
+                  0.0003359751752278757
+                ],
+                "difference": -0.0005705726817546797,
+                "relative_loss_pct": -0.9030800694674799,
+                "requests": 6465,
+                "samples": 2000,
+                "seed": 17,
+                "users": 657
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00409049541631416,
+                  -0.0006637420802698792
+                ],
+                "difference": -0.0023756122712039187,
+                "relative_loss_pct": -2.511906291740168,
+                "requests": 6465,
+                "samples": 2000,
+                "seed": 17,
+                "users": 657
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0010158998622952972,
+                  0.0007879451459926771
+                ],
+                "difference": -0.00010075458151966564,
+                "relative_loss_pct": -0.15971391343646077,
+                "requests": 6542,
+                "samples": 2000,
+                "seed": 17,
+                "users": 673
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0026615586277623556,
+                  0.0014767248231189085
+                ],
+                "difference": -0.0005371882779403419,
+                "relative_loss_pct": -0.5471428836209298,
+                "requests": 6542,
+                "samples": 2000,
+                "seed": 17,
+                "users": 673
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0009255561972048367,
+                  0.0011541271591579219
+                ],
+                "difference": 0.0001097411687606473,
+                "relative_loss_pct": 0.15645906028864706,
+                "requests": 5296,
+                "samples": 2000,
+                "seed": 17,
+                "users": 863
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0026205823444406264,
+                  0.0019269863880458345
+                ],
+                "difference": -0.00027693856998992934,
+                "relative_loss_pct": -0.26042712585267674,
+                "requests": 5296,
+                "samples": 2000,
+                "seed": 17,
+                "users": 863
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0014563768694680988,
+                  0.00020096144926264468
+                ],
+                "difference": -0.0006392268304502717,
+                "relative_loss_pct": -1.0960872201381695,
+                "requests": 7711,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1090
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0039502145388516366,
+                  -0.0004901401498955507
+                ],
+                "difference": -0.0022572885982301105,
+                "relative_loss_pct": -2.520623044366482,
+                "requests": 7711,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1090
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_listwise48_pilot_4096/independent_review.json",
+        "all_signs_retained": true,
+        "ndcg_proven_negative": false,
+        "recall_negative_interval": true,
+        "weaknesses": [
+          "NDCG overall interval includeszero; a negative pilot point alone is not proof of a negative underlying effect.",
+          "Three of four NDCG slice points are negative; all four intervals includezero.",
+          "Recall overall/even-UID/second-half-day intervals are negative; preserve this contrary evidence.",
+          "No model accepted, no alternate metric or time slice substituted."
+        ],
+        "next_action": "Complete D37 fixed8192 offset4096 diagnostic replication with the same V7 source and D36 target; then review terminal evidence and actual available-day boundary. No automatic training or further population expansion.",
+        "decided_at": "2026-10-29T22:18:34.903178+08:00"
+      }
+    },
+    {
+      "run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_lw48_replication_8192",
+      "decision": {
+        "accepted": false,
+        "status": "final_available_window_not_stably_positive",
+        "decided_at": "2026-10-29T22:27:10.965572+08:00",
+        "decision": "Do not publish V8. The negative pilot and positive but inconclusive replication disagree; the original both-positive-point rule is not met. Retain the D36 model as unpublished and retain every score. No further training, sampling expansion, metric replacement or time-slice substitution is scheduled. Proceed to the user-authorized temporal-data-exhaustion delivery review.",
+        "result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00011979530149947469,
+              0.0006930315017688858
+            ],
+            "difference": 0.0002845054355733887,
+            "relative_loss_pct": 0.43063912799521,
+            "requests": 32661,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2779
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.00013875892148800572,
+              0.001644857605706002
+            ],
+            "difference": 0.0007537021728258984,
+            "relative_loss_pct": 0.7397700266135468,
+            "requests": 32661,
+            "samples": 2000,
+            "seed": 17,
+            "users": 2779
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "pilot_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0009507460411309038,
+              0.0003183815296226044
+            ],
+            "difference": -0.00033427299606716813,
+            "relative_loss_pct": -0.5294802247282815,
+            "requests": 13007,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1330
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "pilot_secondary_result": {
+          "ancestor_cache_loss": {
+            "ci95": [
+              -0.0029810541032188917,
+              -0.00011345706384937076
+            ],
+            "difference": -0.0014509586413176787,
+            "relative_loss_pct": -1.5053308062488366,
+            "requests": 13007,
+            "samples": 2000,
+            "seed": 17,
+            "users": 1330
+          },
+          "change_in_cache_loss": null,
+          "immediate_cache_loss": null
+        },
+        "fixed_slice_results": {
+          "chosen_uid_positions_even": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.00022340281409303226,
+                  0.0009468903626656176
+                ],
+                "difference": 0.0003474328233322884,
+                "relative_loss_pct": 0.5341209041870871,
+                "requests": 16346,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1383
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005191908024610831,
+                  0.00202789899241212
+                ],
+                "difference": 0.0007173736985311681,
+                "relative_loss_pct": 0.7223022743355368,
+                "requests": 16346,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1383
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "chosen_uid_positions_odd": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0003415578508622558,
+                  0.0007938897690045738
+                ],
+                "difference": 0.00022145847999220736,
+                "relative_loss_pct": 0.33011106262827694,
+                "requests": 16315,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1396
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005525813423698066,
+                  0.002101830821834969
+                ],
+                "difference": 0.0007900996745618258,
+                "relative_loss_pct": 0.7564104176184667,
+                "requests": 16315,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1396
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "first_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  7.976223687907854e-05,
+                  0.001371442478654179
+                ],
+                "difference": 0.0007178473459535258,
+                "relative_loss_pct": 1.0035449142994863,
+                "requests": 13366,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1814
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0004528969676661281,
+                  0.00249095826018204
+                ],
+                "difference": 0.0010102035726755163,
+                "relative_loss_pct": 0.9209689743400277,
+                "requests": 13366,
+                "samples": 2000,
+                "seed": 17,
+                "users": 1814
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          },
+          "second_12_hours": {
+            "ndcg@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005137866664644082,
+                  0.00047805714761159563
+                ],
+                "difference": -1.5678444921087102e-05,
+                "relative_loss_pct": -0.025174148409014344,
+                "requests": 19295,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2286
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            },
+            "recall@10": {
+              "ancestor_cache_loss": {
+                "ci95": [
+                  -0.0005746621515544476,
+                  0.0017126250915706783
+                ],
+                "difference": 0.0005760189538370414,
+                "relative_loss_pct": 0.5970592147673669,
+                "requests": 19295,
+                "samples": 2000,
+                "seed": 17,
+                "users": 2286
+              },
+              "change_in_cache_loss": null,
+              "immediate_cache_loss": null
+            }
+          }
+        },
+        "independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_lw48_replication_8192/independent_review.json",
+        "pilot_independent_review": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/runs/m7_d36_listwise48_pilot_4096/independent_review.json",
+        "original_both_positive_point_rule_passed": false,
+        "all_signs_retained": true,
+        "data_exhaustion_is_separate_review": true,
+        "weaknesses": [
+          "NDCG and Recall overall replication intervals include zero; a positive point is not stable confirmation.",
+          "Pilot NDCG is negative but its interval includes zero; pilot Recall has a negative interval.",
+          "Only replication first-12h NDCG interval is positive; that slice does not replace the full-day primary.",
+          "Both cohorts use the same models and date after adaptive exploration."
+        ],
+        "next_action": "Final evidence, actual data-boundary and handoff audit only; no further GPU work."
+      }
+    }
+  ],
+  "automatic_successors": false,
+  "active_experiment": null,
+  "active_experiment_question": null,
+  "terminal_gpu_work_completed_at": "2026-10-29T22:27:10.965572+08:00"
+}

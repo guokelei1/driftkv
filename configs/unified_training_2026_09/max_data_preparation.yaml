@@ -1,0 +1,52 @@
+contract: yambda5b_max_200k_preparation_20260915
+status: user_authorized_data_preparation_and_resource_probes_only
+source_root: data/raw/yambda/flat/5b
+source_download_manifest: data/raw/download_manifest_yambda5b_v1.json
+output: data/processed/yambda5b_max_200k_v1
+request_manifest_output: data/manifests/yambda5b_max_200k_hstu_native_v1
+population:
+  users: 200000
+  eligibility: at_least_one_listen_strictly_before_day217
+  cutoff_seconds: 18748800
+  selector_namespace: 'evokv:yambda500m:medium:v1'
+  selection: ascending_sha256_then_uid
+  preserve_raw_uid: true
+  require_prior_large_population_subset: false
+  future_activity_or_labels_used_for_selection: false
+mapping:
+  source: selected_user_listens_strictly_before_day217
+  known_order: ascending_raw_item_id
+  known_ids: one_based_1_through_K
+  padding_id: 0
+  oov_buckets: 256
+  oov_ids: K_plus_1_through_K_plus_256
+  oov_hash: existing_blake2b_evokv_oov_v1
+  known_vocab_frozen_across_releases: true
+  history_tie_order: timestamp_raw_item_behavior
+model:
+  num_layers: 16
+  hidden_size: 320
+  num_heads: 10
+  max_seq_len: 1024
+  seed: 17
+request_rules:
+  group: [uid, timestamp, raw_item_id]
+  exact_duplicates_collapsed: true
+  conflicting_labels_excluded: true
+  strict_prior_listen_required: true
+  labels: {like: 1, dislike: 0}
+  unknown_targets_retained_for_audit_excluded_from_training_and_evaluation: true
+  blocks: {foundation: [0, 217], matrix_horizon: [217, 301]}
+  partial_tail_day: 300
+  quality_metrics_during_preparation: false
+execution:
+  preprocessing_threads: 32
+  preprocessing_memory_limit: 128GB
+  GPU_ids: [0, 1, 2, 3]
+  probe_global_batches: [64, 96, 128]
+  minimum_GPU_memory_reserve_fraction: 0.15
+authorization:
+  data_preparation: true
+  focused_resource_probes: true
+  formal_training_launch: false
+  theta3_read_or_trained: false

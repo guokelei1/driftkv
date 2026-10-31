@@ -1,0 +1,68 @@
+{
+  "prepared_at": "2026-10-29T20:55:21.550513+08:00",
+  "user_scope_revision": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/objective_revision_2026_10_29.json",
+  "published_source": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+  "training_parent_unpublished": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt",
+  "existing_actual_ancestry": [
+    {
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+      "train_days": [
+        33
+      ],
+      "train_end_day": 33,
+      "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m4_d32_listwise06/training/step_002494.pt"
+    },
+    {
+      "checkpoint": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise48/training/step_002506.pt",
+      "train_days": [
+        34
+      ],
+      "train_end_day": 34,
+      "actual_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt"
+    }
+  ],
+  "fresh_training_day": 35,
+  "fresh_training_requests": 154820,
+  "fresh_training_steps": 2420,
+  "epochs": 1,
+  "listwise_weight_unchanged_from_unpublished_parent": 4.8,
+  "accumulated_daily_training_days_since_published_source": [
+    34,
+    35
+  ],
+  "accumulated_training_requests_including_existing_D34": 315142,
+  "daily_scheduler_per_update": {
+    "state": "Existing trainer loads the actual parent model and complete AdamW state",
+    "daily_scheduler": "new_daily_schedule_and_explicit_update_lr_after_loading_parent_optimizer_state",
+    "learning_rate": 0.0001,
+    "warmup_fraction": 0.05
+  },
+  "evaluation_day": 36,
+  "evaluation_date": "2024-02-17",
+  "evaluation_users": 4096,
+  "evaluation_requests": 24069,
+  "cache_source_is_not_immediate_optimizer_parent": true,
+  "last_accepted_edge_evaluation_day": 34,
+  "strictly_future_and_increasing_eval": true,
+  "scenario": "Published cache source has training cutoff D33. The 1 subsequent existing optimizer checkpoint(s) are treated as unpublished in this release scenario; the actual training parent has cutoff D34. Train that parent on complete D35 once and compare the resulting target's Rebuild with the published source's cache on complete D36.",
+  "checks": {
+    "root_actual_dryrun_and_dispatch_spec": "passed",
+    "agent_targeted_cpu_tests": {
+      "status": "passed",
+      "count": 12,
+      "test_file": "experiments/recflow_continuous_chain/code/test_update_cache_source.py",
+      "reviewer": "existing_pairs with independent read-only review"
+    },
+    "numeric_training_and_scoring_implementations_changed": false,
+    "hash_protection": false
+  },
+  "interpretation_limits": [
+    "Two sequential dailyupdates with dailyLR schedules, not a single two-dayepoch.",
+    "Same matched-prefix snapshot protocol, notpersistent servingcache.",
+    "Window, futuredata and endpoint change jointly versusD35pilots; cannot attribute a differentgap solely towindowlength.",
+    "D34lambda4.8 chosen asunpublishedintermediate using samepilotnativequality; adaptive development, allpriorweakandnegativeoutcomesretained."
+  ],
+  "after_completion": "Review fullD36pilot before anyreplication, nextdayupdate orfinaltermination.",
+  "remaining_data_boundary": "D37 is lastfutureevaluationday. Fewerthan10publishedmodels is userauthorized if actualdataexhaustion is reached andfullyreported.",
+  "automatic_successors": false
+}

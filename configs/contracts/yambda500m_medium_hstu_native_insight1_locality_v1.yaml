@@ -1,0 +1,199 @@
+contract: yambda500m_medium_hstu_native_insight1_locality_v1
+date_frozen: 2026-09-01
+status: prospective_medium_insight1_locality_v1
+purpose: >-
+  Measure the optimistic theoretical-KV-coverage versus label-free functional
+  recovery frontiers of layer, sparse-token, and continuous-window Exact-KV
+  splices on every frozen Medium D14 adjacent release edge.
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  architecture: hstu_native_cc
+  versions: [v0, v1, v2, v3, v4, v5]
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  users: 3000
+  history_positions: 1024
+  candidate_probes_per_user: 64
+  new_training: false
+  serving_lineage_promotion: prohibited
+
+model:
+  hidden_size: 192
+  num_layers: 6
+  num_heads: 6
+  max_seq_len: 1024
+  known_items: 1380509
+  oov_buckets: 256
+
+population:
+  eligibility: at_least_1024_listens_strictly_before_day231
+  selector: ascending_existing_label_free_selector_rank_then_uid
+  selected_count: 3000
+  fixed_across_all_edges: true
+  labels_read: prohibited
+  audited_eligible_users_at_day231: 21200
+  history_snapshot: last_1024_events_strictly_before_each_edge_cutover
+
+candidate_panel:
+  width: 64
+  recent_region_positions: [768, 1024]
+  recent_repeat: up_to_16_most_recent_unique_known_items_from_recent_region
+  old_only_repeat: up_to_16_most_recent_unique_known_items_from_positions_0_to_767_excluding_recent_region
+  novel_to_prefix: fill_to_64_from_globally_frequent_known_history_items_absent_from_user_prefix
+  global_bank_source: selected_users_same_edge_pre_cutover_history_only
+  query_timestamp: edge_cutover
+  candidate_specific_state_mask: prohibited
+  labels_or_negative_semantics: prohibited
+
+diagnostic_intervention:
+  type: exact_kv_splice
+  producer_states: [Parent_exact_prefix_KV, Current_exact_prefix_KV]
+  selected_unit: layer_by_history_position
+  selected_values: replace_both_K_and_V_for_all_heads
+  unselected_values: retain_Parent_K_and_V
+  dependency_closed_action: false
+  scale_frontier_admission: prohibited
+  cost_axis: selected_token_layer_units_divided_by_6_times_1024
+  selector_discovery_cost_in_axis: excluded
+  real_flops_or_runtime_interpretation: prohibited
+
+layer_family:
+  layer_numbering: one_based_in_reports_zero_based_in_code
+  groups:
+    - [1]
+    - [2]
+    - [3]
+    - [4]
+    - [5]
+    - [6]
+    - [1, 2]
+    - [3, 4]
+    - [5, 6]
+    - [1, 2, 3]
+    - [3, 4, 5]
+    - [4, 5, 6]
+    - [1, 2, 3, 4]
+    - [3, 4, 5, 6]
+
+window_family:
+  intervals_half_open:
+    - [896, 1024]
+    - [768, 896]
+    - [640, 768]
+    - [768, 1024]
+    - [512, 768]
+    - [256, 512]
+    - [512, 1024]
+    - [256, 1024]
+
+token_family:
+  mask_scope: per_user_candidate_shared_all_layers_all_heads_both_K_and_V
+  tie_break: score_descending_then_position_recency_descending
+  aggregation: per_candidate_layer_head_L1_history_normalization_then_equal_mean
+  budgets:
+    p10: {positions: 102, selectors: [ATTN_MASS, READ_NORM, PERSISTENCE, KV_DRIFT, READ_DELTA]}
+    p20: {positions: 205, selectors: [ATTN_MASS, READ_NORM, KV_DRIFT, READ_DELTA]}
+    p40: {positions: 410, selectors: [READ_NORM, READ_DELTA]}
+    p80: {positions: 819, selectors: [READ_DELTA]}
+  selectors:
+    ATTN_MASS: Current_query_Parent_K_pointwise_attention_mass
+    READ_NORM: Current_query_Parent_KV_weighted_value_contribution_norm
+    PERSISTENCE: frequency_in_candidate_layer_head_attention_top102
+    KV_DRIFT: Current_minus_Parent_K_and_V_position_norm
+    READ_DELTA: Current_Exact_minus_Reuse_weighted_value_contribution_norm
+  current_exact_aware_diagnostic_selectors: [KV_DRIFT, READ_DELTA]
+  executable_policy_claim_for_current_exact_aware_selectors: prohibited
+
+metrics:
+  primary_gap: mean_absolute_probability_gap_to_Current_Exact
+  primary_recovery: one_minus_ratio_of_mean_gap_to_Reuse_mean_gap
+  recovery_clipping: prohibited
+  robustness:
+    - mean_absolute_logit_gap_to_Current_Exact
+    - mean_Bernoulli_JS_to_Current_Exact
+    - top1_agreement_with_Current_Exact
+    - top10_overlap_with_Current_Exact
+    - within_user_rank_correlation_with_Current_Exact
+  aggregation:
+    - every_edge_reported
+    - best_observed_per_edge_family_budget
+    - mean_min_max_per_edge_family_budget
+    - edge_equal_best_observed
+    - globally_fixed_config_edge_equal
+  labels_in_raw_or_primary_analysis: prohibited
+
+runtime:
+  physical_gpus: [0, 1, 2, 3]
+  world_size: 4
+  parallelism: independent_UID_shards_on_four_GPU_ranks
+  edges_within_rank: serial
+  parent_and_current_cache_generation: once_per_user_edge
+  hybrid_cache_persistence: prohibited
+  candidate_chunking: benchmark_before_formal
+  batch_size: benchmark_before_formal
+  cache_dtype: checkpoint_native_fp32
+  aggregate_dtype: fp64
+
+focused_canary:
+  users: 32
+  all_five_edges: required
+  all_34_locality_configs: required
+  anchors: [Reuse, Current_Exact]
+  empty_mask_reproduces_Reuse_max_abs_logit_error: 0.00002
+  full_mask_reproduces_Current_Exact_max_abs_logit_error: 0.00002
+  selected_and_unselected_tensor_copy_errors: 0
+  finite_scores: required
+  resource_and_makespan_estimate_before_formal: required
+
+protocol:
+  future_labels: prohibited
+  outcome_based_population_candidate_budget_or_selector_tuning: prohibited
+  target_KV_predictor_fitting: prohibited
+  selected_edge_reporting: prohibited
+  all_frozen_configs_reported: required
+  exact_KV_splice_is_diagnostic_only: required
+  raw_scores_sealed_before_analysis: required
+  overwrite_existing_evidence: prohibited
+
+frozen_inputs:
+  design:
+    path: research_discussions/evokv_three_module/insight_one/insight_one_experiment_design.md
+    sha256: e102ee139b0b3601359a18f2f14b9f3f84c1f6cdf599b2ffa174ac1e3664294c
+  dataset:
+    path: data/processed/yambda500m_unified_v1/scales/medium/dataset.json
+    sha256: d5b36c47355b57aee51661b9ddf4565e18e6dfb1fa7b2532a87e707137513bbb
+  users:
+    path: data/processed/yambda500m_unified_v1/scales/medium/users.parquet
+    sha256: bc3753cf0b5de618cb55101f2369e30ab8bbc39608245541cf9a635dd9fe7832
+  item_mapping:
+    path: data/processed/yambda500m_unified_v1/scales/medium/item_mapping.parquet
+    sha256: 57b3e1e83625367777cc5cb1f932cb9a6df200352ba07cfdc7bb346a5504bbe7
+  checkpoints:
+    v0: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/shared_v0/checkpoint_100.pt, sha256: 4a51957fe7c7d89132b315ba9b34c442c77c9cb07fc8b09e70f3b5e8c3750586}
+    v1: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v1/checkpoint_100.pt, sha256: 72fdc2011f5e2f5c21ee995406b09fcb82d60fbbd52888cc5d561a8fd30fe124}
+    v2: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v2/checkpoint_100.pt, sha256: 74d535a68d719d0399f968c39477db861dcfb805086b99618f926f1a0c0ac8be}
+    v3: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v3/checkpoint_100.pt, sha256: 9942e1dab6a5e45d638a4d045670593b6370ec50043ecbec174e8a7cd68437d0}
+    v4: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v4/checkpoint_100.pt, sha256: a8f2d57d3ebbcfbf294949ef628c310e06a22afb1ad9d7064f77a2ef35c397e6}
+    v5: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/checkpoint/checkpoint_100.pt, sha256: 6047162ea0d2dd996104f950808e7ff2c84e90a99ec61d554848568cd6edd064}
+  checkpoint_seals:
+    v0: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/shared_v0/checkpoint.seal.json, sha256: 6963bb7cdb4c732d5f5a3c231914fef10206add9d30a446e8e3061631a5823d8}
+    v1: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v1/checkpoint.seal.json, sha256: 6b0e0a3df88ef2692b1313f44be34d3f26f06183fc4f888def604f1e959f937b}
+    v2: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v2/checkpoint.seal.json, sha256: c69c80e8c9c6fa4a2d33c4640cda849cabf2321a1f32b1adce0fa620a7e84097}
+    v3: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v3/checkpoint.seal.json, sha256: 78a6ccd0d231249b27155430236d8006d50ee72c77fc36a5a923029972f64a5e}
+    v4: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/checkpoints/v4/checkpoint.seal.json, sha256: 07863e86e0cfbb0112c60e860d2920bece521a12eaba8cfd0bdb76a6e0a006e8}
+    v5: {path: results/yambda500m_medium_seed17/full_reuse_matrix_v1/D14/v5_extension_v1/checkpoint/checkpoint.seal.json, sha256: ddc2f6f058204476e9329b9d905b3b9d5d27545c7ce6a7d2fb466e92db6ac981}
+
+outputs:
+  input_manifest: data/manifests/yambda500m_medium_insight1_locality_v1
+  result_root: results/yambda500m_medium_seed17/insight1_locality_v1
+  code_root: scripts/insight_one_locality
+
+authorization:
+  design_and_implementation: authorized_by_user_2026_09_01
+  focused_four_gpu_canary: authorized_by_user_2026_09_01
+  batch_and_candidate_chunk_benchmark: authorized_by_user_2026_09_01
+  formal_four_gpu_observation_after_passing_canary_and_resource_estimate: authorized_by_user_2026_09_01
+  new_training: false
+  serving_lineage_promotion: prohibited

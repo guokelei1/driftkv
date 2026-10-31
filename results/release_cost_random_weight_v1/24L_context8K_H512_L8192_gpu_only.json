@@ -1,0 +1,35 @@
+{
+  "batch_size_users": 6,
+  "checkpoint": "results/release_cost_random_weight_v1/models/24L_context8K_H512/random_seed17.pt",
+  "configuration": {
+    "context_length": 8192,
+    "hidden_size": 512,
+    "name": "24L_context8K_H512",
+    "num_heads": 8,
+    "num_layers": 24
+  },
+  "format": "evokv_random_release_cost_plan_v2",
+  "recompute": "Current model prefill over tokens 1 through L",
+  "repetitions": 10,
+  "results": {
+    "recompute": {
+      "card_hours": 2176.388052481192,
+      "elapsed_seconds": 4.700998193359375,
+      "sampled_users": 6,
+      "seconds_per_user": 0.7834996988932291,
+      "target_users": 10000000
+    },
+    "recompute_over_reuse_ratio": 207.9514101084433,
+    "reuse": {
+      "card_hours": 10.465848975711397,
+      "elapsed_seconds": 0.02260623378753662,
+      "sampled_users": 6,
+      "seconds_per_user": 0.003767705631256103,
+      "target_users": 10000000
+    }
+  },
+  "reuse": "Append-only Current token L, conditioned on a precomputed tokens 1 through L-1 KV cache",
+  "sequence_length_per_user": 8192,
+  "target_users": 10000000,
+  "timing_boundary": "CUDA event time for model execution only"
+}

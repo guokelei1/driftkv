@@ -1,0 +1,82 @@
+contract: yambda500m_scale_population_v1
+date_frozen: 2026-08-24
+status: frozen_label_free_population_and_mapping_materialization
+
+scope:
+  dataset: Yambda-500M
+  workload: F_only
+  small: frozen_Yambda_50M_reference_not_reselected
+  medium: fixed_UID_hash_subset_of_large_eligible_population
+  large: all_lineage_eligible_Yambda_500M_users
+  training_authorized: false
+  theta3_access_authorized: false
+
+implementation: scripts/prepare_yambda500m_scale_populations.py
+
+raw_inputs:
+  root: data/raw/yambda/flat/500m
+  required: [listens.parquet, likes.parquet, dislikes.parquet]
+  download_manifest: data/raw/download_manifest_v1.json
+  timestamp_unit: seconds
+  timestamp_precision_seconds: 5
+
+frozen_time_contract_seconds:
+  theta0_cutoff: 18748800
+  update1_train: [18748800, 19785600]
+  update1_admission_dev: [19785600, 19958400]
+  edge1_evaluation: [19958400, 20563200]
+  update2_train: [19958400, 20995200]
+  update2_admission_dev: [20995200, 21168000]
+  edge2_evaluation: [21168000, 21772800]
+
+population_eligibility:
+  unit: raw_uid
+  rule: at_least_one_valid_listen_strictly_before_theta0_cutoff
+  rationale: user_has_a_materializable_parent_state_at_lineage_start
+  invalid_row_checks:
+    - required_columns_non_null
+    - is_organic_in_0_1
+    - nonnegative_timestamp_item_and_uid
+    - globally_sorted_by_uid_then_timestamp
+  do_not_filter_on:
+    - future_activity
+    - like_or_dislike_label
+    - model_score
+    - H_or_S
+    - history_length_above_one
+  history_length_cohorts_reported_not_selected: [1, 32, 256, 512, 1024]
+  preserve_complete_history_for_selected_uid: true
+
+medium_selector:
+  target_users: 30000
+  algorithm: ascending_sha256_then_ascending_uid
+  namespace: "evokv:yambda500m:medium:v1"
+  material: "{namespace}:{decimal_raw_uid}"
+  encoding: ASCII
+  sample_events: false
+
+compact_item_mapping:
+  one_mapping_per_scale: true
+  source: listens_of_selected_users_strictly_before_theta0_cutoff
+  ordering: ascending_raw_item_id
+  model_item_idx: one_based
+  reserved_oov_index: 0
+  frozen_across_theta0_theta1_theta2_theta3: true
+  future_or_qualification_catalog_fit: false
+
+artifacts:
+  root: data/manifests/yambda500m_scale_v1
+  audit: results/data_audit/yambda500m_scale_v1/population_audit.json
+  user_statistics: user_statistics.parquet
+  medium_users: medium_users.parquet
+  large_users: large_users.parquet
+  medium_item_mapping: medium_item_mapping.parquet
+  large_item_mapping: large_item_mapping.parquet
+  manifest: manifest.json
+
+stopping_rules:
+  - abort_on_any_invalid_raw_row
+  - abort_if_medium_is_not_exactly_30000_users
+  - abort_if_medium_is_not_a_subset_of_large
+  - abort_if_any_selected_user_lacks_a_pre_theta0_listen
+  - do_not_change_filter_or_selector_after_population_statistics_are_read

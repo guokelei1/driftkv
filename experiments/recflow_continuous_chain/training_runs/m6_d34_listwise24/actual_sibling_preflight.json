@@ -1,0 +1,317 @@
+{
+  "status": "passed",
+  "checked_at": "2026-10-29T19:20:22.131533+08:00",
+  "baseline_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12",
+  "new_run": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24",
+  "actual_optimizer_parent": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m5_d33_listwise12/training/step_002450.pt",
+  "actual_live_training_pid": 1657614,
+  "actual_live_command_matches_declared": true,
+  "training_finished": false,
+  "argument_differences": {
+    "output": {
+      "baseline": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12/training",
+      "new": "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24/training"
+    },
+    "listwise_weight": {
+      "baseline": 1.2,
+      "new": 2.4
+    }
+  },
+  "only_optimization_configuration_change": "listwise_weight 1.2 to 2.4; output path also differs",
+  "semantic_plan_fields_equal": [
+    "requests",
+    "planned_steps",
+    "world_size",
+    "trainable_parameters",
+    "history_limit",
+    "global_batch",
+    "loss_normalization",
+    "selection",
+    "budget_seconds",
+    "budget_already_spent_seconds"
+  ],
+  "training_day": 34,
+  "requests": 160322,
+  "epochs": 1,
+  "planned_steps": 2506,
+  "seed": 17,
+  "selection_field_checks": {
+    "uid": {
+      "same_values_dtype_and_order": true,
+      "count": 160322,
+      "matches_original_full_day": true
+    },
+    "rid": {
+      "same_values_dtype_and_order": true,
+      "count": 160322,
+      "matches_original_full_day": true
+    },
+    "day": {
+      "same_values_dtype_and_order": true,
+      "count": 160322,
+      "matches_original_full_day": true
+    },
+    "ts": {
+      "same_values_dtype_and_order": true,
+      "count": 160322,
+      "matches_original_full_day": true
+    },
+    "history_length": {
+      "same_values_dtype_and_order": true,
+      "count": 160322,
+      "matches_original_full_day": true
+    }
+  },
+  "full_rank_sampler_checks": [
+    {
+      "rank": 0,
+      "batches": 2506,
+      "positions_equal": true,
+      "real_requests": 40082
+    },
+    {
+      "rank": 1,
+      "batches": 2506,
+      "positions_equal": true,
+      "real_requests": 40080
+    },
+    {
+      "rank": 2,
+      "batches": 2506,
+      "positions_equal": true,
+      "real_requests": 40080
+    },
+    {
+      "rank": 3,
+      "batches": 2506,
+      "positions_equal": true,
+      "real_requests": 40080
+    }
+  ],
+  "full_sampler_exactly_once_real_requests": true,
+  "padding_positions": 62,
+  "architecture": {
+    "layers": 16,
+    "hidden_size": 320,
+    "heads": 10,
+    "head_dim": 32,
+    "item_embedding_dimension": 320
+  },
+  "history_limit": 1024,
+  "trainable_parameters": 1154235353,
+  "config_semantically_equals_parent_and_baseline_endpoint": true,
+  "optimizer": {
+    "implementation": "same AdamW fused implementation, weight_decay0.01, full optimizer state loaded from the same actual parent before plan publication",
+    "same_parent_state_source": true,
+    "elementwise_optimizer_tensors_rechecked_in_this_cpu_review": false,
+    "learning_rate_peak": 0.0001,
+    "daily_scheduler": "same new 5% warmup/cosine schedule after restoring AdamW moments and counters",
+    "all_common_logged_learning_rates_equal": true
+  },
+  "training_curve_comparison": {
+    "logs": [
+      "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise12/training.log",
+      "/home/gkl/work/evokv/experiments/recflow_continuous_chain/training_runs/m6_d34_listwise24/training.log"
+    ],
+    "common_steps": [
+      50,
+      100,
+      150,
+      200,
+      250,
+      300
+    ],
+    "rows": [
+      {
+        "step": 50,
+        "requests": 3200,
+        "lr": 4.08e-05,
+        "baseline": {
+          "bce": 0.6005273376405239,
+          "listwise": 4.203297146558762,
+          "gradient_norm": 1.0825188159942627,
+          "seconds_per_step": 0.6813026991498191
+        },
+        "new": {
+          "bce": 0.601649784296751,
+          "listwise": 4.2029874384403225,
+          "gradient_norm": 2.005995035171509,
+          "seconds_per_step": 0.6812489183270373
+        },
+        "new_minus_baseline_bce": 0.0011224466562270718,
+        "new_minus_baseline_listwise": -0.0003097081184391115,
+        "same_weight_composites": {
+          "1.2": {
+            "baseline": 5.644483913511038,
+            "new": 5.645234710425138,
+            "new_minus_baseline": 0.0007507969141000714
+          },
+          "2.4": {
+            "baseline": 10.68844048938155,
+            "new": 10.688819636553523,
+            "new_minus_baseline": 0.00037914717197296
+          }
+        }
+      },
+      {
+        "step": 100,
+        "requests": 6400,
+        "lr": 8.080000000000001e-05,
+        "baseline": {
+          "bce": 0.5982419190555811,
+          "listwise": 4.21049752175808,
+          "gradient_norm": 1.0270072221755981,
+          "seconds_per_step": 0.6790188529425197
+        },
+        "new": {
+          "bce": 0.6012933460623026,
+          "listwise": 4.208808280229569,
+          "gradient_norm": 1.9020283222198486,
+          "seconds_per_step": 0.6810373241573365
+        },
+        "new_minus_baseline_bce": 0.003051427006721452,
+        "new_minus_baseline_listwise": -0.0016892415285107987,
+        "same_weight_composites": {
+          "1.2": {
+            "baseline": 5.650838945165276,
+            "new": 5.651863282337785,
+            "new_minus_baseline": 0.0010243371725087158
+          },
+          "2.4": {
+            "baseline": 10.703435971274972,
+            "new": 10.702433218613267,
+            "new_minus_baseline": -0.0010027526617051308
+          }
+        }
+      },
+      {
+        "step": 150,
+        "requests": 9600,
+        "lr": 9.997280045736894e-05,
+        "baseline": {
+          "bce": 0.5958056998749574,
+          "listwise": 4.210430547396342,
+          "gradient_norm": 1.032313346862793,
+          "seconds_per_step": 0.679386875349363
+        },
+        "new": {
+          "bce": 0.5998169960578282,
+          "listwise": 4.207895427942276,
+          "gradient_norm": 1.9662874937057495,
+          "seconds_per_step": 0.6823558095792708
+        },
+        "new_minus_baseline_bce": 0.004011296182870883,
+        "new_minus_baseline_listwise": -0.002535119454066148,
+        "same_weight_composites": {
+          "1.2": {
+            "baseline": 5.648322356750568,
+            "new": 5.649291509588559,
+            "new_minus_baseline": 0.0009691528379907055
+          },
+          "2.4": {
+            "baseline": 10.700839013626178,
+            "new": 10.69876602311929,
+            "new_minus_baseline": -0.002072990506887251
+          }
+        }
+      },
+      {
+        "step": 200,
+        "requests": 12800,
+        "lr": 9.975538163975285e-05,
+        "baseline": {
+          "bce": 0.5946087278798222,
+          "listwise": 4.200079592168331,
+          "gradient_norm": 1.0066488981246948,
+          "seconds_per_step": 0.6788511921149237
+        },
+        "new": {
+          "bce": 0.5992076065018773,
+          "listwise": 4.197077007293701,
+          "gradient_norm": 1.7691857814788818,
+          "seconds_per_step": 0.6818739697373913
+        },
+        "new_minus_baseline_bce": 0.0045988786220551026,
+        "new_minus_baseline_listwise": -0.00300258487463001,
+        "same_weight_composites": {
+          "1.2": {
+            "baseline": 5.634704238481819,
+            "new": 5.635700015254318,
+            "new_minus_baseline": 0.0009957767724984024
+          },
+          "2.4": {
+            "baseline": 10.674799749083817,
+            "new": 10.67219242400676,
+            "new_minus_baseline": -0.002607325077057965
+          }
+        }
+      },
+      {
+        "step": 250,
+        "requests": 16000,
+        "lr": 9.932148993794489e-05,
+        "baseline": {
+          "bce": 0.5943589819073677,
+          "listwise": 4.2057954294681545,
+          "gradient_norm": 1.4120395183563232,
+          "seconds_per_step": 0.6791574518458219
+        },
+        "new": {
+          "bce": 0.5994487822651863,
+          "listwise": 4.202268565416336,
+          "gradient_norm": 2.733916997909546,
+          "seconds_per_step": 0.6823440319295817
+        },
+        "new_minus_baseline_bce": 0.005089800357818586,
+        "new_minus_baseline_listwise": -0.003526864051818457,
+        "same_weight_composites": {
+          "1.2": {
+            "baseline": 5.641313497269153,
+            "new": 5.64217106076479,
+            "new_minus_baseline": 0.000857563495636704
+          },
+          "2.4": {
+            "baseline": 10.688268012630939,
+            "new": 10.684893339264393,
+            "new_minus_baseline": -0.003374673366545622
+          }
+        }
+      },
+      {
+        "step": 300,
+        "requests": 19200,
+        "lr": 9.867301310328011e-05,
+        "baseline": {
+          "bce": 0.5930510063966116,
+          "listwise": 4.1973259395360945,
+          "gradient_norm": 0.8959672451019287,
+          "seconds_per_step": 0.6795449956785887
+        },
+        "new": {
+          "bce": 0.598492271800836,
+          "listwise": 4.193250561157862,
+          "gradient_norm": 1.742728352546692,
+          "seconds_per_step": 0.6828114465176096
+        },
+        "new_minus_baseline_bce": 0.005441265404224405,
+        "new_minus_baseline_listwise": -0.004075378378232131,
+        "same_weight_composites": {
+          "1.2": {
+            "baseline": 5.629842133839924,
+            "new": 5.630392945190271,
+            "new_minus_baseline": 0.000550811350346514
+          },
+          "2.4": {
+            "baseline": 10.666633261283238,
+            "new": 10.662293618579705,
+            "new_minus_baseline": -0.004339642703532931
+          }
+        }
+      }
+    ],
+    "interpretation": "Cumulative training-trajectory BCE/listwise on the same request prefixes. Changed weights trade BCE against listwise; neither these losses nor same-weight composite differences establish heldout NDCG, cache loss, convergence, or an eventual positive edge. Different recipe trajectories are not independent seed replications."
+  },
+  "no_gpu_work_launched": true,
+  "active_numerical_code_modified": false,
+  "wall_seconds": 0.41710183396935463
+}

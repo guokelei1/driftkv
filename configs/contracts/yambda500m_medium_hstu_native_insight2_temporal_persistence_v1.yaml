@@ -1,0 +1,131 @@
+contract: yambda500m_medium_hstu_native_insight2_temporal_persistence_v1
+date_frozen: 2026-09-02
+status: prospective_oracle_boundary_persistence_v1
+purpose: >-
+  Test whether the Medium S4 functional difference generated once at cutover
+  remains causally useful across real post-release requests and Current-model
+  appends. This is a representation diagnostic, not an executable estimator.
+
+scope:
+  scale: EvoKV-HSTU-M
+  seed: 17
+  edges: [v0_to_v1, v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5]
+  cutover_days: [231, 245, 259, 273, 287]
+  evaluation_days_after_cutover: 14
+  context: 1024
+  stage: S4_aggregated_context
+  hstu_adapter: av_aggregation
+  one_Parent_to_Current_transition_only: true
+  labels_read: false
+  new_training: false
+
+population:
+  source: frozen_medium_insight1_population
+  canary_indices_half_open: [0, 32]
+  discovery_indices_half_open: [0, 512]
+  confirmation_indices_half_open: [512, 3000]
+  confirmation_read_before_design_freeze: prohibited
+  users_without_real_requests: retain_in_coverage_and_do_not_replace
+
+cutover_correction:
+  source_candidates: frozen_even_anchor_indices
+  source_candidate_count: 32
+  evaluation_candidates: frozen_odd_heldout_indices
+  evaluation_candidate_count: 32
+  source: Current_Exact_minus_Current_Reuse_S4_shared_path
+  query_timestamp: cutover
+  query_delta: cutover_minus_last_prefix_event
+  freeze_once_per_user_edge: required
+  mutation_after_cutover: prohibited
+  Current_Exact_used: true
+  role: oracle_boundary_persistence_only
+  executable_cost_frontier: prohibited
+
+rolling_semantics:
+  exact_cutover_state: Current_generated_last_1024_pre_cutover_events
+  reuse_cutover_state: Parent_generated_last_1024_pre_cutover_events
+  post_cutover_append_model: Current_for_both_paths
+  event_order: query_before_append_at_equal_timestamp
+  target_request_in_prefix: prohibited
+  future_event_in_cutover_correction: prohibited
+  cache_cap: 1024
+  correction_refresh: prohibited
+  request_timestamps: all_known_real_request_groups_in_the_E14_window
+  fixed_panel_role: primary_candidate_control
+  real_exposed_items_role: external_validity_companion
+  real_group_order: ascending_item_idx_then_request_id
+  real_group_width_cap: 64
+
+methods:
+  paths:
+    - current_reuse
+    - same_request_S4_oracle
+    - frozen_cutover_S4
+    - coverage_scaled_frozen_cutover_S4
+  coverage_scale: max_0_context_minus_appends_divided_by_context
+  primary_method: coverage_scaled_frozen_cutover_S4
+
+metrics:
+  primary: unclipped_probability_gap_recovery
+  companion:
+    - unclipped_logit_gap_recovery
+    - correction_direction_cosine
+    - correction_norm_ratio
+    - correction_relative_l2
+    - same_request_S4_ceiling
+    - real_exposed_probability_gap_recovery
+  aggregation: request_mean_within_user_then_user_equal_within_edge_then_edge_equal
+  request_or_gap_weighted_primary: prohibited
+  small_denominator_filtering: prohibited
+  denominator_distribution_and_floor_sensitivity: required
+  time_buckets_seconds:
+    - [0, 86400]
+    - [86400, 259200]
+    - [259200, 604800]
+    - [604800, 1209600]
+  append_buckets:
+    - [0, 0]
+    - [1, 8]
+    - [9, 32]
+    - [33, 128]
+    - [129, 512]
+    - [513, null]
+
+gates:
+  instrumentation:
+    full_S4_delta_max_abs_readout_error: 0.00002
+    frozen_correction_hash_unchanged: required
+    exact_and_reuse_lengths_equal: required
+    all_rows_finite: required
+    labels_read: false
+  persistence:
+    positive_probability_recovery_edges_minimum: 4
+    edge_equal_user_equal_probability_recovery_at_least: 0.70
+  gate_interpretation: representation_only_and_cannot_admit_an_executable_design
+
+frozen_inputs:
+  boundary_contract:
+    path: configs/contracts/yambda500m_medium_hstu_native_insight2_functional_boundary_v1.yaml
+    sha256: c9601b862f5978c690ead15057f66e6bf8f26bf9bb584c386c746933c6429cfd
+  persistence_helper:
+    path: scripts/insight_two/temporal_persistence.py
+    sha256: 0a772c2a7687c164f3ce4e08d6679709ea0e3fd77ede069973348fba07cf449c
+  primary_request_manifest:
+    path: data/manifests/yambda500m_medium_hstu_native_d7_d14_v1/requests_fidelity.parquet
+    sha256: 22a70eea34bc6ca88343f06db8f388d3631644dd00c1e4851bcb8c3c81e46bcd
+  v5_request_manifest:
+    path: data/manifests/yambda500m_medium_hstu_native_d14_v5_extension_v1/requests_fidelity.parquet
+    sha256: 8b23e1a170174245fbeebfb38b20403d667f1a489ffffab3087f6c367c14a056
+
+outputs:
+  root: results/yambda500m_medium_seed17/insight2_functional_boundary_v1/diagnostic_temporal_persistence_v1
+  overwrite_existing_evidence: prohibited
+  raw_first: true
+  all_edges_and_buckets_retained: required
+
+authorization:
+  focused_four_GPU_canary: authorized_by_user_2026_09_02
+  512_user_discovery_after_passing_canary_and_resource_estimate: authorized_by_user_2026_09_02
+  3000_user_confirmation: false
+  executable_action_admission: false
+  long_training: false

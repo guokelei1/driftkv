@@ -1,0 +1,195 @@
+{
+  "status": "design_only_not_a_training_launch_configuration",
+  "date": "2026-10-21",
+  "data_root": "data/processed/recflow_v1",
+  "historical_medium": {
+    "source": "results/recflow/development/window_6l_expanded_u4096_seed17/chain_summary.json",
+    "name": "RecFlow-Medium",
+    "task": "historical_three_token_generative_candidate_ranking",
+    "parameters": 194461521,
+    "users": 4096,
+    "known_videos": 1000000,
+    "layers": 6,
+    "hidden_size": 192,
+    "heads": 6,
+    "relabel_metrics_or_retrain": false
+  },
+  "task": {
+    "target": "effective_view",
+    "label": "behavior & 1",
+    "history_behavior_id": "1 + original_behavior; 0 reserved for PAD",
+    "history": "all realshow exposures strictly before the complete user/timestamp block",
+    "timestamp_unit": "milliseconds in prepared arrays; seconds for model time deltas",
+    "primary_metric": "ROC_AUC over all eligible exposure targets, including hashed OOV",
+    "companions": [
+      "known_video_auc",
+      "hashed_oov_auc",
+      "known_video_target_coverage",
+      "log_loss"
+    ],
+    "loss": "user_equal_binary_cross_entropy_over_all_exposure_targets",
+    "training_unit": "one request prefix shared by all its independent candidate queries",
+    "same_request_candidate_cross_attention": false,
+    "empty_history": "exclude request from supervised scoring; keep its exposures as later history",
+    "negative_subsampling": false,
+    "duplicate_exposure_rows": "retain the prepared realshow rows; no target-level deduplication",
+    "feedback_availability_assumption": "completed earlier-request feedback is available at the next strictly later timestamp"
+  },
+  "population": {
+    "cutoff_day_inclusive": 18,
+    "foundation_train_role": "development",
+    "foundation_train_role_id": 0,
+    "minimum_pre_release_history_filter": false,
+    "admission_role": {
+      "role_id": 1,
+      "order": "ascending stable_hash(uid, salt=20261021), then uid",
+      "foundation_validation_users": 2048,
+      "correction_fit_pool_users": 1024,
+      "correction_validation_users": 128,
+      "unused_reserved_users": 91
+    },
+    "test_role": "final",
+    "test_role_id": 2,
+    "test_population": "all 3210 initial final-role users; score all eligible targets without a minimum-history or outcome filter",
+    "users_first_seen_after_day18": "outside this fixed initial-resident comparison",
+    "same_population_for_large_and_max": true
+  },
+  "catalog": {
+    "selection": "descending number of eligible D1-18 development exposure targets, ties by ascending raw video ID",
+    "selection_uses_feedback_labels": false,
+    "frozen_across_versions": true,
+    "known_ids": "1..K in ascending raw video ID after top-K selection",
+    "padding_id": 0,
+    "oov_buckets": 65536,
+    "oov_bucket_ids": "K+1..K+65536",
+    "oov_hash": "existing stable_oov_bucket: BLAKE2b-64, person=evokv-oov-v1",
+    "unknown_target_policy": "keep target and both feedback labels; use its stable hash embedding",
+    "cold_item_identity_note": "hash buckets share parameters and do not give each unseen video an independent embedding",
+    "directory_nesting": "Large known videos are a subset of Max known videos; OOV IDs are stable within each model chain"
+  },
+  "shared_model": {
+    "hidden_size": 320,
+    "num_heads": 10,
+    "head_dim": 32,
+    "max_seq_len": 1024,
+    "num_behaviors": 4,
+    "temporal_num_freqs": 16,
+    "temporal_max_period": 86400.0,
+    "gating": "silu_gate",
+    "qk_scale": 1.0,
+    "attn_dropout": 0.0,
+    "activation": "elu_plus1",
+    "norm_eps": 1e-06,
+    "input_dropout": 0.1,
+    "tie_item_embeddings": true,
+    "block_variant": "legacy",
+    "relative_position_bias": false,
+    "causal_diagonal": "inclusive",
+    "num_query_types": 3,
+    "num_query_actions": 1,
+    "query_type_id": 2,
+    "query_action_id": 0
+  },
+  "scales": {
+    "large": {
+      "known_videos": 2200000,
+      "num_layers": 10,
+      "global_request_batch": 96,
+      "reference_checkpoint": "results/unified_training_2026_09/large/seed17/checkpoints/v0/checkpoint_100.pt",
+      "reference_parameters": 717260481,
+      "conditional_seconds_per_request_batch_4xa40": [
+        0.6,
+        1.2
+      ]
+    },
+    "max": {
+      "known_videos": 3500000,
+      "num_layers": 16,
+      "global_request_batch": 80,
+      "reference_checkpoint": "results/unified_training_2026_09/max/seed17/checkpoints/v0/checkpoint_100.pt",
+      "reference_parameters": 1138203521,
+      "conditional_seconds_per_request_batch_4xa40": [
+        0.8,
+        1.6
+      ]
+    }
+  },
+  "training": {
+    "seed": 17,
+    "foundation_seeds_per_scale": 1,
+    "base_epochs": 2,
+    "update_epochs": 2,
+    "optimizer": "AdamW",
+    "foundation_learning_rate": 0.0002,
+    "update_learning_rate": 5e-05,
+    "weight_decay": 0.0001,
+    "clip_grad_norm": 1.0,
+    "precision": "BF16 compute, FP32 master parameters/gradient/Adam moments; FP32 evaluation",
+    "optimizer_lineage": "inherit model and AdamW through V0-V5; reset only per-release learning rate",
+    "versions": [
+      {
+        "name": "v0",
+        "fit_days_inclusive": [
+          1,
+          18
+        ],
+        "evaluate_day": 19
+      },
+      {
+        "name": "v1",
+        "fit_days_inclusive": [
+          19,
+          19
+        ],
+        "evaluate_day": 20
+      },
+      {
+        "name": "v2",
+        "fit_days_inclusive": [
+          20,
+          20
+        ],
+        "evaluate_day": 21
+      },
+      {
+        "name": "v3",
+        "fit_days_inclusive": [
+          21,
+          21
+        ],
+        "evaluate_day": 22
+      },
+      {
+        "name": "v4",
+        "fit_days_inclusive": [
+          22,
+          22
+        ],
+        "evaluate_day": 23
+      },
+      {
+        "name": "v5",
+        "fit_days_inclusive": [
+          23,
+          23
+        ],
+        "evaluate_day": 24
+      }
+    ],
+    "later_fixed_version_window_inclusive": [
+      25,
+      37
+    ],
+    "execution": "Large and Max V0-V5 request-grouped runners prepared on g202 two A40s, Large then Max; formal launch waiting. Active run configuration: experiments/foundation_recflow/configs/chain_large_max_2gpu_202.json",
+    "saved_endpoints": "user update: retain every epoch as a complete model/AdamW/RNG checkpoint; all versions default to two epochs",
+    "bounded_loss_resume": "202 runner saves hourly rolling recovery (two generations), plus every permanent epoch checkpoint"
+  },
+  "estimate_scope": {
+    "data_statistics": "CPU counts from retained arrays, not model quality evaluation",
+    "parameter_counts": "CPU meta-model counts cross-checked against Yambda checkpoint tensor shapes",
+    "timing": "Two-A40 full six-version measured-input profiles are recorded in experiments/foundation_recflow/planning_chain_two_gpu.json. Max uses micro20 with two accumulated microbatches; historical conditional four-A40 fields are not the active ETA.",
+    "runtime_margin_multiplier": 1.25,
+    "training_authorized": false,
+    "new_gpu_probes_authorized_by_this_file": false
+  }
+}

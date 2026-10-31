@@ -1,0 +1,77 @@
+{
+  "created_at": "2026-10-27T18:19:35.288905+08:00",
+  "status": "pre_data_review_complete_training_not_ready",
+  "cpu_tests": {
+    "passed": 23,
+    "failed": 0,
+    "seconds": 4.47,
+    "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q tests/experiments/recflow_request_ranking"
+  },
+  "lint_passed": true,
+  "gpu_numerical_check": {
+    "report": "reports/reader_gpu_audit_v2.json",
+    "passed": true,
+    "checks": 5,
+    "no_optimizer_steps": true
+  },
+  "actual_two_gpu_nccl_check": {
+    "report": "reports/distributed_loss_audit.json",
+    "passed": true,
+    "checks": 2,
+    "no_optimizer_steps": true
+  },
+  "post_gpu_revision": {
+    "files": [
+      "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/protocol.py",
+      "/home/gkl/work/evokv/experiments/recflow_request_ranking/code/configuration.py",
+      "/home/gkl/work/evokv/experiments/recflow_request_ranking/configs/proposal.json"
+    ],
+    "scope": "Added explicit Asia/Shanghai millisecond day intervals and matching validation only; numerical model/loss/reader sources unchanged.",
+    "backbone_architecture_unchanged": true,
+    "original_proposal_snapshot": "experiments/recflow_request_ranking/reports/source_snapshots/pre_timezone_proposal.json",
+    "snapshot_sha256": "ce6f963dc7d615128bbf9aab2e7a5ef75fcac4b3313b0398c08e490b74481271"
+  },
+  "real_data_checks": {
+    "exposure_day_bounds": "37_days_checked_Asia_Shanghai_unix_milliseconds",
+    "roles_long_history_feasibility": {
+      "train": 5197,
+      "validation": 734,
+      "development": 694,
+      "confirmation": 750
+    }
+  },
+  "initial_command_issue": {
+    "error": "First GPU check invocation lacked PYTHONPATH=src and failed to import hstu_kvcache before GPU execution.",
+    "resolved": "Reissued with PYTHONPATH=src; both subsequent numerical runs succeeded."
+  },
+  "training_started": false,
+  "training_ready": false,
+  "training_throughput_measured": false,
+  "quality_results": null,
+  "missing_inputs": "14 all_stage daily files or original archive; unchanged download list",
+  "remaining_implementation": [
+    "actual_stage_row_audit_and_CSR_converter",
+    "feature_encoder",
+    "DDP_training_loop_with_cumulative_wall_budget_and_resume",
+    "real_batch_throughput_profile",
+    "pilot_and_version_chain",
+    "continuous_cache_replay_after_snapshot_validation"
+  ],
+  "paper_modified_by_this_task": false,
+  "old_queues_resumed": false,
+  "source_sha256": {
+    "experiments/recflow_request_ranking/code/__init__.py": "b1d7af4b2904f4d2798b104c67bca9627a84278ad8fe3e6a62f72783125491cb",
+    "experiments/recflow_request_ranking/code/check_distributed_loss.py": "4b084fdd97be57b68a706b099b536917ed9811e33cd5fdd99e0956080a7053ba",
+    "experiments/recflow_request_ranking/code/check_reader_gpu.py": "23a91e37ca7a42937ab5bff702bbc6ec9f050812ee4bc59dec86b983c8327660",
+    "experiments/recflow_request_ranking/code/configuration.py": "489c61af90eb9edd8beda9c30db0432f431c399ade7a398de9baed69e31d2e28",
+    "experiments/recflow_request_ranking/code/ingest_archive.py": "c44cb7f83031f1a2b4196bbcc762a964f1b8ba54ff882d4d5685be25ed5385d4",
+    "experiments/recflow_request_ranking/code/objective.py": "deff78eb4ff6659eecd460fb8bad778da15c53d9009b7f0638b554e0ebfb00ad",
+    "experiments/recflow_request_ranking/code/preflight.py": "645be40ed36f77ae08566abc96e8f81ae6d07f1138a1de737ebd35274d407ceb",
+    "experiments/recflow_request_ranking/code/protocol.py": "5fa5f7320279464dcac34266a225f37d160a16258e4e6d25d2d1697abbd065ff",
+    "experiments/recflow_request_ranking/code/shared_reader.py": "0afa302bf96bc15b70e8b8550847eb03f65a1358df0060becffc3141e2473337",
+    "experiments/recflow_request_ranking/configs/proposal.json": "06db2663a7b7b9ae0d1ed8862d4e344c10683ef8c981eb7c442d7498ae94c230",
+    "tests/experiments/recflow_request_ranking/test_ingest.py": "5392aac8533295d05098906b43456713d105d7ac7fb0fe738f0321471d5c9a8a",
+    "tests/experiments/recflow_request_ranking/test_model.py": "f2320f4423b6952e305a11f6fa3c584377946eab44e2156c0dc6d05d5b6d2f08",
+    "tests/experiments/recflow_request_ranking/test_protocol.py": "64966e39f290c8a6a03660e53f7778f6efde4d36c7c4e1247136ff820d0bf243"
+  }
+}
